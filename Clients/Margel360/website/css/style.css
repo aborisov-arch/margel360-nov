@@ -365,16 +365,26 @@ p { color: var(--text-muted); }
 .faq-item.open .faq-answer { max-height: 500px; }
 
 /* ── Services ── */
-.services-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.services-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; justify-items: stretch; }
+/* Centre lone orphan card in last row (e.g. 7th item in 3-col grid) */
+.services-grid > .service-card:last-child:nth-child(3n + 1) {
+  grid-column: 2 / 3;
+}
 .service-card {
   background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-lg);
-  padding: 36px 24px; text-align: center; box-shadow: var(--shadow);
+  overflow: hidden; box-shadow: var(--shadow);
   transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
 }
-.service-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: rgba(201,168,76,0.25); }
-.service-icon { font-size: 2.4rem; margin-bottom: 16px; }
-.service-card h3 { margin-bottom: 10px; color: var(--text); }
-.service-card p { font-size: 0.9rem; }
+.service-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg); border-color: rgba(201,168,76,0.3); }
+.service-card-img { overflow: hidden; }
+.service-card-img img {
+  width: 100%; height: 220px; object-fit: cover; display: block;
+  transition: transform 0.5s ease;
+}
+.service-card:hover .service-card-img img { transform: scale(1.06); }
+.service-card-body { padding: 20px 22px; }
+.service-card-body h3 { margin-bottom: 8px; color: var(--text); font-size: 1rem; }
+.service-card-body p { font-size: 0.88rem; }
 @media (max-width: 768px) { .services-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 480px) { .services-grid { grid-template-columns: 1fr; } }
 
@@ -530,4 +540,11 @@ p { color: var(--text-muted); }
 /* Touch target minimum on interactive elements */
 @media (max-width: 768px) {
   .btn { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+  /* Prevent iOS auto-zoom on input focus (requires font-size >= 16px) */
+  .form-group input,
+  .form-group select,
+  .form-group textarea { font-size: 16px; }
+  /* Hamburger and lang-toggle tap targets */
+  .hamburger { width: 44px; height: 44px; align-items: center; justify-content: center; }
+  .lang-toggle { min-height: 44px; padding: 0 12px; }
 }

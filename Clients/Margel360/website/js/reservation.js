@@ -79,12 +79,19 @@ let booking = { event:null, date:'', time:'day', addons:{}, drinkQtys:{}, name:'
 let activeDrinkCat = 0;
 
 function getLang() { return localStorage.getItem('margel_lang') || 'bg'; }
+const RATE = 1.95583;
+function toEur(bgn) { return (bgn / RATE).toFixed(2); }
 function fmt(bgn) {
   if (!bgn || bgn == null) return getLang() === 'bg' ? 'По запитване' : 'On request';
-  return getLang() === 'bg' ? bgn.toLocaleString('bg-BG') + ' лв.' : '€' + (bgn / 1.956).toFixed(2);
+  return '€' + toEur(bgn);
+}
+function fmtDual(bgn) {
+  // Returns { eur, bgn } strings for two-line display
+  if (!bgn) return null;
+  return { eur: '€' + toEur(bgn), bgn: bgn.toLocaleString('bg-BG') + ' лв.' };
 }
 function fmtEvent(ev) {
-  return getLang() === 'bg' ? ev.price_bgn.toLocaleString('bg-BG') + ' лв.' : '€' + ev.price_eur.toFixed(2);
+  return '€' + toEur(ev.price_bgn);
 }
 
 // ── Navigation ──
@@ -206,7 +213,13 @@ function renderAddons() {
 
     const info = document.createElement('div'); info.className = 'addon-info';
     const name = document.createElement('div'); name.className = 'addon-name'; name.textContent = l === 'bg' ? svc.name_bg : svc.name_en;
-    const price = document.createElement('div'); price.className = 'addon-price'; price.textContent = fmt(svc.price);
+    const price = document.createElement('div'); price.className = 'addon-price';
+    const dual = fmtDual(svc.price);
+    if (dual) {
+      const eurEl = document.createElement('span'); eurEl.className = 'price-eur'; eurEl.textContent = dual.eur;
+      const bgnEl = document.createElement('span'); bgnEl.className = 'price-bgn'; bgnEl.textContent = dual.bgn;
+      price.appendChild(eurEl); price.appendChild(bgnEl);
+    } else { price.textContent = fmt(svc.price); }
     info.appendChild(name); info.appendChild(price);
 
     const check = document.createElement('div'); check.className = 'addon-check'; check.setAttribute('aria-hidden','true'); check.textContent = '✓';
@@ -258,7 +271,13 @@ function renderDrinks() {
     const img = document.createElement('img'); img.src = drink.img; img.alt = l === 'bg' ? drink.name_bg : drink.name_en; img.loading = 'lazy';
     const body = document.createElement('div'); body.className = 'drink-body';
     const name = document.createElement('div'); name.className = 'drink-name'; name.textContent = l === 'bg' ? drink.name_bg : drink.name_en;
-    const price = document.createElement('div'); price.className = 'drink-price'; price.textContent = drink.price_bgn ? fmt(drink.price_bgn) : (l === 'bg' ? 'По запитване' : 'On request');
+    const price = document.createElement('div'); price.className = 'drink-price';
+    const dualD = fmtDual(drink.price_bgn);
+    if (dualD) {
+      const eurEl = document.createElement('span'); eurEl.className = 'price-eur'; eurEl.textContent = dualD.eur;
+      const bgnEl = document.createElement('span'); bgnEl.className = 'price-bgn'; bgnEl.textContent = dualD.bgn;
+      price.appendChild(eurEl); price.appendChild(bgnEl);
+    } else { price.textContent = l === 'bg' ? 'По запитване' : 'On request'; }
 
     const qtyWrap = document.createElement('div'); qtyWrap.className = 'drink-qty';
     const minus = document.createElement('button'); minus.className = 'qty-btn'; minus.textContent = '−'; minus.setAttribute('aria-label', 'Decrease');

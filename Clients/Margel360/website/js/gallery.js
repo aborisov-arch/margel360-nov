@@ -18,7 +18,6 @@ const images = [
   { src: 'assets/images/gallery-3.jpg',           alt_bg: 'Събитие в залата',         alt_en: 'Event at the venue' },
   { src: 'assets/images/gallery-4.jpg',           alt_bg: 'Събитие в залата',         alt_en: 'Event at the venue' },
   { src: 'assets/images/gallery-5.jpg',           alt_bg: 'Събитие в залата',         alt_en: 'Event at the venue' },
-  { src: 'assets/images/gallery-6.jpg',           alt_bg: 'Събитие в залата',         alt_en: 'Event at the venue' },
 ];
 
 // ── State ──
