@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAQ — Маргел 360°</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <nav class="nav scrolled" aria-label="Main navigation">
+    <div class="container">
+      <a href="index.html" class="nav-logo">МАРГЕЛ <span>360°</span></a>
+      <ul class="nav-links" role="list">
+        <li><a href="index.html" data-i18n="nav_home">Тип събитие</a></li>
+        <li><a href="gallery.html" data-i18n="nav_gallery">Галерия</a></li>
+        <li><a href="faq.html" class="active" data-i18n="nav_faq">FAQ</a></li>
+        <li><a href="services.html" data-i18n="nav_services">Услуги</a></li>
+        <li><a href="contact.html" data-i18n="nav_contact">Контакти</a></li>
+        <li><a href="reservation.html" class="btn btn-primary" style="padding:8px 20px" data-i18n="nav_reserve">Запитване</a></li>
+      </ul>
+      <button class="lang-toggle" aria-label="Switch language">EN</button>
+      <button class="hamburger" aria-label="Toggle navigation" aria-expanded="false" aria-controls="nav-drawer">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <nav class="nav-drawer" id="nav-drawer" aria-label="Mobile navigation">
+    <ul role="list" style="display:contents">
+      <li><a href="index.html" data-i18n="nav_home">Тип събитие</a></li>
+      <li><a href="gallery.html" data-i18n="nav_gallery">Галерия</a></li>
+      <li><a href="faq.html" class="active" data-i18n="nav_faq">FAQ</a></li>
+      <li><a href="services.html" data-i18n="nav_services">Услуги</a></li>
+      <li><a href="contact.html" data-i18n="nav_contact">Контакти</a></li>
+      <li><a href="reservation.html" data-i18n="nav_reserve">Запитване</a></li>
+    </ul>
+    <button class="lang-toggle" aria-label="Switch language">EN</button>
+  </nav>
+
+  <main>
+    <div class="page-header">
+      <div class="container">
+        <h1 id="faq-heading" data-i18n="faq_title">Често задавани въпроси</h1>
+        <p data-i18n="faq_sub">Отговори на най-честите въпроси</p>
+      </div>
+    </div>
+    <section class="section" aria-labelledby="faq-heading">
+      <div class="container">
+        <div class="faq-list" id="faq-list" role="list"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="index.html" class="nav-logo">МАРГЕЛ <span>360°</span></a>
+          <p data-i18n="footer_desc">Зала за всяко събитие в сърцето на Враца.</p>
+        </div>
+        <div>
+          <h4 data-i18n="footer_nav">Навигация</h4>
+          <ul class="footer-links" role="list">
+            <li><a href="index.html" data-i18n="nav_home">Тип събитие</a></li>
+            <li><a href="gallery.html" data-i18n="nav_gallery">Галерия</a></li>
+            <li><a href="faq.html" data-i18n="nav_faq">FAQ</a></li>
+            <li><a href="services.html" data-i18n="nav_services">Услуги</a></li>
+            <li><a href="contact.html" data-i18n="nav_contact">Контакти</a></li>
+          </ul>
+        </div>
+        <div class="footer-contact">
+          <h4 data-i18n="footer_contact">Контакти</h4>
+          <p><span aria-hidden="true">📞</span> 0888 10 09 42</p>
+          <p data-i18n="footer_address">гр. Враца, България</p>
+          <div class="social-links">
+            <a href="#" aria-label="Facebook">f</a>
+            <a href="#" aria-label="Instagram">in</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p data-i18n="footer_copy">© 2024 Маргел 360°. Всички права запазени.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/translations-faq.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/faq.js"></script>
+</body>
+</html>
