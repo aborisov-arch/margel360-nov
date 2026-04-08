@@ -1,82 +1,110 @@
-// Events data
+// Events data — pricing and images from margel360.bg
 const events = [
   {
-    title_bg: 'Корпоративни събития за 4 часа',
-    title_en: 'Corporate Event 4h',
-    hours_bg: '8:00–17:30',
-    hours_en: '8:00–5:30 PM',
-    price: '4 066.35 лв.'
+    title_bg: 'Корпоративно събитие',
+    title_en: 'Corporate Event',
+    desc_bg: 'Тематично фирмено парти, семинар или коктейл в мултифункционалната ни зала.',
+    desc_en: 'Themed company party, seminar or cocktail in our multifunctional venue.',
+    hours_bg: 'Дневно или вечерно',
+    hours_en: 'Day or evening',
+    price_bg: 'От 580 лв.',
+    price_en: 'From €296',
+    img: 'assets/images/venue-9.jpg',
   },
   {
-    title_bg: 'Корпоративни събития за 8 часа',
-    title_en: 'Corporate Event 8h',
-    hours_bg: '8:00–17:30',
-    hours_en: '8:00–5:30 PM',
-    price: '4 083.52 лв.'
-  },
-  {
-    title_bg: 'Детски рожден ден (дневно) до 17:30',
-    title_en: 'Kids Birthday (daytime) until 5:30 PM',
-    hours_bg: 'до 17:30',
-    hours_en: 'until 5:30 PM',
-    price: '4 064.24 лв.'
-  },
-  {
-    title_bg: 'Детски рожден ден 5ч. вечерна, 16:00–24:00',
-    title_en: 'Kids Birthday 5h evening, 4 PM–midnight',
-    hours_bg: '16:00–24:00',
-    hours_en: '4:00 PM–midnight',
-    price: '4 065.25 лв.'
+    title_bg: 'Детски рожден ден',
+    title_en: "Children's Birthday",
+    desc_bg: 'Широко пространство за игри, анимация и мини-диско за незабравим детски празник.',
+    desc_en: 'Wide space for games, animation and mini-disco for an unforgettable kids' party.',
+    hours_bg: 'Дневно до 17:30 или вечерно',
+    hours_en: 'Daytime until 5:30 PM or evening',
+    price_bg: 'От 580 лв.',
+    price_en: 'From €296',
+    img: 'assets/images/event-1.jpg',
   },
   {
     title_bg: 'Сватба',
     title_en: 'Wedding',
+    desc_bg: 'Магическа декорация в залата и тераса с изглед към Витоша — перфектна за вашия специален ден.',
+    desc_en: 'Magical décor in the hall and a terrace overlooking Vitosha — perfect for your special day.',
     hours_bg: 'По договаряне',
     hours_en: 'By arrangement',
-    price: '45 473.52 лв.'
+    price_bg: 'По запитване',
+    price_en: 'On request',
+    img: 'assets/images/event-2.jpg',
+  },
+  {
+    title_bg: 'Вечерно събитие',
+    title_en: 'Evening Event',
+    desc_bg: 'Рафинираната атмосфера на Маргел 360° е идеалното място за всяко вечерно тържество.',
+    desc_en: 'The refined atmosphere of Margel 360° is the perfect setting for any evening celebration.',
+    hours_bg: 'Вечерно',
+    hours_en: 'Evening',
+    price_bg: 'От 680 лв.',
+    price_en: 'From €347',
+    img: 'assets/images/venue-16.jpg',
+  },
+  {
+    title_bg: 'Коктейл и бизнес среща',
+    title_en: 'Cocktail & Business',
+    desc_bg: 'До 150 гости тип коктейл. Пълна аудио-визуална техника за презентации и срещи.',
+    desc_en: 'Up to 150 guests cocktail style. Full AV equipment for presentations and meetings.',
+    hours_bg: 'Гъвкаво работно време',
+    hours_en: 'Flexible hours',
+    price_bg: 'От 580 лв.',
+    price_en: 'From €296',
+    img: 'assets/images/venue-8.jpg',
   },
 ];
 
 const equipment = [
-  { icon: '🍸', label_bg: 'Собствен бар с оборудване', label_en: 'Own bar with equipment' },
-  { icon: '🍽️', label_bg: 'Кетъринг зона', label_en: 'Catering area' },
-  { icon: '🚻', label_bg: 'Тоалети', label_en: 'Toilets' },
-  { icon: '🔊', label_bg: '360° Озвучаване', label_en: '360° Sound system' },
+  { icon: '🔊', label_bg: '12 колони EV/YAMAHA 360°', label_en: '12 EV/YAMAHA speakers 360°' },
   { icon: '💡', label_bg: 'Модерно осветление', label_en: 'Modern lighting' },
-  { icon: '🎬', label_bg: 'Проектор и екран', label_en: 'Projector and screen' },
-  { icon: '🔒', label_bg: 'Видеонаблюдение и охрана', label_en: 'CCTV and security' },
-  { icon: '❄️', label_bg: 'Климатизация', label_en: 'Air conditioning' },
-  { icon: '📺', label_bg: 'Информационен монитор', label_en: 'Info display' },
+  { icon: '🌿', label_bg: 'Панорамна тераса 260 м²', label_en: '260 m² panoramic terrace' },
+  { icon: '🧊', label_bg: '2 ледогенератора 50л', label_en: '2 ice makers 50L each' },
+  { icon: '🍽️', label_bg: 'Кетъринг оборудване', label_en: 'Catering equipment' },
+  { icon: '🚗', label_bg: '70+ паркоместа', label_en: '70+ parking spaces' },
+  { icon: '🎬', label_bg: 'Проектор и LED екран', label_en: 'Projector & LED screen' },
+  { icon: '🛗', label_bg: 'Асансьор', label_en: 'Elevator' },
+  { icon: '❄️', label_bg: '3 хладилни витрини', label_en: '3 refrigerated displays' },
+  { icon: '🎤', label_bg: 'Микрофони', label_en: 'Microphones' },
   { icon: '🕺', label_bg: 'Танцова площадка', label_en: 'Dance floor' },
-  { icon: '🌿', label_bg: 'Две открити площадки', label_en: 'Two outdoor areas' },
 ];
 
-// Safe text setter — avoids XSS when inserting into DOM
-function setText(el, text) {
-  el.textContent = text;
-}
+function setText(el, text) { el.textContent = text; }
 
 function renderCards(lang) {
   const eventsGrid = document.getElementById('events-grid');
   if (eventsGrid) {
     eventsGrid.innerHTML = '';
-    events.forEach(e => {
+    events.forEach((e, idx) => {
       const title = lang === 'bg' ? e.title_bg : e.title_en;
+      const desc  = lang === 'bg' ? e.desc_bg  : e.desc_en;
       const hours = lang === 'bg' ? e.hours_bg : e.hours_en;
+      const price = lang === 'bg' ? e.price_bg : e.price_en;
 
       const card = document.createElement('div');
-      card.className = 'event-card';
+      card.className = 'event-card fade-up delay-' + ((idx % 3) + 1);
       card.setAttribute('role', 'listitem');
 
+      const imgWrap = document.createElement('div');
+      imgWrap.className = 'event-card-img-wrap';
       const img = document.createElement('img');
-      img.src = 'assets/images/placeholder.jpg';
-      img.alt = title; // textContent-equivalent for alt — safe
+      img.src = e.img;
+      img.alt = title;
+      img.loading = 'lazy';
+      imgWrap.appendChild(img);
 
       const body = document.createElement('div');
       body.className = 'event-card-body';
 
       const h3 = document.createElement('h3');
       setText(h3, title);
+
+      const p = document.createElement('p');
+      p.style.fontSize = '0.88rem';
+      p.style.marginTop = '8px';
+      setText(p, desc);
 
       const meta = document.createElement('div');
       meta.className = 'event-card-meta';
@@ -86,26 +114,31 @@ function renderCards(lang) {
 
       const priceSpan = document.createElement('span');
       priceSpan.className = 'event-card-price';
-      setText(priceSpan, e.price);
+      setText(priceSpan, price);
 
       meta.appendChild(hoursSpan);
       meta.appendChild(priceSpan);
       body.appendChild(h3);
+      body.appendChild(p);
       body.appendChild(meta);
-      card.appendChild(img);
+      card.appendChild(imgWrap);
       card.appendChild(body);
       eventsGrid.appendChild(card);
     });
+    // Trigger animation observer on new elements
+    if (window._animObserver) {
+      eventsGrid.querySelectorAll('.fade-up').forEach(el => window._animObserver.observe(el));
+    }
   }
 
   const equipGrid = document.getElementById('equip-grid');
   if (equipGrid) {
     equipGrid.innerHTML = '';
-    equipment.forEach(item => {
+    equipment.forEach((item, idx) => {
       const label = lang === 'bg' ? item.label_bg : item.label_en;
 
       const el = document.createElement('div');
-      el.className = 'equip-item';
+      el.className = 'equip-item fade-up delay-' + ((idx % 4) + 1);
       el.setAttribute('role', 'listitem');
 
       const icon = document.createElement('div');
@@ -120,16 +153,17 @@ function renderCards(lang) {
       el.appendChild(span);
       equipGrid.appendChild(el);
     });
+    if (window._animObserver) {
+      equipGrid.querySelectorAll('.fade-up').forEach(el => window._animObserver.observe(el));
+    }
   }
 }
 
-// Initial render
 document.addEventListener('DOMContentLoaded', () => {
   const lang = localStorage.getItem('margel_lang') || 'bg';
   renderCards(lang);
 });
 
-// Re-render on language change dispatched by main.js
 document.addEventListener('langChange', (e) => {
   renderCards(e.detail.lang);
 });

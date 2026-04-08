@@ -14,7 +14,10 @@
   <!-- NAV -->
   <nav class="nav" aria-label="Main navigation">
     <div class="container">
-      <a href="index.html" class="nav-logo">МАРГЕЛ <span>360°</span></a>
+      <a href="index.html" class="nav-logo">
+        <img src="assets/images/logo.jpg" alt="" class="logo-img" aria-hidden="true">
+        МАРГЕЛ <span>360°</span>
+      </a>
       <ul class="nav-links" role="list">
         <li><a href="index.html" class="active" data-i18n="nav_home">Тип събитие</a></li>
         <li><a href="gallery.html" data-i18n="nav_gallery">Галерия</a></li>
@@ -48,16 +51,41 @@
     <section class="hero" aria-label="Hero">
       <div class="hero-overlay" aria-hidden="true"></div>
       <div class="hero-content container">
-        <h1 data-i18n="hero_title">Зала за всяко събитие</h1>
+        <h1><span class="gold-text" data-i18n="hero_title">Зала за всяко събитие</span></h1>
         <p data-i18n="hero_sub">Наслади се на всеки повод в Маргел 360°</p>
         <a href="reservation.html" class="btn btn-primary" data-i18n="hero_cta">Направете запитване</a>
+      </div>
+      <div class="hero-scroll" aria-hidden="true">SCROLL</div>
+    </section>
+
+    <!-- STATS -->
+    <section class="stats-section" aria-label="Key figures">
+      <div class="container">
+        <div class="stats-grid">
+          <div class="stat-item fade-up">
+            <div class="stat-num" data-count="150" data-suffix="+">0+</div>
+            <div class="stat-label" data-i18n="stat_guests">Гости (коктейл)</div>
+          </div>
+          <div class="stat-item fade-up delay-1">
+            <div class="stat-num" data-count="260" data-suffix=" м²">0 м²</div>
+            <div class="stat-label" data-i18n="stat_terrace">Панорамна тераса</div>
+          </div>
+          <div class="stat-item fade-up delay-2">
+            <div class="stat-num" data-count="70" data-suffix="+">0+</div>
+            <div class="stat-label" data-i18n="stat_parking">Безплатни паркоместа</div>
+          </div>
+          <div class="stat-item fade-up delay-3">
+            <div class="stat-num" data-count="12" data-suffix="">0</div>
+            <div class="stat-label" data-i18n="stat_speakers">Проф. тонколони</div>
+          </div>
+        </div>
       </div>
     </section>
 
     <!-- EVENT TYPES -->
     <section class="section events-section" aria-labelledby="events-heading">
       <div class="container">
-        <div class="section-title">
+        <div class="section-title fade-up">
           <h2 id="events-heading" data-i18n="events_title">Избери събитие</h2>
         </div>
         <div class="events-grid" id="events-grid" role="list"></div>
@@ -67,13 +95,14 @@
     <!-- ABOUT -->
     <section class="section about-section" aria-labelledby="about-heading">
       <div class="container about-grid">
-        <div class="about-text">
+        <div class="about-text fade-up">
           <h2 id="about-heading" data-i18n="about_title">МАРГЕЛ 360°</h2>
           <p data-i18n="about_body">Непрекъснато се занимаваме и интересуваме от това, залата да е максимално оборудвана, за да посрещне всяко събитие. Тя е оборудвана в съответствие с изискванията и различните пространства за всякакви фирмени или лични тържества.</p>
           <p style="margin-top:16px" data-i18n="about_body2">Залата работи в 360° в промоция на тържества — Вие я посещавате за Вие, Вашите гости и Вашето парти.</p>
+          <a href="reservation.html" class="btn btn-outline" style="margin-top:28px" data-i18n="hero_cta">Направете запитване</a>
         </div>
-        <div class="about-image">
-          <img src="assets/images/placeholder.jpg" alt="Маргел 360° зала">
+        <div class="about-image fade-up delay-2">
+          <img src="assets/images/venue-12.jpg" alt="Маргел 360° — интериор на залата">
         </div>
       </div>
     </section>
@@ -81,12 +110,12 @@
     <!-- EQUIPMENT -->
     <section class="section equipment-section" aria-labelledby="equip-heading">
       <div class="container">
-        <div class="section-title">
+        <div class="section-title fade-up">
           <h2 id="equip-heading" data-i18n="equip_title">Оборудване на залата</h2>
           <p data-i18n="equip_sub">Залата разполага с всичко необходимо за вашето събитие.</p>
         </div>
         <div class="equip-grid" id="equip-grid" role="list"></div>
-        <div style="text-align:center;margin-top:40px">
+        <div style="text-align:center;margin-top:44px" class="fade-up">
           <a href="reservation.html" class="btn btn-primary" data-i18n="equip_cta">Направете запитване</a>
         </div>
       </div>
@@ -95,18 +124,18 @@
     <!-- PHOTO TEASER -->
     <section class="section photos-section" aria-labelledby="photos-heading">
       <div class="container">
-        <div class="section-title">
+        <div class="section-title fade-up">
           <h2 id="photos-heading" data-i18n="photos_title">Снимки от изминали събития</h2>
         </div>
         <div class="photos-grid" aria-label="Photo preview">
-          <img src="assets/images/placeholder.jpg" alt="Event photo 1">
-          <img src="assets/images/placeholder.jpg" alt="Event photo 2">
-          <img src="assets/images/placeholder.jpg" alt="Event photo 3">
-          <img src="assets/images/placeholder.jpg" alt="Event photo 4">
-          <img src="assets/images/placeholder.jpg" alt="Event photo 5">
-          <img src="assets/images/placeholder.jpg" alt="Event photo 6">
+          <img src="assets/images/venue-1.jpg"  alt="Маргел 360° — събитие 1" loading="lazy">
+          <img src="assets/images/venue-2.jpg"  alt="Маргел 360° — събитие 2" loading="lazy">
+          <img src="assets/images/venue-3.jpg"  alt="Маргел 360° — събитие 3" loading="lazy">
+          <img src="assets/images/venue-4.jpg"  alt="Маргел 360° — събитие 4" loading="lazy">
+          <img src="assets/images/venue-5.jpg"  alt="Маргел 360° — събитие 5" loading="lazy">
+          <img src="assets/images/venue-6.jpg"  alt="Маргел 360° — събитие 6" loading="lazy">
         </div>
-        <div style="text-align:center;margin-top:32px">
+        <div style="text-align:center;margin-top:36px" class="fade-up">
           <a href="gallery.html" class="btn btn-outline" data-i18n="photos_cta">Виж всички снимки</a>
         </div>
       </div>
@@ -118,8 +147,11 @@
     <div class="container">
       <div class="footer-grid">
         <div class="footer-brand">
-          <a href="index.html" class="nav-logo">МАРГЕЛ <span>360°</span></a>
-          <p data-i18n="footer_desc">Зала за всяко събитие в сърцето на Враца.</p>
+          <a href="index.html" class="nav-logo">
+            <img src="assets/images/logo.jpg" alt="" class="logo-img" aria-hidden="true">
+            МАРГЕЛ <span>360°</span>
+          </a>
+          <p data-i18n="footer_desc">Зала за всяко събитие в сърцето на София.</p>
         </div>
         <div>
           <h4 data-i18n="footer_nav">Навигация</h4>
@@ -134,10 +166,10 @@
         <div class="footer-contact">
           <h4 data-i18n="footer_contact">Контакти</h4>
           <p><span aria-hidden="true">📞</span> 0888 10 09 42</p>
-          <p data-i18n="footer_address">гр. Враца, България</p>
+          <p data-i18n="footer_address">бул. Околовръстен път 155, ет.4, София</p>
           <div class="social-links">
-            <a href="#" aria-label="Facebook">f</a>
-            <a href="#" aria-label="Instagram">in</a>
+            <a href="https://www.facebook.com/margel360/" aria-label="Facebook" target="_blank" rel="noopener">f</a>
+            <a href="https://www.instagram.com/margel360/" aria-label="Instagram" target="_blank" rel="noopener">in</a>
           </div>
         </div>
       </div>

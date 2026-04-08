@@ -1,13 +1,30 @@
-// Photo alt text — updated by langChange
+// Real venue photos from margel360.bg
 let photoAlt = localStorage.getItem('margel_lang') === 'en' ? 'Event photo' : 'Снимка от събитие';
 
-const images = Array.from({ length: 12 }, (_, i) => ({
-  src: 'assets/images/placeholder.jpg',
-  get alt() { return `${photoAlt} ${i + 1}`; }
-}));
+const images = [
+  { src: 'assets/images/venue-9.jpg'  },
+  { src: 'assets/images/venue-16.jpg' },
+  { src: 'assets/images/venue-17.jpg' },
+  { src: 'assets/images/venue-1.jpg'  },
+  { src: 'assets/images/venue-2.jpg'  },
+  { src: 'assets/images/venue-3.jpg'  },
+  { src: 'assets/images/venue-4.jpg'  },
+  { src: 'assets/images/venue-5.jpg'  },
+  { src: 'assets/images/venue-6.jpg'  },
+  { src: 'assets/images/venue-7.jpg'  },
+  { src: 'assets/images/venue-10.jpg' },
+  { src: 'assets/images/venue-11.jpg' },
+  { src: 'assets/images/venue-12.jpg' },
+  { src: 'assets/images/venue-13.jpg' },
+  { src: 'assets/images/venue-14.jpg' },
+  { src: 'assets/images/venue-15.jpg' },
+  { src: 'assets/images/event-1.jpg'  },
+  { src: 'assets/images/event-2.jpg'  },
+  { src: 'assets/images/venue-8.jpg'  },
+].map((img, i) => ({ ...img, get alt() { return `${photoAlt} ${i + 1}`; } }));
 
 let currentIndex = 0;
-let triggerElement = null; // element that opened the lightbox, to restore focus on close
+let triggerElement = null;
 
 const grid = document.getElementById('gallery-grid');
 const lightbox = document.getElementById('lightbox');
@@ -51,11 +68,10 @@ function showNext() {
   lbImg.alt = images[currentIndex].alt;
 }
 
-// Render gallery grid
 if (grid) {
   images.forEach((img, i) => {
     const item = document.createElement('div');
-    item.className = 'gallery-item';
+    item.className = 'gallery-item fade-up delay-' + ((i % 3) + 1);
     item.setAttribute('role', 'button');
     item.setAttribute('tabindex', '0');
     item.setAttribute('aria-label', img.alt);
@@ -72,40 +88,37 @@ if (grid) {
     });
     grid.appendChild(item);
   });
+
+  if (window._animObserver) {
+    grid.querySelectorAll('.fade-up').forEach(el => window._animObserver.observe(el));
+  }
 }
 
-// Lightbox controls
 if (lbClose) lbClose.addEventListener('click', closeLightbox);
-if (lbPrev) lbPrev.addEventListener('click', showPrev);
-if (lbNext) lbNext.addEventListener('click', showNext);
+if (lbPrev)  lbPrev.addEventListener('click', showPrev);
+if (lbNext)  lbNext.addEventListener('click', showNext);
 if (lightbox) {
   lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
 }
 
-// Keyboard navigation + focus trap
 document.addEventListener('keydown', e => {
   if (!lightbox || !lightbox.classList.contains('open')) return;
-
-  if (e.key === 'Escape') { closeLightbox(); return; }
-  if (e.key === 'ArrowLeft') { showPrev(); return; }
+  if (e.key === 'Escape')     { closeLightbox(); return; }
+  if (e.key === 'ArrowLeft')  { showPrev(); return; }
   if (e.key === 'ArrowRight') { showNext(); return; }
-
-  // Focus trap: cycle Tab/Shift+Tab within lightbox buttons
   if (e.key === 'Tab' && focusableInLightbox.length > 0) {
     const first = focusableInLightbox[0];
-    const last = focusableInLightbox[focusableInLightbox.length - 1];
+    const last  = focusableInLightbox[focusableInLightbox.length - 1];
     if (e.shiftKey) {
       if (document.activeElement === first) { e.preventDefault(); last.focus(); }
     } else {
-      if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+      if (document.activeElement === last)  { e.preventDefault(); first.focus(); }
     }
   }
 });
 
-// Update alt text when language changes
 document.addEventListener('langChange', e => {
   photoAlt = e.detail.lang === 'en' ? 'Event photo' : 'Снимка от събитие';
-  // Update aria-labels on grid items
   if (grid) {
     grid.querySelectorAll('.gallery-item').forEach((item, i) => {
       const alt = `${photoAlt} ${i + 1}`;

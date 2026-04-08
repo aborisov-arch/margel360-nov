@@ -25,7 +25,7 @@ const translations = {
     success_body: 'Получихме вашето запитване. Ще се свържем с вас в рамките на 24 часа.',
     footer_desc: 'Зала за всяко събитие в сърцето на Враца.',
     footer_nav: 'Навигация', footer_contact: 'Контакти',
-    footer_address: 'гр. Враца, България',
+    footer_address: 'бул. Околовръстен път 155, ет.4, София',
     footer_copy: '© 2026 Маргел 360°. Всички права запазени.',
   },
   en: {
@@ -52,9 +52,9 @@ const translations = {
     err_date: 'Please select a date.',
     success_title: 'Thank you!',
     success_body: 'We received your enquiry. We will be in touch within 24 hours.',
-    footer_desc: 'A venue for every occasion in the heart of Vratsa.',
+    footer_desc: 'A venue for every occasion in the heart of Sofia.',
     footer_nav: 'Navigation', footer_contact: 'Contact',
-    footer_address: 'Vratsa, Bulgaria',
+    footer_address: 'Okolovrsten pat 155, 4th floor, Sofia',
     footer_copy: '© 2026 Margel 360°. All rights reserved.',
   }
 };
