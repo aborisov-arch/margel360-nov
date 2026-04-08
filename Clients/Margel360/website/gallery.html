@@ -8,10 +8,12 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/gallery.css">
 </head>
-<body>
+<body class="gallery-page">
 
-  <nav class="nav scrolled" aria-label="Main navigation">
+  <!-- Transparent nav over the gallery -->
+  <nav class="nav gl-nav" id="main-nav" aria-label="Main navigation">
     <div class="container">
       <a href="index.html" class="nav-logo"><img src="assets/images/logo-real.png" alt="" class="logo-img" aria-hidden="true">МАРГЕЛ <span>360°</span></a>
       <ul class="nav-links" role="list">
@@ -22,10 +24,17 @@
         <li><a href="contact.html" data-i18n="nav_contact">Контакти</a></li>
         <li><a href="reservation.html" class="btn btn-primary" style="padding:8px 20px" data-i18n="nav_reserve">Запитване</a></li>
       </ul>
-      <button class="lang-toggle" aria-label="Switch language">EN</button>
-      <button class="hamburger" aria-label="Toggle navigation" aria-expanded="false" aria-controls="nav-drawer">
-        <span></span><span></span><span></span>
-      </button>
+      <div class="gl-nav-right">
+        <button class="lang-toggle" aria-label="Switch language">EN</button>
+        <button class="gl-view-toggle" id="gl-view-toggle" aria-label="Switch to grid view" title="Grid view">
+          <span class="gl-view-icon gl-view-icon--grid">
+            <span></span><span></span><span></span><span></span>
+          </span>
+        </button>
+        <button class="hamburger" aria-label="Toggle navigation" aria-expanded="false" aria-controls="nav-drawer">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
     </div>
   </nav>
 
@@ -41,60 +50,41 @@
     <button class="lang-toggle" aria-label="Switch language">EN</button>
   </nav>
 
-  <main>
-    <div class="page-header-img" style="background-image:url(assets/images/header-gallery.jpg)">
-      <div class="container">
-        <h1 id="gallery-heading" data-i18n="gallery_title">Галерия</h1>
-        <p data-i18n="gallery_sub">Снимки от нашите събития</p>
-      </div>
-    </div>
-    <section class="section" aria-labelledby="gallery-heading">
-      <div class="container">
-        <div class="gallery-grid" id="gallery-grid" aria-labelledby="gallery-heading"></div>
-      </div>
-    </section>
-  </main>
+  <!-- ── CINEMATIC GALLERY VIEW ── -->
+  <div class="gl-cinema" id="gl-cinema" role="region" aria-label="Photo gallery" aria-live="polite">
 
-  <!-- Lightbox -->
-  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Photo viewer">
-    <button class="lightbox-close" id="lb-close" aria-label="Close photo viewer">×</button>
-    <button class="lightbox-prev" id="lb-prev" aria-label="Previous photo">‹</button>
-    <img class="lightbox-img" id="lb-img" src="" alt="">
-    <button class="lightbox-next" id="lb-next" aria-label="Next photo">›</button>
+    <!-- Slide track -->
+    <div class="gl-track" id="gl-track"></div>
+
+    <!-- Prev / Next hit zones + arrows -->
+    <button class="gl-arrow gl-arrow--prev" id="gl-prev" aria-label="Previous photo">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+        <path d="M18 22L10 14L18 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <button class="gl-arrow gl-arrow--next" id="gl-next" aria-label="Next photo">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+        <path d="M10 6L18 14L10 22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+
+    <!-- Counter -->
+    <div class="gl-counter" aria-live="polite" aria-atomic="true">
+      <span id="gl-current">01</span><span class="gl-counter-sep"> / </span><span id="gl-total">19</span>
+    </div>
+
+    <!-- Scroll hint -->
+    <div class="gl-hint" id="gl-hint" aria-hidden="true">
+      <span>scroll</span>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12l7 7 7-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </div>
+
   </div>
 
-  <footer class="footer">
-    <div class="container">
-      <div class="footer-grid">
-        <div class="footer-brand">
-          <a href="index.html" class="nav-logo"><img src="assets/images/logo-real.png" alt="" class="logo-img" aria-hidden="true">МАРГЕЛ <span>360°</span></a>
-          <p data-i18n="footer_desc">Зала за всяко събитие в сърцето на Враца.</p>
-        </div>
-        <div>
-          <h4 data-i18n="footer_nav">Навигация</h4>
-          <ul class="footer-links" role="list">
-            <li><a href="index.html" data-i18n="nav_home">Тип събитие</a></li>
-            <li><a href="gallery.html" data-i18n="nav_gallery">Галерия</a></li>
-            <li><a href="faq.html" data-i18n="nav_faq">FAQ</a></li>
-            <li><a href="services.html" data-i18n="nav_services">Услуги</a></li>
-            <li><a href="contact.html" data-i18n="nav_contact">Контакти</a></li>
-          </ul>
-        </div>
-        <div class="footer-contact">
-          <h4 data-i18n="footer_contact">Контакти</h4>
-          <p><span aria-hidden="true">📞</span> 0888 10 09 42</p>
-          <p data-i18n="footer_address">бул. Околовръстен път 155, ет.4, София</p>
-          <div class="social-links">
-            <a href="https://www.facebook.com/margel360/" aria-label="Facebook" target="_blank" rel="noopener">f</a>
-            <a href="https://www.instagram.com/margel360/" aria-label="Instagram" target="_blank" rel="noopener">in</a>
-          </div>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <p data-i18n="footer_copy">© 2026 Маргел 360°. Всички права запазени.</p>
-      </div>
-    </div>
-  </footer>
+  <!-- ── GRID VIEW ── -->
+  <div class="gl-grid-view" id="gl-grid-view" aria-hidden="true">
+    <div class="gl-grid-inner" id="gl-grid-inner"></div>
+  </div>
 
   <script src="js/translations-gallery.js"></script>
   <script src="js/main.js"></script>
