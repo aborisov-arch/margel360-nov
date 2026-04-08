@@ -12,7 +12,7 @@ const navDrawer = document.querySelector('.nav-drawer');
 if (hamburger && navDrawer) {
   hamburger.addEventListener('click', () => {
     const isOpen = navDrawer.classList.toggle('open');
-    hamburger.setAttribute('aria-expanded', isOpen);
+    hamburger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
   });
   // Close drawer on link click
   navDrawer.querySelectorAll('a').forEach(a => {
@@ -34,7 +34,7 @@ function applyTranslations(lang) {
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
     if (t[key] !== undefined) {
-      el.innerHTML = t[key];
+      el.textContent = t[key];
     }
   });
   // Update toggle button text
