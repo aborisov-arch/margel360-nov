@@ -15,7 +15,7 @@
   <nav class="nav scrolled" aria-label="Main navigation">
     <div class="container">
       <a href="index.html" class="nav-logo">
-        <img src="assets/images/logo-real.png" alt="" class="logo-img" aria-hidden="true">
+        <img src="assets/images/logo-real.png" alt="Маргел 360°" class="logo-img">
         МАРГЕЛ <span>360°</span>
       </a>
       <ul class="nav-links" role="list">
@@ -46,7 +46,7 @@
   </nav>
 
   <main>
-    <div class="page-header">
+    <div class="page-header-img" style="background-image:url(assets/images/venue-17.jpg)">
       <div class="container">
         <h1 data-i18n="res_title">Направете запитване</h1>
         <p data-i18n="res_sub">Изберете вашето събитие и резервирайте датата</p>
@@ -71,25 +71,29 @@
           </button>
           <button class="wstep" data-step="2" role="listitem">
             <span class="wstep-num">3</span>
-            <span class="wstep-label" data-i18n="step3_label">Включено</span>
+            <span class="wstep-label" data-i18n="step3_label">Услуги</span>
           </button>
           <button class="wstep" data-step="3" role="listitem">
             <span class="wstep-num">4</span>
-            <span class="wstep-label" data-i18n="step4_label">Контакти</span>
+            <span class="wstep-label" data-i18n="step4_label">Напитки</span>
           </button>
           <button class="wstep" data-step="4" role="listitem">
             <span class="wstep-num">5</span>
-            <span class="wstep-label" data-i18n="step5_label">Резюме</span>
+            <span class="wstep-label" data-i18n="step5_label">Контакти</span>
+          </button>
+          <button class="wstep" data-step="5" role="listitem">
+            <span class="wstep-num">6</span>
+            <span class="wstep-label" data-i18n="step6_label">Резюме</span>
           </button>
         </div>
 
-        <!-- Step 1: Event selection -->
+        <!-- Step 1: Event -->
         <div class="wizard-step active" id="step-0">
           <h2 class="step-heading" data-i18n="s1_title">Изберете тип събитие</h2>
           <div class="event-picker" id="event-picker" role="list"></div>
         </div>
 
-        <!-- Step 2: Date & time -->
+        <!-- Step 2: Date -->
         <div class="wizard-step" id="step-1">
           <h2 class="step-heading" data-i18n="s2_title">Изберете дата и час</h2>
           <div class="datetime-wrap">
@@ -125,27 +129,46 @@
           </div>
         </div>
 
-        <!-- Step 3: Included services -->
+        <!-- Step 3: Paid add-on services -->
         <div class="wizard-step" id="step-2">
-          <h2 class="step-heading" data-i18n="s3_title">Включено в наема</h2>
-          <p class="step-sub" data-i18n="s3_sub">Следните услуги са включени в цената на залата.</p>
-          <div class="services-included" id="services-included"></div>
-          <div class="price-summary" id="price-summary"></div>
+          <h2 class="step-heading" data-i18n="s3_title">Допълнителни услуги</h2>
+          <p class="step-sub" data-i18n="s3_sub">Изберете допълнителни услуги към вашето събитие (по желание).</p>
+          <div class="addon-grid" id="addon-grid"></div>
+          <div class="running-total">
+            <span class="rt-label" data-i18n="addons_total">Допълнителни услуги:</span>
+            <span class="rt-value" id="addons-total-val">0 лв.</span>
+          </div>
           <div class="wizard-nav">
             <button class="btn btn-outline" onclick="goToStep(1)" data-i18n="btn_back">Назад</button>
             <button class="btn btn-primary" onclick="goToStep(3)" data-i18n="btn_next">Напред</button>
           </div>
         </div>
 
-        <!-- Step 4: Contact -->
+        <!-- Step 4: Drinks & Alcohol -->
         <div class="wizard-step" id="step-3">
-          <h2 class="step-heading" data-i18n="s4_title">Вашите данни</h2>
+          <h2 class="step-heading" data-i18n="s4_title">Напитки и алкохол</h2>
+          <p class="step-sub" data-i18n="s4_sub">Поръчайте напитки за вашето събитие (по желание).</p>
+          <div class="drinks-tabs" id="drinks-tabs" role="tablist"></div>
+          <div class="drinks-grid" id="drinks-grid"></div>
+          <div class="running-total" style="margin-top:20px">
+            <span class="rt-label" data-i18n="drinks_total">Напитки:</span>
+            <span class="rt-value" id="drinks-total-val">0 лв.</span>
+          </div>
+          <div class="wizard-nav">
+            <button class="btn btn-outline" onclick="goToStep(2)" data-i18n="btn_back">Назад</button>
+            <button class="btn btn-primary" onclick="goToStep(4)" data-i18n="btn_next">Напред</button>
+          </div>
+        </div>
+
+        <!-- Step 5: Contact -->
+        <div class="wizard-step" id="step-4">
+          <h2 class="step-heading" data-i18n="s5_title">Вашите данни</h2>
           <div class="form-wrapper">
             <div class="form-row">
               <div class="form-group" id="fg-name">
                 <label for="res-name" data-i18n="res_name">Три имена</label>
                 <input type="text" id="res-name" name="name" autocomplete="name" aria-describedby="err-name-msg">
-                <span class="form-error" id="err-name-msg" role="alert" data-i18n="err_name">Моля въведете вашето име.</span>
+                <span class="form-error" id="err-name-msg" role="alert" data-i18n="err_name">Моля въведете вашето пълно име.</span>
               </div>
               <div class="form-group" id="fg-phone">
                 <label for="res-phone" data-i18n="res_phone">Телефон</label>
@@ -169,15 +192,16 @@
             </div>
           </div>
           <div class="wizard-nav">
-            <button class="btn btn-outline" onclick="goToStep(2)" data-i18n="btn_back">Назад</button>
-            <button class="btn btn-primary" id="btn-step4-next" data-i18n="btn_next">Напред</button>
+            <button class="btn btn-outline" onclick="goToStep(3)" data-i18n="btn_back">Назад</button>
+            <button class="btn btn-primary" id="btn-step5-next" data-i18n="btn_next">Напред</button>
           </div>
         </div>
 
-        <!-- Step 5: Summary -->
-        <div class="wizard-step" id="step-4">
-          <h2 class="step-heading" data-i18n="s5_title">Преглед и изпращане</h2>
+        <!-- Step 6: Summary -->
+        <div class="wizard-step" id="step-5">
+          <h2 class="step-heading" data-i18n="s6_title">Преглед и изпращане</h2>
           <div class="summary-card" id="booking-summary"></div>
+          <div class="price-summary" id="price-summary"></div>
           <div class="payment-methods">
             <p class="payment-label" data-i18n="payment_label">Начин на плащане</p>
             <div class="payment-options" role="group">
@@ -196,7 +220,7 @@
             </div>
           </div>
           <div class="wizard-nav">
-            <button class="btn btn-outline" onclick="goToStep(3)" data-i18n="btn_back">Назад</button>
+            <button class="btn btn-outline" onclick="goToStep(4)" data-i18n="btn_back">Назад</button>
             <button class="btn btn-primary" id="btn-submit" data-i18n="res_submit">Изпрати запитване</button>
           </div>
         </div>
@@ -218,7 +242,7 @@
       <div class="footer-grid">
         <div class="footer-brand">
           <a href="index.html" class="nav-logo">
-            <img src="assets/images/logo-real.png" alt="" class="logo-img" aria-hidden="true">
+            <img src="assets/images/logo-real.png" alt="Маргел 360°" class="logo-img">
             МАРГЕЛ <span>360°</span>
           </a>
           <p data-i18n="footer_desc">Зала за всяко събитие в сърцето на София.</p>
