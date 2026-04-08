@@ -51,38 +51,85 @@ const equipment = [
   { icon: '🌿', label_bg: 'Две открити площадки', label_en: 'Two outdoor areas' },
 ];
 
-const lang = localStorage.getItem('margel_lang') || 'bg';
-
-// Render events
-const eventsGrid = document.getElementById('events-grid');
-if (eventsGrid) {
-  events.forEach(e => {
-    const card = document.createElement('div');
-    card.className = 'event-card';
-    card.setAttribute('role', 'listitem');
-    card.innerHTML = `
-      <img src="assets/images/placeholder.jpg" alt="${lang === 'bg' ? e.title_bg : e.title_en}">
-      <div class="event-card-body">
-        <h3>${lang === 'bg' ? e.title_bg : e.title_en}</h3>
-        <div class="event-card-meta">
-          <span>${lang === 'bg' ? e.hours_bg : e.hours_en}</span>
-          <span class="event-card-price">${e.price}</span>
-        </div>
-      </div>`;
-    eventsGrid.appendChild(card);
-  });
+// Safe text setter — avoids XSS when inserting into DOM
+function setText(el, text) {
+  el.textContent = text;
 }
 
-// Render equipment
-const equipGrid = document.getElementById('equip-grid');
-if (equipGrid) {
-  equipment.forEach(item => {
-    const el = document.createElement('div');
-    el.className = 'equip-item';
-    el.setAttribute('role', 'listitem');
-    el.innerHTML = `
-      <div class="equip-icon" aria-hidden="true">${item.icon}</div>
-      <span>${lang === 'bg' ? item.label_bg : item.label_en}</span>`;
-    equipGrid.appendChild(el);
-  });
+function renderCards(lang) {
+  const eventsGrid = document.getElementById('events-grid');
+  if (eventsGrid) {
+    eventsGrid.innerHTML = '';
+    events.forEach(e => {
+      const title = lang === 'bg' ? e.title_bg : e.title_en;
+      const hours = lang === 'bg' ? e.hours_bg : e.hours_en;
+
+      const card = document.createElement('div');
+      card.className = 'event-card';
+      card.setAttribute('role', 'listitem');
+
+      const img = document.createElement('img');
+      img.src = 'assets/images/placeholder.jpg';
+      img.alt = title; // textContent-equivalent for alt — safe
+
+      const body = document.createElement('div');
+      body.className = 'event-card-body';
+
+      const h3 = document.createElement('h3');
+      setText(h3, title);
+
+      const meta = document.createElement('div');
+      meta.className = 'event-card-meta';
+
+      const hoursSpan = document.createElement('span');
+      setText(hoursSpan, hours);
+
+      const priceSpan = document.createElement('span');
+      priceSpan.className = 'event-card-price';
+      setText(priceSpan, e.price);
+
+      meta.appendChild(hoursSpan);
+      meta.appendChild(priceSpan);
+      body.appendChild(h3);
+      body.appendChild(meta);
+      card.appendChild(img);
+      card.appendChild(body);
+      eventsGrid.appendChild(card);
+    });
+  }
+
+  const equipGrid = document.getElementById('equip-grid');
+  if (equipGrid) {
+    equipGrid.innerHTML = '';
+    equipment.forEach(item => {
+      const label = lang === 'bg' ? item.label_bg : item.label_en;
+
+      const el = document.createElement('div');
+      el.className = 'equip-item';
+      el.setAttribute('role', 'listitem');
+
+      const icon = document.createElement('div');
+      icon.className = 'equip-icon';
+      icon.setAttribute('aria-hidden', 'true');
+      icon.textContent = item.icon;
+
+      const span = document.createElement('span');
+      setText(span, label);
+
+      el.appendChild(icon);
+      el.appendChild(span);
+      equipGrid.appendChild(el);
+    });
+  }
 }
+
+// Initial render
+document.addEventListener('DOMContentLoaded', () => {
+  const lang = localStorage.getItem('margel_lang') || 'bg';
+  renderCards(lang);
+});
+
+// Re-render on language change dispatched by main.js
+document.addEventListener('langChange', (e) => {
+  renderCards(e.detail.lang);
+});

@@ -41,6 +41,8 @@ function applyTranslations(lang) {
   document.querySelectorAll('.lang-toggle').forEach(btn => {
     btn.textContent = lang === 'bg' ? 'EN' : 'BG';
   });
+  // Notify page-specific scripts to re-render dynamic content
+  document.dispatchEvent(new CustomEvent('langChange', { detail: { lang } }));
 }
 
 function toggleLang() {
