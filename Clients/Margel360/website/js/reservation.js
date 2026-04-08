@@ -7,7 +7,15 @@ function setError(groupId, show) {
 }
 
 function validatePhone(val) {
-  return /^[\d\s+\-()\u00B7]{7,}$/.test(val.trim());
+  // Require at least 7 actual digits (strips formatting characters first)
+  const digits = val.replace(/[\s\-+()\u00B7]/g, '');
+  return /^\d{7,}$/.test(digits);
+}
+
+// Set minimum date to today to prevent past-date submissions
+const dateInput = document.getElementById('res-date');
+if (dateInput) {
+  dateInput.min = new Date().toISOString().split('T')[0];
 }
 
 if (form) {

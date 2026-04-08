@@ -54,17 +54,17 @@
           <form id="reservation-form" novalidate aria-label="Reservation enquiry form">
             <div class="form-group" id="fg-name">
               <label for="res-name" data-i18n="res_name">Три имена</label>
-              <input type="text" id="res-name" name="name" autocomplete="name">
-              <span class="form-error" role="alert" data-i18n="err_name">Моля въведете вашето име.</span>
+              <input type="text" id="res-name" name="name" autocomplete="name" aria-describedby="err-name-msg">
+              <span class="form-error" id="err-name-msg" role="alert" data-i18n="err_name">Моля въведете вашето име.</span>
             </div>
             <div class="form-group" id="fg-phone">
               <label for="res-phone" data-i18n="res_phone">Телефон</label>
-              <input type="tel" id="res-phone" name="phone" autocomplete="tel">
-              <span class="form-error" role="alert" data-i18n="err_phone">Моля въведете валиден телефонен номер.</span>
+              <input type="tel" id="res-phone" name="phone" autocomplete="tel" aria-describedby="err-phone-msg">
+              <span class="form-error" id="err-phone-msg" role="alert" data-i18n="err_phone">Моля въведете валиден телефонен номер.</span>
             </div>
             <div class="form-group" id="fg-event">
               <label for="res-event" data-i18n="res_event">Тип събитие</label>
-              <select id="res-event" name="event">
+              <select id="res-event" name="event" aria-describedby="err-event-msg">
                 <option value="" data-i18n="res_event_placeholder">-- Изберете --</option>
                 <option value="corp4" data-i18n="ev_corp4">Корпоративно събитие 4ч.</option>
                 <option value="corp8" data-i18n="ev_corp8">Корпоративно събитие 8ч.</option>
@@ -73,12 +73,12 @@
                 <option value="wedding" data-i18n="ev_wedding">Сватба</option>
                 <option value="other" data-i18n="ev_other">Друго</option>
               </select>
-              <span class="form-error" role="alert" data-i18n="err_event">Моля изберете тип събитие.</span>
+              <span class="form-error" id="err-event-msg" role="alert" data-i18n="err_event">Моля изберете тип събитие.</span>
             </div>
             <div class="form-group" id="fg-date">
               <label for="res-date" data-i18n="res_date">Предпочитана дата</label>
-              <input type="date" id="res-date" name="date">
-              <span class="form-error" role="alert" data-i18n="err_date">Моля изберете дата.</span>
+              <input type="date" id="res-date" name="date" aria-describedby="err-date-msg">
+              <span class="form-error" id="err-date-msg" role="alert" data-i18n="err_date">Моля изберете дата.</span>
             </div>
             <div class="form-group">
               <label for="res-message" data-i18n="res_message">Съобщение (по желание)</label>
