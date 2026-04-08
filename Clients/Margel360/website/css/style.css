@@ -50,8 +50,12 @@ p { color: var(--text-muted); }
   border-radius: var(--radius);
   font-size: 1rem;
   font-weight: 600;
-  transition: background var(--transition), transform var(--transition);
+  transition: background var(--transition), transform var(--transition), color var(--transition);
   border: none;
+}
+.btn:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
 }
 .btn-primary {
   background: var(--accent);
