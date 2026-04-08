@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Запитване — Маргел 360°</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <nav class="nav scrolled" aria-label="Main navigation">
+    <div class="container">
+      <a href="index.html" class="nav-logo">МАРГЕЛ <span>360°</span></a>
+      <ul class="nav-links" role="list">
+        <li><a href="index.html" data-i18n="nav_home">Тип събитие</a></li>
+        <li><a href="gallery.html" data-i18n="nav_gallery">Галерия</a></li>
+        <li><a href="faq.html" data-i18n="nav_faq">FAQ</a></li>
+        <li><a href="services.html" data-i18n="nav_services">Услуги</a></li>
+        <li><a href="contact.html" data-i18n="nav_contact">Контакти</a></li>
+        <li><a href="reservation.html" class="btn btn-primary active" style="padding:8px 20px" data-i18n="nav_reserve">Запитване</a></li>
+      </ul>
+      <button class="lang-toggle" aria-label="Switch language">EN</button>
+      <button class="hamburger" aria-label="Toggle navigation" aria-expanded="false" aria-controls="nav-drawer">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <nav class="nav-drawer" id="nav-drawer" aria-label="Mobile navigation">
+    <ul role="list" style="display:contents">
+      <li><a href="index.html" data-i18n="nav_home">Тип събитие</a></li>
+      <li><a href="gallery.html" data-i18n="nav_gallery">Галерия</a></li>
+      <li><a href="faq.html" data-i18n="nav_faq">FAQ</a></li>
+      <li><a href="services.html" data-i18n="nav_services">Услуги</a></li>
+      <li><a href="contact.html" data-i18n="nav_contact">Контакти</a></li>
+      <li><a href="reservation.html" class="active" data-i18n="nav_reserve">Запитване</a></li>
+    </ul>
+    <button class="lang-toggle" aria-label="Switch language">EN</button>
+  </nav>
+
+  <main>
+    <div class="page-header">
+      <div class="container">
+        <h1 id="res-heading" data-i18n="res_title">Направете запитване</h1>
+        <p data-i18n="res_sub">Свържете се с нас за да планираме вашето събитие</p>
+      </div>
+    </div>
+    <section class="section" aria-labelledby="res-heading">
+      <div class="container">
+        <div class="form-wrapper">
+          <form id="reservation-form" novalidate aria-label="Reservation enquiry form">
+            <div class="form-group" id="fg-name">
+              <label for="res-name" data-i18n="res_name">Три имена</label>
+              <input type="text" id="res-name" name="name" autocomplete="name">
+              <span class="form-error" role="alert" data-i18n="err_name">Моля въведете вашето име.</span>
+            </div>
+            <div class="form-group" id="fg-phone">
+              <label for="res-phone" data-i18n="res_phone">Телефон</label>
+              <input type="tel" id="res-phone" name="phone" autocomplete="tel">
+              <span class="form-error" role="alert" data-i18n="err_phone">Моля въведете валиден телефонен номер.</span>
+            </div>
+            <div class="form-group" id="fg-event">
+              <label for="res-event" data-i18n="res_event">Тип събитие</label>
+              <select id="res-event" name="event">
+                <option value="" data-i18n="res_event_placeholder">-- Изберете --</option>
+                <option value="corp4" data-i18n="ev_corp4">Корпоративно събитие 4ч.</option>
+                <option value="corp8" data-i18n="ev_corp8">Корпоративно събитие 8ч.</option>
+                <option value="bday_day" data-i18n="ev_bday_day">Детски рожден ден (дневно)</option>
+                <option value="bday_eve" data-i18n="ev_bday_eve">Детски рожден ден (вечерно)</option>
+                <option value="wedding" data-i18n="ev_wedding">Сватба</option>
+                <option value="other" data-i18n="ev_other">Друго</option>
+              </select>
+              <span class="form-error" role="alert" data-i18n="err_event">Моля изберете тип събитие.</span>
+            </div>
+            <div class="form-group" id="fg-date">
+              <label for="res-date" data-i18n="res_date">Предпочитана дата</label>
+              <input type="date" id="res-date" name="date">
+              <span class="form-error" role="alert" data-i18n="err_date">Моля изберете дата.</span>
+            </div>
+            <div class="form-group">
+              <label for="res-message" data-i18n="res_message">Съобщение (по желание)</label>
+              <textarea id="res-message" name="message"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%" data-i18n="res_submit">Изпрати запитване</button>
+          </form>
+          <div class="form-success" id="form-success" role="status" aria-live="polite">
+            <div style="font-size:3rem;margin-bottom:16px" aria-hidden="true">✅</div>
+            <h2 data-i18n="success_title">Благодарим ви!</h2>
+            <p data-i18n="success_body">Получихме вашето запитване. Ще се свържем с вас в рамките на 24 часа.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="index.html" class="nav-logo">МАРГЕЛ <span>360°</span></a>
+          <p data-i18n="footer_desc">Зала за всяко събитие в сърцето на Враца.</p>
+        </div>
+        <div>
+          <h4 data-i18n="footer_nav">Навигация</h4>
+          <ul class="footer-links" role="list">
+            <li><a href="index.html" data-i18n="nav_home">Тип събитие</a></li>
+            <li><a href="gallery.html" data-i18n="nav_gallery">Галерия</a></li>
+            <li><a href="faq.html" data-i18n="nav_faq">FAQ</a></li>
+            <li><a href="services.html" data-i18n="nav_services">Услуги</a></li>
+            <li><a href="contact.html" data-i18n="nav_contact">Контакти</a></li>
+          </ul>
+        </div>
+        <div class="footer-contact">
+          <h4 data-i18n="footer_contact">Контакти</h4>
+          <p><span aria-hidden="true">📞</span> 0888 10 09 42</p>
+          <p data-i18n="footer_address">гр. Враца, България</p>
+          <div class="social-links">
+            <a href="#" aria-label="Facebook">f</a>
+            <a href="#" aria-label="Instagram">in</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p data-i18n="footer_copy">© 2024 Маргел 360°. Всички права запазени.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/translations-reservation.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/reservation.js"></script>
+</body>
+</html>
