@@ -1,0 +1,66 @@
+/* ── Variables ── */
+:root {
+  --bg: #0f0f0f;
+  --bg-2: #1a1a1a;
+  --text: #ffffff;
+  --text-muted: #aaaaaa;
+  --accent: #e63030;
+  --accent-hover: #c42020;
+  --font: 'Inter', Arial, sans-serif;
+  --radius: 8px;
+  --nav-height: 70px;
+  --section-pad: 80px;
+  --max-width: 1200px;
+  --transition: 0.2s ease;
+}
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+img { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+ul { list-style: none; }
+button { cursor: pointer; font-family: var(--font); }
+
+/* ── Typography ── */
+h1 { font-size: clamp(2rem, 5vw, 4rem); font-weight: 800; line-height: 1.1; }
+h2 { font-size: clamp(1.5rem, 3vw, 2.5rem); font-weight: 700; line-height: 1.2; }
+h3 { font-size: 1.25rem; font-weight: 600; }
+p { color: var(--text-muted); }
+
+/* ── Layout helpers ── */
+.container { max-width: var(--max-width); margin: 0 auto; padding: 0 24px; }
+.section { padding: var(--section-pad) 0; }
+.section-title { text-align: center; margin-bottom: 48px; }
+.section-title p { margin-top: 12px; font-size: 1.1rem; }
+
+/* ── Buttons ── */
+.btn {
+  display: inline-block;
+  padding: 14px 32px;
+  border-radius: var(--radius);
+  font-size: 1rem;
+  font-weight: 600;
+  transition: background var(--transition), transform var(--transition);
+  border: none;
+}
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+.btn-primary:hover { background: var(--accent-hover); transform: translateY(-2px); }
+.btn-outline {
+  background: transparent;
+  color: #fff;
+  border: 2px solid #fff;
+}
+.btn-outline:hover { background: #fff; color: var(--bg); }
