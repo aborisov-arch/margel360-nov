@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Маргел 360° — Зала за всяко събитие</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="nav" aria-label="Main navigation">
+    <div class="container">
+      <a href="index.html" class="nav-logo">МАРГЕЛ <span>360°</span></a>
+      <ul class="nav-links" role="list">
+        <li><a href="index.html" class="active" data-i18n="nav_home">Тип събитие</a></li>
+        <li><a href="gallery.html" data-i18n="nav_gallery">Галерия</a></li>
+        <li><a href="faq.html" data-i18n="nav_faq">FAQ</a></li>
+        <li><a href="services.html" data-i18n="nav_services">Услуги</a></li>
+        <li><a href="contact.html" data-i18n="nav_contact">Контакти</a></li>
+        <li><a href="reservation.html" class="btn btn-primary" style="padding:8px 20px" data-i18n="nav_reserve">Запитване</a></li>
+        <li><button class="lang-toggle" aria-label="Switch language">EN</button></li>
+      </ul>
+      <button class="hamburger" aria-label="Toggle navigation" aria-expanded="false" aria-controls="nav-drawer">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- MOBILE DRAWER -->
+  <nav class="nav-drawer" id="nav-drawer" aria-label="Mobile navigation">
+    <a href="index.html" class="active" data-i18n="nav_home">Тип събитие</a>
+    <a href="gallery.html" data-i18n="nav_gallery">Галерия</a>
+    <a href="faq.html" data-i18n="nav_faq">FAQ</a>
+    <a href="services.html" data-i18n="nav_services">Услуги</a>
+    <a href="contact.html" data-i18n="nav_contact">Контакти</a>
+    <a href="reservation.html" data-i18n="nav_reserve">Запитване</a>
+    <button class="lang-toggle" aria-label="Switch language">EN</button>
+  </nav>
+
+  <main>
+    <!-- HERO -->
+    <section class="hero" aria-label="Hero">
+      <div class="hero-overlay" aria-hidden="true"></div>
+      <div class="hero-content container">
+        <h1 data-i18n="hero_title">Зала за всяко събитие</h1>
+        <p data-i18n="hero_sub">Наслади се на всеки повод в Маргел 360°</p>
+        <a href="reservation.html" class="btn btn-primary" data-i18n="hero_cta">Направете запитване</a>
+      </div>
+    </section>
+
+    <!-- EVENT TYPES -->
+    <section class="section events-section" aria-labelledby="events-heading">
+      <div class="container">
+        <div class="section-title">
+          <h2 id="events-heading" data-i18n="events_title">Избери събитие</h2>
+        </div>
+        <div class="events-grid" id="events-grid" role="list"></div>
+      </div>
+    </section>
+
+    <!-- ABOUT -->
+    <section class="section about-section" aria-labelledby="about-heading">
+      <div class="container about-grid">
+        <div class="about-text">
+          <h2 id="about-heading" data-i18n="about_title">МАРГЕЛ 360°</h2>
+          <p data-i18n="about_body">Непрекъснато се занимаваме и интересуваме от това, залата да е максимално оборудвана, за да посрещне всяко събитие. Тя е оборудвана в съответствие с изискванията и различните пространства за всякакви фирмени или лични тържества.</p>
+          <p style="margin-top:16px" data-i18n="about_body2">Залата работи в 360° в промоция на тържества — Вие я посещавате за Вие, Вашите гости и Вашето парти.</p>
+        </div>
+        <div class="about-image">
+          <img src="assets/images/placeholder.jpg" alt="Маргел 360° зала">
+        </div>
+      </div>
+    </section>
+
+    <!-- EQUIPMENT -->
+    <section class="section equipment-section" aria-labelledby="equip-heading">
+      <div class="container">
+        <div class="section-title">
+          <h2 id="equip-heading" data-i18n="equip_title">Оборудване на залата</h2>
+          <p data-i18n="equip_sub">Залата разполага с всичко необходимо за вашето събитие.</p>
+        </div>
+        <div class="equip-grid" id="equip-grid" role="list"></div>
+        <div style="text-align:center;margin-top:40px">
+          <a href="reservation.html" class="btn btn-primary" data-i18n="equip_cta">Направете запитване</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- PHOTO TEASER -->
+    <section class="section photos-section" aria-labelledby="photos-heading">
+      <div class="container">
+        <div class="section-title">
+          <h2 id="photos-heading" data-i18n="photos_title">Снимки от изминали събития</h2>
+        </div>
+        <div class="photos-grid" aria-label="Photo preview">
+          <img src="assets/images/placeholder.jpg" alt="Event photo 1">
+          <img src="assets/images/placeholder.jpg" alt="Event photo 2">
+          <img src="assets/images/placeholder.jpg" alt="Event photo 3">
+          <img src="assets/images/placeholder.jpg" alt="Event photo 4">
+          <img src="assets/images/placeholder.jpg" alt="Event photo 5">
+          <img src="assets/images/placeholder.jpg" alt="Event photo 6">
+        </div>
+        <div style="text-align:center;margin-top:32px">
+          <a href="gallery.html" class="btn btn-outline" data-i18n="photos_cta">Виж всички снимки</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="nav-logo">МАРГЕЛ <span>360°</span></div>
+          <p data-i18n="footer_desc">Зала за всяко събитие в сърцето на Враца.</p>
+        </div>
+        <div>
+          <h4 data-i18n="footer_nav">Навигация</h4>
+          <ul class="footer-links" role="list">
+            <li><a href="index.html" data-i18n="nav_home">Тип събитие</a></li>
+            <li><a href="gallery.html" data-i18n="nav_gallery">Галерия</a></li>
+            <li><a href="faq.html" data-i18n="nav_faq">FAQ</a></li>
+            <li><a href="services.html" data-i18n="nav_services">Услуги</a></li>
+            <li><a href="contact.html" data-i18n="nav_contact">Контакти</a></li>
+          </ul>
+        </div>
+        <div class="footer-contact">
+          <h4 data-i18n="footer_contact">Контакти</h4>
+          <p>📞 0888 10 09 42</p>
+          <p data-i18n="footer_address">гр. Враца, България</p>
+          <div class="social-links">
+            <a href="#" aria-label="Facebook">f</a>
+            <a href="#" aria-label="Instagram">in</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p data-i18n="footer_copy">© 2024 Маргел 360°. Всички права запазени.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/translations-index.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/index.js"></script>
+</body>
+</html>
