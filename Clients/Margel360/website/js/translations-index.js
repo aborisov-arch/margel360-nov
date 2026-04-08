@@ -23,7 +23,7 @@ const translations = {
     footer_nav: 'Навигация',
     footer_contact: 'Контакти',
     footer_address: 'гр. Враца, България',
-    footer_copy: '© 2024 Маргел 360°. Всички права запазени.',
+    footer_copy: '© 2026 Маргел 360°. Всички права запазени.',
   },
   en: {
     nav_home: 'Event Types',
@@ -48,6 +48,6 @@ const translations = {
     footer_nav: 'Navigation',
     footer_contact: 'Contact',
     footer_address: 'Vratsa, Bulgaria',
-    footer_copy: '© 2024 Margel 360°. All rights reserved.',
+    footer_copy: '© 2026 Margel 360°. All rights reserved.',
   }
 };
