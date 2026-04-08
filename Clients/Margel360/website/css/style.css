@@ -208,3 +208,94 @@ p { color: var(--text-muted); }
 @media (max-width: 768px) {
   .footer-grid { grid-template-columns: 1fr; }
 }
+
+/* ── Hero ── */
+.hero {
+  position: relative;
+  height: 100vh;
+  min-height: 600px;
+  display: flex;
+  align-items: center;
+  background: url('assets/images/placeholder.jpg') center/cover no-repeat;
+}
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.3) 60%, #0f0f0f 100%);
+}
+.hero-content {
+  position: relative;
+  z-index: 1;
+}
+.hero-content h1 { margin-bottom: 16px; max-width: 700px; }
+.hero-content p { font-size: 1.2rem; color: rgba(255,255,255,0.8); margin-bottom: 32px; max-width: 500px; }
+
+/* ── Events grid ── */
+.events-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+.event-card {
+  background: var(--bg-2);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+.event-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.4); }
+.event-card img { width: 100%; height: 200px; object-fit: cover; }
+.event-card-body { padding: 20px; }
+.event-card-body h3 { margin-bottom: 8px; }
+.event-card-meta { display: flex; justify-content: space-between; margin-top: 12px; font-size: 0.9rem; color: var(--text-muted); }
+.event-card-price { color: var(--accent); font-weight: 700; font-size: 1rem; }
+
+/* ── About ── */
+.about-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+}
+.about-text h2 { margin-bottom: 20px; }
+.about-text p { font-size: 1rem; }
+.about-image img { border-radius: var(--radius); width: 100%; }
+
+/* ── Equipment ── */
+.equip-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+.equip-item {
+  background: var(--bg-2);
+  border-radius: var(--radius);
+  padding: 20px 16px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+.equip-item .equip-icon { font-size: 1.8rem; margin-bottom: 10px; }
+
+/* ── Photo teaser ── */
+.photos-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.photos-grid img { width: 100%; height: 200px; object-fit: cover; border-radius: var(--radius); }
+
+/* ── Responsive (home page) ── */
+@media (max-width: 1024px) {
+  .events-grid { grid-template-columns: repeat(2, 1fr); }
+  .equip-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 768px) {
+  .events-grid { grid-template-columns: 1fr; }
+  .about-grid { grid-template-columns: 1fr; }
+  .equip-grid { grid-template-columns: repeat(2, 1fr); }
+  .photos-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+  .equip-grid { grid-template-columns: 1fr 1fr; }
+  .photos-grid { grid-template-columns: 1fr; }
+}
