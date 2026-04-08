@@ -9,18 +9,18 @@ const events = [
     hours_en: 'Day or evening',
     price_bg: 'От 580 лв.',
     price_en: 'From €296',
-    img: 'assets/images/venue-9.jpg',
+    img: 'assets/images/event-corporate.jpg',
   },
   {
     title_bg: 'Детски рожден ден',
     title_en: "Children's Birthday",
     desc_bg: 'Широко пространство за игри, анимация и мини-диско за незабравим детски празник.',
-    desc_en: 'Wide space for games, animation and mini-disco for an unforgettable kids' party.',
+    desc_en: 'Wide space for games, animation and mini-disco for an unforgettable kids\' party.',
     hours_bg: 'Дневно до 17:30 или вечерно',
     hours_en: 'Daytime until 5:30 PM or evening',
     price_bg: 'От 580 лв.',
     price_en: 'From €296',
-    img: 'assets/images/event-1.jpg',
+    img: 'assets/images/event-birthday.jpg',
   },
   {
     title_bg: 'Сватба',
@@ -31,7 +31,7 @@ const events = [
     hours_en: 'By arrangement',
     price_bg: 'По запитване',
     price_en: 'On request',
-    img: 'assets/images/event-2.jpg',
+    img: 'assets/images/event-wedding.jpg',
   },
   {
     title_bg: 'Вечерно събитие',
@@ -42,7 +42,7 @@ const events = [
     hours_en: 'Evening',
     price_bg: 'От 680 лв.',
     price_en: 'From €347',
-    img: 'assets/images/venue-16.jpg',
+    img: 'assets/images/event-evening.jpg',
   },
   {
     title_bg: 'Коктейл и бизнес среща',
@@ -53,7 +53,7 @@ const events = [
     hours_en: 'Flexible hours',
     price_bg: 'От 580 лв.',
     price_en: 'From €296',
-    img: 'assets/images/venue-8.jpg',
+    img: 'assets/images/event-corporate.jpg',
   },
 ];
 

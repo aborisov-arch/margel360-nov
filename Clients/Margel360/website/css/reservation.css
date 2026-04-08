@@ -1,6 +1,6 @@
 /* ── Wizard layout ── */
 .wizard-section { padding-top: 24px; }
-.wizard-section > .container { max-width: 960px; }
+.wizard-section > .container { max-width: 960px; padding: 0 16px; }
 
 /* ── Progress bar ── */
 .wizard-progress {
@@ -218,3 +218,100 @@
 .form-success { display: none; text-align: center; padding: 80px 24px; }
 .form-success h2 { color: var(--accent); margin-bottom: 16px; }
 .form-success p { font-size: 1.05rem; }
+
+/* ══════════════════════════════════
+   RESERVATION MOBILE
+   ══════════════════════════════════ */
+
+/* Progress bar — shrink on mobile */
+@media (max-width: 560px) {
+  .wizard-progress { padding: 0 4px; margin-bottom: 32px; }
+  .wstep { min-width: 36px; gap: 4px; }
+  .wstep-num { width: 32px; height: 32px; font-size: 0.78rem; }
+  .wizard-progress-track { top: 16px; left: calc(4px + 16px); right: calc(4px + 16px); }
+}
+
+/* Event picker — 1 column on phone */
+@media (max-width: 480px) {
+  .event-picker { grid-template-columns: 1fr; gap: 12px; }
+  .event-pick-card img { height: 180px; }
+}
+
+/* Time options — stack on small screens */
+@media (max-width: 400px) {
+  .time-options { flex-direction: column; }
+  .time-option-card { flex-direction: row; justify-content: flex-start; gap: 14px; padding: 14px 16px; }
+  .time-icon { font-size: 1.4rem; }
+}
+
+/* Addon grid — always 1 col on phone */
+@media (max-width: 480px) {
+  .addon-grid { grid-template-columns: 1fr; gap: 10px; }
+  .addon-img, .addon-emoji { width: 48px; height: 48px; font-size: 1.6rem; }
+}
+
+/* Drinks grid */
+@media (max-width: 400px) {
+  .drinks-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .drink-item img { height: 80px; }
+  .drink-name { font-size: 0.72rem; }
+}
+
+/* Summary card */
+@media (max-width: 480px) {
+  .summary-img { height: 140px; }
+  .summary-body { padding: 14px 16px; }
+  .price-summary { padding: 14px 16px; }
+}
+
+/* Wizard nav buttons — full width on very small screens */
+@media (max-width: 380px) {
+  .wizard-nav { flex-direction: column-reverse; gap: 10px; }
+  .wizard-nav .btn-outline,
+  .wizard-nav .btn-primary { width: 100%; margin-left: 0; justify-content: center; }
+}
+
+/* Running total strip */
+@media (max-width: 480px) {
+  .running-total { padding: 12px 14px; }
+  .running-total .rt-value { font-size: 0.98rem; }
+}
+
+/* Drinks tabs — wrap on mobile */
+@media (max-width: 480px) {
+  .drinks-tabs { gap: 6px; }
+  .drinks-tab { padding: 6px 12px; font-size: 0.78rem; }
+}
+
+/* Step heading */
+@media (max-width: 560px) {
+  .step-heading { font-size: 1.2rem; }
+  .step-sub { font-size: 0.85rem; margin-bottom: 18px; }
+}
+
+/* ── Flatpickr calendar overrides ── */
+.flatpickr-calendar {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 12px; box-shadow: var(--shadow-lg);
+  font-family: var(--font); color: var(--text);
+}
+.flatpickr-months { background: var(--accent); border-radius: 12px 12px 0 0; padding: 4px 0; }
+.flatpickr-month, .flatpickr-current-month, .flatpickr-monthDropdown-months,
+.flatpickr-months .flatpickr-prev-month, .flatpickr-months .flatpickr-next-month {
+  color: #fff !important; fill: #fff !important;
+}
+.flatpickr-months .flatpickr-prev-month:hover svg,
+.flatpickr-months .flatpickr-next-month:hover svg { fill: rgba(255,255,255,0.7) !important; }
+.flatpickr-current-month input.cur-year { color: #fff !important; }
+.flatpickr-weekdays { background: var(--bg-2); }
+span.flatpickr-weekday { color: var(--text-muted); font-size: 0.75rem; font-weight: 600; background: var(--bg-2); }
+.flatpickr-day { color: var(--text); border-radius: 6px; }
+.flatpickr-day:hover { background: var(--accent-dim); border-color: var(--accent); }
+.flatpickr-day.selected, .flatpickr-day.selected:hover {
+  background: var(--accent); border-color: var(--accent); color: #fff;
+}
+.flatpickr-day.today { border-color: var(--accent); color: var(--accent); font-weight: 700; }
+.flatpickr-day.today:hover { background: var(--accent); color: #fff; }
+.flatpickr-day.flatpickr-disabled, .flatpickr-day.prevMonthDay, .flatpickr-day.nextMonthDay {
+  color: var(--border); }
+.numInputWrapper:hover { background: var(--bg-2); }

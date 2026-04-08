@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/reservation.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 </head>
 <body>
 
@@ -99,7 +100,7 @@
           <div class="datetime-wrap">
             <div class="form-group">
               <label for="res-date" data-i18n="res_date">Предпочитана дата</label>
-              <input type="date" id="res-date" name="date" aria-describedby="err-date-msg">
+              <input type="text" id="res-date" name="date" readonly placeholder="дд/мм/гггг" aria-describedby="err-date-msg">
               <span class="form-error" id="err-date-msg" role="alert" data-i18n="err_date">Моля изберете дата.</span>
             </div>
             <div class="form-group">
@@ -273,6 +274,8 @@
     </div>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/bg.js"></script>
   <script src="js/translations-reservation.js"></script>
   <script src="js/main.js"></script>
   <script src="js/reservation.js"></script>
