@@ -1,0 +1,30 @@
+const translations = {
+  bg: {
+    nav_home: 'Тип събитие', nav_gallery: 'Галерия', nav_faq: 'FAQ',
+    nav_services: 'Услуги', nav_contact: 'Контакти', nav_reserve: 'Запитване',
+    contact_title: 'Контакти',
+    contact_phone_label: 'Телефон',
+    contact_address_label: 'Адрес',
+    contact_address: 'гр. Враца, България',
+    contact_hours_label: 'Работно време',
+    contact_hours: 'По договаряне',
+    footer_desc: 'Зала за всяко събитие в сърцето на Враца.',
+    footer_nav: 'Навигация', footer_contact: 'Контакти',
+    footer_address: 'гр. Враца, България',
+    footer_copy: '© 2024 Маргел 360°. Всички права запазени.',
+  },
+  en: {
+    nav_home: 'Event Types', nav_gallery: 'Gallery', nav_faq: 'FAQ',
+    nav_services: 'Services', nav_contact: 'Contacts', nav_reserve: 'Enquiry',
+    contact_title: 'Contact',
+    contact_phone_label: 'Phone',
+    contact_address_label: 'Address',
+    contact_address: 'Vratsa, Bulgaria',
+    contact_hours_label: 'Opening Hours',
+    contact_hours: 'By arrangement',
+    footer_desc: 'A venue for every occasion in the heart of Vratsa.',
+    footer_nav: 'Navigation', footer_contact: 'Contact',
+    footer_address: 'Vratsa, Bulgaria',
+    footer_copy: '© 2024 Margel 360°. All rights reserved.',
+  }
+};
