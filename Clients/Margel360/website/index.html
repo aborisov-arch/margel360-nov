@@ -22,8 +22,8 @@
         <li><a href="services.html" data-i18n="nav_services">Услуги</a></li>
         <li><a href="contact.html" data-i18n="nav_contact">Контакти</a></li>
         <li><a href="reservation.html" class="btn btn-primary" style="padding:8px 20px" data-i18n="nav_reserve">Запитване</a></li>
-        <li><button class="lang-toggle" aria-label="Switch language">EN</button></li>
       </ul>
+      <button class="lang-toggle" aria-label="Switch language">EN</button>
       <button class="hamburger" aria-label="Toggle navigation" aria-expanded="false" aria-controls="nav-drawer">
         <span></span><span></span><span></span>
       </button>
@@ -32,12 +32,14 @@
 
   <!-- MOBILE DRAWER -->
   <nav class="nav-drawer" id="nav-drawer" aria-label="Mobile navigation">
-    <a href="index.html" class="active" data-i18n="nav_home">Тип събитие</a>
-    <a href="gallery.html" data-i18n="nav_gallery">Галерия</a>
-    <a href="faq.html" data-i18n="nav_faq">FAQ</a>
-    <a href="services.html" data-i18n="nav_services">Услуги</a>
-    <a href="contact.html" data-i18n="nav_contact">Контакти</a>
-    <a href="reservation.html" data-i18n="nav_reserve">Запитване</a>
+    <ul role="list" style="display:contents">
+      <li><a href="index.html" class="active" data-i18n="nav_home">Тип събитие</a></li>
+      <li><a href="gallery.html" data-i18n="nav_gallery">Галерия</a></li>
+      <li><a href="faq.html" data-i18n="nav_faq">FAQ</a></li>
+      <li><a href="services.html" data-i18n="nav_services">Услуги</a></li>
+      <li><a href="contact.html" data-i18n="nav_contact">Контакти</a></li>
+      <li><a href="reservation.html" data-i18n="nav_reserve">Запитване</a></li>
+    </ul>
     <button class="lang-toggle" aria-label="Switch language">EN</button>
   </nav>
 
@@ -116,7 +118,7 @@
     <div class="container">
       <div class="footer-grid">
         <div class="footer-brand">
-          <div class="nav-logo">МАРГЕЛ <span>360°</span></div>
+          <a href="index.html" class="nav-logo">МАРГЕЛ <span>360°</span></a>
           <p data-i18n="footer_desc">Зала за всяко събитие в сърцето на Враца.</p>
         </div>
         <div>
@@ -131,7 +133,7 @@
         </div>
         <div class="footer-contact">
           <h4 data-i18n="footer_contact">Контакти</h4>
-          <p>📞 0888 10 09 42</p>
+          <p><span aria-hidden="true">📞</span> 0888 10 09 42</p>
           <p data-i18n="footer_address">гр. Враца, България</p>
           <div class="social-links">
             <a href="#" aria-label="Facebook">f</a>
