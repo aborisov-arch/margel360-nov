@@ -1,11 +1,11 @@
 // ── Event types ──
 const eventTypes = [
-  { id:'corp4',    title_bg:'Корпоративно събитие (4ч.)',      title_en:'Corporate Event (4h)',          duration_bg:'12:00 – 16:00',   duration_en:'12:00 – 4:00 PM',   price_bgn:580,  price_eur:296.55, img:'assets/images/event-corporate.jpg',    included:['sound','lighting','bar','fridge','parking','wc','elevator','tables_conf'] },
-  { id:'corp8',    title_bg:'Корпоративно събитие (8ч.)',      title_en:'Corporate Event (8h)',          duration_bg:'09:00 – 17:00',   duration_en:'9:00 AM – 5:00 PM', price_bgn:790,  price_eur:403.92, img:'assets/images/event-corporate.jpg',    included:['sound','lighting','bar','fridge','parking','wc','elevator','tables_conf','projector'] },
-  { id:'bday_day', title_bg:'Детски рожден ден (дневно)',     title_en:"Children's Birthday (day)",    duration_bg:'до 17:30',        duration_en:'until 5:30 PM',     price_bgn:1270, price_eur:649.34, img:'assets/images/event-birthday.jpg',     included:['sound','lighting','bar','fridge','parking','wc','elevator','dance'] },
-  { id:'bday_eve', title_bg:'Детски рожден ден (вечерно)',    title_en:"Children's Birthday (evening)",duration_bg:'16:00 – 24:00',   duration_en:'4:00 PM – midnight',price_bgn:1800, price_eur:920.33, img:'assets/images/event-birthday-eve.jpg', included:['sound','lighting','bar','fridge','parking','wc','elevator','dance','terrace'] },
-  { id:'evening',  title_bg:'Вечерно събитие',                title_en:'Evening Event',                duration_bg:'след 19:00',      duration_en:'after 7:00 PM',     price_bgn:2370, price_eur:1211.76,img:'assets/images/event-evening.jpg',      included:['sound','lighting','bar','fridge','parking','wc','elevator','dance','terrace'] },
-  { id:'wedding',  title_bg:'Сватба',                         title_en:'Wedding',                      duration_bg:'По договаряне',   duration_en:'By arrangement',    price_bgn:2880, price_eur:1472.52,img:'assets/images/event-wedding.jpg',      included:['sound','lighting','bar','fridge','parking','wc','elevator','dance','terrace','redcarpet'] },
+  { id:'corp4',    title_bg:'Корпоративно събитие (4ч.)',      title_en:'Corporate Event (4h)',          duration_bg:'08:00 – 17:30',   duration_en:'8:00 AM – 5:30 PM', price_bgn:645.42,  price_eur:330.00,   img:'assets/images/event-corporate.jpg',    included:['sound','lighting','bar','fridge','parking','wc','elevator','tables_conf'] },
+  { id:'corp8',    title_bg:'Корпоративно събитие (8ч.)',      title_en:'Corporate Event (8h)',          duration_bg:'08:00 – 17:30',   duration_en:'8:00 AM – 5:30 PM', price_bgn:860.57,  price_eur:440.00,   img:'assets/images/event-corporate.jpg',    included:['sound','lighting','bar','fridge','parking','wc','elevator','tables_conf','projector'] },
+  { id:'bday_day', title_bg:'Детски рожден ден (дневно)',     title_en:"Children's Birthday (day)",    duration_bg:'до 17:30',        duration_en:'until 5:30 PM',     price_bgn:1369.08, price_eur:700.00,   img:'assets/images/event-birthday.jpg',     included:['sound','lighting','bar','fridge','parking','wc','elevator','dance'] },
+  { id:'bday_eve', title_bg:'Детски рожден ден (вечерно)',    title_en:"Children's Birthday (evening)",duration_bg:'16:00 – 24:00',   duration_en:'4:00 PM – midnight',price_bgn:1897.15, price_eur:970.00,   img:'assets/images/event-birthday-eve.jpg', included:['sound','lighting','bar','fridge','parking','wc','elevator','dance','terrace'] },
+  { id:'evening',  title_bg:'Вечерно събитие',                title_en:'Evening Event',                duration_bg:'след 19:00',      duration_en:'after 7:00 PM',     price_bgn:2503.46, price_eur:1280.46,  img:'assets/images/event-evening.jpg',      included:['sound','lighting','bar','fridge','parking','wc','elevator','dance','terrace'] },
+  { id:'wedding',  title_bg:'Сватба',                         title_en:'Wedding',                      duration_bg:'По договаряне',   duration_en:'By arrangement',    price_bgn:2933.75, price_eur:1500.00,  img:'assets/images/event-wedding.jpg',      included:['sound','lighting','bar','fridge','parking','wc','elevator','dance','terrace','redcarpet'] },
 ];
 
 const includedLabels = {
@@ -15,7 +15,7 @@ const includedLabels = {
 
 // ── Paid add-on services (from margel360.bg services page) ──
 const addonServices = [
-  { id:'dj',        name_bg:'DJ за 5 часа',                name_en:'DJ for 5 hours',             price:500,  img:'assets/images/services/dj.jpg' },
+  { id:'dj',        name_bg:'DJ за 5 часа',                name_en:'DJ for 5 hours',             price:587,  img:'assets/images/services/dj.jpg' },
   { id:'photo2',    name_bg:'Фотограф за 2 часа',          name_en:'Photographer 2h',            price:340,  img:'assets/images/services/photographer.jpg' },
   { id:'photo4',    name_bg:'Фотограф за 4 часа',          name_en:'Photographer 4h',            price:580,  img:'assets/images/services/photographer.jpg' },
   { id:'booth2',    name_bg:'Фото будка 360° (2 часа)',    name_en:'360° Photo Booth (2 hours)', price:390,  img:'assets/images/services/booth.jpg' },
@@ -30,9 +30,9 @@ const addonServices = [
   { id:'led',       name_bg:'LED екран',                   name_en:'LED screen',                 price:290,  img:'assets/images/services/led.jpg' },
   { id:'mic',       name_bg:'Микрофони — 3бр. + брошка',   name_en:'Microphones set',            price:97,   img:'assets/images/services/mic.jpg' },
   { id:'proj',      name_bg:'Мултимедия EPSON',             name_en:'EPSON multimedia projector', price:180,  img:'assets/images/services/projector.jpg' },
-  { id:'security',  name_bg:'Охрана VTA за 6 часа',        name_en:'VTA security 6h',            price:165,  img:'assets/images/services/security.jpg' },
-  { id:'hygiene',   name_bg:'Хигиенист за 5 часа',         name_en:'Hygienist 5h',               price:148,  img:'assets/images/services/wardrobe.jpg' },
-  { id:'wardrobe',  name_bg:'Гардеробиер за 5 часа',       name_en:'Wardrobe attendant 5h',      price:170,  img:'assets/images/services/wardrobe.jpg' },
+  { id:'security',  name_bg:'Охрана VTA за 6 часа',        name_en:'VTA security 6h',            price:196,  img:'assets/images/services/security.jpg' },
+  { id:'hygiene',   name_bg:'Хигиенист за 5 часа',         name_en:'Hygienist 5h',               price:156,  img:'assets/images/services/wardrobe.jpg' },
+  { id:'wardrobe',  name_bg:'Гардеробиер за 5 часа',       name_en:'Wardrobe attendant 5h',      price:176,  img:'assets/images/services/wardrobe.jpg' },
   { id:'valet',     name_bg:'Вале-паркинг за 5 часа',      name_en:'Valet parking 5h',           price:275,  img:'assets/images/services/valet.jpg' },
   { id:'carpet_l',  name_bg:'Червена пътека (8 бр.)',       name_en:'Red carpet (8 pieces)',      price:148,  img:'assets/images/services/redcarpet.jpg' },
   { id:'candles_h', name_bg:'Свещи в залата — 60 бр.',     name_en:'Hall candles 60 pcs',        price:100,  img:'assets/images/services/candles.jpg' },
