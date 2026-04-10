@@ -230,8 +230,12 @@ p { color: var(--text-muted); }
   animation: bounceDown 2s ease-in-out infinite;
 }
 .hero-scroll::after {
-  content: ''; width: 1px; height: 36px;
-  background: linear-gradient(to bottom, rgba(201,168,76,0.6), transparent);
+  content: '';
+  width: 10px; height: 10px;
+  border-right: 2px solid #c9a84c;
+  border-bottom: 2px solid #c9a84c;
+  transform: rotate(45deg);
+  margin-top: 4px;
 }
 
 /* ── Stats ── */
