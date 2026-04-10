@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendar — Margel 360° Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <header class="admin-header">
+    <a href="dashboard.html" class="admin-logo">МАРГЕЛ <span>360°</span></a>
+    <nav class="admin-nav">
+      <a href="dashboard.html">Enquiries</a>
+      <a href="calendar.html" class="active">Calendar</a>
+    </nav>
+    <button class="btn btn-outline btn-sm" id="logout-btn">Logout</button>
+  </header>
+
+  <main class="admin-main">
+    <div class="admin-container">
+      <h1 class="page-title">Occupied Dates</h1>
+      <p class="page-sub">Click a date to mark it as occupied (red). Click again to unmark.</p>
+      <div class="calendar-controls">
+        <button class="btn btn-outline btn-sm" id="prev-month">← Prev</button>
+        <h2 id="calendar-month" class="cal-month-label"></h2>
+        <button class="btn btn-outline btn-sm" id="next-month">Next →</button>
+      </div>
+      <div class="calendar-grid" id="calendar-grid"></div>
+      <div class="cal-legend">
+        <span class="legend-dot occupied"></span> Occupied
+        <span class="legend-dot available"></span> Available
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/calendar.js"></script>
+</body>
+</html>
