@@ -229,13 +229,19 @@ p { color: var(--text-muted); }
   color: #c9a84c; font-size: 1rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; z-index: 1;
   animation: bounceDown 2s ease-in-out infinite;
 }
+.hero-scroll::before {
+  content: '';
+  width: 2px; height: 32px;
+  background: linear-gradient(to bottom, #c9a84c, rgba(201,168,76,0.4));
+  margin-top: 6px;
+}
 .hero-scroll::after {
   content: '';
   width: 10px; height: 10px;
   border-right: 2px solid #c9a84c;
   border-bottom: 2px solid #c9a84c;
   transform: rotate(45deg);
-  margin-top: 4px;
+  margin-top: -6px;
 }
 
 /* ── Stats ── */
@@ -452,7 +458,7 @@ p { color: var(--text-muted); }
   .hero-content { padding: 0 4px; }
   .hero-content h1 { margin-bottom: 14px; }
   .hero-content p { font-size: 1rem; margin-bottom: 28px; }
-  .hero-scroll { display: flex; font-size: 0.85rem; bottom: 24px; }
+  .hero-scroll { display: flex; font-size: 0.85rem; bottom: 60px; }
   .hero-overlay {
     background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.4) 50%, #ffffff 100%);
   }
