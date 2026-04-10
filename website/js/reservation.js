@@ -113,6 +113,7 @@ function goToStep(n) {
   updateProgress();
   const section = document.querySelector('.wizard-section');
   if (section) window.scrollTo({ top: section.offsetTop - 90, behavior: 'smooth' });
+  if (n === 1) renderStep2VariantPicker();
   if (n === 2) renderAddons();
   if (n === 3) renderDrinks();
   if (n === 5) renderSummary();
@@ -145,14 +146,12 @@ function renderEventPicker() {
   grid.innerHTML = '';
 
   eventTypes.forEach(ev => {
-    const isParentSelected = ev.variants
-      ? ev.variants.some(v => v.id === booking.event?.id)
-      : booking.event?.id === ev.id;
+    const isSelected = booking.event?.id === ev.id ||
+      (ev.variants && ev.variants.some(v => v.id === booking.event?.id));
 
     const card = document.createElement('div');
-    card.className = 'event-pick-card' + (isParentSelected ? ' selected' : '');
-    card.setAttribute('role', 'listitem');
-    card.setAttribute('tabindex', '0');
+    card.className = 'event-pick-card' + (isSelected ? ' selected' : '');
+    card.setAttribute('role', 'listitem'); card.setAttribute('tabindex', '0');
 
     const img = document.createElement('img');
     img.src = ev.img; img.alt = l === 'bg' ? ev.title_bg : ev.title_en; img.loading = 'lazy';
@@ -179,108 +178,74 @@ function renderEventPicker() {
     card.appendChild(img); card.appendChild(body);
     grid.appendChild(card);
 
-    function showVariantPicker(ev) {
-      // Remove any existing picker
-      const old = document.getElementById('variant-picker');
-      if (old) old.remove();
-
-      const vp = document.createElement('div');
-      vp.id = 'variant-picker';
-      vp.className = 'variant-picker';
-      vp.style.gridColumn = '1 / -1';
-
-      const lbl = document.createElement('p'); lbl.className = 'variant-label';
-      lbl.textContent = l === 'bg'
-        ? (ev.id === 'corporate' ? 'Изберете продължителност:' : 'Изберете час:')
-        : (ev.id === 'corporate' ? 'Choose duration:' : 'Choose time:');
-      vp.appendChild(lbl);
-
-      const btnWrap = document.createElement('div'); btnWrap.className = 'variant-btn-wrap';
-
-      ev.variants.forEach(variant => {
-        const btn = document.createElement('button');
-        btn.className = 'variant-btn' + (booking.event?.id === variant.id ? ' selected' : '');
-        btn.type = 'button';
-
-        const lbEl = document.createElement('span'); lbEl.className = 'variant-btn-label';
-        lbEl.textContent = l === 'bg' ? variant.label_bg : variant.label_en;
-        const prEl = document.createElement('span'); prEl.className = 'variant-btn-price';
-        prEl.textContent = '€' + variant.price_eur.toFixed(0) + ' / ' + variant.price_bgn.toLocaleString('bg-BG') + ' лв.';
-
-        btn.appendChild(lbEl); btn.appendChild(prEl);
-        btnWrap.appendChild(btn);
-
-        btn.addEventListener('click', () => {
-          booking.event = {
-            ...variant,
-            title_bg: ev.title_bg + ' — ' + variant.label_bg,
-            title_en: ev.title_en + ' — ' + variant.label_en,
-            img: ev.img,
-          };
-          btnWrap.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('selected'));
-          btn.classList.add('selected');
-          setTimeout(() => goToStep(1), 280);
-        });
-      });
-
-      vp.appendChild(btnWrap);
-      grid.appendChild(vp);
-    }
-
     function pick() {
       grid.querySelectorAll('.event-pick-card').forEach(c => c.classList.remove('selected'));
       card.classList.add('selected');
-      if (!ev.variants) {
-        const old = document.getElementById('variant-picker');
-        if (old) old.remove();
-        booking.event = ev;
-        setTimeout(() => goToStep(1), 280);
-      } else {
-        showVariantPicker(ev);
-      }
+      // Store the event (parent if has variants, resolved if not)
+      booking.event = ev;
+      setTimeout(() => goToStep(1), 280);
     }
 
     card.addEventListener('click', pick);
     card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
   });
+}
 
-  // Re-show variant picker if a variant is already selected
-  if (booking.event) {
-    const parentEv = eventTypes.find(ev => ev.variants?.some(v => v.id === booking.event.id));
-    if (parentEv) {
-      // Trigger showVariantPicker via simulated re-render
-      const old = document.getElementById('variant-picker');
-      if (!old) {
-        const vp = document.createElement('div');
-        vp.id = 'variant-picker'; vp.className = 'variant-picker'; vp.style.gridColumn = '1 / -1';
-        const lbl = document.createElement('p'); lbl.className = 'variant-label';
-        lbl.textContent = l === 'bg'
-          ? (parentEv.id === 'corporate' ? 'Изберете продължителност:' : 'Изберете час:')
-          : (parentEv.id === 'corporate' ? 'Choose duration:' : 'Choose time:');
-        vp.appendChild(lbl);
-        const btnWrap = document.createElement('div'); btnWrap.className = 'variant-btn-wrap';
-        parentEv.variants.forEach(variant => {
-          const btn = document.createElement('button');
-          btn.className = 'variant-btn' + (booking.event?.id === variant.id ? ' selected' : '');
-          btn.type = 'button';
-          const lbEl = document.createElement('span'); lbEl.className = 'variant-btn-label';
-          lbEl.textContent = l === 'bg' ? variant.label_bg : variant.label_en;
-          const prEl = document.createElement('span'); prEl.className = 'variant-btn-price';
-          prEl.textContent = '€' + variant.price_eur.toFixed(0) + ' / ' + variant.price_bgn.toLocaleString('bg-BG') + ' лв.';
-          btn.appendChild(lbEl); btn.appendChild(prEl);
-          btnWrap.appendChild(btn);
-          btn.addEventListener('click', () => {
-            booking.event = { ...variant, title_bg: parentEv.title_bg + ' — ' + variant.label_bg, title_en: parentEv.title_en + ' — ' + variant.label_en, img: parentEv.img };
-            btnWrap.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('selected'));
-            btn.classList.add('selected');
-            setTimeout(() => goToStep(1), 280);
-          });
-        });
-        vp.appendChild(btnWrap);
-        grid.appendChild(vp);
-      }
-    }
+// ── Step 2 variant picker (shown inside step 2 for corporate/birthday) ──
+function renderStep2VariantPicker() {
+  const l = getLang();
+  const wrap = document.getElementById('step2-variant-wrap');
+  const errMsg = document.getElementById('err-variant-msg');
+  if (!wrap) return;
+
+  const ev = booking.event;
+  if (!ev?.variants) {
+    wrap.style.display = 'none';
+    if (errMsg) errMsg.style.display = 'none';
+    return;
   }
+
+  wrap.style.display = 'block';
+  wrap.innerHTML = '';
+
+  const lbl = document.createElement('p'); lbl.className = 'variant-label';
+  lbl.textContent = l === 'bg'
+    ? (ev.id === 'corporate' ? 'Изберете продължителност:' : 'Изберете час:')
+    : (ev.id === 'corporate' ? 'Choose duration:' : 'Choose time:');
+  wrap.appendChild(lbl);
+
+  const btnWrap = document.createElement('div'); btnWrap.className = 'variant-btn-wrap';
+
+  ev.variants.forEach(variant => {
+    const btn = document.createElement('button');
+    btn.className = 'variant-btn';
+    btn.type = 'button';
+
+    const lbEl = document.createElement('span'); lbEl.className = 'variant-btn-label';
+    lbEl.textContent = l === 'bg' ? variant.label_bg : variant.label_en;
+    const prEl = document.createElement('span'); prEl.className = 'variant-btn-price';
+    prEl.textContent = '€' + variant.price_eur.toFixed(0) + ' / ' + variant.price_bgn.toLocaleString('bg-BG') + ' лв.';
+
+    btn.appendChild(lbEl); btn.appendChild(prEl);
+    btnWrap.appendChild(btn);
+
+    btn.addEventListener('click', () => {
+      const parentEv = ev; // still has .variants at this point
+      booking.event = {
+        ...variant,
+        title_bg: parentEv.title_bg + ' — ' + variant.label_bg,
+        title_en: parentEv.title_en + ' — ' + variant.label_en,
+        img: parentEv.img,
+      };
+      btnWrap.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      if (errMsg) errMsg.style.display = 'none';
+      wrap.classList.remove('has-error');
+      updatePreview();
+    });
+  });
+
+  wrap.appendChild(btnWrap);
 }
 
 // ── Step 2: Datetime ──
@@ -307,7 +272,16 @@ function setupStep2() {
     if (!d?.value) { fg?.classList.add('has-error'); return; }
     fg?.classList.remove('has-error');
     booking.date = d.value;
-    booking.time = document.querySelector('input[name="time"]:checked')?.value || 'day';
+
+    // If event still has variants (not yet resolved), require selection
+    if (booking.event?.variants) {
+      const wrap = document.getElementById('step2-variant-wrap');
+      const errMsg = document.getElementById('err-variant-msg');
+      wrap?.classList.add('has-error');
+      if (errMsg) errMsg.style.display = 'block';
+      return;
+    }
+
     goToStep(2);
   });
 }
@@ -318,25 +292,27 @@ function updatePreview() {
   const l = getLang();
   preview.classList.add('show'); preview.innerHTML = '';
 
-  // Event name (parent title only, without variant suffix)
-  const parentEv = eventTypes.find(ev => ev.variants?.some(v => v.id === booking.event.id));
   const h4 = document.createElement('h4');
-  h4.textContent = parentEv
-    ? (l === 'bg' ? parentEv.title_bg : parentEv.title_en)
-    : (l === 'bg' ? booking.event.title_bg : booking.event.title_en);
+  h4.textContent = l === 'bg' ? booking.event.title_bg : booking.event.title_en;
   preview.appendChild(h4);
 
-  // Variant tag (day/night or 4h/8h) if applicable
-  if (booking.event.label_bg) {
+  // Variant tag (day/night or 4h/8h) — only when variant is resolved
+  if (booking.event.label_bg && !booking.event.variants) {
     const tag = document.createElement('span');
     tag.className = 'preview-variant-tag';
     tag.textContent = l === 'bg' ? booking.event.label_bg : booking.event.label_en;
     preview.appendChild(tag);
   }
 
-  const p = document.createElement('p');
-  p.textContent = fmtEvent(booking.event) + (booking.date ? ' · ' + booking.date : '');
-  preview.appendChild(p);
+  // Price line — only show when variant is resolved (price_bgn available)
+  if (!booking.event.variants) {
+    const p = document.createElement('p');
+    p.textContent = fmtEvent(booking.event) + (booking.date ? ' · ' + booking.date : '');
+    preview.appendChild(p);
+  } else if (booking.date) {
+    const p = document.createElement('p'); p.textContent = booking.date;
+    preview.appendChild(p);
+  }
 }
 
 // ── Step 3: Add-on services ──
@@ -553,28 +529,15 @@ document.addEventListener('DOMContentLoaded', () => {
   setupSubmit();
   updateProgress();
 
-  // Auto-select event from URL param (e.g. ?event=evening or ?event=corp4)
+  // Auto-select event from URL param (e.g. ?event=evening or ?event=corporate)
   const params = new URLSearchParams(window.location.search);
   const preselect = params.get('event');
   if (preselect) {
-    // Check direct top-level match
-    const directMatch = eventTypes.find(e => e.id === preselect && !e.variants);
-    if (directMatch) {
-      booking.event = directMatch;
+    const match = eventTypes.find(e => e.id === preselect);
+    if (match) {
+      booking.event = match;
       renderEventPicker();
       setTimeout(() => goToStep(1), 300);
-    } else {
-      // Check inside variants
-      for (const ev of eventTypes) {
-        if (!ev.variants) continue;
-        const variant = ev.variants.find(v => v.id === preselect);
-        if (variant) {
-          booking.event = { ...variant, title_bg: ev.title_bg + ' — ' + variant.label_bg, title_en: ev.title_en + ' — ' + variant.label_en, img: ev.img };
-          renderEventPicker();
-          setTimeout(() => goToStep(1), 300);
-          break;
-        }
-      }
     }
   }
 });

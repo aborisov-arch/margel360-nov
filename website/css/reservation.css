@@ -117,6 +117,16 @@
   font-weight: 500;
 }
 
+/* ── Step 2 variant wrap (duration / time inside date step) ── */
+.step2-variant-wrap {
+  margin-top: 20px;
+  padding: 20px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.step2-variant-wrap.has-error { border-color: #e53e3e; }
+
 /* ── Step 2: Datetime ── */
 .datetime-wrap { max-width: 560px; }
 .time-options { display: flex; gap: 16px; }
