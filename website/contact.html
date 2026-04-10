@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Контакти — Маргел 360°</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <nav class="nav scrolled" aria-label="Main navigation">
+    <div class="container">
+      <a href="index.html" class="nav-logo"><img src="assets/images/logo-real.png" alt="" class="logo-img" aria-hidden="true">МАРГЕЛ <span>360°</span></a>
+      <ul class="nav-links" role="list">
+        <li><a href="index.html" data-i18n="nav_home">Тип събитие</a></li>
+        <li><a href="gallery.html" data-i18n="nav_gallery">Галерия</a></li>
+        <li><a href="faq.html" data-i18n="nav_faq">FAQ</a></li>
+        <li><a href="services.html" data-i18n="nav_services">Услуги</a></li>
+        <li><a href="contact.html" class="active" data-i18n="nav_contact">Контакти</a></li>
+        <li><a href="reservation.html" class="btn btn-primary" style="padding:8px 20px" data-i18n="nav_reserve">Запитване</a></li>
+      </ul>
+      <button class="lang-toggle" aria-label="Switch language">EN</button>
+      <button class="hamburger" aria-label="Toggle navigation" aria-expanded="false" aria-controls="nav-drawer">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <nav class="nav-drawer" id="nav-drawer" aria-label="Mobile navigation">
+    <ul role="list" style="display:contents">
+      <li><a href="index.html" data-i18n="nav_home">Тип събитие</a></li>
+      <li><a href="gallery.html" data-i18n="nav_gallery">Галерия</a></li>
+      <li><a href="faq.html" data-i18n="nav_faq">FAQ</a></li>
+      <li><a href="services.html" data-i18n="nav_services">Услуги</a></li>
+      <li><a href="contact.html" class="active" data-i18n="nav_contact">Контакти</a></li>
+      <li><a href="reservation.html" data-i18n="nav_reserve">Запитване</a></li>
+    </ul>
+    <button class="lang-toggle" aria-label="Switch language">EN</button>
+  </nav>
+
+  <main>
+    <div class="page-header-img" style="background-image:url(assets/images/about-venue.jpg)">
+      <div class="container">
+        <h1 id="contact-heading" data-i18n="contact_title">Контакти</h1>
+        <p data-i18n="contact_sub">Свържете се с нас</p>
+      </div>
+    </div>
+    <section class="section" aria-labelledby="contact-heading">
+      <div class="container">
+        <div class="contact-grid">
+          <div class="contact-info">
+            <div class="contact-detail">
+              <div class="contact-detail-icon" aria-hidden="true">📞</div>
+              <div>
+                <h4 data-i18n="contact_phone_label">Телефон</h4>
+                <p>0888 10 09 42</p>
+              </div>
+            </div>
+            <div class="contact-detail">
+              <div class="contact-detail-icon" aria-hidden="true">📍</div>
+              <div>
+                <h4 data-i18n="contact_address_label">Адрес</h4>
+                <p data-i18n="contact_address">бул. Околовръстен път 155, ет.4, София</p>
+              </div>
+            </div>
+            <div class="contact-detail">
+              <div class="contact-detail-icon" aria-hidden="true">🕐</div>
+              <div>
+                <h4 data-i18n="contact_hours_label">Работно време</h4>
+                <p data-i18n="contact_hours">По договаряне</p>
+              </div>
+            </div>
+            <div class="social-links" style="margin-top:32px">
+              <a href="https://www.facebook.com/margel360/" aria-label="Facebook" target="_blank" rel="noopener">f</a>
+              <a href="https://www.instagram.com/margel360/" aria-label="Instagram" target="_blank" rel="noopener">in</a>
+            </div>
+          </div>
+          <div class="contact-map">
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2932.5!2d23.38!3d42.69!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x40aa8574e7f2b9a9%3A0x0!2z0JHRg9C70C4g0J7QutC-0LvQvtCy0YDRitGB0YLQtdC9INC_0YrRgiAxNTU!5e0!3m2!1sbg!2sbg!4v1"
+              allowfullscreen=""
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+              title="Маргел 360° на картата"
+              aria-label="Map showing venue location">
+            </iframe>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="index.html" class="nav-logo"><img src="assets/images/logo-real.png" alt="" class="logo-img" aria-hidden="true">МАРГЕЛ <span>360°</span></a>
+          <p data-i18n="footer_desc">Зала за всяко събитие в сърцето на Враца.</p>
+        </div>
+        <div>
+          <h4 data-i18n="footer_nav">Навигация</h4>
+          <ul class="footer-links" role="list">
+            <li><a href="index.html" data-i18n="nav_home">Тип събитие</a></li>
+            <li><a href="gallery.html" data-i18n="nav_gallery">Галерия</a></li>
+            <li><a href="faq.html" data-i18n="nav_faq">FAQ</a></li>
+            <li><a href="services.html" data-i18n="nav_services">Услуги</a></li>
+            <li><a href="contact.html" data-i18n="nav_contact">Контакти</a></li>
+          </ul>
+        </div>
+        <div class="footer-contact">
+          <h4 data-i18n="footer_contact">Контакти</h4>
+          <p><span aria-hidden="true">📞</span> 0888 10 09 42</p>
+          <p data-i18n="footer_address">бул. Околовръстен път 155, ет.4, София</p>
+          <div class="social-links">
+            <a href="https://www.facebook.com/margel360/" aria-label="Facebook" target="_blank" rel="noopener">f</a>
+            <a href="https://www.instagram.com/margel360/" aria-label="Instagram" target="_blank" rel="noopener">in</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p data-i18n="footer_copy">© 2026 Маргел 360°. Всички права запазени.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/translations-contact.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

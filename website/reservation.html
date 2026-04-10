@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Запитване — Маргел 360°</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/reservation.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+</head>
+<body>
+
+  <nav class="nav scrolled" aria-label="Main navigation">
+    <div class="container">
+      <a href="index.html" class="nav-logo">
+        <img src="assets/images/logo-real.png" alt="Маргел 360°" class="logo-img">
+        МАРГЕЛ <span>360°</span>
+      </a>
+      <ul class="nav-links" role="list">
+        <li><a href="index.html" data-i18n="nav_home">Тип събитие</a></li>
+        <li><a href="gallery.html" data-i18n="nav_gallery">Галерия</a></li>
+        <li><a href="faq.html" data-i18n="nav_faq">FAQ</a></li>
+        <li><a href="services.html" data-i18n="nav_services">Услуги</a></li>
+        <li><a href="contact.html" data-i18n="nav_contact">Контакти</a></li>
+        <li><a href="reservation.html" class="btn btn-primary active" style="padding:8px 20px" data-i18n="nav_reserve">Запитване</a></li>
+      </ul>
+      <button class="lang-toggle" aria-label="Switch language">EN</button>
+      <button class="hamburger" aria-label="Toggle navigation" aria-expanded="false" aria-controls="nav-drawer">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <nav class="nav-drawer" id="nav-drawer" aria-label="Mobile navigation">
+    <ul role="list" style="display:contents">
+      <li><a href="index.html" data-i18n="nav_home">Тип събитие</a></li>
+      <li><a href="gallery.html" data-i18n="nav_gallery">Галерия</a></li>
+      <li><a href="faq.html" data-i18n="nav_faq">FAQ</a></li>
+      <li><a href="services.html" data-i18n="nav_services">Услуги</a></li>
+      <li><a href="contact.html" data-i18n="nav_contact">Контакти</a></li>
+      <li><a href="reservation.html" class="active" data-i18n="nav_reserve">Запитване</a></li>
+    </ul>
+    <button class="lang-toggle" aria-label="Switch language">EN</button>
+  </nav>
+
+  <main>
+    <div class="page-header-img" style="background-image:url(assets/images/venue-17.jpg)">
+      <div class="container">
+        <h1 data-i18n="res_title">Направете запитване</h1>
+        <p data-i18n="res_sub">Изберете вашето събитие и резервирайте датата</p>
+      </div>
+    </div>
+
+    <section class="section wizard-section">
+      <div class="container">
+
+        <!-- Progress -->
+        <div class="wizard-progress" role="list" aria-label="Booking steps">
+          <div class="wizard-progress-track" aria-hidden="true">
+            <div class="wizard-progress-fill" id="progress-fill"></div>
+          </div>
+          <button class="wstep active" data-step="0" role="listitem" aria-current="step">
+            <span class="wstep-num">1</span>
+            <span class="wstep-label" data-i18n="step1_label">Събитие</span>
+          </button>
+          <button class="wstep" data-step="1" role="listitem">
+            <span class="wstep-num">2</span>
+            <span class="wstep-label" data-i18n="step2_label">Дата</span>
+          </button>
+          <button class="wstep" data-step="2" role="listitem">
+            <span class="wstep-num">3</span>
+            <span class="wstep-label" data-i18n="step3_label">Услуги</span>
+          </button>
+          <button class="wstep" data-step="3" role="listitem">
+            <span class="wstep-num">4</span>
+            <span class="wstep-label" data-i18n="step4_label">Напитки</span>
+          </button>
+          <button class="wstep" data-step="4" role="listitem">
+            <span class="wstep-num">5</span>
+            <span class="wstep-label" data-i18n="step5_label">Контакти</span>
+          </button>
+          <button class="wstep" data-step="5" role="listitem">
+            <span class="wstep-num">6</span>
+            <span class="wstep-label" data-i18n="step6_label">Резюме</span>
+          </button>
+        </div>
+
+        <!-- Step 1: Event -->
+        <div class="wizard-step active" id="step-0">
+          <h2 class="step-heading" data-i18n="s1_title">Изберете тип събитие</h2>
+          <div class="event-picker" id="event-picker" role="list"></div>
+        </div>
+
+        <!-- Step 2: Date -->
+        <div class="wizard-step" id="step-1">
+          <h2 class="step-heading" data-i18n="s2_title">Изберете дата и час</h2>
+          <div class="datetime-wrap">
+            <div class="form-group">
+              <label for="res-date" data-i18n="res_date">Предпочитана дата</label>
+              <input type="text" id="res-date" name="date" readonly placeholder="дд/мм/гггг" aria-describedby="err-date-msg">
+              <span class="form-error" id="err-date-msg" role="alert" data-i18n="err_date">Моля изберете дата.</span>
+            </div>
+            <div class="form-group">
+              <label data-i18n="res_time">Час на събитието</label>
+              <div class="time-options" role="group">
+                <label class="time-option">
+                  <input type="radio" name="time" value="day" checked>
+                  <span class="time-option-card">
+                    <span class="time-icon" aria-hidden="true">☀️</span>
+                    <span data-i18n="time_day">Дневно (до 17:30)</span>
+                  </span>
+                </label>
+                <label class="time-option">
+                  <input type="radio" name="time" value="evening">
+                  <span class="time-option-card">
+                    <span class="time-icon" aria-hidden="true">🌙</span>
+                    <span data-i18n="time_evening">Вечерно (след 19:00)</span>
+                  </span>
+                </label>
+              </div>
+            </div>
+            <div class="selected-event-preview" id="event-preview"></div>
+          </div>
+          <div class="wizard-nav">
+            <button class="btn btn-outline" onclick="goToStep(0)" data-i18n="btn_back">Назад</button>
+            <button class="btn btn-primary" id="btn-step2-next" data-i18n="btn_next">Напред</button>
+          </div>
+        </div>
+
+        <!-- Step 3: Paid add-on services -->
+        <div class="wizard-step" id="step-2">
+          <h2 class="step-heading" data-i18n="s3_title">Допълнителни услуги</h2>
+          <p class="step-sub" data-i18n="s3_sub">Изберете допълнителни услуги към вашето събитие (по желание).</p>
+          <div class="addon-grid" id="addon-grid"></div>
+          <div class="running-total">
+            <span class="rt-label" data-i18n="addons_total">Допълнителни услуги:</span>
+            <span class="rt-value" id="addons-total-val">0 лв.</span>
+          </div>
+          <div class="wizard-nav">
+            <button class="btn btn-outline" onclick="goToStep(1)" data-i18n="btn_back">Назад</button>
+            <button class="btn btn-primary" onclick="goToStep(3)" data-i18n="btn_next">Напред</button>
+          </div>
+        </div>
+
+        <!-- Step 4: Drinks & Alcohol -->
+        <div class="wizard-step" id="step-3">
+          <h2 class="step-heading" data-i18n="s4_title">Напитки и алкохол</h2>
+          <p class="step-sub" data-i18n="s4_sub">Поръчайте напитки за вашето събитие (по желание).</p>
+          <div class="drinks-tabs" id="drinks-tabs" role="tablist"></div>
+          <div class="drinks-grid" id="drinks-grid"></div>
+          <div class="running-total" style="margin-top:20px">
+            <span class="rt-label" data-i18n="drinks_total">Напитки:</span>
+            <span class="rt-value" id="drinks-total-val">0 лв.</span>
+          </div>
+          <div class="wizard-nav">
+            <button class="btn btn-outline" onclick="goToStep(2)" data-i18n="btn_back">Назад</button>
+            <button class="btn btn-primary" onclick="goToStep(4)" data-i18n="btn_next">Напред</button>
+          </div>
+        </div>
+
+        <!-- Step 5: Contact -->
+        <div class="wizard-step" id="step-4">
+          <h2 class="step-heading" data-i18n="s5_title">Вашите данни</h2>
+          <div class="form-wrapper">
+            <div class="form-row">
+              <div class="form-group" id="fg-name">
+                <label for="res-name" data-i18n="res_name">Три имена</label>
+                <input type="text" id="res-name" name="name" autocomplete="name" aria-describedby="err-name-msg">
+                <span class="form-error" id="err-name-msg" role="alert" data-i18n="err_name">Моля въведете вашето пълно име.</span>
+              </div>
+              <div class="form-group" id="fg-phone">
+                <label for="res-phone" data-i18n="res_phone">Телефон</label>
+                <input type="tel" id="res-phone" name="phone" autocomplete="tel" aria-describedby="err-phone-msg">
+                <span class="form-error" id="err-phone-msg" role="alert" data-i18n="err_phone">Моля въведете валиден телефонен номер.</span>
+              </div>
+            </div>
+            <div class="form-group" id="fg-email">
+              <label for="res-email" data-i18n="res_email">Имейл</label>
+              <input type="email" id="res-email" name="email" autocomplete="email" aria-describedby="err-email-msg">
+              <span class="form-error" id="err-email-msg" role="alert" data-i18n="err_email">Моля въведете валиден имейл адрес.</span>
+            </div>
+            <div class="form-group" id="fg-guests">
+              <label for="res-guests" data-i18n="res_guests">Брой гости (1–140)</label>
+              <input type="number" id="res-guests" name="guests" min="1" max="140" placeholder="50" aria-describedby="err-guests-msg">
+              <span class="form-error" id="err-guests-msg" role="alert" data-i18n="err_guests">Моля въведете брой гости (1–140).</span>
+            </div>
+            <div class="form-group">
+              <label for="res-message" data-i18n="res_message">Бележки (по желание)</label>
+              <textarea id="res-message" name="message"></textarea>
+            </div>
+          </div>
+          <div class="wizard-nav">
+            <button class="btn btn-outline" onclick="goToStep(3)" data-i18n="btn_back">Назад</button>
+            <button class="btn btn-primary" id="btn-step5-next" data-i18n="btn_next">Напред</button>
+          </div>
+        </div>
+
+        <!-- Step 6: Summary -->
+        <div class="wizard-step" id="step-5">
+          <h2 class="step-heading" data-i18n="s6_title">Преглед и изпращане</h2>
+          <div class="summary-card" id="booking-summary"></div>
+          <div class="price-summary" id="price-summary"></div>
+          <div class="payment-methods">
+            <p class="payment-label" data-i18n="payment_label">Начин на плащане</p>
+            <div class="payment-options" role="group">
+              <label class="payment-option">
+                <input type="radio" name="payment" value="cash" checked>
+                <span data-i18n="pay_cash">В брой</span>
+              </label>
+              <label class="payment-option">
+                <input type="radio" name="payment" value="transfer">
+                <span data-i18n="pay_transfer">Банков превод</span>
+              </label>
+              <label class="payment-option">
+                <input type="radio" name="payment" value="card">
+                <span data-i18n="pay_card">Карта</span>
+              </label>
+            </div>
+          </div>
+          <div class="wizard-nav">
+            <button class="btn btn-outline" onclick="goToStep(4)" data-i18n="btn_back">Назад</button>
+            <button class="btn btn-primary" id="btn-submit" data-i18n="res_submit">Изпрати запитване</button>
+          </div>
+        </div>
+
+        <!-- Success -->
+        <div class="form-success" id="form-success" role="status" aria-live="polite">
+          <div style="font-size:3.5rem;margin-bottom:20px" aria-hidden="true">✅</div>
+          <h2 data-i18n="success_title">Благодарим ви!</h2>
+          <p data-i18n="success_body">Получихме вашето запитване. Ще се свържем с вас в рамките на 24 часа.</p>
+          <a href="index.html" class="btn btn-primary" style="margin-top:28px" data-i18n="success_cta">Към началото</a>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="index.html" class="nav-logo">
+            <img src="assets/images/logo-real.png" alt="Маргел 360°" class="logo-img">
+            МАРГЕЛ <span>360°</span>
+          </a>
+          <p data-i18n="footer_desc">Зала за всяко събитие в сърцето на София.</p>
+        </div>
+        <div>
+          <h4 data-i18n="footer_nav">Навигация</h4>
+          <ul class="footer-links" role="list">
+            <li><a href="index.html" data-i18n="nav_home">Тип събитие</a></li>
+            <li><a href="gallery.html" data-i18n="nav_gallery">Галерия</a></li>
+            <li><a href="faq.html" data-i18n="nav_faq">FAQ</a></li>
+            <li><a href="services.html" data-i18n="nav_services">Услуги</a></li>
+            <li><a href="contact.html" data-i18n="nav_contact">Контакти</a></li>
+          </ul>
+        </div>
+        <div class="footer-contact">
+          <h4 data-i18n="footer_contact">Контакти</h4>
+          <p><span aria-hidden="true">📞</span> 0888 10 09 42</p>
+          <p data-i18n="footer_address">бул. Околовръстен път 155, ет.4, София</p>
+          <div class="social-links">
+            <a href="https://www.facebook.com/margel360/" aria-label="Facebook" target="_blank" rel="noopener">f</a>
+            <a href="https://www.instagram.com/margel360/" aria-label="Instagram" target="_blank" rel="noopener">in</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p data-i18n="footer_copy">© 2026 Маргел 360°. Всички права запазени.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/bg.js"></script>
+  <script src="js/translations-reservation.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/reservation.js"></script>
+</body>
+</html>
