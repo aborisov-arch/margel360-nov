@@ -8,21 +8,24 @@ import ContactSection from "@/components/ContactSection";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import BackToTop from "@/components/BackToTop";
+import { LangProvider } from "@/context/LangContext";
 
 const Index = () => (
-  <main>
-    <div className="grain-overlay" aria-hidden="true" />
-    <Navbar />
-    <HeroSection />
-    <AboutSection />
-    <ServicesSection />
-    <PricingSection />
-    <CalculatorSection />
-    <ContactSection />
-    <Footer />
-    <WhatsAppButton />
-    <BackToTop />
-  </main>
+  <LangProvider>
+    <main>
+      <div className="grain-overlay" aria-hidden="true" />
+      <Navbar />
+      <HeroSection />
+      <AboutSection />
+      <ServicesSection />
+      <PricingSection />
+      <CalculatorSection />
+      <ContactSection />
+      <Footer />
+      <WhatsAppButton />
+      <BackToTop />
+    </main>
+  </LangProvider>
 );
 
 export default Index;

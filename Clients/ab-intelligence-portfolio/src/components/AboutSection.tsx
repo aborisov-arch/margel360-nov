@@ -1,9 +1,11 @@
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
+import { useLang } from "../context/LangContext";
 
 const AboutSection = () => {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
+  const { tr } = useLang();
 
   return (
     <section id="about" className="section-padding" ref={ref} style={{ background: "#000" }}>
@@ -13,9 +15,9 @@ const AboutSection = () => {
           initial={{ opacity: 0 }}
           animate={inView ? { opacity: 1 } : {}}
           transition={{ duration: 0.5 }}
-          className="text-xs font-bold tracking-[0.2em] text-[#1d4ed8] uppercase mb-16"
+          className="text-xs font-bold tracking-[0.2em] text-[#c9a84c] uppercase mb-16"
         >
-          — ЗА НАС
+          {tr.about.label}
         </motion.p>
 
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-24 items-start">
@@ -26,9 +28,9 @@ const AboutSection = () => {
             transition={{ duration: 0.6, delay: 0.1 }}
           >
             <h2 className="text-3xl md:text-5xl font-extrabold text-white leading-tight">
-              18+ проекта.<br />
-              100% клиентско<br />
-              удовлетворение.
+              {tr.about.heading1}<br />
+              {tr.about.heading2}<br />
+              {tr.about.heading3}
             </h2>
           </motion.div>
 
@@ -39,12 +41,12 @@ const AboutSection = () => {
             transition={{ duration: 0.6, delay: 0.25 }}
             className="lg:pt-3"
           >
-            <div className="w-8 h-px bg-[#1d4ed8] mb-8" />
+            <div className="w-8 h-px bg-[#c9a84c] mb-8" />
             <p className="text-base md:text-lg text-white/50 leading-relaxed mb-6">
-              АБИ (AB Intelligence) е Sofia-базирана агенция за уеб дизайн, която помага на малки и средни бизнеси да изградят своето онлайн присъствие.
+              {tr.about.p1}
             </p>
             <p className="text-base text-white/35 leading-relaxed">
-              Създаваме модерни, бързи и оптимизирани за търсачки уебсайтове, които не само изглеждат страхотно, но и привличат реални клиенти — всичко с достъпни цени.
+              {tr.about.p2}
             </p>
           </motion.div>
         </div>

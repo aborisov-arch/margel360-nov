@@ -1,98 +1,107 @@
-import { motion, useInView } from "framer-motion";
+import { motion, useInView, AnimatePresence } from "framer-motion";
 import { useRef, useState } from "react";
+import { useLang } from "../context/LangContext";
 
-const services = [
-  {
-    num: "01",
-    title: "Уеб дизайн",
-    sub: "Web Design",
-    desc: "Модерни и атрактивни уебсайтове, проектирани да впечатляват и конвертират.",
-  },
-  {
-    num: "02",
-    title: "SEO Оптимизация",
-    sub: "SEO Optimization",
-    desc: "Повишете видимостта си в Google и привличайте органичен трафик.",
-  },
-  {
-    num: "03",
-    title: "Мобилна оптимизация",
-    sub: "Mobile Optimization",
-    desc: "Перфектно изживяване на всяко устройство — телефон, таблет, десктоп.",
-  },
-  {
-    num: "04",
-    title: "Поддръжка",
-    sub: "Website Maintenance",
-    desc: "Непрекъсната поддръжка, актуализации и сигурност на вашия сайт.",
-  },
-  {
-    num: "05",
-    title: "Брандинг",
-    sub: "Branding & Identity",
-    desc: "Изградете запомнящ се бранд с уникална визия и последователна идентичност.",
-  },
-];
+const GOLD = "#c9a84c";
+
+type ServiceItem = {
+  num: string;
+  title: string;
+  sub: string;
+  desc: string;
+};
 
 const ServiceRow = ({
   service,
   index,
   inView,
 }: {
-  service: (typeof services)[0];
+  service: ServiceItem;
   index: number;
   inView: boolean;
 }) => {
-  const [hovered, setHovered] = useState(false);
+  const [open, setOpen] = useState(false);
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.5, delay: index * 0.08, ease: [0.22, 1, 0.36, 1] }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      className="group border-t cursor-default"
+      className="border-t"
       style={{ borderColor: "rgba(255,255,255,0.08)" }}
     >
-      <div
-        className="flex items-center justify-between py-7 md:py-9 px-0 transition-all duration-300"
-        style={{ background: hovered ? "rgba(255,255,255,0.02)" : "transparent" }}
+      {/* Header row — clickable */}
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between py-7 md:py-9 text-left group"
+        style={{ background: "transparent" }}
       >
         {/* Left: number + title */}
         <div className="flex items-center gap-5 md:gap-10 flex-1 min-w-0">
           <span
-            className="text-xs font-bold tracking-widest transition-colors duration-300 shrink-0"
-            style={{ color: hovered ? "#1d4ed8" : "rgba(255,255,255,0.25)" }}
+            className="text-xs font-bold tracking-widest shrink-0 transition-colors duration-300"
+            style={{ color: open ? GOLD : "rgba(255,255,255,0.25)" }}
           >
             {service.num}
           </span>
-          <h3
-            className="text-2xl md:text-4xl font-bold leading-tight transition-colors duration-300"
-            style={{ color: hovered ? "#fff" : "rgba(255,255,255,0.85)" }}
-          >
-            {service.title}
-          </h3>
+          <div className="min-w-0">
+            <h3
+              className="text-2xl md:text-4xl font-bold leading-tight transition-colors duration-300"
+              style={{ color: open ? "#fff" : "rgba(255,255,255,0.85)" }}
+            >
+              {service.title}
+            </h3>
+            <p
+              className="text-xs mt-1 tracking-widest uppercase"
+              style={{ color: GOLD, opacity: open ? 1 : 0.6 }}
+            >
+              {service.sub}
+            </p>
+          </div>
         </div>
 
-        {/* Right: description (fades in on hover) or arrow */}
-        <div className="flex items-center gap-6 shrink-0 ml-6">
-          <motion.p
-            animate={{ opacity: hovered ? 1 : 0, x: hovered ? 0 : 10 }}
-            transition={{ duration: 0.25 }}
-            className="hidden lg:block text-sm text-white/50 max-w-xs text-right"
-          >
-            {service.desc}
-          </motion.p>
+        {/* Right: plus/minus icon */}
+        <div
+          className="shrink-0 ml-6 w-8 h-8 flex items-center justify-center rounded-full border transition-all duration-300"
+          style={{
+            borderColor: open ? GOLD : "rgba(255,255,255,0.15)",
+            background: open ? GOLD : "transparent",
+          }}
+        >
           <motion.span
-            animate={{ opacity: hovered ? 1 : 0.2, x: hovered ? 4 : 0 }}
-            transition={{ duration: 0.25 }}
-            className="text-white text-xl"
+            animate={{ rotate: open ? 45 : 0 }}
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            className="text-white font-light text-lg leading-none"
+            style={{ color: open ? "#000" : "#fff" }}
           >
-            →
+            +
           </motion.span>
         </div>
-      </div>
+      </button>
+
+      {/* Expandable content */}
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            key="content"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            style={{ overflow: "hidden" }}
+          >
+            <div className="pb-8 pl-[calc(1rem+20px+20px)] md:pl-[calc(1rem+40px+20px)]">
+              <div
+                className="w-8 h-px mb-5"
+                style={{ background: GOLD }}
+              />
+              <p className="text-base text-white/50 leading-relaxed max-w-2xl">
+                {service.desc}
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
@@ -100,26 +109,25 @@ const ServiceRow = ({
 const ServicesSection = () => {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
+  const { tr } = useLang();
 
   return (
     <section id="services" className="section-padding" ref={ref} style={{ background: "#000" }}>
       <div className="container mx-auto px-6 md:px-10">
-        {/* Label */}
         <motion.p
           initial={{ opacity: 0 }}
           animate={inView ? { opacity: 1 } : {}}
           transition={{ duration: 0.5 }}
-          className="text-xs font-bold tracking-[0.2em] text-[#1d4ed8] uppercase mb-16"
+          className="text-xs font-bold tracking-[0.2em] uppercase mb-16"
+          style={{ color: GOLD }}
         >
-          — УСЛУГИ
+          {tr.services.label}
         </motion.p>
 
-        {/* Rows */}
         <div>
-          {services.map((s, i) => (
+          {tr.services.items.map((s, i) => (
             <ServiceRow key={s.num} service={s} index={i} inView={inView} />
           ))}
-          {/* Bottom border */}
           <div className="border-t" style={{ borderColor: "rgba(255,255,255,0.08)" }} />
         </div>
       </div>

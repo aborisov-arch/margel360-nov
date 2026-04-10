@@ -1,15 +1,17 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-
-const navLinks = [
-  { href: "#services", label: "Услуги" },
-  { href: "#pricing", label: "Цени" },
-  { href: "#calculator", label: "Калкулатор" },
-  { href: "#about", label: "За нас" },
-];
+import { useLang } from "../context/LangContext";
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { lang, toggle, tr } = useLang();
+
+  const navLinks = [
+    { href: "#services", label: tr.nav.services },
+    { href: "#pricing", label: tr.nav.pricing },
+    { href: "#calculator", label: tr.nav.calculator },
+    { href: "#about", label: tr.nav.about },
+  ];
 
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? "hidden" : "";
@@ -35,10 +37,11 @@ const Navbar = () => {
         {/* Logo */}
         <a
           href="#hero"
-          className="text-xl font-bold tracking-tight text-white"
+          className="text-xl font-bold tracking-tight"
+          style={{ color: "#c9a84c" }}
           onClick={(e) => { e.preventDefault(); handleClick("#hero"); }}
         >
-          АБИ
+          ABI
         </a>
 
         {/* Desktop links */}
@@ -47,7 +50,8 @@ const Navbar = () => {
             <li key={l.href}>
               <button
                 onClick={() => handleClick(l.href)}
-                className="text-sm font-medium text-white/50 hover:text-white transition-colors duration-200"
+                className="text-sm font-medium transition-colors duration-200"
+                style={{ color: "#c9a84c" }}
               >
                 {l.label}
               </button>
@@ -55,14 +59,23 @@ const Navbar = () => {
           ))}
         </ul>
 
-        {/* CTA + hamburger */}
-        <div className="flex items-center gap-4">
+        {/* CTA + lang toggle + hamburger */}
+        <div className="flex items-center gap-3">
+          {/* Language toggle */}
+          <button
+            onClick={toggle}
+            className="text-xs font-bold tracking-widest px-3 py-1.5 rounded-full border border-white/15 text-white/50 hover:text-white hover:border-white/40 transition-all duration-200"
+          >
+            {lang === "bg" ? "EN" : "БГ"}
+          </button>
+
           <button
             onClick={() => handleClick("#contact")}
             className="hidden md:block text-sm font-semibold px-5 py-2.5 border border-white/20 text-white rounded-full hover:bg-white hover:text-black transition-all duration-300"
           >
-            Свържете се
+            {tr.nav.contact}
           </button>
+
           <button
             className="md:hidden w-10 h-10 flex flex-col items-center justify-center gap-[5px] relative z-50"
             onClick={() => setMobileOpen(!mobileOpen)}
@@ -99,7 +112,7 @@ const Navbar = () => {
             style={{ background: "#000" }}
           >
             <ul className="flex flex-col items-center gap-8">
-              {[...navLinks, { href: "#contact", label: "Свържете се" }].map((l, i) => (
+              {[...navLinks, { href: "#contact", label: tr.nav.contact }].map((l, i) => (
                 <motion.li
                   key={l.href}
                   initial={{ opacity: 0, y: 20 }}
@@ -108,7 +121,7 @@ const Navbar = () => {
                 >
                   <button
                     onClick={() => handleClick(l.href)}
-                    className="text-3xl font-bold text-white hover:text-[#1d4ed8] transition-colors"
+                    className="text-3xl font-bold text-white hover:text-[#c9a84c] transition-colors"
                   >
                     {l.label}
                   </button>

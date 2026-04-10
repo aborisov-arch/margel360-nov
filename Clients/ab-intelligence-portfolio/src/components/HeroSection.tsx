@@ -1,8 +1,10 @@
 import { motion } from "framer-motion";
-
-const words = ["Изграждаме", "дигиталното", "бъдеще", "на", "вашия", "бизнес."];
+import { useLang } from "../context/LangContext";
+import { ShaderAnimation } from "./ui/shader-animation";
 
 const HeroSection = () => {
+  const { tr } = useLang();
+
   const scrollTo = (id: string) => {
     document.querySelector(id)?.scrollIntoView({ behavior: "smooth" });
   };
@@ -13,20 +15,25 @@ const HeroSection = () => {
       className="relative min-h-screen flex items-center"
       style={{ background: "#000" }}
     >
-      <div className="container mx-auto px-6 md:px-10 pt-32 pb-20">
+      {/* Shader background */}
+      <div className="absolute inset-0 opacity-30 pointer-events-none">
+        <ShaderAnimation />
+      </div>
+
+      <div className="relative z-10 container mx-auto px-6 md:px-10 pt-32 pb-20">
         {/* Label */}
         <motion.p
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="text-xs font-semibold tracking-[0.2em] text-[#1d4ed8] uppercase mb-8"
+          className="text-xs font-semibold tracking-[0.2em] text-[#c9a84c] uppercase mb-8"
         >
-          — Уеб агенция от София, България
+          {tr.hero.label}
         </motion.p>
 
         {/* Headline */}
         <h1 className="text-[clamp(3rem,8vw,6.5rem)] font-extrabold leading-[1.04] tracking-tight text-white mb-10 max-w-5xl">
-          {words.map((word, i) => (
+          {tr.hero.words.map((word, i) => (
             <motion.span
               key={word + i}
               initial={{ opacity: 0, y: 40 }}
@@ -46,7 +53,7 @@ const HeroSection = () => {
           transition={{ duration: 0.6, delay: 1.0 }}
           className="text-base md:text-lg text-white/40 mb-12 max-w-lg"
         >
-          Модерни уебсайтове, които привличат реални клиенти — от концепция до публикуване.
+          {tr.hero.subtitle}
         </motion.p>
 
         {/* Buttons */}
@@ -60,13 +67,13 @@ const HeroSection = () => {
             onClick={() => scrollTo("#calculator")}
             className="px-8 py-4 rounded-full bg-white text-black text-sm font-bold hover:bg-white/90 transition-colors"
           >
-            Сметнете инвестицията
+            {tr.hero.btn1}
           </button>
           <button
             onClick={() => scrollTo("#contact")}
             className="px-8 py-4 rounded-full border border-white/20 text-white text-sm font-semibold hover:border-white/50 transition-colors"
           >
-            Свържете се с нас
+            {tr.hero.btn2}
           </button>
         </motion.div>
 
@@ -78,7 +85,7 @@ const HeroSection = () => {
           className="absolute bottom-10 left-6 md:left-10 flex items-center gap-3"
         >
           <div className="w-px h-12 bg-white/20" />
-          <span className="text-xs text-white/30 tracking-widest uppercase">Scroll</span>
+          <span className="text-sm font-semibold text-white/40 tracking-widest uppercase">Плъзни</span>
         </motion.div>
       </div>
     </section>
