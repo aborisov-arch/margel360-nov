@@ -28,13 +28,6 @@ const services = [
     desc_en:  'Fresh floral decorations for your event.',
   },
   {
-    img:      'assets/images/services/svc-cake.jpg',
-    title_bg: 'Торта по поръчка',
-    title_en: 'Custom Cake',
-    desc_bg:  'Индивидуално изработена торта за специалния повод.',
-    desc_en:  'A bespoke cake crafted for your special occasion.',
-  },
-  {
     img:      'assets/images/services/svc-valet.jpg',
     title_bg: 'Паркинг асистент',
     title_en: 'Parking Assistant',
