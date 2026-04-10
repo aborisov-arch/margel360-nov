@@ -1,92 +1,77 @@
-/* ── Filter bar ── */
-.gl-filter-wrap {
-  background: var(--bg-1);
-  border-bottom: 1px solid var(--border);
-  padding: 20px 0;
-  position: sticky;
-  top: 64px;
-  z-index: 10;
-}
-
-.gl-filter-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.gl-filter-btn {
-  padding: 8px 22px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: inherit;
-}
-
-.gl-filter-btn:hover {
-  border-color: var(--gold);
-  color: var(--gold);
-}
-
-.gl-filter-btn.active {
-  background: var(--gold);
-  border-color: var(--gold);
-  color: #000;
-}
-
-/* ── Gallery section ── */
+/* ── Gallery wrapper ── */
 .gl-section {
   background: var(--bg-1);
   padding-top: 40px !important;
+  padding-bottom: 60px !important;
 }
 
-/* ── Masonry grid ── */
-.gl-grid-inner {
-  columns: 4 240px;
-  column-gap: 12px;
+.gl-gallery-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 56px;
 }
 
-.gl-thumb {
-  break-inside: avoid;
-  margin-bottom: 12px;
-  position: relative;
+/* ── Category section ── */
+.gl-category-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.gl-category-title {
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  border-left: 4px solid var(--gold);
+  padding-left: 16px;
+  margin: 0;
+}
+
+/* ── Horizontal image strip ── */
+.gl-strip {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold) transparent;
+}
+
+.gl-strip::-webkit-scrollbar {
+  height: 4px;
+}
+.gl-strip::-webkit-scrollbar-track {
+  background: transparent;
+}
+.gl-strip::-webkit-scrollbar-thumb {
+  background: var(--gold);
+  border-radius: 2px;
+}
+
+/* ── Image item ── */
+.gl-item {
+  flex: 0 0 auto;
+  width: 280px;
+  height: 200px;
   overflow: hidden;
   border-radius: 6px;
   cursor: pointer;
-  display: block;
+  position: relative;
 }
 
-.gl-thumb img {
+.gl-item img {
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: cover;
   display: block;
   transition: transform 0.4s ease;
 }
 
-.gl-thumb-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0,0,0,0);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.3s ease;
+.gl-item:hover img {
+  transform: scale(1.07);
 }
-
-.gl-thumb-zoom {
-  color: #fff;
-  opacity: 0;
-  transform: scale(0.8);
-  transition: all 0.3s ease;
-}
-
-.gl-thumb:hover .gl-thumb-overlay { background: rgba(0,0,0,0.45); }
-.gl-thumb:hover .gl-thumb-zoom    { opacity: 1; transform: scale(1); }
-.gl-thumb:hover img                { transform: scale(1.04); }
 
 /* ── Lightbox ── */
 .gl-lightbox {
@@ -172,15 +157,20 @@
 
 /* ── Mobile ── */
 @media (max-width: 768px) {
-  .gl-filter-wrap { top: 56px; }
-  .gl-grid-inner  { columns: 2 140px; column-gap: 8px; }
-  .gl-thumb       { margin-bottom: 8px; }
+  .gl-item {
+    width: 200px;
+    height: 150px;
+  }
   .lb-arrow--prev { left: 8px; }
   .lb-arrow--next { right: 8px; }
   .lb-arrow       { width: 40px; height: 40px; }
 }
 
 @media (max-width: 480px) {
-  .gl-filter-bar  { gap: 6px; }
-  .gl-filter-btn  { padding: 6px 14px; font-size: 0.78rem; }
+  .gl-item {
+    width: 160px;
+    height: 120px;
+  }
+  .gl-strip { gap: 8px; }
+  .gl-gallery-wrap { gap: 40px; }
 }
