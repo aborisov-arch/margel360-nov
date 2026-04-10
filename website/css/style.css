@@ -231,9 +231,9 @@ p { color: var(--text-muted); }
 }
 .hero-scroll::before {
   content: '';
-  width: 2px; height: 32px;
-  background: linear-gradient(to bottom, #c9a84c, rgba(201,168,76,0.4));
-  margin-top: 6px;
+  width: 2px; height: 30px;
+  background: #c9a84c;
+  margin-top: 8px;
 }
 .hero-scroll::after {
   content: '';
@@ -241,7 +241,7 @@ p { color: var(--text-muted); }
   border-right: 2px solid #c9a84c;
   border-bottom: 2px solid #c9a84c;
   transform: rotate(45deg);
-  margin-top: -6px;
+  margin-top: -8px;
 }
 
 /* ── Stats ── */
