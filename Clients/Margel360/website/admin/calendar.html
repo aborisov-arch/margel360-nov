@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
   <title>Calendar — Margel 360° Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -23,9 +24,9 @@
       <h1 class="page-title">Occupied Dates</h1>
       <p class="page-sub">Click a date to mark it as occupied (red). Click again to unmark.</p>
       <div class="calendar-controls">
-        <button class="btn btn-outline btn-sm" id="prev-month">← Prev</button>
-        <h2 id="calendar-month" class="cal-month-label"></h2>
-        <button class="btn btn-outline btn-sm" id="next-month">Next →</button>
+        <button class="btn btn-outline btn-sm" id="prev-month" aria-label="Previous month"><span aria-hidden="true">←</span> Prev</button>
+        <h2 id="calendar-month" class="cal-month-label">Loading…</h2>
+        <button class="btn btn-outline btn-sm" id="next-month" aria-label="Next month">Next <span aria-hidden="true">→</span></button>
       </div>
       <div class="calendar-grid" id="calendar-grid"></div>
       <div class="cal-legend">
@@ -35,9 +36,9 @@
     </div>
   </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/supabase-client.js"></script>
-  <script src="js/auth.js"></script>
-  <script src="js/calendar.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="js/supabase-client.js" defer></script>
+  <script src="js/auth.js" defer></script>
+  <script src="js/calendar.js" defer></script>
 </body>
 </html>

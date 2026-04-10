@@ -3,12 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
   <title>Login — Margel 360° Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/admin.css">
 </head>
 <body class="login-page">
+  <main>
   <div class="login-card">
     <div class="login-logo">МАРГЕЛ <span>360°</span></div>
     <h1 class="login-title">Admin Panel</h1>
@@ -25,15 +27,17 @@
       <button type="submit" class="btn btn-primary btn-full" id="login-btn">Sign In</button>
     </form>
   </div>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/supabase-client.js"></script>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="js/supabase-client.js" defer></script>
   <script>
     // Redirect if already logged in
-    db.auth.getSession().then(({ data: { session } }) => {
-      if (session) window.location.href = 'dashboard.html';
-    });
+    try {
+      db.auth.getSession().then(({ data: { session } }) => {
+        if (session) window.location.href = 'dashboard.html';
+      });
 
-    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      document.getElementById('login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const btn = document.getElementById('login-btn');
       const errEl = document.getElementById('login-error');
@@ -54,6 +58,9 @@
         window.location.href = 'dashboard.html';
       }
     });
+    } catch (err) {
+      console.error('Admin login init error:', err);
+    }
   </script>
 </body>
 </html>
