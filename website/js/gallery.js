@@ -5,8 +5,8 @@ const categories = [
     title_bg: 'Вечерни събития',
     title_en: 'Evening Events',
     images: [
-      { src:'assets/images/gallery-evening-1.jpg', alt_bg:'Вечерно събитие', alt_en:'Evening event' },
       { src:'assets/images/gallery-evening-2.jpg', alt_bg:'Вечерно събитие', alt_en:'Evening event' },
+      { src:'assets/images/_C2_9429.jpg',          alt_bg:'Вечерно събитие', alt_en:'Evening event' },
       { src:'assets/images/gallery-evening-3.jpg', alt_bg:'Вечерно събитие', alt_en:'Evening event' },
       { src:'assets/images/gallery-1.jpg',         alt_bg:'Събитие',         alt_en:'Event' },
       { src:'assets/images/event-1.jpg',           alt_bg:'Събитие',         alt_en:'Event' },
@@ -18,7 +18,7 @@ const categories = [
       { src:'assets/images/_C1_5124.jpg',          alt_bg:'Вечерно събитие', alt_en:'Evening event' },
       { src:'assets/images/_C2_3200.jpg',          alt_bg:'Вечерно събитие', alt_en:'Evening event' },
       { src:'assets/images/_C2_6915.jpg',          alt_bg:'Вечерно събитие', alt_en:'Evening event' },
-      { src:'assets/images/_C2_9429.jpg',          alt_bg:'Вечерно събитие', alt_en:'Evening event' },
+      { src:'assets/images/gallery-evening-1.jpg', alt_bg:'Вечерно събитие', alt_en:'Evening event' },
     ],
   },
   {
