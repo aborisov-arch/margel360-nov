@@ -173,7 +173,6 @@ function setupStep2() {
       }
     });
   }
-  document.querySelectorAll('input[name="time"]').forEach(r => r.addEventListener('change', () => { booking.time = r.value; updatePreview(); }));
   const btn = document.getElementById('btn-step2-next');
   if (btn) btn.addEventListener('click', () => {
     const d = document.getElementById('res-date');
@@ -344,7 +343,6 @@ function renderSummary() {
   [
     { label: l==='bg'?'Събитие':'Event',   value: l==='bg'?booking.event.title_bg:booking.event.title_en },
     { label: l==='bg'?'Дата':'Date',       value: booking.date },
-    { label: l==='bg'?'Час':'Time',        value: booking.time==='day'?(l==='bg'?'Дневно':'Daytime'):(l==='bg'?'Вечерно':'Evening') },
     { label: l==='bg'?'Гости':'Guests',    value: booking.guests },
     { label: l==='bg'?'Три имена':'Name',  value: booking.name },
     { label: l==='bg'?'Имейл':'Email',     value: booking.email },
