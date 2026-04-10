@@ -410,4 +410,18 @@ document.addEventListener('DOMContentLoaded', () => {
   setupStep5();
   setupSubmit();
   updateProgress();
+
+  // Auto-select event from URL param (e.g. ?event=evening)
+  const params = new URLSearchParams(window.location.search);
+  const preselect = params.get('event');
+  if (preselect) {
+    const match = eventTypes.find(e => e.id === preselect);
+    if (match) {
+      booking.event = match;
+      document.querySelectorAll('.event-pick-card').forEach((card, i) => {
+        card.classList.toggle('selected', eventTypes[i].id === preselect);
+      });
+      setTimeout(() => goToStep(1), 300);
+    }
+  }
 });

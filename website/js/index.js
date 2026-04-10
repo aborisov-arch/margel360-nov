@@ -1,6 +1,7 @@
 // Events data — pricing and images from margel360.bg
 const events = [
   {
+    id: 'evening',
     title_bg: 'Вечерно събитие',
     title_en: 'Evening Event',
     desc_bg: 'Вечерно събитие след 19:00ч. Рафинираната атмосфера на Маргел 360° за незабравимо тържество.',
@@ -12,6 +13,7 @@ const events = [
     img: 'assets/images/event-evening.jpg',
   },
   {
+    id: 'corp4',
     title_bg: 'Корпоративно събитие 4ч.',
     title_en: 'Corporate Event 4h',
     desc_bg: 'Корпоративни събития 8:00–17:30. Фирмено парти, семинар или коктейл.',
@@ -23,6 +25,7 @@ const events = [
     img: 'assets/images/event-corporate.jpg',
   },
   {
+    id: 'corp8',
     title_bg: 'Корпоративно събитие 8ч.',
     title_en: 'Corporate Event 8h',
     desc_bg: 'Корпоративни събития 8:00–17:30. Пълен работен ден с пълна АВ техника.',
@@ -34,6 +37,7 @@ const events = [
     img: 'assets/images/event-corporate.jpg',
   },
   {
+    id: 'bday_day',
     title_bg: 'Детски рожден ден (дневно)',
     title_en: "Children's Birthday (Day)",
     desc_bg: 'Детски рожден ден до 17:30. Игри, анимация и мини-диско за незабравим детски празник.',
@@ -45,6 +49,7 @@ const events = [
     img: 'assets/images/event-birthday.jpg',
   },
   {
+    id: 'bday_eve',
     title_bg: 'Детски рожден ден (вечерно)',
     title_en: "Children's Birthday (Evening)",
     desc_bg: 'Детски рожден ден вечерно, 16:00–24:00. Незабравим нощен детски празник.',
@@ -56,6 +61,7 @@ const events = [
     img: 'assets/images/event-birthday-eve.jpg',
   },
   {
+    id: 'wedding',
     title_bg: 'Сватба',
     title_en: 'Wedding',
     desc_bg: 'Магическа декорация в залата и тераса с изглед към Витоша — перфектна за вашия специален ден.',
@@ -97,6 +103,10 @@ function renderCards(lang) {
       const card = document.createElement('div');
       card.className = 'event-card fade-up delay-' + ((idx % 3) + 1);
       card.setAttribute('role', 'listitem');
+      card.style.cursor = 'pointer';
+      card.addEventListener('click', () => {
+        window.location.href = 'reservation.html?event=' + e.id;
+      });
 
       const imgWrap = document.createElement('div');
       imgWrap.className = 'event-card-img-wrap';
