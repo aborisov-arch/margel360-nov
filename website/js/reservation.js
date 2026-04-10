@@ -317,9 +317,26 @@ function updatePreview() {
   if (!preview || !booking.event) return;
   const l = getLang();
   preview.classList.add('show'); preview.innerHTML = '';
-  const h4 = document.createElement('h4'); h4.textContent = l === 'bg' ? booking.event.title_bg : booking.event.title_en;
-  const p = document.createElement('p'); p.textContent = fmtEvent(booking.event) + (booking.date ? ' · ' + booking.date : '');
-  preview.appendChild(h4); preview.appendChild(p);
+
+  // Event name (parent title only, without variant suffix)
+  const parentEv = eventTypes.find(ev => ev.variants?.some(v => v.id === booking.event.id));
+  const h4 = document.createElement('h4');
+  h4.textContent = parentEv
+    ? (l === 'bg' ? parentEv.title_bg : parentEv.title_en)
+    : (l === 'bg' ? booking.event.title_bg : booking.event.title_en);
+  preview.appendChild(h4);
+
+  // Variant tag (day/night or 4h/8h) if applicable
+  if (booking.event.label_bg) {
+    const tag = document.createElement('span');
+    tag.className = 'preview-variant-tag';
+    tag.textContent = l === 'bg' ? booking.event.label_bg : booking.event.label_en;
+    preview.appendChild(tag);
+  }
+
+  const p = document.createElement('p');
+  p.textContent = fmtEvent(booking.event) + (booking.date ? ' · ' + booking.date : '');
+  preview.appendChild(p);
 }
 
 // ── Step 3: Add-on services ──

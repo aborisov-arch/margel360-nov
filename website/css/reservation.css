@@ -137,8 +137,20 @@
   background: var(--accent-dim); border: 1px solid rgba(201,168,76,0.25); border-radius: 10px;
 }
 .selected-event-preview.show { display: block; }
-.selected-event-preview h4 { color: var(--accent); font-size: 0.88rem; margin-bottom: 4px; }
-.selected-event-preview p { font-size: 0.85rem; }
+.selected-event-preview h4 { color: var(--accent); font-size: 0.88rem; margin-bottom: 6px; }
+.selected-event-preview p { font-size: 0.85rem; margin-top: 4px; }
+.preview-variant-tag {
+  display: inline-block;
+  background: var(--accent);
+  color: #000;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 999px;
+  margin-bottom: 6px;
+}
 
 /* ── Step 3: Paid add-on services ── */
 .addon-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px; }
