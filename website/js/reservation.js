@@ -1,11 +1,21 @@
 // ── Event types ──
 const eventTypes = [
-  { id:'evening',  title_bg:'Вечерно събитие',                title_en:'Evening Event',                duration_bg:'след 19:00',      duration_en:'after 7:00 PM',     price_bgn:2503.46, price_eur:1280.46,  img:'assets/images/event-evening.jpg',      included:['sound','lighting','bar','fridge','parking','wc','elevator','dance','terrace'] },
-  { id:'corp4',    title_bg:'Корпоративно събитие (4ч.)',      title_en:'Corporate Event (4h)',          duration_bg:'08:00 – 17:30',   duration_en:'8:00 AM – 5:30 PM', price_bgn:645.42,  price_eur:330.00,   img:'assets/images/event-corporate.jpg',    included:['sound','lighting','bar','fridge','parking','wc','elevator','tables_conf'] },
-  { id:'corp8',    title_bg:'Корпоративно събитие (8ч.)',      title_en:'Corporate Event (8h)',          duration_bg:'08:00 – 17:30',   duration_en:'8:00 AM – 5:30 PM', price_bgn:860.57,  price_eur:440.00,   img:'assets/images/event-corporate.jpg',    included:['sound','lighting','bar','fridge','parking','wc','elevator','tables_conf','projector'] },
-  { id:'bday_day', title_bg:'Детски рожден ден (дневно)',     title_en:"Children's Birthday (day)",    duration_bg:'до 17:30',        duration_en:'until 5:30 PM',     price_bgn:1369.08, price_eur:700.00,   img:'assets/images/event-birthday.jpg',     included:['sound','lighting','bar','fridge','parking','wc','elevator','dance'] },
-  { id:'bday_eve', title_bg:'Детски рожден ден (вечерно)',    title_en:"Children's Birthday (evening)",duration_bg:'16:00 – 24:00',   duration_en:'4:00 PM – midnight',price_bgn:1897.15, price_eur:970.00,   img:'assets/images/event-birthday-eve.jpg', included:['sound','lighting','bar','fridge','parking','wc','elevator','dance','terrace'] },
-  { id:'wedding',  title_bg:'Сватба',                         title_en:'Wedding',                      duration_bg:'По договаряне',   duration_en:'By arrangement',    price_bgn:2933.75, price_eur:1500.00,  img:'assets/images/event-wedding.jpg',      included:['sound','lighting','bar','fridge','parking','wc','elevator','dance','terrace','redcarpet'] },
+  { id:'evening',   title_bg:'Вечерно събитие',       title_en:'Evening Event',      duration_bg:'след 19:00',    duration_en:'after 7:00 PM',   price_bgn:2503.46, price_eur:1280.46, img:'assets/images/event-evening.jpg',   included:['sound','lighting','bar','fridge','parking','wc','elevator','dance','terrace'] },
+  {
+    id:'corporate', title_bg:'Корпоративно събитие',  title_en:'Corporate Event',    img:'assets/images/event-corporate.jpg',
+    variants: [
+      { id:'corp4', label_bg:'4 часа', label_en:'4 hours', price_bgn:645.42,  price_eur:330.00, duration_bg:'08:00–17:30', duration_en:'8:00 AM–5:30 PM', included:['sound','lighting','bar','fridge','parking','wc','elevator','tables_conf'] },
+      { id:'corp8', label_bg:'8 часа', label_en:'8 hours', price_bgn:860.57,  price_eur:440.00, duration_bg:'08:00–17:30', duration_en:'8:00 AM–5:30 PM', included:['sound','lighting','bar','fridge','parking','wc','elevator','tables_conf','projector'] },
+    ],
+  },
+  {
+    id:'birthday',  title_bg:'Детски рожден ден',     title_en:"Children's Birthday", img:'assets/images/event-birthday.jpg',
+    variants: [
+      { id:'bday_day', label_bg:'Дневно', label_en:'Daytime', price_bgn:1369.08, price_eur:700.00,  duration_bg:'до 17:30',    duration_en:'until 5:30 PM',     included:['sound','lighting','bar','fridge','parking','wc','elevator','dance'] },
+      { id:'bday_eve', label_bg:'Вечерно', label_en:'Evening', price_bgn:1897.15, price_eur:970.00, duration_bg:'16:00–24:00', duration_en:'4:00 PM–midnight',   included:['sound','lighting','bar','fridge','parking','wc','elevator','dance','terrace'] },
+    ],
+  },
+  { id:'wedding',   title_bg:'Сватба',                title_en:'Wedding',            duration_bg:'По договаряне', duration_en:'By arrangement',  price_bgn:2933.75, price_eur:1500.00, img:'assets/images/event-wedding.jpg',   included:['sound','lighting','bar','fridge','parking','wc','elevator','dance','terrace','redcarpet'] },
 ];
 
 const includedLabels = {
@@ -133,27 +143,144 @@ function renderEventPicker() {
   const grid = document.getElementById('event-picker');
   if (!grid) return;
   grid.innerHTML = '';
+
   eventTypes.forEach(ev => {
+    const isParentSelected = ev.variants
+      ? ev.variants.some(v => v.id === booking.event?.id)
+      : booking.event?.id === ev.id;
+
     const card = document.createElement('div');
-    card.className = 'event-pick-card' + (booking.event?.id === ev.id ? ' selected' : '');
-    card.setAttribute('role', 'listitem'); card.setAttribute('tabindex', '0');
-    const img = document.createElement('img'); img.src = ev.img; img.alt = l === 'bg' ? ev.title_bg : ev.title_en; img.loading = 'lazy';
+    card.className = 'event-pick-card' + (isParentSelected ? ' selected' : '');
+    card.setAttribute('role', 'listitem');
+    card.setAttribute('tabindex', '0');
+
+    const img = document.createElement('img');
+    img.src = ev.img; img.alt = l === 'bg' ? ev.title_bg : ev.title_en; img.loading = 'lazy';
+
     const body = document.createElement('div'); body.className = 'event-pick-body';
     const h3 = document.createElement('h3'); h3.textContent = l === 'bg' ? ev.title_bg : ev.title_en;
     const meta = document.createElement('div'); meta.className = 'event-pick-meta';
-    const dur = document.createElement('span'); dur.className = 'event-pick-duration'; dur.textContent = l === 'bg' ? ev.duration_bg : ev.duration_en;
-    const price = document.createElement('span'); price.className = 'event-pick-price'; price.textContent = fmtEvent(ev);
-    meta.appendChild(dur); meta.appendChild(price); body.appendChild(h3); body.appendChild(meta);
-    card.appendChild(img); card.appendChild(body); grid.appendChild(card);
+
+    if (!ev.variants) {
+      const dur = document.createElement('span'); dur.className = 'event-pick-duration';
+      dur.textContent = l === 'bg' ? ev.duration_bg : ev.duration_en;
+      const price = document.createElement('span'); price.className = 'event-pick-price';
+      price.textContent = fmtEvent(ev);
+      meta.appendChild(dur); meta.appendChild(price);
+    } else {
+      const priceRange = document.createElement('span'); priceRange.className = 'event-pick-price';
+      const lo = Math.min(...ev.variants.map(v => v.price_eur));
+      const hi = Math.max(...ev.variants.map(v => v.price_eur));
+      priceRange.textContent = '€' + lo.toFixed(0) + ' – €' + hi.toFixed(0);
+      meta.appendChild(priceRange);
+    }
+
+    body.appendChild(h3); body.appendChild(meta);
+    card.appendChild(img); card.appendChild(body);
+    grid.appendChild(card);
+
+    function showVariantPicker(ev) {
+      // Remove any existing picker
+      const old = document.getElementById('variant-picker');
+      if (old) old.remove();
+
+      const vp = document.createElement('div');
+      vp.id = 'variant-picker';
+      vp.className = 'variant-picker';
+      vp.style.gridColumn = '1 / -1';
+
+      const lbl = document.createElement('p'); lbl.className = 'variant-label';
+      lbl.textContent = l === 'bg'
+        ? (ev.id === 'corporate' ? 'Изберете продължителност:' : 'Изберете час:')
+        : (ev.id === 'corporate' ? 'Choose duration:' : 'Choose time:');
+      vp.appendChild(lbl);
+
+      const btnWrap = document.createElement('div'); btnWrap.className = 'variant-btn-wrap';
+
+      ev.variants.forEach(variant => {
+        const btn = document.createElement('button');
+        btn.className = 'variant-btn' + (booking.event?.id === variant.id ? ' selected' : '');
+        btn.type = 'button';
+
+        const lbEl = document.createElement('span'); lbEl.className = 'variant-btn-label';
+        lbEl.textContent = l === 'bg' ? variant.label_bg : variant.label_en;
+        const prEl = document.createElement('span'); prEl.className = 'variant-btn-price';
+        prEl.textContent = '€' + variant.price_eur.toFixed(0) + ' / ' + variant.price_bgn.toLocaleString('bg-BG') + ' лв.';
+
+        btn.appendChild(lbEl); btn.appendChild(prEl);
+        btnWrap.appendChild(btn);
+
+        btn.addEventListener('click', () => {
+          booking.event = {
+            ...variant,
+            title_bg: ev.title_bg + ' — ' + variant.label_bg,
+            title_en: ev.title_en + ' — ' + variant.label_en,
+            img: ev.img,
+          };
+          btnWrap.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          setTimeout(() => goToStep(1), 280);
+        });
+      });
+
+      vp.appendChild(btnWrap);
+      grid.appendChild(vp);
+    }
+
     function pick() {
-      booking.event = ev;
       grid.querySelectorAll('.event-pick-card').forEach(c => c.classList.remove('selected'));
       card.classList.add('selected');
-      setTimeout(() => goToStep(1), 280);
+      if (!ev.variants) {
+        const old = document.getElementById('variant-picker');
+        if (old) old.remove();
+        booking.event = ev;
+        setTimeout(() => goToStep(1), 280);
+      } else {
+        showVariantPicker(ev);
+      }
     }
+
     card.addEventListener('click', pick);
     card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
   });
+
+  // Re-show variant picker if a variant is already selected
+  if (booking.event) {
+    const parentEv = eventTypes.find(ev => ev.variants?.some(v => v.id === booking.event.id));
+    if (parentEv) {
+      // Trigger showVariantPicker via simulated re-render
+      const old = document.getElementById('variant-picker');
+      if (!old) {
+        const vp = document.createElement('div');
+        vp.id = 'variant-picker'; vp.className = 'variant-picker'; vp.style.gridColumn = '1 / -1';
+        const lbl = document.createElement('p'); lbl.className = 'variant-label';
+        lbl.textContent = l === 'bg'
+          ? (parentEv.id === 'corporate' ? 'Изберете продължителност:' : 'Изберете час:')
+          : (parentEv.id === 'corporate' ? 'Choose duration:' : 'Choose time:');
+        vp.appendChild(lbl);
+        const btnWrap = document.createElement('div'); btnWrap.className = 'variant-btn-wrap';
+        parentEv.variants.forEach(variant => {
+          const btn = document.createElement('button');
+          btn.className = 'variant-btn' + (booking.event?.id === variant.id ? ' selected' : '');
+          btn.type = 'button';
+          const lbEl = document.createElement('span'); lbEl.className = 'variant-btn-label';
+          lbEl.textContent = l === 'bg' ? variant.label_bg : variant.label_en;
+          const prEl = document.createElement('span'); prEl.className = 'variant-btn-price';
+          prEl.textContent = '€' + variant.price_eur.toFixed(0) + ' / ' + variant.price_bgn.toLocaleString('bg-BG') + ' лв.';
+          btn.appendChild(lbEl); btn.appendChild(prEl);
+          btnWrap.appendChild(btn);
+          btn.addEventListener('click', () => {
+            booking.event = { ...variant, title_bg: parentEv.title_bg + ' — ' + variant.label_bg, title_en: parentEv.title_en + ' — ' + variant.label_en, img: parentEv.img };
+            btnWrap.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            setTimeout(() => goToStep(1), 280);
+          });
+        });
+        vp.appendChild(btnWrap);
+        grid.appendChild(vp);
+      }
+    }
+  }
 }
 
 // ── Step 2: Datetime ──
@@ -166,7 +293,7 @@ function setupStep2() {
       dateFormat: 'd/m/Y',
       minDate: 'today',
       disableMobile: true,
-      onChange(selectedDates, dateStr) {
+      onChange(_selectedDates, dateStr) {
         booking.date = dateStr;
         dateEl.closest('.form-group')?.classList.remove('has-error');
         updatePreview();
@@ -409,17 +536,28 @@ document.addEventListener('DOMContentLoaded', () => {
   setupSubmit();
   updateProgress();
 
-  // Auto-select event from URL param (e.g. ?event=evening)
+  // Auto-select event from URL param (e.g. ?event=evening or ?event=corp4)
   const params = new URLSearchParams(window.location.search);
   const preselect = params.get('event');
   if (preselect) {
-    const match = eventTypes.find(e => e.id === preselect);
-    if (match) {
-      booking.event = match;
-      document.querySelectorAll('.event-pick-card').forEach((card, i) => {
-        card.classList.toggle('selected', eventTypes[i].id === preselect);
-      });
+    // Check direct top-level match
+    const directMatch = eventTypes.find(e => e.id === preselect && !e.variants);
+    if (directMatch) {
+      booking.event = directMatch;
+      renderEventPicker();
       setTimeout(() => goToStep(1), 300);
+    } else {
+      // Check inside variants
+      for (const ev of eventTypes) {
+        if (!ev.variants) continue;
+        const variant = ev.variants.find(v => v.id === preselect);
+        if (variant) {
+          booking.event = { ...variant, title_bg: ev.title_bg + ' — ' + variant.label_bg, title_en: ev.title_en + ' — ' + variant.label_en, img: ev.img };
+          renderEventPicker();
+          setTimeout(() => goToStep(1), 300);
+          break;
+        }
+      }
     }
   }
 });
