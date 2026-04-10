@@ -19,13 +19,26 @@
 }
 
 .gl-category-title {
-  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-size: clamp(1.1rem, 2.5vw, 1.5rem);
   font-weight: 800;
   color: var(--text);
-  letter-spacing: -0.02em;
-  border-left: 4px solid var(--gold);
-  padding-left: 16px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  gap: 20px;
   margin: 0;
+  white-space: nowrap;
+}
+
+.gl-category-title::before,
+.gl-category-title::after {
+  content: '';
+  flex: 1;
+  height: 2px;
+  background: var(--gold);
+  opacity: 0.5;
 }
 
 /* ── Horizontal image strip ── */
@@ -53,8 +66,8 @@
 /* ── Image item ── */
 .gl-item {
   flex: 0 0 auto;
-  width: 280px;
-  height: 200px;
+  height: 260px;
+  width: auto;
   overflow: hidden;
   border-radius: 6px;
   cursor: pointer;
@@ -62,9 +75,8 @@
 }
 
 .gl-item img {
-  width: 100%;
   height: 100%;
-  object-fit: cover;
+  width: auto;
   display: block;
   transition: transform 0.4s ease;
 }
@@ -157,20 +169,15 @@
 
 /* ── Mobile ── */
 @media (max-width: 768px) {
-  .gl-item {
-    width: 200px;
-    height: 150px;
-  }
+  .gl-item { height: 180px; }
   .lb-arrow--prev { left: 8px; }
   .lb-arrow--next { right: 8px; }
   .lb-arrow       { width: 40px; height: 40px; }
 }
 
 @media (max-width: 480px) {
-  .gl-item {
-    width: 160px;
-    height: 120px;
-  }
-  .gl-strip { gap: 8px; }
+  .gl-item        { height: 140px; }
+  .gl-strip       { gap: 8px; }
   .gl-gallery-wrap { gap: 40px; }
+  .gl-category-title { font-size: 0.85rem; letter-spacing: 0.08em; gap: 12px; }
 }
