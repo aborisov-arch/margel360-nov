@@ -253,10 +253,17 @@ let _occupiedDates = [];
 
 async function loadOccupiedDates() {
   try {
-    const { data } = await reservationDb.from('occupied_dates').select('date');
-    if (data) _occupiedDates = data.map(r => r.date); // ['2026-05-10', ...]
-  } catch (_) {
-    // Fail silently — all dates stay available if fetch fails
+    const { data, error } = await reservationDb.from('occupied_dates').select('date');
+    if (error) { console.warn('Occupied dates fetch error:', error.message); return; }
+    if (data && data.length) {
+      // Convert YYYY-MM-DD strings to local-time Date objects so Flatpickr matches correctly
+      _occupiedDates = data.map(r => {
+        const [y, m, d] = r.date.split('-').map(Number);
+        return new Date(y, m - 1, d);
+      });
+    }
+  } catch (err) {
+    console.warn('Occupied dates fetch failed:', err);
   }
 }
 
