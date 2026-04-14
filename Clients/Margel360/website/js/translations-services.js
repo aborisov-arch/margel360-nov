@@ -4,7 +4,7 @@ const translations = {
     nav_services: 'Услуги', nav_contact: 'Контакти', nav_reserve: 'Запитване',
     services_title: 'Допълнителни услуги',
     services_sub: 'Всичко необходимо за перфектното тържество',
-    footer_desc: 'Зала за всяко събитие в сърцето на Враца.',
+    footer_desc: 'Зала за всяко събитие в сърцето на София.',
     footer_nav: 'Навигация', footer_contact: 'Контакти',
     footer_address: 'бул. Околовръстен път 155, ет.4, София',
     footer_copy: '© 2026 Маргел 360°. Всички права запазени.',

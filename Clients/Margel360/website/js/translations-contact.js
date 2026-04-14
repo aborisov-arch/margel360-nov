@@ -9,7 +9,7 @@ const translations = {
     contact_address: 'бул. Околовръстен път 155, ет.4, София',
     contact_hours_label: 'Работно време',
     contact_hours: 'По договаряне',
-    footer_desc: 'Зала за всяко събитие в сърцето на Враца.',
+    footer_desc: 'Зала за всяко събитие в сърцето на София.',
     footer_nav: 'Навигация', footer_contact: 'Контакти',
     footer_address: 'бул. Околовръстен път 155, ет.4, София',
     footer_copy: '© 2026 Маргел 360°. Всички права запазени.',
