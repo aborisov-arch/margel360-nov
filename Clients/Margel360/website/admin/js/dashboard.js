@@ -118,42 +118,53 @@ function renderEnquiries(enquiries) {
     // Status toggle button
     const statusBtn = evt.target.closest('.btn-status');
     if (statusBtn) {
-      const id         = statusBtn.getAttribute('data-id');
+      const id          = statusBtn.getAttribute('data-id');
       const wasAnswered = statusBtn.getAttribute('data-answered') === 'true';
-      const newStatus  = wasAnswered ? 'new' : 'answered';
+      const newStatus   = wasAnswered ? 'new' : 'answered';
+      const isNowAnswered = newStatus === 'answered';
 
-      statusBtn.disabled = true;
+      // ── Optimistic UI update — apply immediately ──
+      const detailRow  = statusBtn.closest('tr.detail-row');
+      const summaryRow = detailRow.previousElementSibling;
 
+      const badge = summaryRow.querySelector('.status-badge');
+      if (badge) {
+        badge.className   = `status-badge ${newStatus}`;
+        badge.textContent = isNowAnswered ? t('status_answered') : t('status_new');
+      }
+      summaryRow.classList.toggle('row-answered', isNowAnswered);
+
+      statusBtn.setAttribute('data-answered', isNowAnswered ? 'true' : 'false');
+      statusBtn.className   = `btn btn-sm ${isNowAnswered ? 'btn-outline' : 'btn-primary'} btn-status`;
+      statusBtn.textContent = isNowAnswered ? t('btn_mark_new') : t('btn_mark_answered');
+      statusBtn.disabled    = true;
+
+      // ── Persist to Supabase — revert on failure ──
       const { error } = await db
         .from('enquiries')
         .update({ status: newStatus })
         .eq('id', id);
 
+      statusBtn.disabled = false;
+
       if (error) {
         console.error('Failed to update status:', error);
-        statusBtn.disabled = false;
+        // Revert UI
+        const revertStatus = wasAnswered ? 'answered' : 'new';
+        if (badge) {
+          badge.className   = `status-badge ${revertStatus}`;
+          badge.textContent = wasAnswered ? t('status_answered') : t('status_new');
+        }
+        summaryRow.classList.toggle('row-answered', wasAnswered);
+        statusBtn.setAttribute('data-answered', wasAnswered ? 'true' : 'false');
+        statusBtn.className   = `btn btn-sm ${wasAnswered ? 'btn-outline' : 'btn-primary'} btn-status`;
+        statusBtn.textContent = wasAnswered ? t('btn_mark_new') : t('btn_mark_answered');
         return;
       }
 
       // Update local cache
       const enquiry = allEnquiries.find(e => String(e.id) === String(id));
       if (enquiry) enquiry.status = newStatus;
-
-      // Update the badge and row colour on the summary row
-      const summaryRow = statusBtn.closest('tr.detail-row').previousElementSibling;
-      const badge = summaryRow.querySelector('.status-badge');
-      if (badge) {
-        badge.className = `status-badge ${newStatus}`;
-        badge.textContent = newStatus === 'answered' ? t('status_answered') : t('status_new');
-      }
-      summaryRow.classList.toggle('row-answered', newStatus === 'answered');
-
-      // Update the button itself
-      const isNowAnswered = newStatus === 'answered';
-      statusBtn.setAttribute('data-answered', isNowAnswered ? 'true' : 'false');
-      statusBtn.className = `btn btn-sm ${isNowAnswered ? 'btn-outline' : 'btn-primary'} btn-status`;
-      statusBtn.textContent = isNowAnswered ? t('btn_mark_new') : t('btn_mark_answered');
-      statusBtn.disabled = false;
     }
   });
 }
