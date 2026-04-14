@@ -398,12 +398,12 @@ body {
 .cal-cell:hover { background: var(--surface-2); border-color: var(--accent); }
 
 .cal-cell.occupied {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: #e53935;
+  border-color: #e53935;
   color: #fff;
 }
 
-.cal-cell.occupied:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.cal-cell.occupied:hover { background: #c62828; border-color: #c62828; }
 
 .cal-cell.empty {
   background: transparent;
@@ -431,7 +431,7 @@ body {
   vertical-align: middle;
 }
 
-.legend-dot.occupied { background: var(--accent); }
+.legend-dot.occupied { background: #e53935; }
 .legend-dot.available { background: var(--surface); border: 1px solid var(--border); }
 
 /* ── Responsive ── */
