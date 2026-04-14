@@ -73,37 +73,37 @@ const faqs = [
   },
 ];
 
-const lang = localStorage.getItem('margel_lang') || 'bg';
-const list = document.getElementById('faq-list');
+document.addEventListener('DOMContentLoaded', () => {
+  const list = document.getElementById('faq-list');
+  const lang = localStorage.getItem('margel_lang') || 'bg';
 
-function renderFaq(currentLang) {
-  if (!list) return;
-  // Update text content of existing static elements
-  const items = list.querySelectorAll('.faq-item');
-  items.forEach((item, i) => {
-    if (!faqs[i]) return;
-    const qSpan = item.querySelector('.faq-question span:first-child');
-    const aP    = item.querySelector('.faq-answer p');
-    if (qSpan) qSpan.textContent = currentLang === 'bg' ? faqs[i].q_bg : faqs[i].q_en;
-    if (aP)    aP.textContent    = currentLang === 'bg' ? faqs[i].a_bg : faqs[i].a_en;
-  });
-}
-
-// Accordion via event delegation
-list?.addEventListener('click', e => {
-  const btn = e.target.closest('.faq-question');
-  if (!btn) return;
-  const item   = btn.closest('.faq-item');
-  const isOpen = item.classList.contains('open');
-  list.querySelectorAll('.faq-item.open').forEach(el => {
-    el.classList.remove('open');
-    el.querySelector('.faq-question').setAttribute('aria-expanded', 'false');
-  });
-  if (!isOpen) {
-    item.classList.add('open');
-    btn.setAttribute('aria-expanded', 'true');
+  function renderFaq(currentLang) {
+    if (!list) return;
+    const items = list.querySelectorAll('.faq-item');
+    items.forEach((item, i) => {
+      if (!faqs[i]) return;
+      const qSpan = item.querySelector('[itemprop="name"]');
+      const aP    = item.querySelector('[itemprop="text"]');
+      if (qSpan) qSpan.textContent = currentLang === 'bg' ? faqs[i].q_bg : faqs[i].q_en;
+      if (aP)    aP.textContent    = currentLang === 'bg' ? faqs[i].a_bg : faqs[i].a_en;
+    });
   }
-});
 
-renderFaq(lang);
-document.addEventListener('langChange', e => renderFaq(e.detail.lang));
+  list?.addEventListener('click', e => {
+    const btn = e.target.closest('.faq-question');
+    if (!btn) return;
+    const item   = btn.closest('.faq-item');
+    const isOpen = item.classList.contains('open');
+    list.querySelectorAll('.faq-item.open').forEach(el => {
+      el.classList.remove('open');
+      el.querySelector('.faq-question').setAttribute('aria-expanded', 'false');
+    });
+    if (!isOpen) {
+      item.classList.add('open');
+      btn.setAttribute('aria-expanded', 'true');
+    }
+  });
+
+  renderFaq(lang);
+  document.addEventListener('langChange', e => renderFaq(e.detail.lang));
+});
