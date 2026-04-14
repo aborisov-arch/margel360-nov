@@ -277,7 +277,18 @@ function setupStep2() {
       dateFormat: 'd/m/Y',
       minDate: 'today',
       disableMobile: true,
-      disable: _occupiedDates,   // grey-out dates marked occupied in admin
+      disable: _occupiedDates,
+      onDayCreate(_dObj, _dStr, _fp, dayElem) {
+        // Tag occupied days so the CSS tooltip "Заета Дата" shows on hover
+        const d = dayElem.dateObj;
+        if (!d) return;
+        const isOccupied = _occupiedDates.some(od =>
+          od.getFullYear() === d.getFullYear() &&
+          od.getMonth()    === d.getMonth() &&
+          od.getDate()     === d.getDate()
+        );
+        if (isOccupied) dayElem.classList.add('occupied-date');
+      },
       onChange(_selectedDates, dateStr) {
         booking.date = dateStr;
         dateEl.closest('.form-group')?.classList.remove('has-error');
