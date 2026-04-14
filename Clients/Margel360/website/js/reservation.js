@@ -248,6 +248,18 @@ function renderStep2VariantPicker() {
   wrap.appendChild(btnWrap);
 }
 
+// ── Occupied dates (fetched from Supabase at load time) ──
+let _occupiedDates = [];
+
+async function loadOccupiedDates() {
+  try {
+    const { data } = await reservationDb.from('occupied_dates').select('date');
+    if (data) _occupiedDates = data.map(r => r.date); // ['2026-05-10', ...]
+  } catch (_) {
+    // Fail silently — all dates stay available if fetch fails
+  }
+}
+
 // ── Step 2: Datetime ──
 function setupStep2() {
   const dateEl = document.getElementById('res-date');
@@ -258,6 +270,7 @@ function setupStep2() {
       dateFormat: 'd/m/Y',
       minDate: 'today',
       disableMobile: true,
+      disable: _occupiedDates,   // grey-out dates marked occupied in admin
       onChange(_selectedDates, dateStr) {
         booking.date = dateStr;
         dateEl.closest('.form-group')?.classList.remove('has-error');
@@ -573,7 +586,8 @@ document.addEventListener('langChange', () => {
 });
 
 // ── Init ──
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadOccupiedDates();   // fetch occupied dates before flatpickr initialises
   renderEventPicker();
   setupStep2();
   setupStep5();

@@ -262,6 +262,8 @@ body {
 }
 
 .enquiries-table tbody tr:hover > td { background: var(--surface-2); }
+.enquiries-table tbody tr.row-answered > td { background: rgba(39,174,96,0.06); }
+.enquiries-table tbody tr.row-answered:hover > td { background: rgba(39,174,96,0.11); }
 
 .btn-expand {
   background: transparent;

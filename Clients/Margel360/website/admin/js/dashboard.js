@@ -47,6 +47,7 @@ function renderEnquiries(enquiries) {
 
     // Main summary row
     const tr = document.createElement('tr');
+    if (isAnswered) tr.classList.add('row-answered');
     tr.innerHTML = `
       <td>${esc(e.full_name)}</td>
       <td>${esc(e.phone)}</td>
@@ -138,13 +139,14 @@ function renderEnquiries(enquiries) {
       const enquiry = allEnquiries.find(e => String(e.id) === String(id));
       if (enquiry) enquiry.status = newStatus;
 
-      // Update the badge in the summary row
+      // Update the badge and row colour on the summary row
       const summaryRow = statusBtn.closest('tr.detail-row').previousElementSibling;
       const badge = summaryRow.querySelector('.status-badge');
       if (badge) {
         badge.className = `status-badge ${newStatus}`;
         badge.textContent = newStatus === 'answered' ? t('status_answered') : t('status_new');
       }
+      summaryRow.classList.toggle('row-answered', newStatus === 'answered');
 
       // Update the button itself
       const isNowAnswered = newStatus === 'answered';
