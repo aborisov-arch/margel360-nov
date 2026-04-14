@@ -1,11 +1,21 @@
 // ── Event types ──
 const eventTypes = [
-  { id:'corp4',    title_bg:'Корпоративно събитие (4ч.)',      title_en:'Corporate Event (4h)',          duration_bg:'12:00 – 16:00',   duration_en:'12:00 – 4:00 PM',   price_bgn:580,  price_eur:296.55, img:'assets/images/event-corporate.jpg',    included:['sound','lighting','bar','fridge','parking','wc','elevator','tables_conf'] },
-  { id:'corp8',    title_bg:'Корпоративно събитие (8ч.)',      title_en:'Corporate Event (8h)',          duration_bg:'09:00 – 17:00',   duration_en:'9:00 AM – 5:00 PM', price_bgn:790,  price_eur:403.92, img:'assets/images/event-corporate.jpg',    included:['sound','lighting','bar','fridge','parking','wc','elevator','tables_conf','projector'] },
-  { id:'bday_day', title_bg:'Детски рожден ден (дневно)',     title_en:"Children's Birthday (day)",    duration_bg:'до 17:30',        duration_en:'until 5:30 PM',     price_bgn:1270, price_eur:649.34, img:'assets/images/event-birthday.jpg',     included:['sound','lighting','bar','fridge','parking','wc','elevator','dance'] },
-  { id:'bday_eve', title_bg:'Детски рожден ден (вечерно)',    title_en:"Children's Birthday (evening)",duration_bg:'16:00 – 24:00',   duration_en:'4:00 PM – midnight',price_bgn:1800, price_eur:920.33, img:'assets/images/event-birthday-eve.jpg', included:['sound','lighting','bar','fridge','parking','wc','elevator','dance','terrace'] },
-  { id:'evening',  title_bg:'Вечерно събитие',                title_en:'Evening Event',                duration_bg:'след 19:00',      duration_en:'after 7:00 PM',     price_bgn:2370, price_eur:1211.76,img:'assets/images/event-evening.jpg',      included:['sound','lighting','bar','fridge','parking','wc','elevator','dance','terrace'] },
-  { id:'wedding',  title_bg:'Сватба',                         title_en:'Wedding',                      duration_bg:'По договаряне',   duration_en:'By arrangement',    price_bgn:2880, price_eur:1472.52,img:'assets/images/event-wedding.jpg',      included:['sound','lighting','bar','fridge','parking','wc','elevator','dance','terrace','redcarpet'] },
+  { id:'evening',   title_bg:'Вечерно събитие',       title_en:'Evening Event',      duration_bg:'след 19:00',    duration_en:'after 7:00 PM',   price_bgn:2503.46, price_eur:1280.46, img:'assets/images/event-evening.jpg',   included:['sound','lighting','bar','fridge','parking','wc','elevator','dance','terrace'] },
+  {
+    id:'corporate', title_bg:'Корпоративно събитие',  title_en:'Corporate Event',    img:'assets/images/event-corporate.jpg',
+    variants: [
+      { id:'corp4', label_bg:'4 часа', label_en:'4 hours', price_bgn:645.42,  price_eur:330.00, duration_bg:'08:00–17:30', duration_en:'8:00 AM–5:30 PM', included:['sound','lighting','bar','fridge','parking','wc','elevator','tables_conf'] },
+      { id:'corp8', label_bg:'8 часа', label_en:'8 hours', price_bgn:860.57,  price_eur:440.00, duration_bg:'08:00–17:30', duration_en:'8:00 AM–5:30 PM', included:['sound','lighting','bar','fridge','parking','wc','elevator','tables_conf','projector'] },
+    ],
+  },
+  {
+    id:'birthday',  title_bg:'Детски рожден ден',     title_en:"Children's Birthday", img:'assets/images/event-birthday.jpg',
+    variants: [
+      { id:'bday_day', label_bg:'Дневно', label_en:'Daytime', price_bgn:1369.08, price_eur:700.00,  duration_bg:'до 17:30',    duration_en:'until 5:30 PM',     included:['sound','lighting','bar','fridge','parking','wc','elevator','dance'] },
+      { id:'bday_eve', label_bg:'Вечерно', label_en:'Evening', price_bgn:1897.15, price_eur:970.00, duration_bg:'16:00–24:00', duration_en:'4:00 PM–midnight',   included:['sound','lighting','bar','fridge','parking','wc','elevator','dance','terrace'] },
+    ],
+  },
+  { id:'wedding',   title_bg:'Сватба',                title_en:'Wedding',            duration_bg:'По договаряне', duration_en:'By arrangement',  price_bgn:2933.75, price_eur:1500.00, img:'assets/images/event-wedding.jpg',   included:['sound','lighting','bar','fridge','parking','wc','elevator','dance','terrace','redcarpet'] },
 ];
 
 const includedLabels = {
@@ -15,7 +25,7 @@ const includedLabels = {
 
 // ── Paid add-on services (from margel360.bg services page) ──
 const addonServices = [
-  { id:'dj',        name_bg:'DJ за 5 часа',                name_en:'DJ for 5 hours',             price:500,  img:'assets/images/services/dj.jpg' },
+  { id:'dj',        name_bg:'DJ за 5 часа',                name_en:'DJ for 5 hours',             price:587,  img:'assets/images/services/dj.jpg' },
   { id:'photo2',    name_bg:'Фотограф за 2 часа',          name_en:'Photographer 2h',            price:340,  img:'assets/images/services/photographer.jpg' },
   { id:'photo4',    name_bg:'Фотограф за 4 часа',          name_en:'Photographer 4h',            price:580,  img:'assets/images/services/photographer.jpg' },
   { id:'booth2',    name_bg:'Фото будка 360° (2 часа)',    name_en:'360° Photo Booth (2 hours)', price:390,  img:'assets/images/services/booth.jpg' },
@@ -30,9 +40,9 @@ const addonServices = [
   { id:'led',       name_bg:'LED екран',                   name_en:'LED screen',                 price:290,  img:'assets/images/services/led.jpg' },
   { id:'mic',       name_bg:'Микрофони — 3бр. + брошка',   name_en:'Microphones set',            price:97,   img:'assets/images/services/mic.jpg' },
   { id:'proj',      name_bg:'Мултимедия EPSON',             name_en:'EPSON multimedia projector', price:180,  img:'assets/images/services/projector.jpg' },
-  { id:'security',  name_bg:'Охрана VTA за 6 часа',        name_en:'VTA security 6h',            price:165,  img:'assets/images/services/security.jpg' },
-  { id:'hygiene',   name_bg:'Хигиенист за 5 часа',         name_en:'Hygienist 5h',               price:148,  img:'assets/images/services/wardrobe.jpg' },
-  { id:'wardrobe',  name_bg:'Гардеробиер за 5 часа',       name_en:'Wardrobe attendant 5h',      price:170,  img:'assets/images/services/wardrobe.jpg' },
+  { id:'security',  name_bg:'Охрана VTA за 6 часа',        name_en:'VTA security 6h',            price:196,  img:'assets/images/services/security.jpg' },
+  { id:'hygiene',   name_bg:'Хигиенист за 5 часа',         name_en:'Hygienist 5h',               price:156,  img:'assets/images/services/wardrobe.jpg' },
+  { id:'wardrobe',  name_bg:'Гардеробиер за 5 часа',       name_en:'Wardrobe attendant 5h',      price:176,  img:'assets/images/services/wardrobe.jpg' },
   { id:'valet',     name_bg:'Вале-паркинг за 5 часа',      name_en:'Valet parking 5h',           price:275,  img:'assets/images/services/valet.jpg' },
   { id:'carpet_l',  name_bg:'Червена пътека (8 бр.)',       name_en:'Red carpet (8 pieces)',      price:148,  img:'assets/images/services/redcarpet.jpg' },
   { id:'candles_h', name_bg:'Свещи в залата — 60 бр.',     name_en:'Hall candles 60 pcs',        price:100,  img:'assets/images/services/candles.jpg' },
@@ -103,6 +113,7 @@ function goToStep(n) {
   updateProgress();
   const section = document.querySelector('.wizard-section');
   if (section) window.scrollTo({ top: section.offsetTop - 90, behavior: 'smooth' });
+  if (n === 1) renderStep2VariantPicker();
   if (n === 2) renderAddons();
   if (n === 3) renderDrinks();
   if (n === 5) renderSummary();
@@ -133,27 +144,108 @@ function renderEventPicker() {
   const grid = document.getElementById('event-picker');
   if (!grid) return;
   grid.innerHTML = '';
+
   eventTypes.forEach(ev => {
+    const isSelected = booking.event?.id === ev.id ||
+      (ev.variants && ev.variants.some(v => v.id === booking.event?.id));
+
     const card = document.createElement('div');
-    card.className = 'event-pick-card' + (booking.event?.id === ev.id ? ' selected' : '');
+    card.className = 'event-pick-card' + (isSelected ? ' selected' : '');
     card.setAttribute('role', 'listitem'); card.setAttribute('tabindex', '0');
-    const img = document.createElement('img'); img.src = ev.img; img.alt = l === 'bg' ? ev.title_bg : ev.title_en; img.loading = 'lazy';
+
+    const img = document.createElement('img');
+    img.src = ev.img; img.alt = l === 'bg' ? ev.title_bg : ev.title_en; img.loading = 'lazy';
+
     const body = document.createElement('div'); body.className = 'event-pick-body';
     const h3 = document.createElement('h3'); h3.textContent = l === 'bg' ? ev.title_bg : ev.title_en;
     const meta = document.createElement('div'); meta.className = 'event-pick-meta';
-    const dur = document.createElement('span'); dur.className = 'event-pick-duration'; dur.textContent = l === 'bg' ? ev.duration_bg : ev.duration_en;
-    const price = document.createElement('span'); price.className = 'event-pick-price'; price.textContent = fmtEvent(ev);
-    meta.appendChild(dur); meta.appendChild(price); body.appendChild(h3); body.appendChild(meta);
-    card.appendChild(img); card.appendChild(body); grid.appendChild(card);
+
+    if (!ev.variants) {
+      const dur = document.createElement('span'); dur.className = 'event-pick-duration';
+      dur.textContent = l === 'bg' ? ev.duration_bg : ev.duration_en;
+      const price = document.createElement('span'); price.className = 'event-pick-price';
+      price.textContent = fmtEvent(ev);
+      meta.appendChild(dur); meta.appendChild(price);
+    } else {
+      const priceRange = document.createElement('span'); priceRange.className = 'event-pick-price';
+      const lo = Math.min(...ev.variants.map(v => v.price_eur));
+      const hi = Math.max(...ev.variants.map(v => v.price_eur));
+      priceRange.textContent = '€' + lo.toFixed(0) + ' – €' + hi.toFixed(0);
+      meta.appendChild(priceRange);
+    }
+
+    body.appendChild(h3); body.appendChild(meta);
+    card.appendChild(img); card.appendChild(body);
+    grid.appendChild(card);
+
     function pick() {
-      booking.event = ev;
       grid.querySelectorAll('.event-pick-card').forEach(c => c.classList.remove('selected'));
       card.classList.add('selected');
+      // Store the event (parent if has variants, resolved if not)
+      booking.event = ev;
       setTimeout(() => goToStep(1), 280);
     }
+
     card.addEventListener('click', pick);
     card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
   });
+}
+
+// ── Step 2 variant picker (shown inside step 2 for corporate/birthday) ──
+function renderStep2VariantPicker() {
+  const l = getLang();
+  const wrap = document.getElementById('step2-variant-wrap');
+  const errMsg = document.getElementById('err-variant-msg');
+  if (!wrap) return;
+
+  const ev = booking.event;
+  if (!ev?.variants) {
+    wrap.style.display = 'none';
+    if (errMsg) errMsg.style.display = 'none';
+    return;
+  }
+
+  wrap.style.display = 'block';
+  wrap.innerHTML = '';
+
+  const lbl = document.createElement('p'); lbl.className = 'variant-label';
+  lbl.textContent = l === 'bg'
+    ? (ev.id === 'corporate' ? 'Изберете продължителност:' : 'Изберете час:')
+    : (ev.id === 'corporate' ? 'Choose duration:' : 'Choose time:');
+  wrap.appendChild(lbl);
+
+  const btnWrap = document.createElement('div'); btnWrap.className = 'variant-btn-wrap';
+
+  ev.variants.forEach(variant => {
+    const btn = document.createElement('button');
+    btn.className = 'variant-btn';
+    btn.type = 'button';
+
+    const lbEl = document.createElement('span'); lbEl.className = 'variant-btn-label';
+    lbEl.textContent = l === 'bg' ? variant.label_bg : variant.label_en;
+    const prEl = document.createElement('span'); prEl.className = 'variant-btn-price';
+    prEl.textContent = '€' + variant.price_eur.toFixed(0) + ' / ' + variant.price_bgn.toLocaleString('bg-BG') + ' лв.';
+
+    btn.appendChild(lbEl); btn.appendChild(prEl);
+    btnWrap.appendChild(btn);
+
+    btn.addEventListener('click', () => {
+      const parentEv = ev; // still has .variants at this point
+      booking.event = {
+        ...variant,
+        title_bg: parentEv.title_bg + ' — ' + variant.label_bg,
+        title_en: parentEv.title_en + ' — ' + variant.label_en,
+        img: parentEv.img,
+      };
+      btnWrap.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      if (errMsg) errMsg.style.display = 'none';
+      wrap.classList.remove('has-error');
+      updatePreview();
+    });
+  });
+
+  wrap.appendChild(btnWrap);
 }
 
 // ── Step 2: Datetime ──
@@ -166,14 +258,13 @@ function setupStep2() {
       dateFormat: 'd/m/Y',
       minDate: 'today',
       disableMobile: true,
-      onChange(selectedDates, dateStr) {
+      onChange(_selectedDates, dateStr) {
         booking.date = dateStr;
         dateEl.closest('.form-group')?.classList.remove('has-error');
         updatePreview();
       }
     });
   }
-  document.querySelectorAll('input[name="time"]').forEach(r => r.addEventListener('change', () => { booking.time = r.value; updatePreview(); }));
   const btn = document.getElementById('btn-step2-next');
   if (btn) btn.addEventListener('click', () => {
     const d = document.getElementById('res-date');
@@ -181,7 +272,16 @@ function setupStep2() {
     if (!d?.value) { fg?.classList.add('has-error'); return; }
     fg?.classList.remove('has-error');
     booking.date = d.value;
-    booking.time = document.querySelector('input[name="time"]:checked')?.value || 'day';
+
+    // If event still has variants (not yet resolved), require selection
+    if (booking.event?.variants) {
+      const wrap = document.getElementById('step2-variant-wrap');
+      const errMsg = document.getElementById('err-variant-msg');
+      wrap?.classList.add('has-error');
+      if (errMsg) errMsg.style.display = 'block';
+      return;
+    }
+
     goToStep(2);
   });
 }
@@ -191,9 +291,28 @@ function updatePreview() {
   if (!preview || !booking.event) return;
   const l = getLang();
   preview.classList.add('show'); preview.innerHTML = '';
-  const h4 = document.createElement('h4'); h4.textContent = l === 'bg' ? booking.event.title_bg : booking.event.title_en;
-  const p = document.createElement('p'); p.textContent = fmtEvent(booking.event) + (booking.date ? ' · ' + booking.date : '');
-  preview.appendChild(h4); preview.appendChild(p);
+
+  const h4 = document.createElement('h4');
+  h4.textContent = l === 'bg' ? booking.event.title_bg : booking.event.title_en;
+  preview.appendChild(h4);
+
+  // Variant tag (day/night or 4h/8h) — only when variant is resolved
+  if (booking.event.label_bg && !booking.event.variants) {
+    const tag = document.createElement('span');
+    tag.className = 'preview-variant-tag';
+    tag.textContent = l === 'bg' ? booking.event.label_bg : booking.event.label_en;
+    preview.appendChild(tag);
+  }
+
+  // Price line — only show when variant is resolved (price_bgn available)
+  if (!booking.event.variants) {
+    const p = document.createElement('p');
+    p.textContent = fmtEvent(booking.event) + (booking.date ? ' · ' + booking.date : '');
+    preview.appendChild(p);
+  } else if (booking.date) {
+    const p = document.createElement('p'); p.textContent = booking.date;
+    preview.appendChild(p);
+  }
 }
 
 // ── Step 3: Add-on services ──
@@ -344,7 +463,6 @@ function renderSummary() {
   [
     { label: l==='bg'?'Събитие':'Event',   value: l==='bg'?booking.event.title_bg:booking.event.title_en },
     { label: l==='bg'?'Дата':'Date',       value: booking.date },
-    { label: l==='bg'?'Час':'Time',        value: booking.time==='day'?(l==='bg'?'Дневно':'Daytime'):(l==='bg'?'Вечерно':'Evening') },
     { label: l==='bg'?'Гости':'Guests',    value: booking.guests },
     { label: l==='bg'?'Три имена':'Name',  value: booking.name },
     { label: l==='bg'?'Имейл':'Email',     value: booking.email },
@@ -461,4 +579,16 @@ document.addEventListener('DOMContentLoaded', () => {
   setupStep5();
   setupSubmit();
   updateProgress();
+
+  // Auto-select event from URL param (e.g. ?event=evening or ?event=corporate)
+  const params = new URLSearchParams(window.location.search);
+  const preselect = params.get('event');
+  if (preselect) {
+    const match = eventTypes.find(e => e.id === preselect);
+    if (match) {
+      booking.event = match;
+      renderEventPicker();
+      setTimeout(() => goToStep(1), 300);
+    }
+  }
 });

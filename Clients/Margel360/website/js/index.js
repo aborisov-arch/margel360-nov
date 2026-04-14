@@ -1,59 +1,52 @@
 // Events data — pricing and images from margel360.bg
 const events = [
   {
+    id: 'evening',
+    title_bg: 'Вечерно събитие',
+    title_en: 'Evening Event',
+    desc_bg: 'Вечерно събитие след 19:00ч. Рафинираната атмосфера на Маргел 360° за незабравимо тържество.',
+    desc_en: 'Evening event from 19:00. The refined atmosphere of Margel 360° for an unforgettable celebration.',
+    hours_bg: '5 часа',
+    hours_en: '5 hours',
+    price_bg: '€1,280.46 (2503лв.)',
+    price_en: '€1,280.46 (2503 BGN)',
+    img: 'assets/images/event-evening.jpg',
+  },
+  {
+    id: 'corporate',
     title_bg: 'Корпоративно събитие',
     title_en: 'Corporate Event',
-    desc_bg: 'Тематично фирмено парти, семинар или коктейл в мултифункционалната ни зала.',
-    desc_en: 'Themed company party, seminar or cocktail in our multifunctional venue.',
-    hours_bg: 'Дневно или вечерно',
-    hours_en: 'Day or evening',
-    price_bg: 'От 580 лв.',
-    price_en: 'From €296',
+    desc_bg: 'Корпоративни събития 8:00–17:30. Фирмено парти, семинар или обучение с пълна АВ техника.',
+    desc_en: 'Corporate events 8:00–17:30. Company party, seminar or training with full AV equipment.',
+    hours_bg: '4 или 8 часа',
+    hours_en: '4 or 8 hours',
+    price_bg: '€330 – €440',
+    price_en: '€330 – €440',
     img: 'assets/images/event-corporate.jpg',
   },
   {
+    id: 'birthday',
     title_bg: 'Детски рожден ден',
     title_en: "Children's Birthday",
-    desc_bg: 'Широко пространство за игри, анимация и мини-диско за незабравим детски празник.',
-    desc_en: 'Wide space for games, animation and mini-disco for an unforgettable kids\' party.',
-    hours_bg: 'Дневно до 17:30 или вечерно',
-    hours_en: 'Daytime until 5:30 PM or evening',
-    price_bg: 'От 580 лв.',
-    price_en: 'From €296',
+    desc_bg: 'Детски рожден ден дневно или вечерно. Игри, анимация и мини-диско за незабравим празник.',
+    desc_en: 'Children\'s birthday, daytime or evening. Games, animation and mini-disco.',
+    hours_bg: 'Дневно или вечерно',
+    hours_en: 'Daytime or evening',
+    price_bg: '€700 – €970',
+    price_en: '€700 – €970',
     img: 'assets/images/event-birthday.jpg',
   },
   {
+    id: 'wedding',
     title_bg: 'Сватба',
     title_en: 'Wedding',
     desc_bg: 'Магическа декорация в залата и тераса с изглед към Витоша — перфектна за вашия специален ден.',
     desc_en: 'Magical décor in the hall and a terrace overlooking Vitosha — perfect for your special day.',
-    hours_bg: 'По договаряне',
-    hours_en: 'By arrangement',
-    price_bg: 'По запитване',
-    price_en: 'On request',
+    hours_bg: '6 часа',
+    hours_en: '6 hours',
+    price_bg: '€1,500.00 (2934лв.)',
+    price_en: '€1,500.00 (2934 BGN)',
     img: 'assets/images/event-wedding.jpg',
-  },
-  {
-    title_bg: 'Вечерно събитие',
-    title_en: 'Evening Event',
-    desc_bg: 'Рафинираната атмосфера на Маргел 360° е идеалното място за всяко вечерно тържество.',
-    desc_en: 'The refined atmosphere of Margel 360° is the perfect setting for any evening celebration.',
-    hours_bg: 'Вечерно',
-    hours_en: 'Evening',
-    price_bg: 'От 680 лв.',
-    price_en: 'From €347',
-    img: 'assets/images/event-evening.jpg',
-  },
-  {
-    title_bg: 'Коктейл и бизнес среща',
-    title_en: 'Cocktail & Business',
-    desc_bg: 'До 150 гости тип коктейл. Пълна аудио-визуална техника за презентации и срещи.',
-    desc_en: 'Up to 150 guests cocktail style. Full AV equipment for presentations and meetings.',
-    hours_bg: 'Гъвкаво работно време',
-    hours_en: 'Flexible hours',
-    price_bg: 'От 580 лв.',
-    price_en: 'From €296',
-    img: 'assets/images/event-corporate.jpg',
   },
 ];
 
@@ -86,6 +79,10 @@ function renderCards(lang) {
       const card = document.createElement('div');
       card.className = 'event-card fade-up delay-' + ((idx % 3) + 1);
       card.setAttribute('role', 'listitem');
+      card.style.cursor = 'pointer';
+      card.addEventListener('click', () => {
+        window.location.href = 'reservation.html?event=' + e.id;
+      });
 
       const imgWrap = document.createElement('div');
       imgWrap.className = 'event-card-img-wrap';

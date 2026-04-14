@@ -3,17 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Галерия — Маргел 360°</title>
+  <title>Галерия — Маргел 360° | Снимки от сватби, рождени дни и събития</title>
+  <meta name="description" content="Разгледайте галерията на Маргел 360° — снимки от сватби, детски рождени дни, вечерни и корпоративни събития в нашата зала в София.">
+  <link rel="canonical" href="https://margel360.bg/gallery.html">
+  <meta property="og:title" content="Галерия — Маргел 360°">
+  <meta property="og:description" content="Снимки от сватби, рождени дни и корпоративни събития в зала Маргел 360°, София.">
+  <meta property="og:image" content="https://margel360.bg/assets/images/header-gallery.jpg">
+  <meta property="og:url" content="https://margel360.bg/gallery.html">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/gallery.css">
 </head>
-<body class="gallery-page">
+<body>
 
-  <!-- Transparent nav over the gallery -->
-  <nav class="nav gl-nav" id="main-nav" aria-label="Main navigation">
+  <nav class="nav scrolled" aria-label="Main navigation">
     <div class="container">
       <a href="index.html" class="nav-logo"><img src="assets/images/logo-real.png" alt="" class="logo-img" aria-hidden="true">МАРГЕЛ <span>360°</span></a>
       <ul class="nav-links" role="list">
@@ -24,17 +29,10 @@
         <li><a href="contact.html" data-i18n="nav_contact">Контакти</a></li>
         <li><a href="reservation.html" class="btn btn-primary" style="padding:8px 20px" data-i18n="nav_reserve">Запитване</a></li>
       </ul>
-      <div class="gl-nav-right">
-        <button class="lang-toggle" aria-label="Switch language">EN</button>
-        <button class="gl-view-toggle" id="gl-view-toggle" aria-label="Switch to grid view" title="Grid view">
-          <span class="gl-view-icon gl-view-icon--grid">
-            <span></span><span></span><span></span><span></span>
-          </span>
-        </button>
-        <button class="hamburger" aria-label="Toggle navigation" aria-expanded="false" aria-controls="nav-drawer">
-          <span></span><span></span><span></span>
-        </button>
-      </div>
+      <button class="lang-toggle" aria-label="Switch language">EN</button>
+      <button class="hamburger" aria-label="Toggle navigation" aria-expanded="false" aria-controls="nav-drawer">
+        <span></span><span></span><span></span>
+      </button>
     </div>
   </nav>
 
@@ -50,41 +48,75 @@
     <button class="lang-toggle" aria-label="Switch language">EN</button>
   </nav>
 
-  <!-- ── CINEMATIC GALLERY VIEW ── -->
-  <div class="gl-cinema" id="gl-cinema" role="region" aria-label="Photo gallery" aria-live="polite">
-
-    <!-- Slide track -->
-    <div class="gl-track" id="gl-track"></div>
-
-    <!-- Prev / Next hit zones + arrows -->
-    <button class="gl-arrow gl-arrow--prev" id="gl-prev" aria-label="Previous photo">
-      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
-        <path d="M18 22L10 14L18 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
-    <button class="gl-arrow gl-arrow--next" id="gl-next" aria-label="Next photo">
-      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
-        <path d="M10 6L18 14L10 22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
-
-    <!-- Counter -->
-    <div class="gl-counter" aria-live="polite" aria-atomic="true">
-      <span id="gl-current">01</span><span class="gl-counter-sep"> / </span><span id="gl-total">19</span>
+  <main>
+    <!-- Page header -->
+    <div class="page-header-img" style="background-image:url(assets/images/header-gallery.jpg)">
+      <div class="container">
+        <h1 data-i18n="gallery_title">Галерия</h1>
+        <p data-i18n="gallery_sub">Моменти от изминали тържества</p>
+      </div>
     </div>
 
-    <!-- Scroll hint -->
-    <div class="gl-hint" id="gl-hint" aria-hidden="true">
-      <span>scroll</span>
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12l7 7 7-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    <!-- Gallery sections -->
+    <section class="gl-section section" aria-label="Photo gallery">
+      <div class="container">
+        <div id="gl-gallery-wrap" class="gl-gallery-wrap"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Lightbox -->
+  <div id="gl-lightbox" class="gl-lightbox" role="dialog" aria-modal="true" aria-label="Image lightbox">
+    <button id="lb-close" class="lb-close" aria-label="Close">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <button id="lb-prev" class="lb-arrow lb-arrow--prev" aria-label="Previous">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><path d="M18 22L10 14L18 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="lb-img-wrap">
+      <img id="lb-img" src="" alt="">
     </div>
-
+    <button id="lb-next" class="lb-arrow lb-arrow--next" aria-label="Next">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><path d="M10 6L18 14L10 22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="lb-footer">
+      <span id="lb-caption" class="lb-caption"></span>
+      <span id="lb-counter" class="lb-counter"></span>
+    </div>
   </div>
 
-  <!-- ── GRID VIEW ── -->
-  <div class="gl-grid-view" id="gl-grid-view" aria-hidden="true">
-    <div class="gl-grid-inner" id="gl-grid-inner"></div>
-  </div>
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="index.html" class="nav-logo"><img src="assets/images/logo-real.png" alt="" class="logo-img" aria-hidden="true">МАРГЕЛ <span>360°</span></a>
+          <p data-i18n="footer_desc">Зала за всяко събитие в сърцето на София.</p>
+        </div>
+        <div>
+          <h4 data-i18n="footer_nav">Навигация</h4>
+          <ul class="footer-links" role="list">
+            <li><a href="index.html" data-i18n="nav_home">Тип събитие</a></li>
+            <li><a href="gallery.html" data-i18n="nav_gallery">Галерия</a></li>
+            <li><a href="faq.html" data-i18n="nav_faq">FAQ</a></li>
+            <li><a href="services.html" data-i18n="nav_services">Услуги</a></li>
+            <li><a href="contact.html" data-i18n="nav_contact">Контакти</a></li>
+          </ul>
+        </div>
+        <div class="footer-contact">
+          <h4 data-i18n="footer_contact">Контакти</h4>
+          <p><span aria-hidden="true">📞</span> 0888 100 042</p>
+          <p data-i18n="footer_address">бул. Околовръстен път 155, ет.4, София</p>
+          <div class="social-links">
+            <a href="https://www.facebook.com/margel360/" aria-label="Facebook" target="_blank" rel="noopener">f</a>
+            <a href="https://www.instagram.com/margel360/" aria-label="Instagram" target="_blank" rel="noopener">in</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p data-i18n="footer_copy">© 2026 Маргел 360°. Всички права запазени.</p>
+      </div>
+    </div>
+  </footer>
 
   <script src="js/translations-gallery.js"></script>
   <script src="js/main.js"></script>

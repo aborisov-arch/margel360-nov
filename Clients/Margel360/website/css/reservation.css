@@ -66,6 +66,67 @@
 @media (max-width: 768px) { .event-picker { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 480px) { .event-picker { grid-template-columns: 1fr; } }
 
+/* ── Variant picker (duration / time sub-selector) ── */
+.variant-picker {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-top: 4px;
+  animation: fadeIn 0.2s ease;
+}
+.variant-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 14px;
+}
+.variant-btn-wrap {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.variant-btn {
+  flex: 1;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 20px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-1);
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: inherit;
+}
+.variant-btn:hover { border-color: rgba(201,168,76,0.5); }
+.variant-btn.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.variant-btn-label {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.variant-btn.selected .variant-btn-label { color: var(--accent); }
+.variant-btn-price {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* ── Step 2 variant wrap (duration / time inside date step) ── */
+.step2-variant-wrap {
+  margin-top: 20px;
+  padding: 20px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.step2-variant-wrap.has-error { border-color: #e53e3e; }
+
 /* ── Step 2: Datetime ── */
 .datetime-wrap { max-width: 560px; }
 .time-options { display: flex; gap: 16px; }
@@ -86,8 +147,20 @@
   background: var(--accent-dim); border: 1px solid rgba(201,168,76,0.25); border-radius: 10px;
 }
 .selected-event-preview.show { display: block; }
-.selected-event-preview h4 { color: var(--accent); font-size: 0.88rem; margin-bottom: 4px; }
-.selected-event-preview p { font-size: 0.85rem; }
+.selected-event-preview h4 { color: var(--accent); font-size: 0.88rem; margin-bottom: 6px; }
+.selected-event-preview p { font-size: 0.85rem; margin-top: 4px; }
+.preview-variant-tag {
+  display: inline-block;
+  background: var(--accent);
+  color: #000;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 999px;
+  margin-bottom: 6px;
+}
 
 /* ── Step 3: Paid add-on services ── */
 .addon-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px; }

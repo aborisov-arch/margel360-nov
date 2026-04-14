@@ -3,7 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Запитване — Маргел 360°</title>
+  <title>Онлайн Запитване — Маргел 360° | Резервирайте вашата дата</title>
+  <meta name="description" content="Изпратете запитване за наем на зала Маргел 360° в София. Изберете тип събитие, дата и допълнителни услуги. Отговаряме до 24 часа.">
+  <link rel="canonical" href="https://margel360.bg/reservation.html">
+  <meta property="og:title" content="Запитване за наем — Маргел 360°">
+  <meta property="og:description" content="Резервирайте вашата дата в зала Маргел 360° — онлайн запитване за сватба, рожден ден или корпоративно събитие.">
+  <meta property="og:image" content="https://margel360.bg/assets/images/header-gallery.jpg">
+  <meta property="og:url" content="https://margel360.bg/reservation.html">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -103,25 +109,8 @@
               <input type="text" id="res-date" name="date" readonly placeholder="дд/мм/гггг" aria-describedby="err-date-msg">
               <span class="form-error" id="err-date-msg" role="alert" data-i18n="err_date">Моля изберете дата.</span>
             </div>
-            <div class="form-group">
-              <label data-i18n="res_time">Час на събитието</label>
-              <div class="time-options" role="group">
-                <label class="time-option">
-                  <input type="radio" name="time" value="day" checked>
-                  <span class="time-option-card">
-                    <span class="time-icon" aria-hidden="true">☀️</span>
-                    <span data-i18n="time_day">Дневно (до 17:30)</span>
-                  </span>
-                </label>
-                <label class="time-option">
-                  <input type="radio" name="time" value="evening">
-                  <span class="time-option-card">
-                    <span class="time-icon" aria-hidden="true">🌙</span>
-                    <span data-i18n="time_evening">Вечерно (след 19:00)</span>
-                  </span>
-                </label>
-              </div>
-            </div>
+            <div id="step2-variant-wrap" class="step2-variant-wrap" style="display:none"></div>
+            <span class="form-error" id="err-variant-msg" role="alert" style="display:none" data-i18n="err_variant">Моля изберете опция.</span>
             <div class="selected-event-preview" id="event-preview"></div>
           </div>
           <div class="wizard-nav">
