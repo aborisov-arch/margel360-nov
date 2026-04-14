@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bg">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title>Calendar — Margel 360° Admin</title>
+  <title>Календар — Маргел 360° Админ</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/admin.css">
@@ -13,31 +13,40 @@
   <header class="admin-header">
     <a href="dashboard.html" class="admin-logo">МАРГЕЛ <span>360°</span></a>
     <nav class="admin-nav">
-      <a href="dashboard.html">Enquiries</a>
-      <a href="calendar.html" class="active">Calendar</a>
+      <a href="dashboard.html" data-i18n="nav_enquiries">Запитвания</a>
+      <a href="calendar.html" class="active" data-i18n="nav_calendar">Календар</a>
     </nav>
-    <button class="btn btn-outline btn-sm" id="logout-btn">Logout</button>
+    <div class="lang-toggle">
+      <button class="lang-btn" data-lang="bg">БГ</button>
+      <button class="lang-btn" data-lang="en">EN</button>
+    </div>
+    <button class="btn btn-outline btn-sm" id="logout-btn" data-i18n="nav_logout">Изход</button>
   </header>
 
   <main class="admin-main">
     <div class="admin-container">
-      <h1 class="page-title">Occupied Dates</h1>
-      <p class="page-sub">Click a date to mark it as occupied (red). Click again to unmark.</p>
+      <h1 class="page-title" data-i18n="cal_title">Заети дати</h1>
+      <p class="page-sub" data-i18n="cal_sub">Натиснете дата, за да я отбележите като заета. Натиснете отново за отмяна.</p>
       <div class="calendar-controls">
-        <button class="btn btn-outline btn-sm" id="prev-month" aria-label="Previous month"><span aria-hidden="true">←</span> Prev</button>
-        <h2 id="calendar-month" class="cal-month-label">Loading…</h2>
-        <button class="btn btn-outline btn-sm" id="next-month" aria-label="Next month">Next <span aria-hidden="true">→</span></button>
+        <button class="btn btn-outline btn-sm" id="prev-month" aria-label="Previous month">
+          <span aria-hidden="true">←</span> <span data-i18n="cal_prev">Назад</span>
+        </button>
+        <h2 id="calendar-month" class="cal-month-label">…</h2>
+        <button class="btn btn-outline btn-sm" id="next-month" aria-label="Next month">
+          <span data-i18n="cal_next">Напред</span> <span aria-hidden="true">→</span>
+        </button>
       </div>
       <div class="calendar-grid" id="calendar-grid"></div>
       <div class="cal-legend">
-        <span class="legend-dot occupied"></span> Occupied
-        <span class="legend-dot available"></span> Available
+        <span><span class="legend-dot occupied"></span><span data-i18n="cal_occupied">Заето</span></span>
+        <span><span class="legend-dot available"></span><span data-i18n="cal_available">Свободно</span></span>
       </div>
     </div>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="js/supabase-client.js" defer></script>
+  <script src="js/admin-i18n.js" defer></script>
   <script src="js/auth.js" defer></script>
   <script src="js/calendar.js" defer></script>
 </body>

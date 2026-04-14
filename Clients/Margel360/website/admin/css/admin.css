@@ -14,16 +14,18 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #0a0a0a;
-  --surface: #111111;
-  --surface-2: #1a1a1a;
-  --border: #2a2a2a;
-  --text: #ffffff;
-  --text-muted: #888888;
-  --accent: #e63030;
-  --accent-hover: #cc2a2a;
-  --radius: 8px;
-  --font: 'Inter', Arial, sans-serif;
+  --bg:           #f8f7f4;
+  --surface:      #ffffff;
+  --surface-2:    #f0ede8;
+  --border:       #e8e4dd;
+  --text:         #1a1a1a;
+  --text-muted:   #777777;
+  --accent:       #c9a84c;
+  --accent-hover: #b8923a;
+  --accent-dim:   rgba(201,168,76,0.12);
+  --radius:       8px;
+  --font:         'Inter', Arial, sans-serif;
+  --shadow:       0 2px 12px rgba(0,0,0,0.07);
 }
 
 body {
@@ -33,6 +35,7 @@ body {
   font-size: 15px;
   line-height: 1.6;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* ── Login page ── */
@@ -51,6 +54,7 @@ body {
   padding: 48px 40px;
   width: 100%;
   max-width: 400px;
+  box-shadow: var(--shadow);
 }
 
 .login-logo {
@@ -58,7 +62,8 @@ body {
   font-weight: 800;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
+  color: var(--text);
 }
 
 .login-logo span { color: var(--accent); }
@@ -67,11 +72,15 @@ body {
   font-size: 1rem;
   font-weight: 400;
   color: var(--text-muted);
-  margin-bottom: 32px;
+  margin-bottom: 20px;
+}
+
+.login-lang {
+  margin-bottom: 28px;
 }
 
 .login-error {
-  color: var(--accent);
+  color: #c0392b;
   font-size: 0.875rem;
   margin-bottom: 12px;
 }
@@ -80,7 +89,7 @@ body {
 .admin-header {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 16px;
   padding: 0 32px;
   height: 60px;
   background: var(--surface);
@@ -88,6 +97,7 @@ body {
   position: sticky;
   top: 0;
   z-index: 10;
+  box-shadow: var(--shadow);
 }
 
 .admin-logo {
@@ -104,7 +114,7 @@ body {
 
 .admin-nav {
   display: flex;
-  gap: 8px;
+  gap: 4px;
   flex: 1;
 }
 
@@ -118,7 +128,30 @@ body {
 }
 
 .admin-nav a:hover { color: var(--text); background: var(--surface-2); }
-.admin-nav a.active { color: var(--text); font-weight: 600; }
+.admin-nav a.active { color: var(--accent); font-weight: 600; background: var(--accent-dim); }
+
+/* ── Language toggle ── */
+.lang-toggle {
+  display: flex;
+  gap: 4px;
+}
+
+.lang-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-family: var(--font);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 9px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+  letter-spacing: 0.03em;
+}
+
+.lang-btn:hover { color: var(--text); border-color: var(--text-muted); }
+.lang-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
 
 /* ── Main content ── */
 .admin-main { padding: 40px 32px; }
@@ -129,6 +162,7 @@ body {
   font-size: 1.75rem;
   font-weight: 700;
   margin-bottom: 8px;
+  color: var(--text);
 }
 
 .page-sub {
@@ -178,7 +212,7 @@ body {
 
 .form-group input {
   width: 100%;
-  background: var(--surface-2);
+  background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 6px;
   color: var(--text);
@@ -189,7 +223,7 @@ body {
   transition: border-color 0.2s;
 }
 
-.form-group input:focus { border-color: var(--accent); }
+.form-group input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
 
 /* ── Loading state ── */
 .loading-state {
@@ -203,6 +237,10 @@ body {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.9rem;
+  background: var(--surface);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
 }
 
 .enquiries-table th {
@@ -214,6 +252,7 @@ body {
   letter-spacing: 0.06em;
   color: var(--text-muted);
   border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
 }
 
 .enquiries-table td {
@@ -222,7 +261,7 @@ body {
   vertical-align: top;
 }
 
-.enquiries-table tbody tr:hover > td { background: var(--surface); }
+.enquiries-table tbody tr:hover > td { background: var(--surface-2); }
 
 .btn-expand {
   background: transparent;
@@ -233,10 +272,10 @@ body {
   padding: 4px 10px;
   border-radius: 4px;
   cursor: pointer;
-  transition: color 0.2s, border-color 0.2s;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
 }
 
-.btn-expand:hover { color: var(--text); border-color: var(--text-muted); }
+.btn-expand:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
 
 .detail-row.hidden { display: none; }
 
@@ -245,6 +284,7 @@ body {
   border-radius: var(--radius);
   padding: 20px 24px;
   margin: 4px 0 8px;
+  border: 1px solid var(--border);
 }
 
 .detail-grid {
@@ -277,6 +317,33 @@ body {
   padding: 60px 0;
 }
 
+/* ── Status badges ── */
+.status-badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.02em;
+}
+
+.status-badge.new {
+  background: rgba(201,168,76,0.15);
+  color: var(--accent-hover);
+}
+
+.status-badge.answered {
+  background: rgba(39,174,96,0.12);
+  color: #1e8449;
+}
+
+/* ── Detail actions ── */
+.detail-actions {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
 /* ── Calendar ── */
 .calendar-controls {
   display: flex;
@@ -290,6 +357,7 @@ body {
   font-weight: 600;
   min-width: 220px;
   text-align: center;
+  color: var(--text);
 }
 
 .calendar-grid {
@@ -322,9 +390,10 @@ body {
   font-family: var(--font);
   color: var(--text);
   transition: background 0.15s, border-color 0.15s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 
-.cal-cell:hover { background: var(--surface-2); border-color: var(--text-muted); }
+.cal-cell:hover { background: var(--surface-2); border-color: var(--accent); }
 
 .cal-cell.occupied {
   background: var(--accent);
@@ -339,6 +408,7 @@ body {
   border-color: transparent;
   cursor: default;
   pointer-events: none;
+  box-shadow: none;
 }
 
 .cal-legend {
@@ -364,7 +434,7 @@ body {
 
 /* ── Responsive ── */
 @media (max-width: 640px) {
-  .admin-header { padding: 0 16px; gap: 12px; }
+  .admin-header { padding: 0 16px; gap: 10px; }
   .admin-main { padding: 24px 16px; }
   .enquiries-table th:nth-child(2),
   .enquiries-table td:nth-child(2),

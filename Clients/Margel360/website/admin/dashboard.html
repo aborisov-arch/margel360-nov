@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bg">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title>Enquiries — Margel 360° Admin</title>
+  <title>Запитвания — Маргел 360° Админ</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/admin.css">
@@ -13,26 +13,31 @@
   <header class="admin-header">
     <a href="dashboard.html" class="admin-logo">МАРГЕЛ <span>360°</span></a>
     <nav class="admin-nav">
-      <a href="dashboard.html" class="active">Enquiries</a>
-      <a href="calendar.html">Calendar</a>
+      <a href="dashboard.html" class="active" data-i18n="nav_enquiries">Запитвания</a>
+      <a href="calendar.html" data-i18n="nav_calendar">Календар</a>
     </nav>
-    <button class="btn btn-outline btn-sm" id="logout-btn">Logout</button>
+    <div class="lang-toggle">
+      <button class="lang-btn" data-lang="bg">БГ</button>
+      <button class="lang-btn" data-lang="en">EN</button>
+    </div>
+    <button class="btn btn-outline btn-sm" id="logout-btn" data-i18n="nav_logout">Изход</button>
   </header>
 
   <main class="admin-main">
     <div class="admin-container">
-      <h1 class="page-title">Enquiries</h1>
-      <div id="loading" class="loading-state" aria-live="polite">Loading enquiries…</div>
+      <h1 class="page-title" data-i18n="dash_title">Запитвания</h1>
+      <div id="loading" class="loading-state" aria-live="polite" data-i18n="dash_loading">Зареждане…</div>
       <div id="enquiries-wrap" style="display:none">
         <table class="enquiries-table">
           <thead>
             <tr>
-              <th scope="col">Name</th>
-              <th scope="col">Phone</th>
-              <th scope="col">Event</th>
-              <th scope="col">Date</th>
-              <th scope="col">Received</th>
-              <th scope="col"><span class="sr-only">Actions</span></th>
+              <th scope="col" data-i18n="col_name">Име</th>
+              <th scope="col" data-i18n="col_phone">Телефон</th>
+              <th scope="col" data-i18n="col_event">Събитие</th>
+              <th scope="col" data-i18n="col_date">Дата</th>
+              <th scope="col" data-i18n="col_received">Получено</th>
+              <th scope="col" data-i18n="col_status">Статус</th>
+              <th scope="col"><span class="sr-only" data-i18n="col_actions">Действия</span></th>
             </tr>
           </thead>
           <tbody id="enquiries-body"></tbody>
@@ -43,6 +48,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="js/supabase-client.js" defer></script>
+  <script src="js/admin-i18n.js" defer></script>
   <script src="js/auth.js" defer></script>
   <script src="js/dashboard.js" defer></script>
 </body>

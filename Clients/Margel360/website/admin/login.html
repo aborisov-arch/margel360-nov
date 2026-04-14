@@ -1,63 +1,67 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bg">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title>Login — Margel 360° Admin</title>
+  <title>Вход — Маргел 360° Админ</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/admin.css">
 </head>
 <body class="login-page">
   <main>
-  <div class="login-card">
-    <div class="login-logo">МАРГЕЛ <span>360°</span></div>
-    <h1 class="login-title">Admin Panel</h1>
-    <form id="login-form" novalidate>
-      <div class="form-group">
-        <label for="email">Email</label>
-        <input type="email" id="email" name="email" autocomplete="email" required>
+    <div class="login-card">
+      <div class="login-logo">МАРГЕЛ <span>360°</span></div>
+      <h1 class="login-title" data-i18n="login_title">Административен панел</h1>
+      <div class="lang-toggle login-lang">
+        <button class="lang-btn" data-lang="bg">БГ</button>
+        <button class="lang-btn" data-lang="en">EN</button>
       </div>
-      <div class="form-group">
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" autocomplete="current-password" required>
-      </div>
-      <p class="login-error" id="login-error" role="alert" style="display:none"></p>
-      <button type="submit" class="btn btn-primary btn-full" id="login-btn">Sign In</button>
-    </form>
-  </div>
+      <form id="login-form" novalidate>
+        <div class="form-group">
+          <label for="email" data-i18n="login_email">Имейл</label>
+          <input type="email" id="email" name="email" autocomplete="email" required>
+        </div>
+        <div class="form-group">
+          <label for="password" data-i18n="login_password">Парола</label>
+          <input type="password" id="password" name="password" autocomplete="current-password" required>
+        </div>
+        <p class="login-error" id="login-error" role="alert" style="display:none"></p>
+        <button type="submit" class="btn btn-primary btn-full" id="login-btn" data-i18n="login_btn">Вход</button>
+      </form>
+    </div>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase-client.js"></script>
+  <script src="js/admin-i18n.js"></script>
   <script>
-    // Redirect if already logged in
     try {
       db.auth.getSession().then(({ data: { session } }) => {
         if (session) window.location.href = 'dashboard.html';
       });
 
       document.getElementById('login-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const btn = document.getElementById('login-btn');
-      const errEl = document.getElementById('login-error');
-      btn.disabled = true;
-      btn.textContent = 'Signing in…';
-      errEl.style.display = 'none';
+        e.preventDefault();
+        const btn    = document.getElementById('login-btn');
+        const errEl  = document.getElementById('login-error');
+        btn.disabled = true;
+        btn.textContent = t('login_signing');
+        errEl.style.display = 'none';
 
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value;
+        const email    = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
 
-      const { error } = await db.auth.signInWithPassword({ email, password });
-      if (error) {
-        errEl.textContent = 'Invalid email or password. Please try again.';
-        errEl.style.display = 'block';
-        btn.disabled = false;
-        btn.textContent = 'Sign In';
-      } else {
-        window.location.href = 'dashboard.html';
-      }
-    });
+        const { error } = await db.auth.signInWithPassword({ email, password });
+        if (error) {
+          errEl.textContent    = t('login_error');
+          errEl.style.display  = 'block';
+          btn.disabled         = false;
+          btn.textContent      = t('login_btn');
+        } else {
+          window.location.href = 'dashboard.html';
+        }
+      });
     } catch (err) {
       console.error('Admin login init error:', err);
     }

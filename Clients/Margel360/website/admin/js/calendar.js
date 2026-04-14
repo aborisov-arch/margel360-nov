@@ -1,11 +1,6 @@
-let currentYear = new Date().getFullYear();
-let currentMonth = new Date().getMonth(); // 0-based (0 = January)
+let currentYear  = new Date().getFullYear();
+let currentMonth = new Date().getMonth(); // 0-based
 let occupiedDates = new Set();
-
-const MONTH_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
 
 document.addEventListener('DOMContentLoaded', async () => {
   const session = await requireAuth();
@@ -27,6 +22,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 });
 
+// Called by admin-i18n.js on language switch
+function rerenderPage() {
+  renderCalendar();
+}
+
 async function loadOccupiedDates() {
   const { data, error } = await db.from('occupied_dates').select('date');
   if (error) {
@@ -37,23 +37,24 @@ async function loadOccupiedDates() {
 }
 
 function renderCalendar() {
+  const months = t('months');
   document.getElementById('calendar-month').textContent =
-    `${MONTH_NAMES[currentMonth]} ${currentYear}`;
+    `${months[currentMonth]} ${currentYear}`;
 
   const gridEl = document.getElementById('calendar-grid');
   gridEl.innerHTML = '';
 
-  // Day-of-week header labels (Monday first)
-  ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].forEach(label => {
+  // Day-of-week headers (Monday first)
+  t('days_short').forEach(label => {
     const el = document.createElement('div');
     el.className = 'cal-day-label';
     el.textContent = label;
     gridEl.appendChild(el);
   });
 
-  // Blank cells before the 1st of the month (Monday = 0, Sunday = 6)
+  // Blank cells before the 1st (Monday = 0, Sunday = 6)
   const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay();
-  const startOffset = (firstDayOfWeek + 6) % 7;
+  const startOffset    = (firstDayOfWeek + 6) % 7;
   for (let i = 0; i < startOffset; i++) {
     const el = document.createElement('div');
     el.className = 'cal-cell empty';
@@ -64,14 +65,14 @@ function renderCalendar() {
   // Day cells
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
   for (let d = 1; d <= daysInMonth; d++) {
-    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const dateStr   = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
     const isOccupied = occupiedDates.has(dateStr);
 
     const btn = document.createElement('button');
     btn.className = 'cal-cell' + (isOccupied ? ' occupied' : '');
     btn.textContent = d;
     btn.setAttribute('aria-label',
-      `${d} ${MONTH_NAMES[currentMonth]} ${currentYear}${isOccupied ? ' — occupied' : ''}`
+      `${d} ${t('months')[currentMonth]} ${currentYear}${isOccupied ? ' ' + t('cal_occupied_aria') : ''}`
     );
     btn.addEventListener('click', () => toggleDate(dateStr, btn));
     gridEl.appendChild(btn);
@@ -81,17 +82,19 @@ function renderCalendar() {
 async function toggleDate(dateStr, btn) {
   const wasOccupied = occupiedDates.has(dateStr);
 
-  // Optimistic UI update — apply immediately
+  // Optimistic UI update
   if (wasOccupied) {
     occupiedDates.delete(dateStr);
     btn.classList.remove('occupied');
     btn.setAttribute('aria-label',
-      btn.getAttribute('aria-label').replace(' — occupied', '')
+      btn.getAttribute('aria-label').replace(' ' + t('cal_occupied_aria'), '')
     );
   } else {
     occupiedDates.add(dateStr);
     btn.classList.add('occupied');
-    btn.setAttribute('aria-label', btn.getAttribute('aria-label') + ' — occupied');
+    btn.setAttribute('aria-label',
+      btn.getAttribute('aria-label') + ' ' + t('cal_occupied_aria')
+    );
   }
 
   // Persist to Supabase — revert on failure
@@ -99,20 +102,20 @@ async function toggleDate(dateStr, btn) {
     const { error } = await db.from('occupied_dates').delete().eq('date', dateStr);
     if (error) {
       console.error('Failed to unmark date:', error);
-      // Revert
       occupiedDates.add(dateStr);
       btn.classList.add('occupied');
-      btn.setAttribute('aria-label', btn.getAttribute('aria-label') + ' — occupied');
+      btn.setAttribute('aria-label',
+        btn.getAttribute('aria-label') + ' ' + t('cal_occupied_aria')
+      );
     }
   } else {
     const { error } = await db.from('occupied_dates').insert({ date: dateStr });
     if (error) {
       console.error('Failed to mark date:', error);
-      // Revert
       occupiedDates.delete(dateStr);
       btn.classList.remove('occupied');
       btn.setAttribute('aria-label',
-        btn.getAttribute('aria-label').replace(' — occupied', '')
+        btn.getAttribute('aria-label').replace(' ' + t('cal_occupied_aria'), '')
       );
     }
   }
