@@ -477,6 +477,44 @@ p { color: var(--text-muted); }
   .hero-content .btn { width: 100%; text-align: center; }
 }
 
+/* ── Floating phone button ── */
+.fab-phone {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 900;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--gold);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+  transition: transform 0.2s, box-shadow 0.2s;
+  text-decoration: none;
+}
+.fab-phone:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+}
+.fab-phone svg {
+  width: 26px;
+  height: 26px;
+  fill: none;
+  stroke: #000;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (max-width: 768px) {
+  .fab-phone { bottom: 20px; right: 20px; width: 52px; height: 52px; }
+  .fab-phone svg { width: 24px; height: 24px; }
+}
+
 /* Stats mobile */
 @media (max-width: 380px) {
   .stats-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
