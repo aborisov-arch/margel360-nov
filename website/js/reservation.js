@@ -11,8 +11,8 @@ const eventTypes = [
   {
     id:'birthday',  title_bg:'Детски рожден ден',     title_en:"Children's Birthday", img:'assets/images/event-birthday.jpg',
     variants: [
-      { id:'bday_day', label_bg:'Дневно', label_en:'Daytime', price_bgn:1369.08, price_eur:700.00,  duration_bg:'до 17:30',    duration_en:'until 5:30 PM',     included:['sound','lighting','bar','fridge','parking','wc','elevator','dance'] },
-      { id:'bday_eve', label_bg:'Вечерно', label_en:'Evening', price_bgn:1897.15, price_eur:970.00, duration_bg:'16:00–24:00', duration_en:'4:00 PM–midnight',   included:['sound','lighting','bar','fridge','parking','wc','elevator','dance','terrace'] },
+      { id:'bday_day', label_bg:'Дневно (до 17:30) — 5 часа', label_en:'Daytime (until 5:30 PM) — 5 hours', price_bgn:1369.08, price_eur:700.00,  duration_bg:'до 17:30',    duration_en:'until 5:30 PM',     included:['sound','lighting','bar','fridge','parking','wc','elevator','dance'] },
+      { id:'bday_eve', label_bg:'Вечерно (16:00–24:00) — 5 часа', label_en:'Evening (4:00 PM–midnight) — 5 hours', price_bgn:1897.15, price_eur:970.00, duration_bg:'16:00–24:00', duration_en:'4:00 PM–midnight',   included:['sound','lighting','bar','fridge','parking','wc','elevator','dance','terrace'] },
     ],
   },
   { id:'wedding',   title_bg:'Сватба',                title_en:'Wedding',            duration_bg:'По договаряне', duration_en:'By arrangement',  price_bgn:2933.75, price_eur:1500.00, img:'assets/images/event-wedding.jpg',   included:['sound','lighting','bar','fridge','parking','wc','elevator','dance','terrace','redcarpet'] },
@@ -248,6 +248,25 @@ function renderStep2VariantPicker() {
   wrap.appendChild(btnWrap);
 }
 
+// ── Occupied dates (fetched from Supabase at load time) ──
+let _occupiedDates = [];
+
+async function loadOccupiedDates() {
+  try {
+    const { data, error } = await reservationDb.from('occupied_dates').select('date');
+    if (error) { console.warn('Occupied dates fetch error:', error.message); return; }
+    if (data && data.length) {
+      // Convert YYYY-MM-DD strings to local-time Date objects so Flatpickr matches correctly
+      _occupiedDates = data.map(r => {
+        const [y, m, d] = r.date.split('-').map(Number);
+        return new Date(y, m - 1, d);
+      });
+    }
+  } catch (err) {
+    console.warn('Occupied dates fetch failed:', err);
+  }
+}
+
 // ── Step 2: Datetime ──
 function setupStep2() {
   const dateEl = document.getElementById('res-date');
@@ -258,6 +277,18 @@ function setupStep2() {
       dateFormat: 'd/m/Y',
       minDate: 'today',
       disableMobile: true,
+      disable: _occupiedDates,
+      onDayCreate(_dObj, _dStr, _fp, dayElem) {
+        // Tag occupied days so the CSS tooltip "Заета Дата" shows on hover
+        const d = dayElem.dateObj;
+        if (!d) return;
+        const isOccupied = _occupiedDates.some(od =>
+          od.getFullYear() === d.getFullYear() &&
+          od.getMonth()    === d.getMonth() &&
+          od.getDate()     === d.getDate()
+        );
+        if (isOccupied) dayElem.classList.add('occupied-date');
+      },
       onChange(_selectedDates, dateStr) {
         booking.date = dateStr;
         dateEl.closest('.form-group')?.classList.remove('has-error');
@@ -501,8 +532,59 @@ function renderSummary() {
 function setupSubmit() {
   const btn = document.getElementById('btn-submit');
   if (!btn) return;
-  btn.addEventListener('click', () => {
+
+  btn.addEventListener('click', async () => {
     booking.payment = document.querySelector('input[name="payment"]:checked')?.value || 'cash';
+
+    btn.disabled = true;
+    const origText = btn.textContent;
+    btn.textContent = getLang() === 'bg' ? 'Изпращане…' : 'Sending…';
+
+    // Serialize add-ons: only the ones selected (price > 0)
+    const addonsPayload = Object.entries(booking.addons)
+      .filter(([, price]) => price > 0)
+      .map(([id, price]) => {
+        const svc = addonServices.find(s => s.id === id);
+        return { id, name: svc ? svc.name_en : id, price };
+      });
+
+    // Serialize drinks: only items with qty > 0
+    const drinksPayload = Object.entries(booking.drinkQtys)
+      .filter(([, qty]) => qty > 0)
+      .map(([id, qty]) => {
+        const drink = drinks.find(d => d.id === id);
+        return { id, name: drink ? drink.name_en : id, qty, price_bgn: drink?.price_bgn ?? null };
+      });
+
+    const payload = {
+      full_name: booking.name,
+      email: booking.email,
+      phone: booking.phone,
+      event_type: booking.event ? booking.event.title_en : '',
+      event_id: booking.event ? booking.event.id : '',
+      preferred_date: booking.date,
+      time_of_day: booking.time,
+      guests: booking.guests ? parseInt(booking.guests, 10) : null,
+      addons: addonsPayload,
+      drinks: drinksPayload,
+      payment_method: booking.payment,
+      notes: booking.notes || null,
+    };
+
+    const { error } = await reservationDb.from('enquiries').insert(payload);
+
+    if (error) {
+      console.error('Enquiry submission error:', error);
+      btn.disabled = false;
+      btn.textContent = origText;
+      const lang = getLang();
+      alert(lang === 'bg'
+        ? 'Нещо се обърка. Моля обадете ни се директно на 0888 10 09 42.'
+        : 'Something went wrong. Please call us directly on 0888 10 09 42.');
+      return;
+    }
+
+    // Success — show confirmation
     document.getElementById('step-5')?.classList.remove('active');
     document.querySelector('.wizard-progress').style.display = 'none';
     document.getElementById('form-success').style.display = 'block';
@@ -522,7 +604,8 @@ document.addEventListener('langChange', () => {
 });
 
 // ── Init ──
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadOccupiedDates();   // fetch occupied dates before flatpickr initialises
   renderEventPicker();
   setupStep2();
   setupStep5();
