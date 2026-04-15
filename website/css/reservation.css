@@ -200,6 +200,41 @@
 
 @media (max-width: 600px) { .addon-grid { grid-template-columns: 1fr; } }
 
+/* ── Drinks prompt overlay ── */
+.drinks-prompt {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: rgba(0,0,0,0.6);
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.drinks-prompt-box {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 36px 32px;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+}
+.drinks-prompt-box p {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 28px;
+  line-height: 1.5;
+}
+.drinks-prompt-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.drinks-prompt-btns .btn { width: 100%; }
+
 /* ── Step 4: Drinks / Alcohol ── */
 .drinks-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
 .drinks-tab {

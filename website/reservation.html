@@ -149,7 +149,18 @@
           </div>
           <div class="wizard-nav">
             <button class="btn btn-outline" onclick="goToStep(1)" data-i18n="btn_back">Назад</button>
-            <button class="btn btn-primary" onclick="goToStep(3)" data-i18n="btn_next">Напред</button>
+            <button class="btn btn-primary" onclick="showDrinksPrompt()" data-i18n="btn_next">Напред</button>
+          </div>
+        </div>
+
+        <!-- Step 3b: Drinks prompt -->
+        <div class="drinks-prompt" id="drinks-prompt" style="display:none">
+          <div class="drinks-prompt-box">
+            <p id="drinks-prompt-text">Желаете ли да разгледате менюто с напитки?</p>
+            <div class="drinks-prompt-btns">
+              <button class="btn btn-primary" id="drinks-prompt-yes">Да, покажи менюто</button>
+              <button class="btn btn-outline" id="drinks-prompt-no">Не, продължи напред</button>
+            </div>
           </div>
         </div>
 

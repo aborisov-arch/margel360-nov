@@ -396,6 +396,27 @@ function updateAddonsTotal() {
   if (el) el.textContent = getLang() === 'bg' ? total.toLocaleString('bg-BG') + ' лв.' : '€' + (total / 1.956).toFixed(2);
 }
 
+// ── Drinks prompt (between add-ons and drinks) ──
+function showDrinksPrompt() {
+  const l = getLang();
+  const prompt = document.getElementById('drinks-prompt');
+  const textEl = document.getElementById('drinks-prompt-text');
+  const yesBtn = document.getElementById('drinks-prompt-yes');
+  const noBtn = document.getElementById('drinks-prompt-no');
+  if (!prompt) { goToStep(3); return; }
+
+  textEl.textContent = l === 'bg'
+    ? 'Желаете ли да разгледате менюто с напитки?'
+    : 'Would you like to see our drinks menu?';
+  yesBtn.textContent = l === 'bg' ? 'Да, покажи менюто' : 'Yes, show menu';
+  noBtn.textContent = l === 'bg' ? 'Не, продължи напред' : 'No, skip';
+
+  prompt.style.display = 'flex';
+
+  yesBtn.onclick = function() { prompt.style.display = 'none'; goToStep(3); };
+  noBtn.onclick = function() { prompt.style.display = 'none'; goToStep(4); };
+}
+
 // ── Step 4: Drinks ──
 function renderDrinksNav() {
   const l = getLang();
