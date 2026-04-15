@@ -587,8 +587,8 @@ function setupSubmit() {
       btn.textContent = origText;
       const lang = getLang();
       alert(lang === 'bg'
-        ? 'Нещо се обърка. Моля обадете ни се директно на 0888 10 09 42.'
-        : 'Something went wrong. Please call us directly on 0888 10 09 42.');
+        ? 'Нещо се обърка. Моля обадете ни се директно на 0888 100 042.'
+        : 'Something went wrong. Please call us directly on 0888 100 042.');
       return;
     }
 
