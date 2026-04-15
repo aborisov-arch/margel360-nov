@@ -199,13 +199,13 @@ function renderStep2VariantPicker() {
   if (!wrap) return;
 
   const ev = booking.event;
-  if (!ev?.variants) {
-    wrap.style.display = 'none';
-    if (errMsg) errMsg.style.display = 'none';
+  if (!ev || !ev.variants) {
+    wrap.setAttribute('style', 'display:none');
+    if (errMsg) errMsg.setAttribute('style', 'display:none');
     return;
   }
 
-  wrap.style.display = 'block';
+  wrap.setAttribute('style', 'display:block');
   wrap.innerHTML = '';
 
   const lbl = document.createElement('p'); lbl.className = 'variant-label';

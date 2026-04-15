@@ -128,7 +128,7 @@
 .step2-variant-wrap.has-error { border-color: #e53e3e; }
 
 /* ── Step 2: Datetime ── */
-.datetime-wrap { max-width: 560px; }
+.datetime-wrap { max-width: 680px; }
 .time-options { display: flex; gap: 16px; }
 .time-option { flex: 1; cursor: pointer; }
 .time-option input { position: absolute; opacity: 0; pointer-events: none; }
@@ -406,6 +406,51 @@ span.flatpickr-weekday { color: var(--text-muted); font-size: 0.75rem; font-weig
 .flatpickr-day.today:hover { background: var(--accent); color: #fff; }
 .flatpickr-day.flatpickr-disabled, .flatpickr-day.prevMonthDay, .flatpickr-day.nextMonthDay {
   color: var(--border); }
+
+/* ── Occupied date tooltip ── */
+.flatpickr-day.occupied-date {
+  background: rgba(229,57,53,0.1) !important;
+  border-color: rgba(229,57,53,0.35) !important;
+  color: #e53935 !important;
+  position: relative;
+}
+
+.flatpickr-day.occupied-date::after {
+  content: 'Заета Дата';
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #333;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+  z-index: 200;
+}
+
+.flatpickr-day.occupied-date::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-top-color: #333;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+  z-index: 200;
+}
+
+.flatpickr-day.occupied-date:hover::after,
+.flatpickr-day.occupied-date:hover::before { opacity: 1; }
+
 .numInputWrapper:hover { background: var(--bg-2); }
 
 /* Flatpickr — full width and readable on mobile */
