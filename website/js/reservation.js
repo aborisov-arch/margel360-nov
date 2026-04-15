@@ -11,8 +11,8 @@ const eventTypes = [
   {
     id:'birthday',  title_bg:'Детски рожден ден',     title_en:"Children's Birthday", img:'assets/images/event-birthday.jpg',
     variants: [
-      { id:'bday_day', label_bg:'Дневно (до 17:30) — 5 часа', label_en:'Daytime (until 5:30 PM) — 5 hours', price_bgn:1369.08, price_eur:700.00,  duration_bg:'до 17:30',    duration_en:'until 5:30 PM',     included:['sound','lighting','bar','fridge','parking','wc','elevator','dance'] },
-      { id:'bday_eve', label_bg:'Вечерно (16:00–24:00) — 5 часа', label_en:'Evening (4:00 PM–midnight) — 5 hours', price_bgn:1897.15, price_eur:970.00, duration_bg:'16:00–24:00', duration_en:'4:00 PM–midnight',   included:['sound','lighting','bar','fridge','parking','wc','elevator','dance','terrace'] },
+      { id:'bday_day', label_bg:'Дневно', label_en:'Daytime', sub_bg:'(до 17:30) — 5 часа', sub_en:'(until 5:30 PM) — 5 hours', price_bgn:1369.08, price_eur:700.00,  duration_bg:'до 17:30',    duration_en:'until 5:30 PM',     included:['sound','lighting','bar','fridge','parking','wc','elevator','dance'] },
+      { id:'bday_eve', label_bg:'Вечерно', label_en:'Evening', sub_bg:'(16:00–24:00) — 5 часа', sub_en:'(4:00 PM–midnight) — 5 hours', price_bgn:1897.15, price_eur:970.00, duration_bg:'16:00–24:00', duration_en:'4:00 PM–midnight',   included:['sound','lighting','bar','fridge','parking','wc','elevator','dance','terrace'] },
     ],
   },
   { id:'wedding',   title_bg:'Сватба',                title_en:'Wedding',            duration_bg:'По договаряне', duration_en:'By arrangement',  price_bgn:2933.75, price_eur:1500.00, img:'assets/images/event-wedding.jpg',   included:['sound','lighting','bar','fridge','parking','wc','elevator','dance','terrace','redcarpet'] },
@@ -223,10 +223,18 @@ function renderStep2VariantPicker() {
 
     const lbEl = document.createElement('span'); lbEl.className = 'variant-btn-label';
     lbEl.textContent = l === 'bg' ? variant.label_bg : variant.label_en;
+    btn.appendChild(lbEl);
+
+    // Show sub-label (time + hours) if present
+    if (variant.sub_bg) {
+      const subEl = document.createElement('span'); subEl.className = 'variant-btn-sub';
+      subEl.textContent = l === 'bg' ? variant.sub_bg : variant.sub_en;
+      btn.appendChild(subEl);
+    }
+
     const prEl = document.createElement('span'); prEl.className = 'variant-btn-price';
     prEl.textContent = '€' + variant.price_eur.toFixed(0) + ' / ' + variant.price_bgn.toLocaleString('bg-BG') + ' лв.';
-
-    btn.appendChild(lbEl); btn.appendChild(prEl);
+    btn.appendChild(prEl);
     btnWrap.appendChild(btn);
 
     btn.addEventListener('click', () => {

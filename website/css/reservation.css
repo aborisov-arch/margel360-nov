@@ -111,6 +111,11 @@
   color: var(--text);
 }
 .variant-btn.selected .variant-btn-label { color: var(--accent); }
+.variant-btn-sub {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
 .variant-btn-price {
   font-size: 0.82rem;
   color: var(--text-muted);
