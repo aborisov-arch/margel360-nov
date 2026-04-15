@@ -222,15 +222,11 @@ function renderStep2VariantPicker() {
     btn.type = 'button';
 
     const lbEl = document.createElement('span'); lbEl.className = 'variant-btn-label';
-    lbEl.textContent = l === 'bg' ? variant.label_bg : variant.label_en;
+    let labelText = l === 'bg' ? variant.label_bg : variant.label_en;
+    if (variant.sub_bg) labelText += '\n' + (l === 'bg' ? variant.sub_bg : variant.sub_en);
+    lbEl.textContent = labelText;
+    lbEl.style.whiteSpace = 'pre-line';
     btn.appendChild(lbEl);
-
-    // Show sub-label (time + hours) if present
-    if (variant.sub_bg) {
-      const subEl = document.createElement('span'); subEl.className = 'variant-btn-sub';
-      subEl.textContent = l === 'bg' ? variant.sub_bg : variant.sub_en;
-      btn.appendChild(subEl);
-    }
 
     const prEl = document.createElement('span'); prEl.className = 'variant-btn-price';
     prEl.textContent = '€' + variant.price_eur.toFixed(0) + ' / ' + variant.price_bgn.toLocaleString('bg-BG') + ' лв.';
