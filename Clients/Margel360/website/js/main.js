@@ -1,3 +1,26 @@
+// ── Hero video mobile autoplay fix ──
+(function() {
+  const vid = document.querySelector('.hero-video');
+  if (!vid) return;
+
+  // Try to play immediately (may fail on mobile)
+  const tryPlay = vid.play();
+  if (tryPlay && tryPlay.catch) {
+    tryPlay.catch(function() {
+      // Autoplay blocked — retry on first user interaction
+      function playOnInteraction() {
+        vid.play();
+        document.removeEventListener('touchstart', playOnInteraction);
+        document.removeEventListener('scroll', playOnInteraction);
+        document.removeEventListener('click', playOnInteraction);
+      }
+      document.addEventListener('touchstart', playOnInteraction, { once: true, passive: true });
+      document.addEventListener('scroll', playOnInteraction, { once: true, passive: true });
+      document.addEventListener('click', playOnInteraction, { once: true });
+    });
+  }
+})();
+
 // ── Nav scroll effect ──
 const nav = document.querySelector('.nav');
 if (nav) {

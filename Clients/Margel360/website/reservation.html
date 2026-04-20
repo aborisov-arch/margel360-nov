@@ -23,7 +23,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="css/reservation.css">
+  <link rel="stylesheet" href="css/reservation.css?v=2">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <script type="application/ld+json">
 {
@@ -49,6 +49,7 @@
         <li><a href="gallery.html" data-i18n="nav_gallery">Галерия</a></li>
         <li><a href="faq.html" data-i18n="nav_faq">FAQ</a></li>
         <li><a href="services.html" data-i18n="nav_services">Услуги</a></li>
+        <li><a href="drinks.html" data-i18n="nav_drinks">Меню</a></li>
         <li><a href="contact.html" data-i18n="nav_contact">Контакти</a></li>
         <li><a href="reservation.html" class="btn btn-primary active" style="padding:8px 20px" data-i18n="nav_reserve">Запитване</a></li>
       </ul>
@@ -65,6 +66,7 @@
       <li><a href="gallery.html" data-i18n="nav_gallery">Галерия</a></li>
       <li><a href="faq.html" data-i18n="nav_faq">FAQ</a></li>
       <li><a href="services.html" data-i18n="nav_services">Услуги</a></li>
+      <li><a href="drinks.html" data-i18n="nav_drinks">Меню</a></li>
       <li><a href="contact.html" data-i18n="nav_contact">Контакти</a></li>
       <li><a href="reservation.html" class="active" data-i18n="nav_reserve">Запитване</a></li>
     </ul>
@@ -145,11 +147,22 @@
           <div class="addon-grid" id="addon-grid"></div>
           <div class="running-total">
             <span class="rt-label" data-i18n="addons_total">Допълнителни услуги:</span>
-            <span class="rt-value" id="addons-total-val">0 лв.</span>
+            <span class="rt-value" id="addons-total-val">€0.00</span>
           </div>
           <div class="wizard-nav">
             <button class="btn btn-outline" onclick="goToStep(1)" data-i18n="btn_back">Назад</button>
-            <button class="btn btn-primary" onclick="goToStep(3)" data-i18n="btn_next">Напред</button>
+            <button class="btn btn-primary" onclick="showDrinksPrompt()" data-i18n="btn_next">Напред</button>
+          </div>
+        </div>
+
+        <!-- Step 3b: Drinks prompt -->
+        <div class="drinks-prompt" id="drinks-prompt" style="display:none">
+          <div class="drinks-prompt-box">
+            <p id="drinks-prompt-text">Желаете ли да разгледате менюто с напитки?</p>
+            <div class="drinks-prompt-btns">
+              <button class="btn btn-primary" id="drinks-prompt-yes">Да, покажи менюто</button>
+              <button class="btn btn-outline" id="drinks-prompt-no">Не, продължи напред</button>
+            </div>
           </div>
         </div>
 
@@ -161,7 +174,7 @@
           <div class="drinks-grid" id="drinks-grid"></div>
           <div class="running-total" style="margin-top:20px">
             <span class="rt-label" data-i18n="drinks_total">Напитки:</span>
-            <span class="rt-value" id="drinks-total-val">0 лв.</span>
+            <span class="rt-value" id="drinks-total-val">€0.00</span>
           </div>
           <div class="wizard-nav">
             <button class="btn btn-outline" onclick="goToStep(2)" data-i18n="btn_back">Назад</button>
@@ -263,12 +276,13 @@
             <li><a href="gallery.html" data-i18n="nav_gallery">Галерия</a></li>
             <li><a href="faq.html" data-i18n="nav_faq">FAQ</a></li>
             <li><a href="services.html" data-i18n="nav_services">Услуги</a></li>
+            <li><a href="drinks.html" data-i18n="nav_drinks">Меню</a></li>
             <li><a href="contact.html" data-i18n="nav_contact">Контакти</a></li>
           </ul>
         </div>
         <div class="footer-contact">
           <h4 data-i18n="footer_contact">Контакти</h4>
-          <p><span aria-hidden="true">📞</span> 0888 10 09 42</p>
+          <p><span aria-hidden="true">📞</span> 0888 100 042</p>
           <p data-i18n="footer_address">бул. Околовръстен път 155, ет.4, София</p>
           <div class="social-links">
             <a href="https://www.facebook.com/margel360/" aria-label="Facebook" target="_blank" rel="noopener">f</a>
@@ -288,6 +302,8 @@
   <script src="js/main.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/reservation-supabase.js"></script>
-  <script src="js/reservation.js"></script>
+  <script src="js/drinks-data.js"></script>
+  <script src="js/reservation.js?v=3"></script>
+  <a href="tel:+359888100042" class="fab-phone" aria-label="Обадете се"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg></a>
 </body>
 </html>

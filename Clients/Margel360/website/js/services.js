@@ -5,7 +5,7 @@ const services = [
     title_en: 'Decoration',
     desc_bg:  'Персонализирана украса за вашето тържество.',
     desc_en:  'Personalised decoration for your celebration.',
-    price:    '€181.51 (355лв.)',
+    price:    '€181.51',
   },
   {
     img:      'assets/images/services/svc-photobooth.jpg',
@@ -19,9 +19,9 @@ const services = [
     img:      'assets/images/services/svc-dj-new.jpg',
     title_bg: 'DJ оборудване',
     title_en: 'DJ Equipment',
-    desc_bg:  'DJ за 5часа, овъртайм 60 EUR/1 час.',
-    desc_en:  'DJ for 5 hours, overtime 60 EUR/hour.',
-    price:    '€300.00 (587лв.) / 5ч.',
+    desc_bg:  'DJ за 5часа, овъртайм €30/1 час.',
+    desc_en:  'DJ for 5 hours, overtime €30/hour.',
+    price:    '€300.00 / 5ч.',
   },
   {
     img:      'assets/images/services/svc-flowers.jpg',
@@ -29,15 +29,15 @@ const services = [
     title_en: 'Candles & Lighting',
     desc_bg:  'Свещи в залата и терасата, светлинни фонтани.',
     desc_en:  'Candles in the hall and terrace, light fountains.',
-    price:    '€51.13 (100лв.)',
+    price:    '€51.13',
   },
   {
     img:      'assets/images/services/svc-valet.jpg',
     title_bg: 'Вале-паркинг',
     title_en: 'Valet Parking',
-    desc_bg:  'Вале-паркинг за 5 часа, овъртайм 50лв/ч.',
-    desc_en:  'Valet parking for 5 hours, overtime 50 BGN/hour.',
-    price:    '€140.61 (275лв.) / 5ч.',
+    desc_bg:  'Вале-паркинг за 5 часа, овъртайм €25/ч.',
+    desc_en:  'Valet parking for 5 hours, overtime €25/hour.',
+    price:    '€140.61 / 5ч.',
   },
   {
     img:      'assets/images/services/svc-security.jpg',
@@ -45,7 +45,7 @@ const services = [
     title_en: 'Security',
     desc_bg:  'Охрана VTA, за 6 часа, 1 служител.',
     desc_en:  'VTA security, 6 hours, 1 officer.',
-    price:    '€100.00 (196лв.) / 6ч.',
+    price:    '€100.00 / 6ч.',
   },
   {
     img:      'assets/images/services/mic.jpg',
@@ -53,7 +53,7 @@ const services = [
     title_en: 'Microphones',
     desc_bg:  '3 броя + 1 брой тип брошка.',
     desc_en:  '3 units + 1 lapel microphone.',
-    price:    '€49.60 (97лв.)',
+    price:    '€49.60',
   },
   {
     img:      'assets/images/services/photographer.jpg',
@@ -69,7 +69,7 @@ const services = [
     title_en: 'EPSON Projector',
     desc_bg:  'Мултимедиен проектор за презентации и видео.',
     desc_en:  'Multimedia projector for presentations and video.',
-    price:    '€92.03 (180лв.)',
+    price:    '€92.03',
   },
   {
     img:      'assets/images/services/fireworks.jpg',
@@ -77,7 +77,7 @@ const services = [
     title_en: 'Fireworks',
     desc_bg:  'Заря 150-170сек. /100 изстрела/ или 300-340сек. /200 изстрела/.',
     desc_en:  'Fireworks 150-170sec / 100 shots or 300-340sec / 200 shots.',
-    price:    '€224.97 (440лв.) / €403.92 (790лв.)',
+    price:    '€224.97 / €403.92',
   },
   {
     img:      'assets/images/services/fountain-l.jpg',
@@ -85,7 +85,7 @@ const services = [
     title_en: 'Light Fountains',
     desc_bg:  'Светлинен фонтан Н 1300мм 6 бр. или от машина Н 2600мм 2 бр.',
     desc_en:  'Light fountain H 1300mm 6 pcs or machine H 2600mm 2 pcs.',
-    price:    '€49.08 (96лв.) / €81.81 (160лв.)',
+    price:    '€49.08 / €81.81',
   },
   {
     img:      'assets/images/services/led.jpg',
@@ -93,7 +93,7 @@ const services = [
     title_en: 'LED Screen VIDEO/FOTO',
     desc_bg:  'Лед екран за VIDEO/FOTO 3800/2500мм.',
     desc_en:  'LED screen for VIDEO/PHOTO 3800/2500mm.',
-    price:    '€148.27 (290лв.)',
+    price:    '€148.27',
   },
   {
     img:      'assets/images/services/glow-numbers.jpg',
@@ -101,7 +101,7 @@ const services = [
     title_en: 'Glowing Numbers',
     desc_bg:  'Светещи Цифри Н=1100mm.',
     desc_en:  'Glowing numbers H=1100mm.',
-    price:    '€34.77 (68лв.) / бр.',
+    price:    '€34.77 / бр.',
   },
   {
     img:      'assets/images/services/arch.jpg',
@@ -109,7 +109,7 @@ const services = [
     title_en: 'Decorative Arch',
     desc_bg:  'Декоративна арка L3000 H1600 с осветление.',
     desc_en:  'Decorative arch L3000 H1600 with lighting.',
-    price:    '€388.58 (760лв.)',
+    price:    '€388.58',
   },
   {
     img:      'assets/images/services/wall-silver.jpg',
@@ -117,7 +117,7 @@ const services = [
     title_en: 'Decorative Wall SILVER',
     desc_bg:  'Декоративна стена SILVER L-3000 H2500.',
     desc_en:  'Decorative wall SILVER L-3000 H2500.',
-    price:    '€181.51 (355лв.)',
+    price:    '€181.51',
   },
   {
     img:      'assets/images/services/wall-gold.jpg',
@@ -125,7 +125,7 @@ const services = [
     title_en: 'Decorative Wall GOLD',
     desc_bg:  'Декоративна стена GOLD L-3000 H2500.',
     desc_en:  'Decorative wall GOLD L-3000 H2500.',
-    price:    '€181.51 (355лв.)',
+    price:    '€181.51',
   },
   {
     img:      'assets/images/services/heater.jpg',
@@ -133,7 +133,7 @@ const services = [
     title_en: 'Gas Patio Heater',
     desc_bg:  'Газова отоплителна гъба за терасата.',
     desc_en:  'Gas patio heater for the terrace.',
-    price:    '€74.14 (145лв.) / бр.',
+    price:    '€74.14 / бр.',
   },
   {
     img:      'assets/images/services/table-glow.jpg',
@@ -141,15 +141,15 @@ const services = [
     title_en: 'RGB Glowing Table',
     desc_bg:  'Маса светеща 1100мм Ф60см RGB.',
     desc_en:  'Glowing table 1100mm Ø60cm RGB.',
-    price:    '€20.45 (40лв.) / бр.',
+    price:    '€20.45 / бр.',
   },
   {
     img:      'assets/images/services/wardrobe.jpg',
     title_bg: 'Гардеробиер',
     title_en: 'Cloakroom Attendant',
-    desc_bg:  'Гардеробиер за 5 часа, офъртайм 20 EUR/1 час.',
-    desc_en:  'Cloakroom attendant for 5 hours, overtime 20 EUR/hour.',
-    price:    '€90.00 (176лв.) / 5ч.',
+    desc_bg:  'Гардеробиер за 5 часа, овъртайм €20/1 час.',
+    desc_en:  'Cloakroom attendant for 5 hours, overtime €20/hour.',
+    price:    '€90.00 / 5ч.',
   },
   {
     img:      'assets/images/services/redcarpet.jpg',
@@ -157,7 +157,7 @@ const services = [
     title_en: 'Red Carpet',
     desc_bg:  'Червена пътека с оградни стойки и въже.',
     desc_en:  'Red carpet with barrier posts and rope.',
-    price:    '€64.93 (127лв.) / €75.67 (148лв.)',
+    price:    '€64.93 / €75.67',
   },
 ];
 

@@ -214,6 +214,7 @@ p { color: var(--text-muted); }
 .hero-overlay {
   position: absolute; inset: 0;
   background: linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.3) 60%, #ffffff 100%);
+  pointer-events: none;
 }
 .hero-content { position: relative; z-index: 1; }
 .hero-content h1 { margin-bottom: 20px; max-width: 760px; color: #fff; }
@@ -399,6 +400,60 @@ p { color: var(--text-muted); }
 @media (max-width: 768px) { .services-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 480px) { .services-grid { grid-template-columns: 1fr; } }
 
+/* ── Drinks Menu Page ── */
+.drinks-menu-tabs { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 32px; }
+.drinks-menu-tab {
+  padding: 10px 20px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 24px;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
+}
+.drinks-menu-tab:hover { color: var(--text); border-color: var(--gold); }
+.drinks-menu-tab.active { background: var(--gold); color: #fff; border-color: var(--gold); }
+.drinks-menu-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+.drink-card {
+  background: var(--surface, #fff);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  display: flex;
+  flex-direction: column;
+}
+.drink-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg, 0 6px 20px rgba(0,0,0,0.08)); border-color: rgba(201,168,76,0.35); }
+.drink-card-img {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-2, #f6f4ef);
+  padding: 18px;
+  aspect-ratio: 1 / 1;
+}
+.drink-card-img img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.drink-card-body { padding: 14px 16px 18px; text-align: center; }
+.drink-card-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 8px;
+  line-height: 1.35;
+  min-height: 2.7em;
+}
+.drink-card-price { font-size: 1rem; font-weight: 700; color: var(--gold); margin: 0; }
+.drinks-menu-note { text-align: center; margin-top: 40px; color: var(--text-muted); font-size: 0.85rem; }
+@media (max-width: 900px) { .drinks-menu-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 640px) { .drinks-menu-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; } .drink-card-img { padding: 12px; } .drink-card-name { font-size: 0.82rem; min-height: 2.5em; } }
+
 /* ── Reservation Form ── */
 .form-wrapper { max-width: 640px; margin: 0 auto; }
 .form-group { margin-bottom: 22px; }
@@ -474,6 +529,44 @@ p { color: var(--text-muted); }
 /* Buttons — full-width on very small screens */
 @media (max-width: 400px) {
   .hero-content .btn { width: 100%; text-align: center; }
+}
+
+/* ── Floating phone button ── */
+.fab-phone {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 900;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #25D366;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+  transition: transform 0.2s, box-shadow 0.2s;
+  text-decoration: none;
+}
+.fab-phone:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+}
+.fab-phone svg {
+  width: 26px;
+  height: 26px;
+  fill: none;
+  stroke: #000;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (max-width: 768px) {
+  .fab-phone { bottom: 20px; right: 20px; width: 52px; height: 52px; }
+  .fab-phone svg { width: 24px; height: 24px; }
 }
 
 /* Stats mobile */

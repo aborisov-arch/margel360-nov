@@ -1,7 +1,7 @@
 const translations = {
   bg: {
     nav_home: 'Тип събитие', nav_gallery: 'Галерия', nav_faq: 'FAQ',
-    nav_services: 'Услуги', nav_contact: 'Контакти', nav_reserve: 'Запитване',
+    nav_services: 'Услуги', nav_drinks: 'Меню', nav_contact: 'Контакти', nav_reserve: 'Запитване',
     gallery_title: 'Галерия', gallery_sub: 'Моменти от изминали тържества',
     footer_desc: 'Зала за всяко събитие в сърцето на София.',
     footer_nav: 'Навигация', footer_contact: 'Контакти',
@@ -10,7 +10,7 @@ const translations = {
   },
   en: {
     nav_home: 'Event Types', nav_gallery: 'Gallery', nav_faq: 'FAQ',
-    nav_services: 'Services', nav_contact: 'Contacts', nav_reserve: 'Enquiry',
+    nav_services: 'Services', nav_drinks: 'Menu', nav_contact: 'Contacts', nav_reserve: 'Enquiry',
     gallery_title: 'Gallery', gallery_sub: 'Photos from our events',
     footer_desc: 'A venue for every occasion in the heart of Sofia.',
     footer_nav: 'Navigation', footer_contact: 'Contact',

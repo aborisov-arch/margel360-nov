@@ -1,7 +1,7 @@
 const translations = {
   bg: {
     nav_home: 'Тип събитие', nav_gallery: 'Галерия', nav_faq: 'FAQ',
-    nav_services: 'Услуги', nav_contact: 'Контакти', nav_reserve: 'Запитване',
+    nav_services: 'Услуги', nav_drinks: 'Меню', nav_contact: 'Контакти', nav_reserve: 'Запитване',
     contact_title: 'Контакти',
     contact_sub: 'Свържете се с нас',
     contact_phone_label: 'Телефон',
@@ -16,7 +16,7 @@ const translations = {
   },
   en: {
     nav_home: 'Event Types', nav_gallery: 'Gallery', nav_faq: 'FAQ',
-    nav_services: 'Services', nav_contact: 'Contacts', nav_reserve: 'Enquiry',
+    nav_services: 'Services', nav_drinks: 'Menu', nav_contact: 'Contacts', nav_reserve: 'Enquiry',
     contact_title: 'Contact',
     contact_sub: 'Get in touch',
     contact_phone_label: 'Phone',

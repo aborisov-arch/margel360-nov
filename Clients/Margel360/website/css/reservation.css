@@ -111,6 +111,11 @@
   color: var(--text);
 }
 .variant-btn.selected .variant-btn-label { color: var(--accent); }
+.variant-btn-sub {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
 .variant-btn-price {
   font-size: 0.82rem;
   color: var(--text-muted);
@@ -128,7 +133,7 @@
 .step2-variant-wrap.has-error { border-color: #e53e3e; }
 
 /* ── Step 2: Datetime ── */
-.datetime-wrap { max-width: 560px; }
+.datetime-wrap { max-width: 680px; }
 .time-options { display: flex; gap: 16px; }
 .time-option { flex: 1; cursor: pointer; }
 .time-option input { position: absolute; opacity: 0; pointer-events: none; }
@@ -194,6 +199,41 @@
 .addon-item.selected .addon-check { background: var(--accent); border-color: var(--accent); color: #fff; }
 
 @media (max-width: 600px) { .addon-grid { grid-template-columns: 1fr; } }
+
+/* ── Drinks prompt overlay ── */
+.drinks-prompt {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: rgba(0,0,0,0.6);
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.drinks-prompt-box {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 36px 32px;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+}
+.drinks-prompt-box p {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 28px;
+  line-height: 1.5;
+}
+.drinks-prompt-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.drinks-prompt-btns .btn { width: 100%; }
 
 /* ── Step 4: Drinks / Alcohol ── */
 .drinks-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
