@@ -58,6 +58,41 @@ let booking = { event:null, date:'', time:'day', addons:{}, drinkQtys:{}, name:'
 let activeDrinkCat = 0;
 
 function getLang() { return localStorage.getItem('margel_lang') || 'bg'; }
+
+// ── Image lightbox (desktop-only click-to-enlarge for addon service thumbnails) ──
+function openImageLightbox(src, alt) {
+  const overlay = document.createElement('div');
+  overlay.className = 'image-lightbox';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-label', alt || 'Enlarged image');
+
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'image-lightbox-close';
+  closeBtn.type = 'button';
+  closeBtn.setAttribute('aria-label', getLang() === 'bg' ? 'Затвори' : 'Close');
+  closeBtn.textContent = '×';
+
+  const img = document.createElement('img');
+  img.src = src;
+  img.alt = alt || '';
+
+  overlay.appendChild(closeBtn);
+  overlay.appendChild(img);
+  document.body.appendChild(overlay);
+  const prevOverflow = document.body.style.overflow;
+  document.body.style.overflow = 'hidden';
+
+  function close() {
+    overlay.remove();
+    document.body.style.overflow = prevOverflow;
+    document.removeEventListener('keydown', onKey);
+  }
+  function onKey(e) { if (e.key === 'Escape') close(); }
+
+  overlay.addEventListener('click', e => { if (e.target === overlay || e.target === closeBtn) close(); });
+  document.addEventListener('keydown', onKey);
+}
 function fmt(eur) {
   if (eur == null) return getLang() === 'bg' ? 'По запитване' : 'On request';
   return '€' + Math.round(Number(eur));
@@ -324,7 +359,20 @@ function renderAddons() {
     const input = document.createElement('input'); input.type = 'checkbox'; input.checked = !!booking.addons[svc.id];
 
     const visual = document.createElement('div');
-    if (svc.img) { visual.className = 'addon-img'; const i = document.createElement('img'); i.src = svc.img; i.alt = ''; visual.appendChild(i); }
+    if (svc.img) {
+      visual.className = 'addon-img';
+      const i = document.createElement('img');
+      i.src = svc.img;
+      i.alt = l === 'bg' ? svc.name_bg : svc.name_en;
+      visual.appendChild(i);
+      // Desktop-only click-to-enlarge; on mobile, click falls through to label and toggles checkbox
+      visual.addEventListener('click', e => {
+        if (!window.matchMedia('(min-width: 768px)').matches) return;
+        e.preventDefault();
+        e.stopPropagation();
+        openImageLightbox(svc.img, i.alt);
+      });
+    }
     else { visual.className = 'addon-emoji'; visual.textContent = svc.emoji || '⭐'; visual.setAttribute('aria-hidden', 'true'); }
 
     const info = document.createElement('div'); info.className = 'addon-info';
