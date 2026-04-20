@@ -8,8 +8,8 @@ const events = [
     desc_en: 'Evening event from 19:00. The refined atmosphere of Margel 360° for an unforgettable celebration.',
     hours_bg: '5 часа',
     hours_en: '5 hours',
-    price_bg: '€1,280.46',
-    price_en: '€1,280.46',
+    price_bg: '€1,280',
+    price_en: '€1,280',
     img: 'assets/images/event-evening.jpg',
   },
   {
@@ -44,8 +44,8 @@ const events = [
     desc_en: 'Magical décor in the hall and a terrace overlooking Vitosha — perfect for your special day.',
     hours_bg: '6 часа',
     hours_en: '6 hours',
-    price_bg: '€1,500.00',
-    price_en: '€1,500.00',
+    price_bg: '€1,500',
+    price_en: '€1,500',
     img: 'assets/images/event-wedding.jpg',
   },
 ];
