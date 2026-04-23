@@ -131,7 +131,10 @@ function updateProgress() {
 document.querySelectorAll('.wstep').forEach(btn => {
   btn.addEventListener('click', () => {
     const n = parseInt(btn.getAttribute('data-step'), 10);
-    if (n < currentStep) goToStep(n);
+    if (n < currentStep) {
+      if (n === 3) enterDrinksStep();
+      else goToStep(n);
+    }
   });
 });
 
@@ -402,13 +405,21 @@ function updateAddonsTotal() {
 }
 
 // ── Drinks prompt (between add-ons and drinks) ──
+function enterDrinksStep() {
+  if (window.AgeGate) {
+    window.AgeGate.verify(function () { goToStep(3); });
+  } else {
+    goToStep(3);
+  }
+}
+
 function showDrinksPrompt() {
   const l = getLang();
   const prompt = document.getElementById('drinks-prompt');
   const textEl = document.getElementById('drinks-prompt-text');
   const yesBtn = document.getElementById('drinks-prompt-yes');
   const noBtn = document.getElementById('drinks-prompt-no');
-  if (!prompt) { goToStep(3); return; }
+  if (!prompt) { enterDrinksStep(); return; }
 
   textEl.textContent = l === 'bg'
     ? 'Желаете ли да разгледате менюто с напитки?'
@@ -418,7 +429,7 @@ function showDrinksPrompt() {
 
   prompt.style.display = 'flex';
 
-  yesBtn.onclick = function() { prompt.style.display = 'none'; goToStep(3); };
+  yesBtn.onclick = function() { prompt.style.display = 'none'; enterDrinksStep(); };
   noBtn.onclick = function() { prompt.style.display = 'none'; goToStep(4); };
 }
 
