@@ -687,6 +687,31 @@ p { color: var(--text-muted); }
   .lang-toggle { min-height: 44px; padding: 0 12px; }
 }
 
+/* ── Video gallery section ── */
+.videos-section { background: var(--bg-2); }
+.videos-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+.video-card {
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  background: #000;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  object-fit: cover;
+  display: block;
+  outline: none;
+}
+.video-card:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+@media (max-width: 900px) {
+  .videos-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+}
+@media (max-width: 520px) {
+  .videos-grid { grid-template-columns: 1fr; }
+}
+
 /* ── Event detail pages ── */
 .event-detail { max-width: 820px; }
 .event-detail-meta {
