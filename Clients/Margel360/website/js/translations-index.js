@@ -1,7 +1,7 @@
 // translations-index.js — Home page
 const translations = {
   bg: {
-    nav_home: 'Тип събитие',
+    nav_home: 'Събития',
     nav_gallery: 'Галерия',
     nav_faq: 'FAQ',
     nav_services: 'Услуги',
@@ -32,7 +32,7 @@ const translations = {
     footer_copy: '© 2026 Маргел 360°. Всички права запазени.',
   },
   en: {
-    nav_home: 'Event Types',
+    nav_home: 'Events',
     nav_gallery: 'Gallery',
     nav_faq: 'FAQ',
     nav_services: 'Services',

@@ -1,6 +1,6 @@
 const translations = {
   bg: {
-    nav_home: 'Тип събитие', nav_gallery: 'Галерия', nav_faq: 'FAQ',
+    nav_home: 'Събития', nav_gallery: 'Галерия', nav_faq: 'FAQ',
     nav_services: 'Услуги', nav_drinks: 'Меню', nav_contact: 'Контакти', nav_reserve: 'Запитване',
     services_title: 'Допълнителни услуги',
     services_sub: 'Всичко необходимо за перфектното тържество',
@@ -10,7 +10,7 @@ const translations = {
     footer_copy: '© 2026 Маргел 360°. Всички права запазени.',
   },
   en: {
-    nav_home: 'Event Types', nav_gallery: 'Gallery', nav_faq: 'FAQ',
+    nav_home: 'Events', nav_gallery: 'Gallery', nav_faq: 'FAQ',
     nav_services: 'Services', nav_drinks: 'Menu', nav_contact: 'Contacts', nav_reserve: 'Enquiry',
     services_title: 'Additional Services',
     services_sub: 'Everything you need for the perfect celebration',

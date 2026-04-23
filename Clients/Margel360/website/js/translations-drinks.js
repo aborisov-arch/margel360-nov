@@ -1,6 +1,6 @@
 const translations = {
   bg: {
-    nav_home: 'Тип събитие', nav_gallery: 'Галерия', nav_faq: 'FAQ',
+    nav_home: 'Събития', nav_gallery: 'Галерия', nav_faq: 'FAQ',
     nav_services: 'Услуги', nav_drinks: 'Меню', nav_contact: 'Контакти', nav_reserve: 'Запитване',
     drinks_title: 'Меню с напитки',
     drinks_sub: 'Шампанско, вино, спиртни и безалкохолни за вашето събитие',
@@ -11,7 +11,7 @@ const translations = {
     footer_copy: '© 2026 Маргел 360°. Всички права запазени.',
   },
   en: {
-    nav_home: 'Event Types', nav_gallery: 'Gallery', nav_faq: 'FAQ',
+    nav_home: 'Events', nav_gallery: 'Gallery', nav_faq: 'FAQ',
     nav_services: 'Services', nav_drinks: 'Menu', nav_contact: 'Contacts', nav_reserve: 'Enquiry',
     drinks_title: 'Drinks Menu',
     drinks_sub: 'Champagne, wines, spirits and soft drinks for your event',

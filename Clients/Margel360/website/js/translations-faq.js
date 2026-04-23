@@ -1,6 +1,6 @@
 const translations = {
   bg: {
-    nav_home: 'Тип събитие', nav_gallery: 'Галерия', nav_faq: 'FAQ',
+    nav_home: 'Събития', nav_gallery: 'Галерия', nav_faq: 'FAQ',
     nav_services: 'Услуги', nav_drinks: 'Меню', nav_contact: 'Контакти', nav_reserve: 'Запитване',
     faq_title: 'Често задавани въпроси',
     faq_sub: 'Отговори на най-честите въпроси',
@@ -10,7 +10,7 @@ const translations = {
     footer_copy: '© 2026 Маргел 360°. Всички права запазени.',
   },
   en: {
-    nav_home: 'Event Types', nav_gallery: 'Gallery', nav_faq: 'FAQ',
+    nav_home: 'Events', nav_gallery: 'Gallery', nav_faq: 'FAQ',
     nav_services: 'Services', nav_drinks: 'Menu', nav_contact: 'Contacts', nav_reserve: 'Enquiry',
     faq_title: 'Frequently Asked Questions',
     faq_sub: 'Answers to the most common questions',
