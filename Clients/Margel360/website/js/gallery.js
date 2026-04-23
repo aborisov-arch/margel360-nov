@@ -49,31 +49,6 @@ const categories = [
       { src:'assets/images/gallery-corporate-1.jpg', alt_bg:'Корпоративна среща',   alt_en:'Corporate meeting' },
     ],
   },
-  {
-    id: 'venue',
-    title_bg: 'Зала Маргел 360°',
-    title_en: 'Margel 360° Venue',
-    images: [
-      { src:'assets/images/about-venue.jpg', alt_bg:'Зала', alt_en:'Venue' },
-      { src:'assets/images/venue-1.jpg',     alt_bg:'Зала', alt_en:'Venue' },
-      { src:'assets/images/venue-2.jpg',     alt_bg:'Зала', alt_en:'Venue' },
-      { src:'assets/images/venue-3.jpg',     alt_bg:'Зала', alt_en:'Venue' },
-      { src:'assets/images/venue-4.jpg',     alt_bg:'Зала', alt_en:'Venue' },
-      { src:'assets/images/venue-5.jpg',     alt_bg:'Зала', alt_en:'Venue' },
-      { src:'assets/images/venue-6.jpg',     alt_bg:'Зала', alt_en:'Venue' },
-      { src:'assets/images/venue-7.jpg',     alt_bg:'Зала', alt_en:'Venue' },
-      { src:'assets/images/venue-8.jpg',     alt_bg:'Зала', alt_en:'Venue' },
-      { src:'assets/images/venue-9.jpg',     alt_bg:'Зала', alt_en:'Venue' },
-      { src:'assets/images/venue-10.jpg',    alt_bg:'Зала', alt_en:'Venue' },
-      { src:'assets/images/venue-11.jpg',    alt_bg:'Зала', alt_en:'Venue' },
-      { src:'assets/images/venue-12.jpg',    alt_bg:'Зала', alt_en:'Venue' },
-      { src:'assets/images/venue-13.jpg',    alt_bg:'Зала', alt_en:'Venue' },
-      { src:'assets/images/venue-14.jpg',    alt_bg:'Зала', alt_en:'Venue' },
-      { src:'assets/images/venue-15.jpg',    alt_bg:'Зала', alt_en:'Venue' },
-      { src:'assets/images/venue-16.jpg',    alt_bg:'Зала', alt_en:'Venue' },
-      { src:'assets/images/venue-17.jpg',    alt_bg:'Зала', alt_en:'Venue' },
-    ],
-  },
 ];
 
 // ── State ──
