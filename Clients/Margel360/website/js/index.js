@@ -81,7 +81,7 @@ function renderCards(lang) {
       card.setAttribute('role', 'listitem');
       card.style.cursor = 'pointer';
       card.addEventListener('click', () => {
-        window.location.href = 'reservation.html?event=' + e.id;
+        window.location.href = e.id + '.html';
       });
 
       const imgWrap = document.createElement('div');
