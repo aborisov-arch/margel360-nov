@@ -36,7 +36,7 @@ function renderEnquiries(enquiries) {
   const tbody = document.getElementById('enquiries-body');
 
   if (!enquiries || !enquiries.length) {
-    tbody.innerHTML = `<tr><td colspan="7" class="empty-state">${t('dash_empty')}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="empty-state">${t('dash_empty')}</td></tr>`;
     return;
   }
 
@@ -54,10 +54,12 @@ function renderEnquiries(enquiries) {
       <td>${esc(e.event_type)}</td>
       <td>${esc(e.preferred_date)}</td>
       <td>${fmtDate(e.created_at)}</td>
+      <td>${e.last_edited_at ? fmtDate(e.last_edited_at) : t('edit_never')}</td>
       <td>
         <span class="status-badge ${isAnswered ? 'answered' : 'new'}">
           ${isAnswered ? t('status_answered') : t('status_new')}
         </span>
+        ${e.edit_locked ? `<span class="status-badge locked" style="margin-left:6px">${t('edit_locked_badge')}</span>` : ''}
       </td>
       <td><button class="btn-expand" aria-expanded="false" data-id="${esc(e.id)}">${t('btn_view')}</button></td>
     `;
@@ -68,7 +70,7 @@ function renderEnquiries(enquiries) {
     detailTr.className = 'detail-row hidden';
     detailTr.id = `detail-${e.id}`;
     detailTr.innerHTML = `
-      <td colspan="7">
+      <td colspan="8">
         <div class="detail-panel">
           <div class="detail-grid">
             <div><strong>${t('detail_email')}:</strong> ${esc(e.email)}</div>
@@ -85,6 +87,14 @@ function renderEnquiries(enquiries) {
               data-answered="${isAnswered ? 'true' : 'false'}">
               ${isAnswered ? t('btn_mark_new') : t('btn_mark_answered')}
             </button>
+            <button class="btn btn-sm btn-outline btn-lock"
+              data-id="${esc(e.id)}"
+              data-locked="${e.edit_locked ? 'true' : 'false'}">
+              ${e.edit_locked ? t('edit_unlock_btn') : t('edit_lock_btn')}
+            </button>
+            <span style="color:#888;font-size:0.9em;margin-left:auto">
+              ${t('edit_count_label')}: ${e.edit_count ?? 0}
+            </span>
           </div>
         </div>
       </td>
@@ -165,6 +175,32 @@ function renderEnquiries(enquiries) {
       // Update local cache
       const enquiry = allEnquiries.find(e => String(e.id) === String(id));
       if (enquiry) enquiry.status = newStatus;
+    }
+
+    // Lock toggle button
+    const lockBtn = evt.target.closest('.btn-lock');
+    if (lockBtn) {
+      const id = lockBtn.getAttribute('data-id');
+      const wasLocked = lockBtn.getAttribute('data-locked') === 'true';
+      const newLocked = !wasLocked;
+
+      lockBtn.disabled = true;
+      const { error } = await db
+        .from('enquiries')
+        .update({ edit_locked: newLocked })
+        .eq('id', id);
+      lockBtn.disabled = false;
+
+      if (error) {
+        console.error('Lock toggle failed:', error);
+        return;
+      }
+      lockBtn.setAttribute('data-locked', newLocked ? 'true' : 'false');
+      lockBtn.textContent = newLocked ? t('edit_unlock_btn') : t('edit_lock_btn');
+      const enquiry = allEnquiries.find(x => String(x.id) === String(id));
+      if (enquiry) enquiry.edit_locked = newLocked;
+      renderEnquiries(allEnquiries);
+      return;
     }
   });
 }
