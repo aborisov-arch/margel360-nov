@@ -45,7 +45,7 @@
         МАРГЕЛ <span>360°</span>
       </a>
       <ul class="nav-links" role="list">
-        <li><a href="index.html" data-i18n="nav_home">Тип събитие</a></li>
+        <li><a href="index.html" data-i18n="nav_home">Събития</a></li>
         <li><a href="gallery.html" data-i18n="nav_gallery">Галерия</a></li>
         <li><a href="faq.html" data-i18n="nav_faq">FAQ</a></li>
         <li><a href="services.html" data-i18n="nav_services">Услуги</a></li>
@@ -62,7 +62,7 @@
 
   <nav class="nav-drawer" id="nav-drawer" aria-label="Mobile navigation">
     <ul role="list" style="display:contents">
-      <li><a href="index.html" data-i18n="nav_home">Тип събитие</a></li>
+      <li><a href="index.html" data-i18n="nav_home">Събития</a></li>
       <li><a href="gallery.html" data-i18n="nav_gallery">Галерия</a></li>
       <li><a href="faq.html" data-i18n="nav_faq">FAQ</a></li>
       <li><a href="services.html" data-i18n="nav_services">Услуги</a></li>
@@ -130,6 +130,18 @@
               <input type="text" id="res-date" name="date" readonly placeholder="дд/мм/гггг" aria-describedby="err-date-msg">
               <span class="form-error" id="err-date-msg" role="alert" data-i18n="err_date">Моля изберете дата.</span>
             </div>
+            <div class="form-group" id="fg-time" style="display:none">
+              <label for="res-time" data-i18n="res_time">Начален час</label>
+              <select id="res-time" name="time" aria-describedby="err-time-msg">
+                <option value="" data-i18n="res_time_choose">— Изберете час —</option>
+                <option value="19:00">19:00</option>
+                <option value="19:30">19:30</option>
+                <option value="20:00">20:00</option>
+                <option value="20:30">20:30</option>
+                <option value="21:00">21:00</option>
+              </select>
+              <span class="form-error" id="err-time-msg" role="alert" data-i18n="err_time">Моля изберете начален час.</span>
+            </div>
             <div id="step2-variant-wrap" class="step2-variant-wrap" style="display:none"></div>
             <span class="form-error" id="err-variant-msg" role="alert" style="display:none" data-i18n="err_variant">Моля изберете опция.</span>
             <div class="selected-event-preview" id="event-preview"></div>
@@ -188,13 +200,37 @@
           <div class="form-wrapper">
             <div class="form-row">
               <div class="form-group" id="fg-name">
-                <label for="res-name" data-i18n="res_name">Три имена</label>
+                <label for="res-name" data-i18n="res_name">Име и фамилия</label>
                 <input type="text" id="res-name" name="name" autocomplete="name" aria-describedby="err-name-msg">
-                <span class="form-error" id="err-name-msg" role="alert" data-i18n="err_name">Моля въведете вашето пълно име.</span>
+                <span class="form-error" id="err-name-msg" role="alert" data-i18n="err_name">Моля въведете вашето име и фамилия.</span>
               </div>
               <div class="form-group" id="fg-phone">
                 <label for="res-phone" data-i18n="res_phone">Телефон</label>
-                <input type="tel" id="res-phone" name="phone" autocomplete="tel" aria-describedby="err-phone-msg">
+                <div class="phone-input-wrap">
+                  <select id="res-phone-cc" class="phone-cc" aria-label="Код на държавата">
+                    <option value="+359" data-flag="🇧🇬" selected>🇧🇬 +359</option>
+                    <option value="+49"  data-flag="🇩🇪">🇩🇪 +49</option>
+                    <option value="+44"  data-flag="🇬🇧">🇬🇧 +44</option>
+                    <option value="+1"   data-flag="🇺🇸">🇺🇸 +1</option>
+                    <option value="+33"  data-flag="🇫🇷">🇫🇷 +33</option>
+                    <option value="+39"  data-flag="🇮🇹">🇮🇹 +39</option>
+                    <option value="+34"  data-flag="🇪🇸">🇪🇸 +34</option>
+                    <option value="+31"  data-flag="🇳🇱">🇳🇱 +31</option>
+                    <option value="+43"  data-flag="🇦🇹">🇦🇹 +43</option>
+                    <option value="+41"  data-flag="🇨🇭">🇨🇭 +41</option>
+                    <option value="+32"  data-flag="🇧🇪">🇧🇪 +32</option>
+                    <option value="+30"  data-flag="🇬🇷">🇬🇷 +30</option>
+                    <option value="+40"  data-flag="🇷🇴">🇷🇴 +40</option>
+                    <option value="+389" data-flag="🇲🇰">🇲🇰 +389</option>
+                    <option value="+381" data-flag="🇷🇸">🇷🇸 +381</option>
+                    <option value="+90"  data-flag="🇹🇷">🇹🇷 +90</option>
+                    <option value="+48"  data-flag="🇵🇱">🇵🇱 +48</option>
+                    <option value="+420" data-flag="🇨🇿">🇨🇿 +420</option>
+                    <option value="+36"  data-flag="🇭🇺">🇭🇺 +36</option>
+                    <option value="+971" data-flag="🇦🇪">🇦🇪 +971</option>
+                  </select>
+                  <input type="tel" id="res-phone" name="phone" autocomplete="tel" aria-describedby="err-phone-msg" placeholder="888 123 456">
+                </div>
                 <span class="form-error" id="err-phone-msg" role="alert" data-i18n="err_phone">Моля въведете валиден телефонен номер.</span>
               </div>
             </div>
@@ -207,6 +243,7 @@
               <label for="res-guests" data-i18n="res_guests">Брой гости (1–140)</label>
               <input type="number" id="res-guests" name="guests" min="1" max="140" placeholder="50" aria-describedby="err-guests-msg">
               <span class="form-error" id="err-guests-msg" role="alert" data-i18n="err_guests">Моля въведете брой гости (1–140).</span>
+              <p class="guests-note" data-i18n="guests_note">Базовата цена е за до 40 гости. За всеки допълнителен гост над 40 се начислява такса от €15.34.</p>
             </div>
             <div class="form-group">
               <label for="res-message" data-i18n="res_message">Бележки (по желание)</label>
@@ -224,6 +261,7 @@
           <h2 class="step-heading" data-i18n="s6_title">Преглед и изпращане</h2>
           <div class="summary-card" id="booking-summary"></div>
           <div class="price-summary" id="price-summary"></div>
+          <p class="overtime-note" data-i18n="overtime_note">Забележка: за всеки час, надхвърлящ договорената продължителност, се начислява такса от €127.83.</p>
           <div class="payment-methods">
             <p class="payment-label" data-i18n="payment_label">Начин на плащане</p>
             <div class="payment-options" role="group">
@@ -267,12 +305,12 @@
             <img src="assets/images/logo-real.png" alt="Маргел 360°" class="logo-img">
             МАРГЕЛ <span>360°</span>
           </a>
-          <p data-i18n="footer_desc">Зала за всяко събитие в сърцето на София.</p>
+          <p data-i18n="footer_desc">Маргел 360° е професионална зала за събития в София — сватби, рождени дни, корпоративни срещи, тематични партита и конференции. До 140 гости, панорамна тераса 260 м² с изглед към Витоша, 12 колони EV/YAMAHA за 360° звук, модерно осветление и 70+ безплатни паркоместа.</p>
         </div>
         <div>
           <h4 data-i18n="footer_nav">Навигация</h4>
           <ul class="footer-links" role="list">
-            <li><a href="index.html" data-i18n="nav_home">Тип събитие</a></li>
+            <li><a href="index.html" data-i18n="nav_home">Събития</a></li>
             <li><a href="gallery.html" data-i18n="nav_gallery">Галерия</a></li>
             <li><a href="faq.html" data-i18n="nav_faq">FAQ</a></li>
             <li><a href="services.html" data-i18n="nav_services">Услуги</a></li>
@@ -300,11 +338,12 @@
   <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/bg.js"></script>
   <script src="js/translations-reservation.js"></script>
   <script src="js/main.js"></script>
+  <script src="js/age-gate.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/reservation-supabase.js"></script>
   <script src="js/drinks-data.js"></script>
   <script src="js/reservation-catalog.js"></script>
-  <script src="js/reservation.js?v=4"></script>
+  <script src="js/reservation.js?v=5"></script>
   <a href="tel:+359888100042" class="fab-phone" aria-label="Обадете се"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg></a>
 </body>
 </html>

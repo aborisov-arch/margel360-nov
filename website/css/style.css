@@ -112,11 +112,13 @@ p { color: var(--text-muted); }
 }
 .nav .container { display: flex; align-items: center; justify-content: space-between; width: 100%; }
 .nav-logo { display: flex; align-items: center; gap: 10px; font-size: 1.25rem; font-weight: 800; color: var(--text); letter-spacing: -0.5px; }
-.logo-img { width: 40px; height: 40px; object-fit: contain; border-radius: 6px; }
+.logo-img { width: 40px; height: 40px; object-fit: contain; border-radius: 6px; transition: filter var(--transition); }
 .nav-logo span { color: var(--accent); }
 
 /* On hero (transparent nav), force white text */
 .nav:not(.scrolled) .nav-logo { color: #fff; }
+.nav:not(.scrolled) .logo-img { filter: brightness(0) invert(1); }
+.nav.scrolled .logo-img { filter: brightness(0); }
 .nav:not(.scrolled) .nav-links a { color: rgba(255,255,255,0.8); }
 .nav:not(.scrolled) .nav-links a:hover,
 .nav:not(.scrolled) .nav-links a.active { color: #fff; }

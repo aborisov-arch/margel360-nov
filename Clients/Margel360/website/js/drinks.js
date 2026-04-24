@@ -30,13 +30,14 @@ document.addEventListener('DOMContentLoaded', () => {
       img.src = d.img;
       img.alt = lang === 'bg' ? d.name_bg : d.name_en;
       img.loading = 'lazy';
+      img.onerror = () => { img.onerror = null; img.src = 'assets/images/drinks/placeholder.svg'; };
       imgWrap.appendChild(img);
 
       const body = document.createElement('div'); body.className = 'drink-card-body';
       const name = document.createElement('h3'); name.className = 'drink-card-name';
       name.textContent = lang === 'bg' ? d.name_bg : d.name_en;
       const price = document.createElement('p'); price.className = 'drink-card-price';
-      price.textContent = '€' + Math.round(Number(d.price_eur));
+      price.textContent = '€' + Number(d.price_eur).toFixed(2);
 
       body.appendChild(name); body.appendChild(price);
       card.appendChild(imgWrap); card.appendChild(body);

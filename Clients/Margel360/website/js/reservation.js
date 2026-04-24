@@ -1,3 +1,7 @@
+// ── Pricing constants ──
+const GUEST_BASE_COUNT = 40;      // Base guest count included in event price
+const EXTRA_GUEST_FEE = 15.34;    // EUR per extra guest above the base
+
 // ── Drinks data (drinks & drinkCategories) loaded from js/drinks-data.js ──
 // ── Event types, includedLabels, addonServices loaded from js/reservation-catalog.js ──
 
@@ -60,7 +64,7 @@ function goToStep(n) {
   updateProgress();
   const section = document.querySelector('.wizard-section');
   if (section) window.scrollTo({ top: section.offsetTop - 90, behavior: 'smooth' });
-  if (n === 1) renderStep2VariantPicker();
+  if (n === 1) { renderStep2VariantPicker(); renderStep2TimePicker(); }
   if (n === 2) renderAddons();
   if (n === 3) renderDrinks();
   if (n === 5) renderSummary();
@@ -81,7 +85,10 @@ function updateProgress() {
 document.querySelectorAll('.wstep').forEach(btn => {
   btn.addEventListener('click', () => {
     const n = parseInt(btn.getAttribute('data-step'), 10);
-    if (n < currentStep) goToStep(n);
+    if (n < currentStep) {
+      if (n === 3) enterDrinksStep();
+      else goToStep(n);
+    }
   });
 });
 
@@ -136,6 +143,26 @@ function renderEventPicker() {
     card.addEventListener('click', pick);
     card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
   });
+}
+
+// ── Step 2 time picker (shown only for evening event) ──
+function renderStep2TimePicker() {
+  const fg = document.getElementById('fg-time');
+  const sel = document.getElementById('res-time');
+  if (!fg || !sel) return;
+  const isEvening = booking.event?.id === 'evening';
+  fg.style.display = isEvening ? '' : 'none';
+  if (!isEvening) {
+    booking.time = '';
+    sel.value = '';
+    fg.classList.remove('has-error');
+    return;
+  }
+  if (booking.time) sel.value = booking.time;
+  sel.onchange = () => {
+    booking.time = sel.value;
+    if (sel.value) fg.classList.remove('has-error');
+  };
 }
 
 // ── Step 2 variant picker (shown inside step 2 for corporate/birthday) ──
@@ -255,6 +282,15 @@ function setupStep2() {
     fg?.classList.remove('has-error');
     booking.date = d.value;
 
+    // Evening event: require start time
+    if (booking.event?.id === 'evening') {
+      const timeSel = document.getElementById('res-time');
+      const timeFg  = document.getElementById('fg-time');
+      if (!timeSel?.value) { timeFg?.classList.add('has-error'); return; }
+      timeFg?.classList.remove('has-error');
+      booking.time = timeSel.value;
+    }
+
     // If event still has variants (not yet resolved), require selection
     if (booking.event?.variants) {
       const wrap = document.getElementById('step2-variant-wrap');
@@ -352,13 +388,21 @@ function updateAddonsTotal() {
 }
 
 // ── Drinks prompt (between add-ons and drinks) ──
+function enterDrinksStep() {
+  if (window.AgeGate) {
+    window.AgeGate.verify(function () { goToStep(3); });
+  } else {
+    goToStep(3);
+  }
+}
+
 function showDrinksPrompt() {
   const l = getLang();
   const prompt = document.getElementById('drinks-prompt');
   const textEl = document.getElementById('drinks-prompt-text');
   const yesBtn = document.getElementById('drinks-prompt-yes');
   const noBtn = document.getElementById('drinks-prompt-no');
-  if (!prompt) { goToStep(3); return; }
+  if (!prompt) { enterDrinksStep(); return; }
 
   textEl.textContent = l === 'bg'
     ? 'Желаете ли да разгледате менюто с напитки?'
@@ -368,7 +412,7 @@ function showDrinksPrompt() {
 
   prompt.style.display = 'flex';
 
-  yesBtn.onclick = function() { prompt.style.display = 'none'; goToStep(3); };
+  yesBtn.onclick = function() { prompt.style.display = 'none'; enterDrinksStep(); };
   noBtn.onclick = function() { prompt.style.display = 'none'; goToStep(4); };
 }
 
@@ -399,32 +443,41 @@ function renderDrinks() {
     item.className = 'drink-item' + (qty > 0 ? ' has-qty' : '');
 
     const img = document.createElement('img'); img.src = drink.img; img.alt = l === 'bg' ? drink.name_bg : drink.name_en; img.loading = 'lazy';
+    img.onerror = () => { img.onerror = null; img.src = 'assets/images/drinks/placeholder.svg'; };
     const body = document.createElement('div'); body.className = 'drink-body';
     const name = document.createElement('div'); name.className = 'drink-name'; name.textContent = l === 'bg' ? drink.name_bg : drink.name_en;
     const price = document.createElement('div'); price.className = 'drink-price';
-    price.textContent = fmt(drink.price_eur);
+    price.textContent = '€' + Number(drink.price_eur).toFixed(2);
 
     const qtyWrap = document.createElement('div'); qtyWrap.className = 'drink-qty';
-    const minus = document.createElement('button'); minus.className = 'qty-btn'; minus.textContent = '−'; minus.setAttribute('aria-label', 'Decrease');
-    const num = document.createElement('span'); num.className = 'qty-num'; num.textContent = qty;
-    const plus = document.createElement('button'); plus.className = 'qty-btn'; plus.textContent = '+'; plus.setAttribute('aria-label', 'Increase');
+    const minus = document.createElement('button'); minus.className = 'qty-btn'; minus.type = 'button'; minus.textContent = '−'; minus.setAttribute('aria-label', 'Decrease');
+    const num = document.createElement('input');
+    num.className = 'qty-num';
+    num.type = 'number';
+    num.min = '0';
+    num.max = '999';
+    num.step = '1';
+    num.inputMode = 'numeric';
+    num.value = qty;
+    num.setAttribute('aria-label', l === 'bg' ? 'Количество' : 'Quantity');
+    const plus = document.createElement('button'); plus.className = 'qty-btn'; plus.type = 'button'; plus.textContent = '+'; plus.setAttribute('aria-label', 'Increase');
 
     qtyWrap.appendChild(minus); qtyWrap.appendChild(num); qtyWrap.appendChild(plus);
     body.appendChild(name); body.appendChild(price); body.appendChild(qtyWrap);
     item.appendChild(img); item.appendChild(body); grid.appendChild(item);
 
-    minus.addEventListener('click', () => {
-      booking.drinkQtys[drink.id] = Math.max(0, (booking.drinkQtys[drink.id] || 0) - 1);
-      num.textContent = booking.drinkQtys[drink.id];
-      item.classList.toggle('has-qty', booking.drinkQtys[drink.id] > 0);
+    function setQty(next) {
+      const n = Math.max(0, Math.min(999, Math.floor(Number(next) || 0)));
+      booking.drinkQtys[drink.id] = n;
+      num.value = n;
+      item.classList.toggle('has-qty', n > 0);
       updateDrinksTotal();
-    });
-    plus.addEventListener('click', () => {
-      booking.drinkQtys[drink.id] = (booking.drinkQtys[drink.id] || 0) + 1;
-      num.textContent = booking.drinkQtys[drink.id];
-      item.classList.add('has-qty');
-      updateDrinksTotal();
-    });
+    }
+    minus.addEventListener('click', () => setQty((booking.drinkQtys[drink.id] || 0) - 1));
+    plus.addEventListener('click',  () => setQty((booking.drinkQtys[drink.id] || 0) + 1));
+    num.addEventListener('input', () => setQty(num.value));
+    num.addEventListener('focus', () => num.select());
+    num.addEventListener('blur',  () => { if (num.value === '' || isNaN(Number(num.value))) setQty(0); });
   });
 }
 
@@ -450,7 +503,9 @@ function setupStep5() {
     v(guests,'fg-guests', val => { const n=parseInt(val); return n>=1 && n<=140; });
     if (!valid) return;
     booking.name = name.value.trim(); booking.email = email.value.trim();
-    booking.phone = phone.value.trim(); booking.guests = guests.value;
+    const cc = document.getElementById('res-phone-cc')?.value || '';
+    booking.phone = (cc + ' ' + phone.value.trim()).trim();
+    booking.guests = guests.value;
     booking.notes = document.getElementById('res-message')?.value.trim() || '';
     goToStep(5);
   });
@@ -468,7 +523,7 @@ function renderSummary() {
   const body = document.createElement('div'); body.className = 'summary-body';
   [
     { label: l==='bg'?'Събитие':'Event',   value: l==='bg'?booking.event.title_bg:booking.event.title_en },
-    { label: l==='bg'?'Дата':'Date',       value: booking.date },
+    { label: l==='bg'?'Дата':'Date',       value: booking.date + (booking.time ? ' · ' + booking.time : '') },
     { label: l==='bg'?'Гости':'Guests',    value: booking.guests },
     { label: l==='bg'?'Три имена':'Name',  value: booking.name },
     { label: l==='bg'?'Имейл':'Email',     value: booking.email },
@@ -486,11 +541,16 @@ function renderSummary() {
     priceSummary.innerHTML = '';
     const addonsTotal = Object.values(booking.addons).reduce((s,v)=>s+(v||0),0);
     let drinksTotal = 0; drinks.forEach(d => { if (d.price_eur) drinksTotal += (booking.drinkQtys[d.id]||0)*d.price_eur; });
-    const grandTotal = (booking.event.price_eur || 0) + addonsTotal + drinksTotal;
+    const guests = parseInt(booking.guests, 10) || 0;
+    const extraGuests = Math.max(0, guests - GUEST_BASE_COUNT);
+    const extraGuestsFee = extraGuests * EXTRA_GUEST_FEE;
+    const grandTotal = (booking.event.price_eur || 0) + addonsTotal + drinksTotal + extraGuestsFee;
+    const extraLabel = (l==='bg'?'Допълнителни гости':'Extra guests') + ' (' + extraGuests + ' × €' + EXTRA_GUEST_FEE.toFixed(2) + ')';
     const rows = [
       { label: l==='bg'?'Наем на зала':'Venue rental', value: fmtEvent(booking.event) },
       ...(addonsTotal > 0 ? [{ label: l==='bg'?'Допълнителни услуги':'Add-on services', value: '€'+Math.round(addonsTotal) }] : []),
       ...(drinksTotal > 0 ? [{ label: l==='bg'?'Напитки':'Drinks', value: '€'+Math.round(drinksTotal) }] : []),
+      ...(extraGuestsFee > 0 ? [{ label: extraLabel, value: '€'+extraGuestsFee.toFixed(2) }] : []),
       { label: l==='bg'?'Обща сума':'Total', value: '€'+Math.round(grandTotal), total: true },
     ];
     rows.forEach(row => {
