@@ -361,6 +361,18 @@
   line-height: 1.5;
 }
 
+/* Overtime fee note on summary step */
+.overtime-note {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+  margin: -4px 0 24px;
+  padding: 12px 16px;
+  background: var(--bg-2);
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+}
+
 /* Phone with country dial-code select */
 .phone-input-wrap { display: flex; gap: 8px; align-items: stretch; }
 .phone-input-wrap .phone-cc {
