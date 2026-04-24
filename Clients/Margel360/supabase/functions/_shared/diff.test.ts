@@ -24,9 +24,17 @@ Deno.test("diffEnquiry: no change returns empty", () => {
 });
 
 Deno.test("diffEnquiry: only whitelisted fields", () => {
-  const before = { guests: 30, preferred_date: "2026-05-01", email: "a@b.c" };
-  const after  = { guests: 35, preferred_date: "2026-06-01", email: "x@y.z" };
+  const before = { guests: 30, email: "a@b.c", status: "new" };
+  const after  = { guests: 35, email: "x@y.z", status: "answered" };
   const d = diffEnquiry(before, after);
-  assertEquals(d.length, 1); // guests only; preferred_date & email are not in the whitelist
+  assertEquals(d.length, 1); // guests only; email and status are not in the whitelist
   assertEquals(d[0].field, "guests");
+});
+
+Deno.test("diffEnquiry: preferred_date is whitelisted", () => {
+  const before = { preferred_date: "26/04/2026" };
+  const after  = { preferred_date: "30/04/2026" };
+  const d = diffEnquiry(before, after);
+  assertEquals(d.length, 1);
+  assertEquals(d[0].field, "preferred_date");
 });

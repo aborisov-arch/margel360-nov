@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Редактиране на запитване — Маргел 360°</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/reservation.css?v=4">
+  <link rel="stylesheet" href="css/edit.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+</head>
+<body>
+
+  <nav class="nav scrolled" aria-label="Main navigation">
+    <div class="container">
+      <a href="index.html" class="nav-logo">
+        <img src="assets/images/logo-real.png" alt="Маргел 360°" class="logo-img">
+        МАРГЕЛ <span>360°</span>
+      </a>
+    </div>
+  </nav>
+
+  <main class="edit-main">
+    <div class="container">
+
+      <section id="state-loading" class="edit-state">
+        <p class="edit-loading">Зареждане…</p>
+      </section>
+
+      <section id="state-not-found" class="edit-state hidden">
+        <h1>Запитването не е намерено</h1>
+        <p>Линкът изглежда невалиден. Моля свържете се с нас на <a href="mailto:360@margel.info">360@margel.info</a>.</p>
+        <p><a class="btn btn-outline" href="index.html">Към началната страница</a></p>
+      </section>
+
+      <section id="state-expired" class="edit-state hidden">
+        <h1>Линкът е изтекъл</h1>
+        <p>Линкът за редактиране на това запитване вече не е валиден. Моля свържете се с нас на <a href="mailto:360@margel.info">360@margel.info</a>.</p>
+      </section>
+
+      <section id="state-locked" class="edit-state hidden">
+        <h1>Редактирането е заключено</h1>
+        <p>За промени по тази резервация, моля свържете се с нас на <a href="mailto:360@margel.info">360@margel.info</a>.</p>
+      </section>
+
+      <section id="state-form" class="edit-state hidden">
+        <div class="edit-banner" id="edit-banner"></div>
+
+        <form id="edit-form" novalidate>
+          <fieldset class="edit-fieldset">
+            <legend>Заявено събитие (само за преглед)</legend>
+            <div class="edit-readonly" id="readonly-block"></div>
+          </fieldset>
+
+          <fieldset class="edit-fieldset">
+            <legend>Дата на събитието</legend>
+            <input type="text" id="field-date" placeholder="дд/мм/гггг" autocomplete="off" required>
+          </fieldset>
+
+          <fieldset class="edit-fieldset">
+            <legend>Брой гости</legend>
+            <input type="number" id="field-guests" min="1" max="400" required>
+          </fieldset>
+
+          <fieldset class="edit-fieldset">
+            <legend>Контактен телефон</legend>
+            <input type="tel" id="field-phone" required>
+          </fieldset>
+
+          <fieldset class="edit-fieldset">
+            <legend>Допълнителни услуги</legend>
+            <div id="addon-grid" class="addon-grid"></div>
+          </fieldset>
+
+          <fieldset class="edit-fieldset">
+            <legend>Напитки</legend>
+            <div class="drinks-tabs" id="drinks-tabs" role="tablist"></div>
+            <div class="drinks-grid" id="drinks-grid"></div>
+          </fieldset>
+
+          <fieldset class="edit-fieldset">
+            <legend>Бележки</legend>
+            <textarea id="field-notes" rows="4"></textarea>
+          </fieldset>
+
+          <div class="edit-actions">
+            <button type="submit" class="btn btn-primary" id="btn-save">Запази промените</button>
+          </div>
+
+          <div id="edit-error" class="edit-error hidden" role="alert"></div>
+        </form>
+      </section>
+
+      <section id="state-saved" class="edit-state hidden">
+        <div class="edit-saved">
+          <h1>Промените са запазени</h1>
+          <p>Изпратихме ви нов имейл с обобщение.</p>
+          <button type="button" class="btn btn-outline" id="btn-reload">Връщане към резервацията</button>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <script src="js/reservation-catalog.js"></script>
+  <script src="js/drinks-data.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://npmcdn.com/flatpickr/dist/l10n/bg.js"></script>
+  <script src="js/edit.js"></script>
+</body>
+</html>

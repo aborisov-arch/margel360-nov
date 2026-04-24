@@ -1,4 +1,4 @@
-export const EDITABLE_FIELDS = ["guests", "phone", "notes", "addons", "drinks"] as const;
+export const EDITABLE_FIELDS = ["guests", "phone", "notes", "addons", "drinks", "preferred_date"] as const;
 export type EditableField = typeof EDITABLE_FIELDS[number];
 
 export type DiffEntry = { field: EditableField; before: unknown; after: unknown };
