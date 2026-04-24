@@ -54,15 +54,31 @@ export function renderCustomerEmail(e: Enquiry, siteUrl: string): { subject: str
   const subject = `Обобщение на вашата резервация — ${esc(e.event_type)}, ${fmtDateBg(e.preferred_date)}`;
 
   const html = `<!doctype html>
-<html lang="bg"><head><meta charset="utf-8"><title>${esc(subject)}</title></head>
+<html lang="bg"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${esc(subject)}</title>
+<style>
+  @media only screen and (max-width:520px) {
+    .email-wrap { padding: 12px 0 !important; }
+    .email-card { width: 100% !important; max-width: 100% !important; border-radius: 0 !important; }
+    .email-header { padding: 18px 20px !important; }
+    .email-body { padding: 22px 20px !important; }
+    .email-edit-box { padding: 16px 18px !important; }
+    .email-cta { display: block !important; box-sizing: border-box !important; width: 100% !important; padding: 14px 18px !important; text-align: center !important; }
+    .email-footer { padding: 16px 20px !important; line-height: 1.5 !important; }
+    .email-h3 { font-size: 15px !important; }
+  }
+</style>
+</head>
 <body style="margin:0;padding:0;background:#f4f4f4;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:24px 0">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="email-wrap" style="background:#f4f4f4;padding:24px 0">
   <tr><td align="center">
-    <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden;max-width:600px">
-      <tr><td style="padding:24px 32px;background:#1a1a1a;color:#fff">
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0" class="email-card" style="background:#fff;border-radius:8px;overflow:hidden;max-width:600px;width:100%">
+      <tr><td class="email-header" style="padding:24px 32px;background:#1a1a1a;color:#fff">
         <div style="font-size:20px;font-weight:700;letter-spacing:1px">МАРГЕЛ <span style="color:#c9a86a">360°</span></div>
       </td></tr>
-      <tr><td style="padding:32px">
+      <tr><td class="email-body" style="padding:32px">
         <p style="margin:0 0 16px;font-size:16px;color:#333">Здравейте, ${esc(firstName)},</p>
         <p style="margin:0 0 20px;font-size:14px;color:#555;line-height:1.5">
           Получихме вашето запитване. Ето обобщение на избраното от вас:
@@ -77,31 +93,31 @@ export function renderCustomerEmail(e: Enquiry, siteUrl: string): { subject: str
         </table>
 
         ${addonRows ? `
-        <h3 style="margin:24px 0 8px;font-size:14px;color:#1a1a1a">Допълнителни услуги</h3>
+        <h3 class="email-h3" style="margin:24px 0 8px;font-size:14px;color:#1a1a1a">Допълнителни услуги</h3>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:14px">
           ${addonRows}
         </table>` : ""}
 
         ${drinkRows ? `
-        <h3 style="margin:24px 0 8px;font-size:14px;color:#1a1a1a">Напитки</h3>
+        <h3 class="email-h3" style="margin:24px 0 8px;font-size:14px;color:#1a1a1a">Напитки</h3>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:14px">
           ${drinkRows}
         </table>` : ""}
 
         ${e.notes ? `
-        <h3 style="margin:24px 0 8px;font-size:14px;color:#1a1a1a">Бележки</h3>
+        <h3 class="email-h3" style="margin:24px 0 8px;font-size:14px;color:#1a1a1a">Бележки</h3>
         <p style="margin:0;font-size:14px;color:#333;line-height:1.5;white-space:pre-wrap">${esc(e.notes)}</p>` : ""}
 
         <p style="margin:24px 0 0;font-size:14px;color:#555;line-height:1.5">
           Нашият екип ще се свърже с вас в рамките на 24 часа за потвърждение и финална цена.
         </p>
 
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:32px;padding:20px;background:#f6f6f6;border-radius:6px">
-          <tr><td style="font-size:14px;color:#333">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:32px;background:#f6f6f6;border-radius:6px">
+          <tr><td class="email-edit-box" style="padding:20px;font-size:14px;color:#333">
             <strong>Искате да промените нещо?</strong><br>
             Можете да редактирате своята резервация — брой гости, допълнителни услуги, специални желания — директно от тази страница:
             <br><br>
-            <a href="${editUrl}" style="display:inline-block;padding:10px 18px;background:#1a1a1a;color:#fff;text-decoration:none;border-radius:4px;font-weight:500">
+            <a href="${editUrl}" class="email-cta" style="display:inline-block;padding:10px 18px;background:#1a1a1a;color:#fff;text-decoration:none;border-radius:4px;font-weight:500">
               Редактирай резервацията
             </a>
             <br><br>
@@ -111,7 +127,7 @@ export function renderCustomerEmail(e: Enquiry, siteUrl: string): { subject: str
           </td></tr>
         </table>
       </td></tr>
-      <tr><td style="padding:20px 32px;background:#fafafa;font-size:12px;color:#888;text-align:center">
+      <tr><td class="email-footer" style="padding:20px 32px;background:#fafafa;font-size:12px;color:#888;text-align:center">
         МАРГЕЛ 360° &middot; бул. Околовръстен път 155, София 1618 &middot; <a href="mailto:360@margel.info" style="color:#666">360@margel.info</a>
       </td></tr>
     </table>

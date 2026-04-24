@@ -565,12 +565,13 @@ function setupSubmit() {
     const origText = btn.textContent;
     btn.textContent = getLang() === 'bg' ? 'Изпращане…' : 'Sending…';
 
-    // Serialize add-ons: only the ones selected (price > 0)
+    // Serialize add-ons: only the ones selected (price > 0). Store Bulgarian
+    // names — customers receive Bulgarian emails; admin panel is bilingual by ID.
     const addonsPayload = Object.entries(booking.addons)
       .filter(([, price]) => price > 0)
       .map(([id, price]) => {
         const svc = addonServices.find(s => s.id === id);
-        return { id, name: svc ? svc.name_en : id, price };
+        return { id, name: svc ? svc.name_bg : id, price };
       });
 
     // Serialize drinks: only items with qty > 0
@@ -578,14 +579,14 @@ function setupSubmit() {
       .filter(([, qty]) => qty > 0)
       .map(([id, qty]) => {
         const drink = drinks.find(d => d.id === id);
-        return { id, name: drink ? drink.name_en : id, qty, price_eur: drink?.price_eur ?? null };
+        return { id, name: drink ? drink.name_bg : id, qty, price_eur: drink?.price_eur ?? null };
       });
 
     const payload = {
       full_name: booking.name,
       email: booking.email,
       phone: booking.phone,
-      event_type: booking.event ? booking.event.title_en : '',
+      event_type: booking.event ? booking.event.title_bg : '',
       event_id: booking.event ? booking.event.id : '',
       preferred_date: booking.date,
       time_of_day: booking.time,
