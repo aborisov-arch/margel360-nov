@@ -463,7 +463,7 @@ function renderDrinks() {
     const body = document.createElement('div'); body.className = 'drink-body';
     const name = document.createElement('div'); name.className = 'drink-name'; name.textContent = l === 'bg' ? drink.name_bg : drink.name_en;
     const price = document.createElement('div'); price.className = 'drink-price';
-    price.textContent = fmt(drink.price_eur);
+    price.textContent = '€' + Number(drink.price_eur).toFixed(2);
 
     const qtyWrap = document.createElement('div'); qtyWrap.className = 'drink-qty';
     const minus = document.createElement('button'); minus.className = 'qty-btn'; minus.textContent = '−'; minus.setAttribute('aria-label', 'Decrease');
