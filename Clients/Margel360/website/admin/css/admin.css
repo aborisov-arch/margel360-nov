@@ -334,6 +334,101 @@ body {
   color: var(--accent-hover);
 }
 
+.status-badge.locked {
+  background: rgba(217,79,79,0.14);
+  color: #a12828;
+}
+
+/* ── Payment tracking section ── */
+.payment-tracking {
+  margin-top: 16px;
+  padding: 12px 14px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.payment-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.payment-heading {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* View vs edit mode */
+.payment-tracking.is-view .payment-edit { display: none; }
+.payment-tracking.is-edit .payment-view { display: none; }
+
+/* Compact view mode — three inline rows */
+.payment-view-row {
+  display: grid;
+  grid-template-columns: 70px 1fr;
+  gap: 8px;
+  align-items: baseline;
+  padding: 3px 0;
+  font-size: 0.88rem;
+}
+.payment-view-row span { color: var(--text-muted, #888); font-weight: 500; }
+.payment-view-row strong { color: var(--text); font-weight: 500; word-break: break-word; }
+
+/* Edit mode — compact single-line inputs */
+.payment-row {
+  display: grid;
+  grid-template-columns: 70px 1fr;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.payment-row span {
+  font-size: 0.85rem;
+  color: var(--text);
+  font-weight: 500;
+}
+.payment-row input[type=text] {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.88rem;
+  background: var(--surface-2, #fafafa);
+  color: var(--text);
+  box-sizing: border-box;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+.payment-row input[type=text]:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-dim);
+  background: #fff;
+}
+.payment-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+.payment-status {
+  font-size: 0.82rem;
+  color: #1e8449;
+  font-weight: 600;
+}
+
+@media (max-width: 480px) {
+  .payment-view-row,
+  .payment-row { grid-template-columns: 1fr; gap: 2px; }
+  .payment-view-row span { font-size: 0.78rem; }
+}
+
 .status-badge.answered {
   background: rgba(39,174,96,0.12);
   color: #1e8449;

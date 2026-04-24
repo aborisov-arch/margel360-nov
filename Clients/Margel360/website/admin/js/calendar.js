@@ -107,6 +107,17 @@ async function toggleDate(dateStr, btn) {
       btn.setAttribute('aria-label',
         btn.getAttribute('aria-label') + ' ' + t('cal_occupied_aria')
       );
+    } else {
+      // Also unlock any enquiry on that date so the customer can edit again.
+      // enquiries.preferred_date is stored as "DD/MM/YYYY"; dateStr is "YYYY-MM-DD".
+      const [y, m, d] = dateStr.split('-');
+      const ddmmyyyy = `${d}/${m}/${y}`;
+      const { error: unlockErr } = await db
+        .from('enquiries')
+        .update({ edit_locked: false })
+        .eq('preferred_date', ddmmyyyy)
+        .eq('edit_locked', true);
+      if (unlockErr) console.warn('Could not unlock enquiry on date:', unlockErr);
     }
   } else {
     const { error } = await db.from('occupied_dates').insert({ date: dateStr });

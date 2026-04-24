@@ -62,6 +62,17 @@
 }
 .edit-saved h1 { color: #1a6b2c; margin: 0 0 10px; }
 
+/* Override flatpickr's default blue selected-day with the site's red, matching
+   the convention used for occupied dates. Needs !important because the CDN
+   flatpickr.min.css loads after this file. */
+.flatpickr-day.selected,
+.flatpickr-day.selected:hover,
+.flatpickr-day.selected.today {
+  background: #e53935 !important;
+  border-color: #e53935 !important;
+  color: #fff !important;
+}
+
 .edit-drink-row {
   display: grid;
   grid-template-columns: 1fr auto;

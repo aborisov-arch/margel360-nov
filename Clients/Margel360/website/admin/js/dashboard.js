@@ -81,6 +81,7 @@ function renderEnquiries(enquiries) {
           ${fmtAddons(e.addons)}
           ${fmtDrinks(e.drinks)}
           ${e.notes ? `<div class="detail-notes"><strong>${t('detail_notes')}:</strong> ${esc(e.notes)}</div>` : ''}
+          ${renderPaymentTracking(e)}
           <div class="detail-actions">
             <button class="btn btn-sm ${isAnswered ? 'btn-outline' : 'btn-primary'} btn-status"
               data-id="${esc(e.id)}"
@@ -177,32 +178,193 @@ function renderEnquiries(enquiries) {
       if (enquiry) enquiry.status = newStatus;
     }
 
-    // Lock toggle button
+    // Edit payment — switch to edit mode
+    const editPayBtn = evt.target.closest('.btn-edit-payment');
+    if (editPayBtn) {
+      const wrap = editPayBtn.closest('.payment-tracking');
+      wrap.classList.remove('is-view');
+      wrap.classList.add('is-edit');
+      editPayBtn.style.display = 'none';
+      wrap.querySelector('.btn-cancel-payment').style.display = '';
+      return;
+    }
+
+    // Cancel payment edit — revert to view mode, restore fields from cache
+    const cancelPayBtn = evt.target.closest('.btn-cancel-payment');
+    if (cancelPayBtn) {
+      const id = cancelPayBtn.getAttribute('data-id');
+      const wrap = cancelPayBtn.closest('.payment-tracking');
+      const enquiry = allEnquiries.find(x => String(x.id) === String(id));
+      const pt = enquiry?.payment_tracking || {};
+      wrap.querySelectorAll('input[data-payment-key]').forEach(inp => {
+        inp.value = pt[inp.getAttribute('data-payment-key')] || '';
+      });
+      wrap.classList.remove('is-edit');
+      wrap.classList.add('is-view');
+      wrap.querySelector('.btn-edit-payment').style.display = '';
+      cancelPayBtn.style.display = 'none';
+      return;
+    }
+
+    // Save payment tracking
+    const payBtn = evt.target.closest('.btn-save-payment');
+    if (payBtn) {
+      const id = payBtn.getAttribute('data-id');
+      const wrap = payBtn.closest('.payment-tracking');
+      const statusEl = wrap.querySelector('.payment-status');
+      const patch = {};
+      wrap.querySelectorAll('input[data-payment-key]').forEach(inp => {
+        const k = inp.getAttribute('data-payment-key');
+        const v = inp.value.trim();
+        if (v) patch[k] = v;
+      });
+
+      payBtn.disabled = true;
+      statusEl.textContent = '';
+      const { error } = await db
+        .from('enquiries')
+        .update({ payment_tracking: patch })
+        .eq('id', id);
+      payBtn.disabled = false;
+
+      if (error) {
+        console.error('Payment save failed:', error);
+        statusEl.textContent = '⚠';
+        return;
+      }
+      statusEl.textContent = '✓ ' + t('payment_saved');
+      const enquiry = allEnquiries.find(x => String(x.id) === String(id));
+      if (enquiry) enquiry.payment_tracking = patch;
+
+      // Update view-mode display in place
+      wrap.querySelectorAll('.payment-view-row').forEach((row, i) => {
+        const key = ['bank', 'cash', 'card'][i];
+        const strong = row.querySelector('strong');
+        strong.textContent = patch[key] || t('payment_empty');
+      });
+
+      // Flip to view mode
+      setTimeout(() => {
+        statusEl.textContent = '';
+        wrap.classList.remove('is-edit');
+        wrap.classList.add('is-view');
+        wrap.querySelector('.btn-edit-payment').style.display = '';
+        wrap.querySelector('.btn-cancel-payment').style.display = 'none';
+      }, 800);
+      return;
+    }
+
+    // Lock toggle button — optimistic in-place update; do NOT re-render
+    // (renderEnquiries re-binds the tbody click listener, stacking handlers).
     const lockBtn = evt.target.closest('.btn-lock');
     if (lockBtn) {
       const id = lockBtn.getAttribute('data-id');
       const wasLocked = lockBtn.getAttribute('data-locked') === 'true';
       const newLocked = !wasLocked;
 
+      const detailRow = lockBtn.closest('tr.detail-row');
+      const summaryRow = detailRow?.previousElementSibling;
+
       lockBtn.disabled = true;
       const { error } = await db
         .from('enquiries')
         .update({ edit_locked: newLocked })
         .eq('id', id);
-      lockBtn.disabled = false;
 
       if (error) {
         console.error('Lock toggle failed:', error);
+        lockBtn.disabled = false;
         return;
       }
+
+      // Sync with occupied_dates: lock => mark date occupied, unlock => unmark.
+      // preferred_date is stored as "DD/MM/YYYY"; occupied_dates uses "YYYY-MM-DD".
+      const enquiry = allEnquiries.find(x => String(x.id) === String(id));
+      const dd = enquiry?.preferred_date;
+      if (dd && /^\d{2}\/\d{2}\/\d{4}$/.test(dd)) {
+        const [d, m, y] = dd.split('/');
+        const iso = `${y}-${m}-${d}`;
+        if (newLocked) {
+          // Ignore duplicate-key error if the date was already occupied for another reason.
+          const { error: insErr } = await db.from('occupied_dates').insert({ date: iso });
+          if (insErr && !/duplicate|unique/i.test(insErr.message ?? '')) {
+            console.warn('Could not mark date occupied:', insErr);
+          }
+        } else {
+          const { error: delErr } = await db.from('occupied_dates').delete().eq('date', iso);
+          if (delErr) console.warn('Could not unmark date:', delErr);
+        }
+      }
+
+      lockBtn.disabled = false;
+
+      // Flip button label + data attr
       lockBtn.setAttribute('data-locked', newLocked ? 'true' : 'false');
       lockBtn.textContent = newLocked ? t('edit_unlock_btn') : t('edit_lock_btn');
-      const enquiry = allEnquiries.find(x => String(x.id) === String(id));
+
+      // Add or remove the "Заключено" badge on the summary row in place.
+      if (summaryRow) {
+        const statusCell = summaryRow.querySelector('td:nth-child(7)');
+        const existing = statusCell?.querySelector('.status-badge.locked');
+        if (newLocked && !existing && statusCell) {
+          const badge = document.createElement('span');
+          badge.className = 'status-badge locked';
+          badge.style.marginLeft = '6px';
+          badge.textContent = t('edit_locked_badge');
+          statusCell.appendChild(badge);
+        } else if (!newLocked && existing) {
+          existing.remove();
+        }
+      }
+
+      // Keep the cache in sync so a later render (e.g. language switch) is correct.
       if (enquiry) enquiry.edit_locked = newLocked;
-      renderEnquiries(allEnquiries);
       return;
     }
   });
+}
+
+function renderPaymentTracking(e) {
+  const pt = e.payment_tracking || {};
+  const hasAny = !!(pt.bank || pt.cash || pt.card);
+  const mode = hasAny ? 'view' : 'edit';
+  return `
+    <div class="payment-tracking ${mode === 'view' ? 'is-view' : 'is-edit'}" data-id="${esc(e.id)}">
+      <div class="payment-header">
+        <h4 class="payment-heading">${t('payment_heading')}</h4>
+        <button class="btn btn-sm btn-outline btn-edit-payment" data-id="${esc(e.id)}"
+                style="${mode === 'view' ? '' : 'display:none'}">
+          ${t('payment_edit')}
+        </button>
+      </div>
+
+      <div class="payment-view">
+        <div class="payment-view-row"><span>${t('payment_bank')}:</span><strong>${pt.bank ? esc(pt.bank) : t('payment_empty')}</strong></div>
+        <div class="payment-view-row"><span>${t('payment_cash')}:</span><strong>${pt.cash ? esc(pt.cash) : t('payment_empty')}</strong></div>
+        <div class="payment-view-row"><span>${t('payment_card')}:</span><strong>${pt.card ? esc(pt.card) : t('payment_empty')}</strong></div>
+      </div>
+
+      <div class="payment-edit">
+        <label class="payment-row">
+          <span>${t('payment_bank')}:</span>
+          <input type="text" data-payment-key="bank" value="${esc(pt.bank || '')}">
+        </label>
+        <label class="payment-row">
+          <span>${t('payment_cash')}:</span>
+          <input type="text" data-payment-key="cash" value="${esc(pt.cash || '')}">
+        </label>
+        <label class="payment-row">
+          <span>${t('payment_card')}:</span>
+          <input type="text" data-payment-key="card" value="${esc(pt.card || '')}">
+        </label>
+        <div class="payment-actions">
+          <button class="btn btn-sm btn-primary btn-save-payment" data-id="${esc(e.id)}">${t('payment_save')}</button>
+          <button class="btn btn-sm btn-outline btn-cancel-payment" data-id="${esc(e.id)}"${hasAny ? '' : ' style="display:none"'}>${t('payment_cancel')}</button>
+          <span class="payment-status" aria-live="polite"></span>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 function esc(str) {
