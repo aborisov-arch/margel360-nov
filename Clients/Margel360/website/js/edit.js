@@ -1,29 +1,37 @@
 // edit.js — customer self-service edit page
-// Loads an enquiry by token and lets the customer update a whitelist of fields.
+// Fetches enquiry by magic-link token, renders the editorial form, and
+// submits changes through the token-authenticated edge function.
 
 const SUPABASE_URL = 'https://wlxutsufrobzovdsiecb.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndseHV0c3Vmcm9iem92ZHNpZWNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5MDc3MDQsImV4cCI6MjA5MTQ4MzcwNH0.EY2j3lZRmfGlWcTTNy9CMIHZX1E-2jit11jZwP7UOJo';
-const FN_GET = `${SUPABASE_URL}/functions/v1/get-enquiry-by-token`;
+const FN_GET    = `${SUPABASE_URL}/functions/v1/get-enquiry-by-token`;
 const FN_UPDATE = `${SUPABASE_URL}/functions/v1/update-enquiry-by-token`;
 
-// Catalogs are loaded by reservation-catalog.js and drinks-data.js:
-// => `addonServices`, `drinks` (global)
+// Catalogs loaded via reservation-catalog.js + drinks-data.js (window globals):
+//   addonServices, drinks, drinkCategories
 
 const state = { token: null, enquiry: null, occupiedDates: [], activeDrinkCat: 0, drinkQtys: {} };
 
-function $(id) { return document.getElementById(id); }
+const $ = id => document.getElementById(id);
+
 function show(id) {
-  document.querySelectorAll('.edit-state').forEach(el => el.classList.add('hidden'));
-  $(id).classList.remove('hidden');
+  document.querySelectorAll('.spread').forEach(el => { el.hidden = true; });
+  const el = $(id);
+  if (el) el.hidden = false;
+  // Fade colophon in on any non-loading state
+  if (id !== 'state-loading') $('venue-colophon').hidden = false;
 }
+
 function fmtDateBg(stored) {
-  // preferred_date is "DD/MM/YYYY" text — display as DD.MM.YYYY.
   return String(stored || '').replaceAll('/', '.');
 }
-function escapeHtml(s) {
+
+function esc(s) {
   return String(s ?? '')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
+
+// ── Entry ───────────────────────────────────────────────────
 
 async function main() {
   const params = new URLSearchParams(window.location.search);
@@ -61,34 +69,45 @@ async function loadOccupiedDates() {
     if (!res.ok) return [];
     const rows = await res.json();
     return Array.isArray(rows) ? rows.map(r => r.date) : [];
-  } catch {
-    return [];
-  }
+  } catch { return []; }
 }
+
+// ── Form rendering ──────────────────────────────────────────
 
 function renderForm() {
   const e = state.enquiry;
+  const timeLabel = e.time_of_day === 'day' ? 'Дневно · до 17:30' : 'Вечерно · след 19:00';
 
-  $('edit-banner').innerHTML =
-    `Редактирате резервация за <strong>${escapeHtml(e.event_type)}</strong> на <strong>${fmtDateBg(e.preferred_date)}</strong>.
-     Всички промени ще бъдат изпратени на вашия имейл.`;
+  $('form-eyebrow').textContent = `Редактиране · ${e.event_type}`;
+  $('form-headline').innerHTML = `Вашето събитие <em>на ${fmtDateBg(e.preferred_date)}</em>.`;
+  $('colophon-date').textContent = fmtDateBg(e.preferred_date);
 
-  const timeLabel = e.time_of_day === 'day' ? 'Дневно (до 17:30)' : 'Вечерно (след 19:00)';
   $('readonly-block').innerHTML = `
-    <span>Събитие</span><strong>${escapeHtml(e.event_type)}</strong>
-    <span>Час</span><strong>${timeLabel}</strong>
-    <span>Имейл</span><strong>${escapeHtml(e.email)}</strong>
+    <div>
+      <span class="label-caps">Събитие</span>
+      <strong>${esc(e.event_type)}</strong>
+    </div>
+    <div>
+      <span class="label-caps">Час</span>
+      <strong>${timeLabel}</strong>
+    </div>
+    <div>
+      <span class="label-caps">Имейл</span>
+      <strong>${esc(e.email)}</strong>
+    </div>
   `;
 
   $('field-guests').value = e.guests ?? '';
   $('field-phone').value = e.phone ?? '';
   $('field-notes').value = e.notes ?? '';
+  $('saved-email').textContent = e.email || 'вашия имейл';
 
   initDatePicker();
   renderAddons();
   renderDrinks();
 
   $('edit-form').addEventListener('submit', onSave);
+  $('btn-reload').addEventListener('click', () => window.location.reload());
 
   show('state-form');
 }
@@ -98,7 +117,6 @@ function initDatePicker() {
   if (!dateEl || typeof flatpickr === 'undefined') return;
 
   const current = state.enquiry.preferred_date; // "DD/MM/YYYY"
-  // Convert occupied "YYYY-MM-DD" strings to local-midnight Dates, excluding the customer's own current date.
   const occupied = (state.occupiedDates || [])
     .filter(d => {
       if (!current) return true;
@@ -118,7 +136,7 @@ function initDatePicker() {
     animate: true,
     disable: occupied,
     defaultDate: current || undefined,
-    onDayCreate(_dObj, _dStr, _fp, dayElem) {
+    onDayCreate(_d, _s, _fp, dayElem) {
       const d = dayElem.dateObj;
       if (!d) return;
       const isOccupied = occupied.some(od =>
@@ -134,134 +152,128 @@ function initDatePicker() {
 function renderAddons() {
   const grid = $('addon-grid');
   grid.innerHTML = '';
-  const selected = new Map((state.enquiry.addons ?? []).map(a => [a.id, a]));
+  const selected = new Set((state.enquiry.addons ?? []).map(a => a.id));
 
   addonServices.forEach(svc => {
-    const item = document.createElement('label');
-    item.className = 'addon-item' + (selected.has(svc.id) ? ' selected' : '');
+    const li = document.createElement('li');
+    const label = document.createElement('label');
+    label.className = 'addon-card' + (selected.has(svc.id) ? ' is-selected' : '');
 
     const input = document.createElement('input');
     input.type = 'checkbox';
     input.checked = selected.has(svc.id);
     input.dataset.addonId = svc.id;
 
-    const visual = document.createElement('div');
+    const visual = document.createElement('span');
+    visual.className = 'addon-card__img';
     if (svc.img) {
-      visual.className = 'addon-img';
       const img = document.createElement('img');
       img.src = svc.img;
-      img.alt = svc.name_bg;
+      img.alt = '';
       img.loading = 'lazy';
       visual.appendChild(img);
-    } else {
-      visual.className = 'addon-emoji';
-      visual.textContent = '⭐';
-      visual.setAttribute('aria-hidden', 'true');
     }
 
-    const info = document.createElement('div');
-    info.className = 'addon-info';
-    info.innerHTML = `<div class="addon-name">${escapeHtml(svc.name_bg)}</div>
-      <div class="addon-price">€${Math.round(svc.price)}</div>`;
+    const info = document.createElement('span');
+    info.className = 'addon-card__info';
+    info.innerHTML = `
+      <span class="addon-card__name">${esc(svc.name_bg)}</span>
+      <span class="addon-card__price">€${Math.round(svc.price)}</span>
+    `;
 
-    const check = document.createElement('div');
-    check.className = 'addon-check';
-    check.setAttribute('aria-hidden', 'true');
-    check.textContent = '✓';
-
-    item.appendChild(input);
-    item.appendChild(visual);
-    item.appendChild(info);
-    item.appendChild(check);
-
-    item.addEventListener('change', () => item.classList.toggle('selected', input.checked));
-
-    grid.appendChild(item);
+    label.append(input, visual, info);
+    input.addEventListener('change', () => label.classList.toggle('is-selected', input.checked));
+    li.appendChild(label);
+    grid.appendChild(li);
   });
 }
 
 function renderDrinks() {
-  // Seed the qty map once from the enquiry so edits survive tab switches.
   if (Object.keys(state.drinkQtys).length === 0) {
     (state.enquiry.drinks ?? []).forEach(d => { state.drinkQtys[d.id] = d.qty; });
   }
-
   renderDrinkTabs();
-  renderDrinkGrid();
+  renderDrinkTiles();
 }
 
 function renderDrinkTabs() {
   const tabs = $('drinks-tabs');
-  if (!tabs) return;
   tabs.innerHTML = '';
   const cats = (typeof drinkCategories !== 'undefined' ? drinkCategories.bg : []) || [];
   cats.forEach((name, i) => {
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'drinks-tab' + (i === state.activeDrinkCat ? ' active' : '');
+    btn.className = 'drinks-nav__tab' + (i === state.activeDrinkCat ? ' is-active' : '');
     btn.textContent = name;
     btn.setAttribute('role', 'tab');
     btn.addEventListener('click', () => {
       state.activeDrinkCat = i;
       renderDrinkTabs();
-      renderDrinkGrid();
+      renderDrinkTiles();
     });
     tabs.appendChild(btn);
   });
 }
 
-function renderDrinkGrid() {
+function renderDrinkTiles() {
   const grid = $('drinks-grid');
-  if (!grid) return;
   grid.innerHTML = '';
   const pool = typeof drinks !== 'undefined' ? drinks : [];
   pool.filter(d => d.cat === state.activeDrinkCat).forEach(drink => {
     const qty = state.drinkQtys[drink.id] || 0;
-    const item = document.createElement('div');
-    item.className = 'drink-item' + (qty > 0 ? ' has-qty' : '');
 
-    const img = document.createElement('img');
-    img.src = drink.img;
-    img.alt = drink.name_bg || drink.name_en || '';
-    img.loading = 'lazy';
+    const li = document.createElement('li');
+    li.className = 'drink-tile' + (qty > 0 ? ' has-qty' : '');
 
-    const body = document.createElement('div');
-    body.className = 'drink-body';
-    const name = document.createElement('div');
-    name.className = 'drink-name';
+    const img = document.createElement('span');
+    img.className = 'drink-tile__img';
+    if (drink.img) {
+      const i = document.createElement('img');
+      i.src = drink.img;
+      i.alt = '';
+      i.loading = 'lazy';
+      img.appendChild(i);
+    }
+
+    const body = document.createElement('span');
+    body.className = 'drink-tile__body';
+
+    const name = document.createElement('span');
+    name.className = 'drink-tile__name';
     name.textContent = drink.name_bg || drink.name_en || drink.id;
-    const price = document.createElement('div');
-    price.className = 'drink-price';
-    price.textContent = drink.price_eur != null ? '€' + Math.round(drink.price_eur) : 'По запитване';
 
-    const qtyWrap = document.createElement('div');
+    const price = document.createElement('span');
+    price.className = 'drink-tile__price';
+    price.textContent = drink.price_eur != null ? `€${Math.round(drink.price_eur)}` : 'По запитване';
+
+    const qtyWrap = document.createElement('span');
     qtyWrap.className = 'drink-qty';
     const minus = document.createElement('button');
-    minus.type = 'button'; minus.className = 'qty-btn'; minus.textContent = '−';
-    minus.setAttribute('aria-label', 'Намали');
+    minus.type = 'button'; minus.textContent = '−'; minus.setAttribute('aria-label', 'Намали');
     const num = document.createElement('span');
-    num.className = 'qty-num'; num.textContent = qty;
+    num.textContent = qty;
     const plus = document.createElement('button');
-    plus.type = 'button'; plus.className = 'qty-btn'; plus.textContent = '+';
-    plus.setAttribute('aria-label', 'Увеличи');
+    plus.type = 'button'; plus.textContent = '+'; plus.setAttribute('aria-label', 'Увеличи');
 
     qtyWrap.append(minus, num, plus);
     body.append(name, price, qtyWrap);
-    item.append(img, body);
-    grid.appendChild(item);
+    li.append(img, body);
+    grid.appendChild(li);
 
     minus.addEventListener('click', () => {
       state.drinkQtys[drink.id] = Math.max(0, (state.drinkQtys[drink.id] || 0) - 1);
       num.textContent = state.drinkQtys[drink.id];
-      item.classList.toggle('has-qty', state.drinkQtys[drink.id] > 0);
+      li.classList.toggle('has-qty', state.drinkQtys[drink.id] > 0);
     });
     plus.addEventListener('click', () => {
       state.drinkQtys[drink.id] = (state.drinkQtys[drink.id] || 0) + 1;
       num.textContent = state.drinkQtys[drink.id];
-      item.classList.add('has-qty');
+      li.classList.add('has-qty');
     });
   });
 }
+
+// ── Save ────────────────────────────────────────────────────
 
 async function onSave(evt) {
   evt.preventDefault();
@@ -280,7 +292,7 @@ async function onSave(evt) {
     errEl.textContent = 'Моля, изберете дата.';
     errEl.classList.remove('hidden');
     btn.disabled = false;
-    btn.textContent = 'Запази промените';
+    btn.textContent = 'Запазете промените';
     return;
   }
 
@@ -309,18 +321,17 @@ async function onSave(evt) {
       }),
     });
     const body = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(body.error || 'server_error');
+    if (!res.ok) throw new Error(body?.detail || body?.error || 'server_error');
 
     show('state-saved');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch (err) {
     console.error(err);
-    errEl.textContent = 'Нещо се обърка. Моля опитайте отново или се свържете с нас.';
+    errEl.textContent = 'Нещо се обърка при запазването. Моля опитайте отново или се свържете с нас на 360@margel.info.';
     errEl.classList.remove('hidden');
     btn.disabled = false;
-    btn.textContent = 'Запази промените';
+    btn.textContent = 'Запазете промените';
   }
 }
-
-$('btn-reload')?.addEventListener('click', () => window.location.reload());
 
 document.addEventListener('DOMContentLoaded', main);

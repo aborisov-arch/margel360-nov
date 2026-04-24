@@ -4,112 +4,161 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title>Редактиране на запитване — Маргел 360°</title>
+  <title>Редактиране · Маргел 360°</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="css/reservation.css?v=4">
-  <link rel="stylesheet" href="css/edit.css">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Manrope:wght@300..800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/venue.css?v=1">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 </head>
-<body>
+<body class="venue">
 
-  <nav class="nav scrolled" aria-label="Main navigation">
-    <div class="container">
-      <a href="index.html" class="nav-logo">
-        <img src="assets/images/logo-real.png" alt="Маргел 360°" class="logo-img">
-        МАРГЕЛ <span>360°</span>
-      </a>
-    </div>
-  </nav>
+  <div class="venue__container">
 
-  <main class="edit-main">
-    <div class="container">
+    <header class="venue__masthead">
+      <a class="venue__wordmark" href="index.html">МАРГЕЛ&nbsp;<em>360°</em></a>
+      <div class="venue__sigil" aria-hidden="true">360°</div>
+    </header>
 
-      <section id="state-loading" class="edit-state">
-        <p class="edit-loading">Зареждане…</p>
+    <main class="stage">
+
+      <!-- LOADING -->
+      <section class="spread" id="state-loading">
+        <p class="label-caps">Зареждане</p>
+        <h1 class="display display-lg">Подготвяме вашата резервация…</h1>
       </section>
 
-      <section id="state-not-found" class="edit-state hidden">
-        <h1>Запитването не е намерено</h1>
-        <p>Линкът изглежда невалиден. Моля свържете се с нас на <a href="mailto:360@margel.info">360@margel.info</a>.</p>
-        <p><a class="btn btn-outline" href="index.html">Към началната страница</a></p>
+      <!-- NOT FOUND -->
+      <section class="spread state-page" id="state-not-found" hidden>
+        <p class="label-caps">Упс</p>
+        <h1 class="display display-lg">Запитването не е намерено.</h1>
+        <hr class="rule-gold">
+        <p class="lead">Линкът изглежда невалиден или вече е бил използван. Моля свържете се с нас и ще намерим вашата резервация заедно.</p>
+        <a class="btn btn-ghost" href="mailto:360@margel.info">Свържете се с нас</a>
       </section>
 
-      <section id="state-expired" class="edit-state hidden">
-        <h1>Линкът е изтекъл</h1>
-        <p>Линкът за редактиране на това запитване вече не е валиден. Моля свържете се с нас на <a href="mailto:360@margel.info">360@margel.info</a>.</p>
+      <!-- EXPIRED -->
+      <section class="spread state-page" id="state-expired" hidden>
+        <p class="label-caps">Линкът е изтекъл</p>
+        <h1 class="display display-lg">Времето за онлайн редакция изтече.</h1>
+        <hr class="rule-gold">
+        <p class="lead">Можем да обновим резервацията ви по телефон или имейл. Ще се радваме да ви помогнем.</p>
+        <a class="btn btn-ghost" href="mailto:360@margel.info">Пишете ни на 360@margel.info</a>
       </section>
 
-      <section id="state-locked" class="edit-state hidden">
-        <h1>Редактирането е заключено</h1>
-        <p>За промени по тази резервация, моля свържете се с нас на <a href="mailto:360@margel.info">360@margel.info</a>.</p>
+      <!-- LOCKED -->
+      <section class="spread state-page" id="state-locked" hidden>
+        <p class="label-caps">Заключена резервация</p>
+        <h1 class="display display-lg">За тази дата нашият екип <em>се грижи лично</em>.</h1>
+        <hr class="rule-gold">
+        <p class="lead">Моля свържете се с нас, ако желаете допълнителни промени — с удоволствие ще ги уредим.</p>
+        <a class="btn btn-ghost" href="mailto:360@margel.info">360@margel.info</a>
       </section>
 
-      <section id="state-form" class="edit-state hidden">
-        <div class="edit-banner" id="edit-banner"></div>
-
-        <form id="edit-form" novalidate>
-          <fieldset class="edit-fieldset">
-            <legend>Заявено събитие (само за преглед)</legend>
-            <div class="edit-readonly" id="readonly-block"></div>
-          </fieldset>
-
-          <fieldset class="edit-fieldset">
-            <legend>Дата на събитието</legend>
-            <input type="text" id="field-date" placeholder="дд/мм/гггг" autocomplete="off" required>
-          </fieldset>
-
-          <fieldset class="edit-fieldset">
-            <legend>Брой гости</legend>
-            <input type="number" id="field-guests" min="1" max="400" required>
-          </fieldset>
-
-          <fieldset class="edit-fieldset">
-            <legend>Контактен телефон</legend>
-            <input type="tel" id="field-phone" required>
-          </fieldset>
-
-          <fieldset class="edit-fieldset">
-            <legend>Допълнителни услуги</legend>
-            <div id="addon-grid" class="addon-grid"></div>
-          </fieldset>
-
-          <fieldset class="edit-fieldset">
-            <legend>Напитки</legend>
-            <div class="drinks-tabs" id="drinks-tabs" role="tablist"></div>
-            <div class="drinks-grid" id="drinks-grid"></div>
-          </fieldset>
-
-          <fieldset class="edit-fieldset">
-            <legend>Бележки</legend>
-            <textarea id="field-notes" rows="4"></textarea>
-          </fieldset>
-
-          <div class="edit-actions">
-            <button type="submit" class="btn btn-primary" id="btn-save">Запази промените</button>
+      <!-- FORM -->
+      <section class="spread" id="state-form" hidden>
+        <header class="spread__header">
+          <div class="spread__eyebrow">
+            <span class="label-caps" id="form-eyebrow">Редактиране · вашата резервация</span>
           </div>
+          <h1 class="display display-lg" id="form-headline">Вашето събитие.</h1>
+          <p class="lead" id="form-sub">Всичко, което променим тук, веднага потвърждаваме с нов имейл към вас и екипа на залата.</p>
+          <hr class="rule-gold">
+        </header>
 
-          <div id="edit-error" class="edit-error hidden" role="alert"></div>
+        <form id="edit-form" class="composition" novalidate>
+
+          <section class="composition__section">
+            <h2 class="numeral" data-num="i.">Подробности</h2>
+            <div class="readonly-grid" id="readonly-block"></div>
+          </section>
+
+          <section class="composition__section">
+            <h2 class="numeral" data-num="ii.">Дата на събитието</h2>
+            <label class="field">
+              <span class="label-caps">Изберете нова дата или запазете избраната</span>
+              <input type="text" id="field-date" placeholder="дд / мм / гггг" autocomplete="off" required>
+            </label>
+          </section>
+
+          <section class="composition__section">
+            <h2 class="numeral" data-num="iii.">Гости и контакт</h2>
+            <div class="field-grid-2">
+              <label class="field">
+                <span class="label-caps">Брой гости</span>
+                <input type="number" id="field-guests" min="1" max="400" required>
+              </label>
+              <label class="field">
+                <span class="label-caps">Телефон</span>
+                <input type="tel" id="field-phone" required>
+              </label>
+            </div>
+          </section>
+
+          <section class="composition__section">
+            <h2 class="numeral" data-num="iv.">Допълнителни услуги</h2>
+            <ul class="addon-list" id="addon-grid"></ul>
+          </section>
+
+          <section class="composition__section">
+            <h2 class="numeral" data-num="v.">Напитки</h2>
+            <nav class="drinks-nav" id="drinks-tabs" role="tablist"></nav>
+            <ul class="drinks-list" id="drinks-grid"></ul>
+          </section>
+
+          <section class="composition__section">
+            <h2 class="numeral" data-num="vi.">Бележки</h2>
+            <label class="field">
+              <span class="label-caps">Специални желания, алергии, декоративни предпочитания</span>
+              <textarea id="field-notes" rows="4" placeholder="Напишете ни всичко, което бихте желали да имаме предвид…"></textarea>
+            </label>
+          </section>
+
+          <footer class="composition__actions">
+            <button type="submit" class="btn btn-primary" id="btn-save">Запазете промените</button>
+          </footer>
+
+          <div id="edit-error" class="alert hidden" role="alert"></div>
         </form>
       </section>
 
-      <section id="state-saved" class="edit-state hidden">
-        <div class="edit-saved">
-          <h1>Промените са запазени</h1>
-          <p>Изпратихме ви нов имейл с обобщение.</p>
-          <button type="button" class="btn btn-outline" id="btn-reload">Връщане към резервацията</button>
+      <!-- SAVED -->
+      <section class="spread" id="state-saved" hidden>
+        <div class="saved-stage">
+          <p class="label-caps">— запазено —</p>
+          <h1 class="display display-xl"><em>Благодарим.</em></h1>
+          <p class="lead">Изпратихме ви ново обобщение на <strong id="saved-email">вашия имейл</strong>. Очакваме ви с нетърпение.</p>
+          <hr class="rule-gold">
+          <button id="btn-reload" type="button" class="link link--underline">Върнете се към резервацията</button>
         </div>
       </section>
 
-    </div>
-  </main>
+    </main>
+
+    <footer class="venue__colophon" id="venue-colophon" hidden>
+      <hr class="rule-gold">
+      <div class="colophon__grid">
+        <div>
+          <p class="label-caps label-caps--ink">Маргел&nbsp;360°</p>
+          <p>бул. Околовръстен път 155 · ет. 4 · София 1618</p>
+        </div>
+        <div>
+          <p class="label-caps label-caps--ink">Контакт</p>
+          <p><a href="mailto:360@margel.info">360@margel.info</a><br><a href="tel:+359888100042">+359&nbsp;888&nbsp;100&nbsp;042</a></p>
+        </div>
+        <div>
+          <p class="label-caps label-caps--ink">По вашата дата</p>
+          <p id="colophon-date">—</p>
+        </div>
+      </div>
+    </footer>
+
+  </div>
 
   <script src="js/reservation-catalog.js"></script>
   <script src="js/drinks-data.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-  <script src="https://npmcdn.com/flatpickr/dist/l10n/bg.js"></script>
-  <script src="js/edit.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/bg.js"></script>
+  <script src="js/edit.js?v=2"></script>
 </body>
 </html>
