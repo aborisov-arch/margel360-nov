@@ -200,6 +200,7 @@ p { color: var(--text-muted); }
 .social-links a:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 .footer-bottom { border-top: 1px solid #1e1e1e; padding-top: 24px; text-align: center; color: #555; font-size: 0.78rem; }
 .footer .nav-logo { color: #fff; }
+.footer .logo-img { filter: brightness(0) invert(1); }
 
 @media (max-width: 768px) { .footer-grid { grid-template-columns: 1fr; gap: 32px; } }
 
