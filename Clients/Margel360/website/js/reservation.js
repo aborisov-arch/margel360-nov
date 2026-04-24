@@ -460,6 +460,7 @@ function renderDrinks() {
     item.className = 'drink-item' + (qty > 0 ? ' has-qty' : '');
 
     const img = document.createElement('img'); img.src = drink.img; img.alt = l === 'bg' ? drink.name_bg : drink.name_en; img.loading = 'lazy';
+    img.onerror = () => { img.onerror = null; img.src = 'assets/images/drinks/placeholder.svg'; };
     const body = document.createElement('div'); body.className = 'drink-body';
     const name = document.createElement('div'); name.className = 'drink-name'; name.textContent = l === 'bg' ? drink.name_bg : drink.name_en;
     const price = document.createElement('div'); price.className = 'drink-price';

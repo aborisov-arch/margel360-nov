@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
       img.src = d.img;
       img.alt = lang === 'bg' ? d.name_bg : d.name_en;
       img.loading = 'lazy';
+      img.onerror = () => { img.onerror = null; img.src = 'assets/images/drinks/placeholder.svg'; };
       imgWrap.appendChild(img);
 
       const body = document.createElement('div'); body.className = 'drink-card-body';
