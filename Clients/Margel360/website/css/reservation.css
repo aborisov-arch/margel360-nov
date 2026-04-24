@@ -353,6 +353,14 @@
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 @media (max-width: 560px) { .form-row { grid-template-columns: 1fr; } }
 
+/* Guest count helper note */
+.guests-note {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
 /* Phone with country dial-code select */
 .phone-input-wrap { display: flex; gap: 8px; align-items: stretch; }
 .phone-input-wrap .phone-cc {

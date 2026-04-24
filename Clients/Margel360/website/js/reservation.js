@@ -1,3 +1,7 @@
+// ── Pricing constants ──
+const GUEST_BASE_COUNT = 40;      // Base guest count included in event price
+const EXTRA_GUEST_FEE = 15.34;    // EUR per extra guest above the base
+
 // ── Event types ──
 const eventTypes = [
   { id:'evening',   title_bg:'Вечерно събитие',       title_en:'Evening Event',      duration_bg:'след 19:00',    duration_en:'after 7:00 PM',   price_eur:1280, img:'assets/images/event-evening.jpg',   included:['sound','lighting','bar','fridge','parking','wc','elevator','dance','terrace'] },
@@ -579,11 +583,16 @@ function renderSummary() {
     priceSummary.innerHTML = '';
     const addonsTotal = Object.values(booking.addons).reduce((s,v)=>s+(v||0),0);
     let drinksTotal = 0; drinks.forEach(d => { if (d.price_eur) drinksTotal += (booking.drinkQtys[d.id]||0)*d.price_eur; });
-    const grandTotal = (booking.event.price_eur || 0) + addonsTotal + drinksTotal;
+    const guests = parseInt(booking.guests, 10) || 0;
+    const extraGuests = Math.max(0, guests - GUEST_BASE_COUNT);
+    const extraGuestsFee = extraGuests * EXTRA_GUEST_FEE;
+    const grandTotal = (booking.event.price_eur || 0) + addonsTotal + drinksTotal + extraGuestsFee;
+    const extraLabel = (l==='bg'?'Допълнителни гости':'Extra guests') + ' (' + extraGuests + ' × €' + EXTRA_GUEST_FEE.toFixed(2) + ')';
     const rows = [
       { label: l==='bg'?'Наем на зала':'Venue rental', value: fmtEvent(booking.event) },
       ...(addonsTotal > 0 ? [{ label: l==='bg'?'Допълнителни услуги':'Add-on services', value: '€'+Math.round(addonsTotal) }] : []),
       ...(drinksTotal > 0 ? [{ label: l==='bg'?'Напитки':'Drinks', value: '€'+Math.round(drinksTotal) }] : []),
+      ...(extraGuestsFee > 0 ? [{ label: extraLabel, value: '€'+extraGuestsFee.toFixed(2) }] : []),
       { label: l==='bg'?'Обща сума':'Total', value: '€'+Math.round(grandTotal), total: true },
     ];
     rows.forEach(row => {
