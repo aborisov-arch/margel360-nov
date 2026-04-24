@@ -3,10 +3,12 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import { json, preflight } from "../_shared/cors.ts";
 import { getIp, rateLimit } from "../_shared/rate-limit.ts";
 import { diffEnquiry, EDITABLE_FIELDS } from "../_shared/diff.ts";
+import { validateField } from "../_shared/validate.ts";
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const EDIT_COUNT_CAP = 10;
+const SUPABASE_URL    = Deno.env.get("SUPABASE_URL")!;
+const SERVICE_ROLE    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const INTERNAL_SECRET = Deno.env.get("INTERNAL_SHARED_SECRET") ?? "";
+const EDIT_COUNT_CAP  = 10;
 
 const sb = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
 
@@ -24,12 +26,17 @@ async function logAccess(
   });
 }
 
-function pickWhitelisted(changes: Record<string, unknown>): Record<string, unknown> {
+function pickAndValidate(
+  changes: Record<string, unknown>,
+): { ok: true; value: Record<string, unknown> } | { ok: false; field: string; error: string } {
   const out: Record<string, unknown> = {};
   for (const f of EDITABLE_FIELDS) {
-    if (f in changes) out[f] = changes[f];
+    if (!(f in changes)) continue;
+    const result = validateField(f, changes[f]);
+    if (!result.ok) return { ok: false, field: f, error: result.error };
+    out[f] = result.value;
   }
-  return out;
+  return { ok: true, value: out };
 }
 
 serve(async (req) => {
@@ -66,8 +73,11 @@ serve(async (req) => {
     return json({ error: "expired" }, 410);
   }
 
-  // Enforce whitelist (silently drop everything else)
-  const patch = pickWhitelisted(changes);
+  // Enforce whitelist + per-field validation. Non-whitelisted fields are
+  // silently dropped; malformed whitelisted fields reject the whole request.
+  const picked = pickAndValidate(changes);
+  if (!picked.ok) return json({ error: "invalid_field", field: picked.field, detail: picked.error }, 400);
+  const patch = picked.value;
   if (!Object.keys(patch).length) return json({ error: "no_changes" }, 400);
 
   // Compute diff
@@ -100,6 +110,7 @@ serve(async (req) => {
     headers: {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${SERVICE_ROLE}`,
+      "X-Internal-Secret": INTERNAL_SECRET,
     },
     body: JSON.stringify({ enquiry_id: updated.id, reason: "updated", diff }),
   }).catch(e => console.error("summary dispatch failed:", e));
@@ -108,7 +119,7 @@ serve(async (req) => {
     await logAccess(updated.id, tokenHash, ip, ua, "locked", true);
   }
 
-  // Scrub token before returning
-  const { edit_token: _t, status: _s, ...publicFields } = updated;
+  // Scrub token + admin-only payment_tracking before returning.
+  const { edit_token: _t, status: _s, payment_tracking: _pt, ...publicFields } = updated;
   return json({ enquiry: publicFields, diff, locked: willLock });
 });

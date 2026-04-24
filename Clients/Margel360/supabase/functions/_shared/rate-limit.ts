@@ -1,3 +1,14 @@
+// MVP rate limiter — intentionally scoped to a single Deno isolate.
+// Supabase spins up multiple isolates under burst load, so this Map is
+// per-instance and DOES NOT provide global rate limiting. It only helps
+// against a client hammering one warm instance with sequential requests.
+//
+// Real abuse protection for the edit flow comes from:
+//   1. The DB-side edit_count cap (see update-enquiry-by-token).
+//   2. Supabase's platform-level edge-function request limits.
+//
+// Upgrade path if distributed limiting is needed: back this with Upstash
+// Redis or a `rate_limit` Postgres table keyed on (key, window_start).
 type Bucket = { count: number; resetAt: number };
 const buckets = new Map<string, Bucket>();
 

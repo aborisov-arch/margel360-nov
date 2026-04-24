@@ -62,8 +62,9 @@ serve(async (req) => {
     return json({ error: "expired" }, 410);
   }
 
-  // Strip internal fields before returning.
-  const { edit_token: _t, status: _s, ...publicFields } = data;
+  // Strip internal fields before returning. payment_tracking holds admin-only
+  // bookkeeping notes (bank/cash/card) that the customer must not see.
+  const { edit_token: _t, status: _s, payment_tracking: _pt, ...publicFields } = data;
 
   await logAccess(data.id, tokenHash, ip, ua, "view", true);
   return json({ enquiry: publicFields });

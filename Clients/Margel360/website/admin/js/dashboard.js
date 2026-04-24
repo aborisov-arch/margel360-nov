@@ -23,6 +23,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   allEnquiries = enquiries || [];
   renderEnquiries(allEnquiries);
+
+  // Bind the tbody click handler exactly once. Doing it inside
+  // renderEnquiries caused listeners to stack on every language switch.
+  bindTableHandlers();
 });
 
 // Called by admin-i18n.js when language is switched
@@ -53,8 +57,8 @@ function renderEnquiries(enquiries) {
       <td>${esc(e.phone)}</td>
       <td>${esc(e.event_type)}</td>
       <td>${esc(e.preferred_date)}</td>
-      <td>${fmtDate(e.created_at)}</td>
-      <td>${e.last_edited_at ? fmtDate(e.last_edited_at) : t('edit_never')}</td>
+      <td>${esc(fmtDate(e.created_at))}</td>
+      <td>${esc(e.last_edited_at ? fmtDate(e.last_edited_at) : t('edit_never'))}</td>
       <td>
         <span class="status-badge ${isAnswered ? 'answered' : 'new'}">
           ${isAnswered ? t('status_answered') : t('status_new')}
@@ -74,7 +78,7 @@ function renderEnquiries(enquiries) {
         <div class="detail-panel">
           <div class="detail-grid">
             <div><strong>${t('detail_email')}:</strong> ${esc(e.email)}</div>
-            <div><strong>${t('detail_guests')}:</strong> ${e.guests != null ? e.guests : '—'}</div>
+            <div><strong>${t('detail_guests')}:</strong> ${e.guests != null ? esc(e.guests) : '—'}</div>
             <div><strong>${t('detail_time')}:</strong> ${e.time_of_day === 'day' ? t('detail_time_day') : t('detail_time_eve')}</div>
             <div><strong>${t('detail_payment')}:</strong> ${esc(e.payment_method)}</div>
           </div>
@@ -102,8 +106,13 @@ function renderEnquiries(enquiries) {
     `;
     tbody.appendChild(detailTr);
   });
+}
 
-  // Toggle expand/collapse
+function bindTableHandlers() {
+  const tbody = document.getElementById('enquiries-body');
+  if (!tbody || tbody.dataset.bound === '1') return;
+  tbody.dataset.bound = '1';
+
   tbody.addEventListener('click', async evt => {
     // Expand button
     const expandBtn = evt.target.closest('.btn-expand');
@@ -279,20 +288,26 @@ function renderEnquiries(enquiries) {
 
       // Sync with occupied_dates: lock => mark date occupied, unlock => unmark.
       // preferred_date is stored as "DD/MM/YYYY"; occupied_dates uses "YYYY-MM-DD".
+      // Partial-failure paths surface a visible warning so the admin doesn't
+      // think the calendar is in sync when it isn't.
       const enquiry = allEnquiries.find(x => String(x.id) === String(id));
       const dd = enquiry?.preferred_date;
+      let syncWarning = '';
       if (dd && /^\d{2}\/\d{2}\/\d{4}$/.test(dd)) {
         const [d, m, y] = dd.split('/');
         const iso = `${y}-${m}-${d}`;
         if (newLocked) {
-          // Ignore duplicate-key error if the date was already occupied for another reason.
           const { error: insErr } = await db.from('occupied_dates').insert({ date: iso });
           if (insErr && !/duplicate|unique/i.test(insErr.message ?? '')) {
             console.warn('Could not mark date occupied:', insErr);
+            syncWarning = 'calendar sync failed';
           }
         } else {
           const { error: delErr } = await db.from('occupied_dates').delete().eq('date', iso);
-          if (delErr) console.warn('Could not unmark date:', delErr);
+          if (delErr) {
+            console.warn('Could not unmark date:', delErr);
+            syncWarning = 'calendar sync failed';
+          }
         }
       }
 
@@ -319,6 +334,10 @@ function renderEnquiries(enquiries) {
 
       // Keep the cache in sync so a later render (e.g. language switch) is correct.
       if (enquiry) enquiry.edit_locked = newLocked;
+
+      if (syncWarning) {
+        alert(`${t('edit_lock_btn')}: ${syncWarning}`);
+      }
       return;
     }
   });
@@ -386,12 +405,20 @@ function fmtDate(iso) {
 
 function fmtAddons(addons) {
   if (!Array.isArray(addons) || !addons.length) return '';
-  const items = addons.map(a => `<li>${esc(a.name)} — €${(a.price / 1.95583).toFixed(2)}</li>`).join('');
+  const items = addons.map(a => {
+    const price = Number(a?.price);
+    const priceStr = Number.isFinite(price) ? (price / 1.95583).toFixed(2) : '—';
+    return `<li>${esc(a?.name)} — €${priceStr}</li>`;
+  }).join('');
   return `<div class="detail-section"><strong>${t('detail_addons')}:</strong><ul>${items}</ul></div>`;
 }
 
 function fmtDrinks(drinks) {
   if (!Array.isArray(drinks) || !drinks.length) return '';
-  const items = drinks.map(d => `<li>${esc(d.name)} × ${d.qty}</li>`).join('');
+  const items = drinks.map(d => {
+    const qty = Number(d?.qty);
+    const qtyStr = Number.isInteger(qty) && qty >= 0 ? qty : '?';
+    return `<li>${esc(d?.name)} × ${qtyStr}</li>`;
+  }).join('');
   return `<div class="detail-section"><strong>${t('detail_drinks')}:</strong><ul>${items}</ul></div>`;
 }

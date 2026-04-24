@@ -3,13 +3,15 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import { json, preflight } from "../_shared/cors.ts";
 import { renderCustomerEmail, renderOwnerEmail } from "../_shared/enquiry-email.ts";
 import type { DiffEntry } from "../_shared/diff.ts";
+import { isUuid } from "../_shared/validate.ts";
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const RESEND_KEY   = Deno.env.get("RESEND_API_KEY")!;
-const FROM_EMAIL   = Deno.env.get("EVENT_HALL_FROM_EMAIL") ?? "enquiries@margel360.bg";
-const OWNER_EMAILS = (Deno.env.get("OWNER_EMAILS") ?? "").split(",").map(s => s.trim()).filter(Boolean);
-const SITE_URL     = Deno.env.get("PUBLIC_SITE_URL") ?? "https://margel360.bg";
+const SUPABASE_URL    = Deno.env.get("SUPABASE_URL")!;
+const SERVICE_ROLE    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const RESEND_KEY      = Deno.env.get("RESEND_API_KEY")!;
+const FROM_EMAIL      = Deno.env.get("EVENT_HALL_FROM_EMAIL") ?? "enquiries@margel360.bg";
+const OWNER_EMAILS    = (Deno.env.get("OWNER_EMAILS") ?? "").split(",").map(s => s.trim()).filter(Boolean);
+const SITE_URL        = Deno.env.get("PUBLIC_SITE_URL") ?? "https://margel360.bg";
+const INTERNAL_SECRET = Deno.env.get("INTERNAL_SHARED_SECRET") ?? "";
 
 const sb = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
 
@@ -43,18 +45,40 @@ serve(async (req) => {
   let body: InternalBody | WebhookBody;
   try { body = await req.json(); } catch { return json({ error: "bad_json" }, 400); }
 
-  // Resolve enquiry_id + reason + diff from either shape
+  // Resolve enquiry_id + reason + diff from either shape.
+  //
+  // Two authenticated entry points:
+  //   1. DB webhook (Supabase `INSERT on enquiries`): payload is
+  //      { type:"INSERT", table:"enquiries", record:{ id, ... } }.
+  //      We accept it only when shape matches exactly.
+  //   2. Internal call from update-enquiry-by-token: payload is
+  //      { enquiry_id, reason, diff? } and must carry the shared secret
+  //      in the X-Internal-Secret header, so external callers cannot
+  //      spoof fake "updated" emails to the owner.
   let enquiryId: string;
   let reason: "created" | "updated";
   let diff: DiffEntry[] | null = null;
 
-  if ("record" in body && body.record?.id) {
-    enquiryId = body.record.id;
+  const isWebhookShape = body
+    && (body as WebhookBody).type === "INSERT"
+    && (body as WebhookBody).table === "enquiries"
+    && isUuid((body as WebhookBody).record?.id);
+
+  if (isWebhookShape) {
+    enquiryId = (body as WebhookBody).record.id;
     reason = "created";
   } else if ("enquiry_id" in body) {
-    enquiryId = body.enquiry_id;
-    reason = body.reason;
-    diff = body.diff ?? null;
+    if (!INTERNAL_SECRET || req.headers.get("x-internal-secret") !== INTERNAL_SECRET) {
+      return json({ error: "unauthorised" }, 401);
+    }
+    const b = body as InternalBody;
+    if (!isUuid(b.enquiry_id)) return json({ error: "bad_enquiry_id" }, 400);
+    if (b.reason !== "created" && b.reason !== "updated") {
+      return json({ error: "bad_reason" }, 400);
+    }
+    enquiryId = b.enquiry_id;
+    reason = b.reason;
+    diff = Array.isArray(b.diff) ? b.diff : null;
   } else {
     return json({ error: "bad_payload" }, 400);
   }

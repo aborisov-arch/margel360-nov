@@ -98,6 +98,10 @@ async function toggleDate(dateStr, btn) {
   }
 
   // Persist to Supabase — revert on failure
+  // Note: unmarking a date no longer force-unlocks any linked enquiries.
+  // That cross-write was too risky (could bypass the edit_count cap, and
+  // could remove a date that was manually occupied for unrelated reasons).
+  // Admin unlocks enquiries explicitly via the dashboard row toggle.
   if (wasOccupied) {
     const { error } = await db.from('occupied_dates').delete().eq('date', dateStr);
     if (error) {
@@ -107,17 +111,6 @@ async function toggleDate(dateStr, btn) {
       btn.setAttribute('aria-label',
         btn.getAttribute('aria-label') + ' ' + t('cal_occupied_aria')
       );
-    } else {
-      // Also unlock any enquiry on that date so the customer can edit again.
-      // enquiries.preferred_date is stored as "DD/MM/YYYY"; dateStr is "YYYY-MM-DD".
-      const [y, m, d] = dateStr.split('-');
-      const ddmmyyyy = `${d}/${m}/${y}`;
-      const { error: unlockErr } = await db
-        .from('enquiries')
-        .update({ edit_locked: false })
-        .eq('preferred_date', ddmmyyyy)
-        .eq('edit_locked', true);
-      if (unlockErr) console.warn('Could not unlock enquiry on date:', unlockErr);
     }
   } else {
     const { error } = await db.from('occupied_dates').insert({ date: dateStr });
