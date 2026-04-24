@@ -110,7 +110,7 @@ function goToStep(n) {
   updateProgress();
   const section = document.querySelector('.wizard-section');
   if (section) window.scrollTo({ top: section.offsetTop - 90, behavior: 'smooth' });
-  if (n === 1) renderStep2VariantPicker();
+  if (n === 1) { renderStep2VariantPicker(); renderStep2TimePicker(); }
   if (n === 2) renderAddons();
   if (n === 3) renderDrinks();
   if (n === 5) renderSummary();
@@ -189,6 +189,26 @@ function renderEventPicker() {
     card.addEventListener('click', pick);
     card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
   });
+}
+
+// ── Step 2 time picker (shown only for evening event) ──
+function renderStep2TimePicker() {
+  const fg = document.getElementById('fg-time');
+  const sel = document.getElementById('res-time');
+  if (!fg || !sel) return;
+  const isEvening = booking.event?.id === 'evening';
+  fg.style.display = isEvening ? '' : 'none';
+  if (!isEvening) {
+    booking.time = '';
+    sel.value = '';
+    fg.classList.remove('has-error');
+    return;
+  }
+  if (booking.time) sel.value = booking.time;
+  sel.onchange = () => {
+    booking.time = sel.value;
+    if (sel.value) fg.classList.remove('has-error');
+  };
 }
 
 // ── Step 2 variant picker (shown inside step 2 for corporate/birthday) ──
@@ -307,6 +327,15 @@ function setupStep2() {
     if (!d?.value) { fg?.classList.add('has-error'); return; }
     fg?.classList.remove('has-error');
     booking.date = d.value;
+
+    // Evening event: require start time
+    if (booking.event?.id === 'evening') {
+      const timeSel = document.getElementById('res-time');
+      const timeFg  = document.getElementById('fg-time');
+      if (!timeSel?.value) { timeFg?.classList.add('has-error'); return; }
+      timeFg?.classList.remove('has-error');
+      booking.time = timeSel.value;
+    }
 
     // If event still has variants (not yet resolved), require selection
     if (booking.event?.variants) {
@@ -512,7 +541,9 @@ function setupStep5() {
     v(guests,'fg-guests', val => { const n=parseInt(val); return n>=1 && n<=140; });
     if (!valid) return;
     booking.name = name.value.trim(); booking.email = email.value.trim();
-    booking.phone = phone.value.trim(); booking.guests = guests.value;
+    const cc = document.getElementById('res-phone-cc')?.value || '';
+    booking.phone = (cc + ' ' + phone.value.trim()).trim();
+    booking.guests = guests.value;
     booking.notes = document.getElementById('res-message')?.value.trim() || '';
     goToStep(5);
   });
@@ -530,7 +561,7 @@ function renderSummary() {
   const body = document.createElement('div'); body.className = 'summary-body';
   [
     { label: l==='bg'?'Събитие':'Event',   value: l==='bg'?booking.event.title_bg:booking.event.title_en },
-    { label: l==='bg'?'Дата':'Date',       value: booking.date },
+    { label: l==='bg'?'Дата':'Date',       value: booking.date + (booking.time ? ' · ' + booking.time : '') },
     { label: l==='bg'?'Гости':'Guests',    value: booking.guests },
     { label: l==='bg'?'Три имена':'Name',  value: booking.name },
     { label: l==='bg'?'Имейл':'Email',     value: booking.email },

@@ -130,6 +130,18 @@
               <input type="text" id="res-date" name="date" readonly placeholder="дд/мм/гггг" aria-describedby="err-date-msg">
               <span class="form-error" id="err-date-msg" role="alert" data-i18n="err_date">Моля изберете дата.</span>
             </div>
+            <div class="form-group" id="fg-time" style="display:none">
+              <label for="res-time" data-i18n="res_time">Начален час</label>
+              <select id="res-time" name="time" aria-describedby="err-time-msg">
+                <option value="" data-i18n="res_time_choose">— Изберете час —</option>
+                <option value="19:00">19:00</option>
+                <option value="19:30">19:30</option>
+                <option value="20:00">20:00</option>
+                <option value="20:30">20:30</option>
+                <option value="21:00">21:00</option>
+              </select>
+              <span class="form-error" id="err-time-msg" role="alert" data-i18n="err_time">Моля изберете начален час.</span>
+            </div>
             <div id="step2-variant-wrap" class="step2-variant-wrap" style="display:none"></div>
             <span class="form-error" id="err-variant-msg" role="alert" style="display:none" data-i18n="err_variant">Моля изберете опция.</span>
             <div class="selected-event-preview" id="event-preview"></div>
@@ -188,13 +200,37 @@
           <div class="form-wrapper">
             <div class="form-row">
               <div class="form-group" id="fg-name">
-                <label for="res-name" data-i18n="res_name">Три имена</label>
+                <label for="res-name" data-i18n="res_name">Име и фамилия</label>
                 <input type="text" id="res-name" name="name" autocomplete="name" aria-describedby="err-name-msg">
-                <span class="form-error" id="err-name-msg" role="alert" data-i18n="err_name">Моля въведете вашето пълно име.</span>
+                <span class="form-error" id="err-name-msg" role="alert" data-i18n="err_name">Моля въведете вашето име и фамилия.</span>
               </div>
               <div class="form-group" id="fg-phone">
                 <label for="res-phone" data-i18n="res_phone">Телефон</label>
-                <input type="tel" id="res-phone" name="phone" autocomplete="tel" aria-describedby="err-phone-msg">
+                <div class="phone-input-wrap">
+                  <select id="res-phone-cc" class="phone-cc" aria-label="Код на държавата">
+                    <option value="+359" data-flag="🇧🇬" selected>🇧🇬 +359</option>
+                    <option value="+49"  data-flag="🇩🇪">🇩🇪 +49</option>
+                    <option value="+44"  data-flag="🇬🇧">🇬🇧 +44</option>
+                    <option value="+1"   data-flag="🇺🇸">🇺🇸 +1</option>
+                    <option value="+33"  data-flag="🇫🇷">🇫🇷 +33</option>
+                    <option value="+39"  data-flag="🇮🇹">🇮🇹 +39</option>
+                    <option value="+34"  data-flag="🇪🇸">🇪🇸 +34</option>
+                    <option value="+31"  data-flag="🇳🇱">🇳🇱 +31</option>
+                    <option value="+43"  data-flag="🇦🇹">🇦🇹 +43</option>
+                    <option value="+41"  data-flag="🇨🇭">🇨🇭 +41</option>
+                    <option value="+32"  data-flag="🇧🇪">🇧🇪 +32</option>
+                    <option value="+30"  data-flag="🇬🇷">🇬🇷 +30</option>
+                    <option value="+40"  data-flag="🇷🇴">🇷🇴 +40</option>
+                    <option value="+389" data-flag="🇲🇰">🇲🇰 +389</option>
+                    <option value="+381" data-flag="🇷🇸">🇷🇸 +381</option>
+                    <option value="+90"  data-flag="🇹🇷">🇹🇷 +90</option>
+                    <option value="+48"  data-flag="🇵🇱">🇵🇱 +48</option>
+                    <option value="+420" data-flag="🇨🇿">🇨🇿 +420</option>
+                    <option value="+36"  data-flag="🇭🇺">🇭🇺 +36</option>
+                    <option value="+971" data-flag="🇦🇪">🇦🇪 +971</option>
+                  </select>
+                  <input type="tel" id="res-phone" name="phone" autocomplete="tel" aria-describedby="err-phone-msg" placeholder="888 123 456">
+                </div>
                 <span class="form-error" id="err-phone-msg" role="alert" data-i18n="err_phone">Моля въведете валиден телефонен номер.</span>
               </div>
             </div>
