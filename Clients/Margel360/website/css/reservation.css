@@ -314,7 +314,24 @@
   transition: all var(--transition);
 }
 .qty-btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
-.qty-num { font-size: 0.9rem; font-weight: 700; color: var(--text); min-width: 20px; text-align: center; }
+input.qty-num {
+  font-size: 0.9rem; font-weight: 700; color: var(--text);
+  width: 44px; text-align: center;
+  padding: 4px 2px;
+  border: 1px solid var(--border); border-radius: 6px;
+  background: var(--bg);
+  font-family: inherit;
+  -moz-appearance: textfield;
+  appearance: textfield;
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+input.qty-num::-webkit-outer-spin-button,
+input.qty-num::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input.qty-num:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(201,168,76,0.15); }
 
 @media (max-width: 768px) { .drinks-grid { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 480px) { .drinks-grid { grid-template-columns: repeat(2, 1fr); } }

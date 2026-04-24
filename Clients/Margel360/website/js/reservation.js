@@ -500,26 +500,34 @@ function renderDrinks() {
     price.textContent = '€' + Number(drink.price_eur).toFixed(2);
 
     const qtyWrap = document.createElement('div'); qtyWrap.className = 'drink-qty';
-    const minus = document.createElement('button'); minus.className = 'qty-btn'; minus.textContent = '−'; minus.setAttribute('aria-label', 'Decrease');
-    const num = document.createElement('span'); num.className = 'qty-num'; num.textContent = qty;
-    const plus = document.createElement('button'); plus.className = 'qty-btn'; plus.textContent = '+'; plus.setAttribute('aria-label', 'Increase');
+    const minus = document.createElement('button'); minus.className = 'qty-btn'; minus.type = 'button'; minus.textContent = '−'; minus.setAttribute('aria-label', 'Decrease');
+    const num = document.createElement('input');
+    num.className = 'qty-num';
+    num.type = 'number';
+    num.min = '0';
+    num.max = '999';
+    num.step = '1';
+    num.inputMode = 'numeric';
+    num.value = qty;
+    num.setAttribute('aria-label', l === 'bg' ? 'Количество' : 'Quantity');
+    const plus = document.createElement('button'); plus.className = 'qty-btn'; plus.type = 'button'; plus.textContent = '+'; plus.setAttribute('aria-label', 'Increase');
 
     qtyWrap.appendChild(minus); qtyWrap.appendChild(num); qtyWrap.appendChild(plus);
     body.appendChild(name); body.appendChild(price); body.appendChild(qtyWrap);
     item.appendChild(img); item.appendChild(body); grid.appendChild(item);
 
-    minus.addEventListener('click', () => {
-      booking.drinkQtys[drink.id] = Math.max(0, (booking.drinkQtys[drink.id] || 0) - 1);
-      num.textContent = booking.drinkQtys[drink.id];
-      item.classList.toggle('has-qty', booking.drinkQtys[drink.id] > 0);
+    function setQty(next) {
+      const n = Math.max(0, Math.min(999, Math.floor(Number(next) || 0)));
+      booking.drinkQtys[drink.id] = n;
+      num.value = n;
+      item.classList.toggle('has-qty', n > 0);
       updateDrinksTotal();
-    });
-    plus.addEventListener('click', () => {
-      booking.drinkQtys[drink.id] = (booking.drinkQtys[drink.id] || 0) + 1;
-      num.textContent = booking.drinkQtys[drink.id];
-      item.classList.add('has-qty');
-      updateDrinksTotal();
-    });
+    }
+    minus.addEventListener('click', () => setQty((booking.drinkQtys[drink.id] || 0) - 1));
+    plus.addEventListener('click',  () => setQty((booking.drinkQtys[drink.id] || 0) + 1));
+    num.addEventListener('input', () => setQty(num.value));
+    num.addEventListener('focus', () => num.select());
+    num.addEventListener('blur',  () => { if (num.value === '' || isNaN(Number(num.value))) setQty(0); });
   });
 }
 
