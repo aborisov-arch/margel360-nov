@@ -19,6 +19,9 @@ const categories = [
       { src:'assets/images/_C2_3200.jpg',          alt_bg:'Вечерно събитие', alt_en:'Evening event' },
       { src:'assets/images/_C2_6915.jpg',          alt_bg:'Вечерно събитие', alt_en:'Evening event' },
       { src:'assets/images/gallery-evening-1.jpg', alt_bg:'Вечерно събитие', alt_en:'Evening event' },
+      { src:'assets/images/gallery-evening-6.jpg', alt_bg:'Бар с коктейли',  alt_en:'Cocktail bar' },
+      { src:'assets/images/gallery-evening-7.jpg', alt_bg:'DJ пулт',         alt_en:'DJ booth' },
+      { src:'assets/images/gallery-evening-8.jpg', alt_bg:'Сервиране на маса', alt_en:'Table setting' },
     ],
   },
   {
@@ -28,6 +31,7 @@ const categories = [
     images: [
       { src:'assets/images/event-wedding.jpg',     alt_bg:'Сватба',             alt_en:'Wedding' },
       { src:'assets/images/gallery-wedding-1.jpg', alt_bg:'Сватбено тържество', alt_en:'Wedding celebration' },
+      { src:'assets/images/gallery-wedding-2.jpg', alt_bg:'Сватбена украса',    alt_en:'Wedding décor' },
     ],
   },
   {
@@ -38,6 +42,9 @@ const categories = [
       { src:'assets/images/event-birthday.jpg',     alt_bg:'Детски рожден ден', alt_en:"Children's birthday" },
       { src:'assets/images/event-birthday-eve.jpg', alt_bg:'Вечерен рожден ден', alt_en:'Evening birthday' },
       { src:'assets/images/gallery-birthday-1.jpg', alt_bg:'Рожден ден',         alt_en:'Birthday party' },
+      { src:'assets/images/gallery-birthday-2.jpg', alt_bg:'Торта със зари',     alt_en:'Cake with sparklers' },
+      { src:'assets/images/gallery-birthday-3.jpg', alt_bg:'Торта на терасата',  alt_en:'Cake on the terrace' },
+      { src:'assets/images/gallery-birthday-4.jpg', alt_bg:'Цветни димни ефекти', alt_en:'Coloured smoke effects' },
     ],
   },
   {
@@ -45,8 +52,9 @@ const categories = [
     title_bg: 'Корпоративни събития',
     title_en: 'Corporate Events',
     images: [
-      { src:'assets/images/event-corporate.jpg',     alt_bg:'Корпоративно събитие', alt_en:'Corporate event' },
-      { src:'assets/images/gallery-corporate-1.jpg', alt_bg:'Корпоративна среща',   alt_en:'Corporate meeting' },
+      { src:'assets/images/event-corporate.jpg',      alt_bg:'Корпоративно събитие', alt_en:'Corporate event' },
+      { src:'assets/images/gallery-corporate-1.jpg',  alt_bg:'Корпоративна среща',   alt_en:'Corporate meeting' },
+      { src:'assets/images/gallery-corporate-2.jpg',  alt_bg:'Корпоративен коктейл', alt_en:'Corporate cocktail' },
     ],
   },
 ];
