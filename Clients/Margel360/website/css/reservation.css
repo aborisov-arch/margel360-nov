@@ -225,7 +225,7 @@
 }
 .addon-item:hover { border-color: rgba(201,168,76,0.4); background: var(--bg-2); }
 .addon-item.selected { border-color: var(--accent); background: var(--accent-dim); }
-.addon-item input { position: absolute; opacity: 0; pointer-events: none; }
+.addon-item input[type="checkbox"] { position: absolute; opacity: 0; pointer-events: none; }
 .addon-img {
   width: 56px; height: 56px; border-radius: 6px; flex-shrink: 0;
   background: var(--bg-2); overflow: hidden;

@@ -380,7 +380,13 @@ function renderAddons() {
     info.appendChild(name); info.appendChild(price);
 
     if (hasQty) {
-      const qty = booking.addonQtys[svc.id] || 0;
+      // Default the qty to the free baseline (e.g. 40 stools) on first
+      // render so each row reflects what the venue already includes;
+      // decrement for fewer guests, increment to add chargeable extras.
+      if (booking.addonQtys[svc.id] == null) {
+        booking.addonQtys[svc.id] = svc.freeUntil;
+      }
+      const qty = booking.addonQtys[svc.id];
       const subtotal = Math.max(0, qty - svc.freeUntil) * svc.price;
 
       const hint = document.createElement('div');
