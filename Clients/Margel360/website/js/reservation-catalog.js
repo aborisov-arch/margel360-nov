@@ -55,11 +55,11 @@ const addonServices = [
   { id:'heater',     name_bg:'Газова отоплителна гъба',       name_en:'Gas patio heater',               price:74.14,  img:'assets/images/services/heater.jpg' },
   { id:'heater_tbl', name_bg:'Газова отоплителна маса',       name_en:'Gas heating table',              price:74.14,  img:'assets/images/services/heater-table.jpg' },
   { id:'glow_table', name_bg:'Маса светеща RGB',              name_en:'RGB glowing table',              price:20.45,  img:'assets/images/services/table-glow.jpg' },
-  // Furniture extras — first N pcs included with venue rental, then per piece:
-  { id:'bar_stool',  name_bg:'Бар стол (над 40)',             name_en:'Bar stool (above 40)',           price:5.11,   img:'assets/images/services/bar-stool.jpg' },
-  { id:'conf_chair', name_bg:'Конферентен стол (над 40)',     name_en:'Conference chair (above 40)',    price:5.11,   img:'assets/images/services/conf-chair.jpg' },
-  { id:'chiavari',   name_bg:'Стол „Шивари“ (над 10)',        name_en:'Chiavari chair (above 10)',      price:6.65,   img:'assets/images/services/chiavari.jpg' },
-  { id:'cocktail_t', name_bg:'Коктейлна маса Ø70 (над 16)',   name_en:'Cocktail table Ø70 (above 16)',  price:12.78,  img:'assets/images/services/cocktail-table.jpg' },
-  { id:'rect_table', name_bg:'Правоъгълна маса 180 (над 1)',  name_en:'Rectangular table 180 (above 1)',price:23.01,  img:'assets/images/services/rect-table.jpg' },
-  { id:'round_table',name_bg:'Кръгла маса Ø152 (над 1)',      name_en:'Round table Ø152 (above 1)',     price:24.54,  img:'assets/images/services/round-table.jpg' },
+  // Furniture extras — `freeUntil` pcs included with venue rental, then `price` per extra piece:
+  { id:'bar_stool',  name_bg:'Бар стол',              name_en:'Bar stool',              price:5.11,  freeUntil:40, img:'assets/images/services/bar-stool.jpg' },
+  { id:'conf_chair', name_bg:'Конферентен стол',      name_en:'Conference chair',       price:5.11,  freeUntil:40, img:'assets/images/services/conf-chair.jpg' },
+  { id:'chiavari',   name_bg:'Стол „Шивари“',         name_en:'Chiavari chair',         price:6.65,  freeUntil:10, img:'assets/images/services/chiavari.jpg' },
+  { id:'cocktail_t', name_bg:'Коктейлна маса Ø70',    name_en:'Cocktail table Ø70',     price:12.78, freeUntil:16, img:'assets/images/services/cocktail-table.jpg' },
+  { id:'rect_table', name_bg:'Правоъгълна маса 180',  name_en:'Rectangular table 180',  price:23.01, freeUntil:1,  img:'assets/images/services/rect-table.jpg' },
+  { id:'round_table',name_bg:'Кръгла маса Ø152',      name_en:'Round table Ø152',       price:24.54, freeUntil:1,  img:'assets/images/services/round-table.jpg' },
 ];

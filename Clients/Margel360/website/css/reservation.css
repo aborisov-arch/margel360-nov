@@ -247,6 +247,13 @@
 }
 .addon-item.selected .addon-check { background: var(--accent); border-color: var(--accent); color: #fff; }
 
+.addon-item.addon-qty-mode { cursor: default; }
+.addon-item.addon-qty-mode .addon-img { cursor: zoom-in; }
+.addon-hint { font-size: 0.7rem; color: var(--text-muted); line-height: 1.25; margin-top: 3px; }
+.addon-qty { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.addon-qty .qty-btn { width: 24px; height: 24px; font-size: 0.95rem; }
+.addon-qty input.qty-num { width: 38px; padding: 3px 2px; font-size: 0.82rem; }
+
 @media (max-width: 600px) { .addon-grid { grid-template-columns: 1fr; } }
 
 /* ── Drinks prompt overlay ── */

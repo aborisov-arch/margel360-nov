@@ -8,7 +8,7 @@ const EXTRA_GUEST_FEE = 15.34;    // EUR per extra guest above the base
 // ── State ──
 let currentStep = 0;
 const TOTAL_STEPS = 6;
-let booking = { event:null, date:'', time:'day', addons:{}, drinkQtys:{}, name:'', email:'', phone:'', guests:'', notes:'', payment:'cash' };
+let booking = { event:null, date:'', time:'day', addons:{}, addonQtys:{}, drinkQtys:{}, name:'', email:'', phone:'', guests:'', notes:'', payment:'cash' };
 let activeDrinkCat = 0;
 
 function getLang() { return localStorage.getItem('margel_lang') || 'bg'; }
@@ -340,9 +340,20 @@ function renderAddons() {
   if (!grid) return;
   grid.innerHTML = '';
   addonServices.forEach(svc => {
-    const item = document.createElement('label');
-    item.className = 'addon-item' + (booking.addons[svc.id] ? ' selected' : '');
-    const input = document.createElement('input'); input.type = 'checkbox'; input.checked = !!booking.addons[svc.id];
+    const hasQty = svc.freeUntil != null;
+
+    const item = document.createElement(hasQty ? 'div' : 'label');
+    const isSelected = hasQty
+      ? (booking.addonQtys[svc.id] || 0) > 0
+      : !!booking.addons[svc.id];
+    item.className = 'addon-item' + (isSelected ? ' selected' : '') + (hasQty ? ' addon-qty-mode' : '');
+
+    let input;
+    if (!hasQty) {
+      input = document.createElement('input');
+      input.type = 'checkbox';
+      input.checked = !!booking.addons[svc.id];
+    }
 
     const visual = document.createElement('div');
     if (svc.img) {
@@ -351,9 +362,11 @@ function renderAddons() {
       i.src = svc.img;
       i.alt = l === 'bg' ? svc.name_bg : svc.name_en;
       visual.appendChild(i);
-      // Desktop-only click-to-enlarge; on mobile, click falls through to label and toggles checkbox
+      // Click-to-enlarge. For checkbox addons it's desktop-only so a mobile tap
+      // can fall through to the label and toggle the box. Quantity addons have
+      // no checkbox to fall through to, so the lightbox works on both.
       visual.addEventListener('click', e => {
-        if (!window.matchMedia('(min-width: 768px)').matches) return;
+        if (!hasQty && !window.matchMedia('(min-width: 768px)').matches) return;
         e.preventDefault();
         e.stopPropagation();
         openImageLightbox(svc.img, i.alt);
@@ -364,9 +377,57 @@ function renderAddons() {
     const info = document.createElement('div'); info.className = 'addon-info';
     const name = document.createElement('div'); name.className = 'addon-name'; name.textContent = l === 'bg' ? svc.name_bg : svc.name_en;
     const price = document.createElement('div'); price.className = 'addon-price';
-    price.textContent = fmt(svc.price);
     info.appendChild(name); info.appendChild(price);
 
+    if (hasQty) {
+      const qty = booking.addonQtys[svc.id] || 0;
+      const subtotal = Math.max(0, qty - svc.freeUntil) * svc.price;
+
+      const hint = document.createElement('div');
+      hint.className = 'addon-hint';
+      hint.textContent = (l === 'bg' ? 'Първите ' : 'First ') + svc.freeUntil
+        + (l === 'bg' ? ' бр. безплатно — €' : ' free — €') + svc.price.toFixed(2)
+        + (l === 'bg' ? ' за всеки следващ' : ' per extra');
+      info.appendChild(hint);
+      price.textContent = fmt(subtotal);
+
+      const qtyWrap = document.createElement('div'); qtyWrap.className = 'addon-qty';
+      const minus = document.createElement('button'); minus.className = 'qty-btn'; minus.type = 'button'; minus.textContent = '−'; minus.setAttribute('aria-label', l === 'bg' ? 'Намали' : 'Decrease');
+      const num = document.createElement('input');
+      num.className = 'qty-num';
+      num.type = 'number';
+      num.min = '0';
+      num.max = '999';
+      num.step = '1';
+      num.inputMode = 'numeric';
+      num.value = qty;
+      num.setAttribute('aria-label', l === 'bg' ? 'Брой' : 'Quantity');
+      const plus = document.createElement('button'); plus.className = 'qty-btn'; plus.type = 'button'; plus.textContent = '+'; plus.setAttribute('aria-label', l === 'bg' ? 'Добави' : 'Increase');
+      qtyWrap.appendChild(minus); qtyWrap.appendChild(num); qtyWrap.appendChild(plus);
+
+      item.appendChild(visual); item.appendChild(info); item.appendChild(qtyWrap);
+      grid.appendChild(item);
+
+      function setQty(next) {
+        const n = Math.max(0, Math.min(999, Math.floor(Number(next) || 0)));
+        booking.addonQtys[svc.id] = n;
+        booking.addons[svc.id] = Math.max(0, n - svc.freeUntil) * svc.price;
+        num.value = n;
+        price.textContent = fmt(booking.addons[svc.id]);
+        item.classList.toggle('selected', n > 0);
+        updateAddonsTotal();
+      }
+      minus.addEventListener('click', () => setQty((booking.addonQtys[svc.id] || 0) - 1));
+      plus.addEventListener('click',  () => setQty((booking.addonQtys[svc.id] || 0) + 1));
+      num.addEventListener('input', () => setQty(num.value));
+      num.addEventListener('focus', () => num.select());
+      num.addEventListener('blur',  () => { if (num.value === '' || isNaN(Number(num.value))) setQty(0); });
+      // Prevent qty controls from triggering image lightbox or other label behavior
+      qtyWrap.addEventListener('click', e => e.stopPropagation());
+      return;
+    }
+
+    price.textContent = fmt(svc.price);
     const check = document.createElement('div'); check.className = 'addon-check'; check.setAttribute('aria-hidden','true'); check.textContent = '✓';
 
     item.appendChild(input); item.appendChild(visual); item.appendChild(info); item.appendChild(check);
@@ -577,12 +638,21 @@ function setupSubmit() {
 
     // Serialize add-ons: only the ones selected (price > 0). Store Bulgarian
     // names — customers receive Bulgarian emails; admin panel is bilingual by ID.
-    const addonsPayload = Object.entries(booking.addons)
-      .filter(([, price]) => price > 0)
-      .map(([id, price]) => {
-        const svc = addonServices.find(s => s.id === id);
-        return { id, name: svc ? svc.name_bg : id, price };
-      });
+    // Serialize add-ons. Quantity-based items (with `freeUntil`) are kept whenever
+    // qty > 0, even if subtotal is 0 (within the free baseline) — admin still
+    // needs to know how many chairs/tables to provide.
+    const addonsPayload = addonServices
+      .map(svc => {
+        const qty = booking.addonQtys[svc.id] || 0;
+        const price = booking.addons[svc.id] || 0;
+        if (svc.freeUntil != null) {
+          if (qty <= 0) return null;
+          return { id: svc.id, name: svc.name_bg, qty, price };
+        }
+        if (price <= 0) return null;
+        return { id: svc.id, name: svc.name_bg, price };
+      })
+      .filter(Boolean);
 
     // Serialize drinks: only items with qty > 0
     const drinksPayload = Object.entries(booking.drinkQtys)
