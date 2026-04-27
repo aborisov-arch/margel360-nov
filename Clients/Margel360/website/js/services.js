@@ -32,7 +32,7 @@ const services = [
     price:    '€51.13',
   },
   {
-    img:      'assets/images/services/svc-flowers.jpg',
+    img:      'assets/images/services/candles-terrace.jpg',
     title_bg: 'Свещи на терасата',
     title_en: 'Terrace Candles',
     desc_bg:  '50 бр. восъчни свещи на терасата.',
@@ -80,7 +80,7 @@ const services = [
     price:    '€92.03',
   },
   {
-    img:      'assets/images/services/projector.jpg',
+    img:      'assets/images/services/flipchart.jpg',
     title_bg: 'Флипчарт',
     title_en: 'Flipchart',
     desc_bg:  'Флипчарт за презентации и обучения.',
@@ -160,7 +160,7 @@ const services = [
     price:    '€74.14 / бр.',
   },
   {
-    img:      'assets/images/services/heater.jpg',
+    img:      'assets/images/services/heater-table.jpg',
     title_bg: 'Газова отоплителна маса',
     title_en: 'Gas Heating Table',
     desc_bg:  'Газова отоплителна маса 900/900/H1050.',
@@ -184,7 +184,7 @@ const services = [
     price:    '€90 / 5ч.',
   },
   {
-    img:      'assets/images/services/wardrobe.jpg',
+    img:      'assets/images/services/hygienist.jpg',
     title_bg: 'Хигиенист',
     title_en: 'Hygienist',
     desc_bg:  'Хигиенист за 5 часа, овъртайм €20/час.',
@@ -208,7 +208,7 @@ const services = [
     price:    '€64.93',
   },
   {
-    img:      'assets/images/services/svc-decoration.jpg',
+    img:      'assets/images/services/cleaning.jpg',
     title_bg: 'Почистване на зала',
     title_en: 'Hall Cleaning',
     desc_bg:  'Професионално почистване след събитието.',
@@ -216,7 +216,7 @@ const services = [
     price:    '€70',
   },
   {
-    img:      'assets/images/services/svc-decoration.jpg',
+    img:      'assets/images/services/bar-stool.jpg',
     title_bg: 'Бар стол (доп.)',
     title_en: 'Bar Stool (extra)',
     desc_bg:  'Над 40 включени в наема.',
@@ -224,7 +224,7 @@ const services = [
     price:    '€5.11 / бр.',
   },
   {
-    img:      'assets/images/services/svc-decoration.jpg',
+    img:      'assets/images/services/conf-chair.jpg',
     title_bg: 'Конферентен стол (доп.)',
     title_en: 'Conference Chair (extra)',
     desc_bg:  'Над 40 включени в наема.',
@@ -232,7 +232,7 @@ const services = [
     price:    '€5.11 / бр.',
   },
   {
-    img:      'assets/images/services/svc-decoration.jpg',
+    img:      'assets/images/services/chiavari.jpg',
     title_bg: 'Стол „Шивари“ (доп.)',
     title_en: 'Chiavari Chair (extra)',
     desc_bg:  'Над 10 включени в наема.',
@@ -240,7 +240,7 @@ const services = [
     price:    '€6.65 / бр.',
   },
   {
-    img:      'assets/images/services/svc-decoration.jpg',
+    img:      'assets/images/services/cocktail-table.jpg',
     title_bg: 'Коктейлна маса Ø70см (доп.)',
     title_en: 'Cocktail Table Ø70cm (extra)',
     desc_bg:  'С еластан. Над 16 включени в наема.',
@@ -248,7 +248,7 @@ const services = [
     price:    '€12.78 / бр.',
   },
   {
-    img:      'assets/images/services/svc-decoration.jpg',
+    img:      'assets/images/services/rect-table.jpg',
     title_bg: 'Правоъгълна маса 180см (доп.)',
     title_en: 'Rectangular Table 180cm (extra)',
     desc_bg:  'С еластан. Над 1 включена в наема.',
@@ -256,7 +256,7 @@ const services = [
     price:    '€23.01 / бр.',
   },
   {
-    img:      'assets/images/services/svc-decoration.jpg',
+    img:      'assets/images/services/round-table.jpg',
     title_bg: 'Кръгла маса Ø152см (доп.)',
     title_en: 'Round Table Ø152cm (extra)',
     desc_bg:  'С еластан. Над 1 включена в наема.',
