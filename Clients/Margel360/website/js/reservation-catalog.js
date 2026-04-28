@@ -1,21 +1,21 @@
 // ── Event types ──
 const eventTypes = [
-  { id:'evening',   title_bg:'Вечерно събитие',       title_en:'Evening Event',      duration_bg:'след 19:00',    duration_en:'after 7:00 PM',   price_eur:1280, img:'assets/images/event-evening.jpg',   included:['sound','lighting','bar','fridge','parking','wc','elevator','furniture','dance','terrace'] },
+  { id:'evening',   title_bg:'Вечерно събитие',       title_en:'Evening Event',      desc_bg:'За приятели, рождени дни и специален повод.', desc_en:'For friends, birthdays and special occasions.',           duration_bg:'след 19:00',    duration_en:'after 7:00 PM',   price_eur:1280, img:'assets/images/event-evening.jpg',   included:['sound','lighting','bar','fridge','parking','wc','elevator','furniture','dance','terrace'] },
   {
-    id:'corporate', title_bg:'Корпоративно събитие',  title_en:'Corporate Event',    img:'assets/images/event-corporate.jpg',
+    id:'corporate', title_bg:'Корпоративно събитие',  title_en:'Corporate Event',    desc_bg:'Тиймбилдинг, презентации и работни срещи.',     desc_en:'Team-building, presentations and corporate meetings.', img:'assets/images/event-corporate.jpg',
     variants: [
       { id:'corp4', label_bg:'4 часа', label_en:'4 hours', price_eur:330, duration_bg:'08:00–17:30', duration_en:'8:00 AM–5:30 PM', included:['sound','lighting','bar','fridge','parking','wc','elevator','tables_conf'] },
       { id:'corp8', label_bg:'8 часа', label_en:'8 hours', price_eur:440, duration_bg:'08:00–17:30', duration_en:'8:00 AM–5:30 PM', included:['sound','lighting','bar','fridge','parking','wc','elevator','tables_conf','projector'] },
     ],
   },
   {
-    id:'birthday',  title_bg:'Детски рожден ден',     title_en:"Children's Birthday", img:'assets/images/event-birthday.jpg',
+    id:'birthday',  title_bg:'Детски рожден ден',     title_en:"Children's Birthday", desc_bg:'Празник за вашето дете и гостите му.',          desc_en:"A celebration for your child and their guests.", img:'assets/images/event-birthday.jpg',
     variants: [
       { id:'bday_day', label_bg:'Дневно', label_en:'Daytime', sub_bg:'(до 17:30) — 5 часа', sub_en:'(until 5:30 PM) — 5 hours', price_eur:700, duration_bg:'до 17:30',    duration_en:'until 5:30 PM',     included:['sound','lighting','bar','fridge','parking','wc','elevator','furniture','dance'] },
       { id:'bday_eve', label_bg:'Вечерно', label_en:'Evening', sub_bg:'(16:00–24:00) — 5 часа', sub_en:'(4:00 PM–midnight) — 5 hours', price_eur:970, duration_bg:'16:00–24:00', duration_en:'4:00 PM–midnight',   included:['sound','lighting','bar','fridge','parking','wc','elevator','furniture','dance','terrace'] },
     ],
   },
-  { id:'wedding',   title_bg:'Сватба',                title_en:'Wedding',            duration_bg:'По договаряне', duration_en:'By arrangement',  price_eur:1500, img:'assets/images/event-wedding.jpg',   included:['sound','lighting','bar','fridge','parking','wc','elevator','furniture','dance','terrace','redcarpet'] },
+  { id:'wedding',   title_bg:'Сватба',                title_en:'Wedding',            desc_bg:'Тържество с панорамна гледка и 360° тераса.',  desc_en:'A reception with panoramic views and a 360° terrace.',  duration_bg:'По договаряне', duration_en:'By arrangement',  price_eur:1500, img:'assets/images/event-wedding.jpg',   included:['sound','lighting','bar','fridge','parking','wc','elevator','furniture','dance','terrace','redcarpet'] },
 ];
 
 const includedLabels = {

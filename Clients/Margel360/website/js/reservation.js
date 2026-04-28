@@ -111,7 +111,15 @@ function renderEventPicker() {
     img.src = ev.img; img.alt = l === 'bg' ? ev.title_bg : ev.title_en; img.loading = 'lazy';
 
     const body = document.createElement('div'); body.className = 'event-pick-body';
+    const titleblock = document.createElement('div'); titleblock.className = 'event-pick-titleblock';
     const h3 = document.createElement('h3'); h3.textContent = l === 'bg' ? ev.title_bg : ev.title_en;
+    titleblock.appendChild(h3);
+    const descText = l === 'bg' ? ev.desc_bg : ev.desc_en;
+    if (descText) {
+      const desc = document.createElement('p'); desc.className = 'event-pick-desc';
+      desc.textContent = descText;
+      titleblock.appendChild(desc);
+    }
     const meta = document.createElement('div'); meta.className = 'event-pick-meta';
 
     if (!ev.variants) {
@@ -128,7 +136,7 @@ function renderEventPicker() {
       meta.appendChild(priceRange);
     }
 
-    body.appendChild(h3); body.appendChild(meta);
+    body.appendChild(titleblock); body.appendChild(meta);
     card.appendChild(img); card.appendChild(body);
     grid.appendChild(card);
 
