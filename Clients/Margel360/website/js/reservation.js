@@ -342,6 +342,22 @@ function updatePreview() {
 }
 
 // ── Step 3: Add-on services ──
+function renderVenueIncluded() {
+  const l = getLang();
+  const grid = document.getElementById('venue-included-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  venueIncluded.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'venue-included-item';
+    const icon = document.createElement('span'); icon.className = 'venue-included-icon'; icon.textContent = item.icon; icon.setAttribute('aria-hidden', 'true');
+    const label = document.createElement('span'); label.className = 'venue-included-label';
+    label.textContent = l === 'bg' ? item.label_bg : item.label_en;
+    card.appendChild(icon); card.appendChild(label);
+    grid.appendChild(card);
+  });
+}
+
 function renderAddons() {
   const l = getLang();
   const grid = document.getElementById('addon-grid');
@@ -442,6 +458,15 @@ function renderAddons() {
     }
 
     price.textContent = fmt(svc.price);
+
+    const hintText = l === 'bg' ? svc.hint_bg : svc.hint_en;
+    if (hintText) {
+      const hint = document.createElement('div');
+      hint.className = 'addon-hint';
+      hint.textContent = hintText;
+      info.appendChild(hint);
+    }
+
     const check = document.createElement('div'); check.className = 'addon-check'; check.setAttribute('aria-hidden','true'); check.textContent = '✓';
 
     item.appendChild(input); item.appendChild(visual); item.appendChild(info); item.appendChild(check);
@@ -727,6 +752,7 @@ document.addEventListener('langChange', () => {
 document.addEventListener('DOMContentLoaded', async () => {
   await loadOccupiedDates();   // fetch occupied dates before flatpickr initialises
   renderEventPicker();
+  renderVenueIncluded();
   setupStep2();
   setupStep5();
   setupSubmit();

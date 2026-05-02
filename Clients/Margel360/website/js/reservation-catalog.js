@@ -23,9 +23,23 @@ const includedLabels = {
   en: { sound:'Professional 360° sound',    lighting:'Prof. lighting',    bar:'Bar with ice makers',  fridge:'3 fridges',          parking:'70+ parking',    wc:'Restrooms',            elevator:'Elevator',   tables_conf:'Conf. tables & chairs',  furniture:'50 chairs, tables, bar stools',     projector:'Projector & screen', dance:'Dance floor', terrace:'360m² terrace', redcarpet:'Red carpet' },
 };
 
+// ── Free amenities included with every venue rental (margel360.bg) ──
+const venueIncluded = [
+  { icon:'🔊',  label_bg:'Професионално озвучение',                    label_en:'Professional sound' },
+  { icon:'💡',  label_bg:'Професионално осветление',                   label_en:'Professional lighting' },
+  { icon:'🍸',  label_bg:'16 бр. маси тип „щъркел" + еластан',         label_en:'16 cocktail tables + stretch covers' },
+  { icon:'🪑',  label_bg:'40 бр. бар столове',                          label_en:'40 bar stools' },
+  { icon:'🅿️',  label_bg:'Безплатен паркинг до 50 автомобила',         label_en:'Free parking up to 50 vehicles' },
+  { icon:'🧊',  label_bg:'Бар с 2 бр. ледогенератори',                  label_en:'Bar with 2 ice makers' },
+  { icon:'🍷',  label_bg:'Хладилни витрини за вино и безалк. напитки', label_en:'Wine & soft-drinks fridges' },
+  { icon:'🍽️',  label_bg:'Миялна машина',                              label_en:'Dishwasher' },
+  { icon:'☕',  label_bg:'Кафе машина с безплатно кафе',               label_en:'Coffee machine with free coffee' },
+  { icon:'🚻',  label_bg:'Мъжка и дамска тоалетна',                    label_en:"Men's and women's restrooms" },
+];
+
 // ── Paid add-on services (from margel360.bg services page) ──
 const addonServices = [
-  { id:'dj',         name_bg:'DJ за 5 часа',                  name_en:'DJ for 5 hours',                 price:300,    img:'assets/images/services/dj.jpg' },
+  { id:'dj',         name_bg:'DJ за 5 часа',                  name_en:'DJ for 5 hours',                 price:300,    img:'assets/images/services/dj.jpg', hint_bg:'За всеки допълнителен час — €60', hint_en:'Each additional hour — €60' },
   { id:'photo2',     name_bg:'Фотограф за 2 часа',            name_en:'Photographer 2h',                price:173.84, img:'assets/images/services/photographer.jpg' },
   { id:'photo4',     name_bg:'Фотограф за 4 часа',            name_en:'Photographer 4h',                price:296.55, img:'assets/images/services/photographer.jpg' },
   { id:'booth2',     name_bg:'Фото будка 360° (2 часа)',      name_en:'360° Photo Booth (2 hours)',     price:199.40, img:'assets/images/services/booth.jpg' },

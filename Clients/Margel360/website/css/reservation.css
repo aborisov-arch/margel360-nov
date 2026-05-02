@@ -365,6 +365,21 @@ input.qty-num:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(20
 .service-inc-label { font-size: 0.85rem; color: var(--text-muted); }
 @media (max-width: 600px) { .services-included { grid-template-columns: 1fr; } }
 
+/* ── "What's included" panel above the paid add-ons ── */
+.venue-included { margin-bottom: 28px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+.venue-included-title { font-size: 0.95rem; font-weight: 600; color: var(--text); margin: 0 0 12px; letter-spacing: 0.2px; }
+.venue-included-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+.venue-included-item {
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  text-align: center; gap: 8px; padding: 14px 10px;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+  min-height: 110px;
+}
+.venue-included-icon { font-size: 1.6rem; line-height: 1; }
+.venue-included-label { font-size: 0.74rem; color: var(--text-muted); line-height: 1.35; }
+@media (max-width: 900px) { .venue-included-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 560px) { .venue-included-grid { grid-template-columns: repeat(2, 1fr); } .venue-included-icon { font-size: 1.4rem; } .venue-included-label { font-size: 0.7rem; } }
+
 /* ── Running total strip ── */
 .running-total {
   display: flex; justify-content: space-between; align-items: center;
