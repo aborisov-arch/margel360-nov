@@ -240,6 +240,67 @@ export function renderCustomerEmail(e: Enquiry, siteUrl: string): { subject: str
   return { subject, html };
 }
 
+type LineItem = { id?: string; name?: string; qty?: number; price?: number };
+
+const FIELD_LABEL: Record<string, string> = {
+  guests:         "Guests",
+  phone:          "Phone",
+  notes:          "Notes",
+  addons:         "Add-on services",
+  drinks:         "Drinks",
+  preferred_date: "Date",
+};
+
+function fmtAddon(a: LineItem): string {
+  const name  = String(a?.name ?? a?.id ?? "?");
+  const qty   = typeof a?.qty   === "number" && a.qty   > 0 ? ` × ${a.qty}` : "";
+  const price = typeof a?.price === "number" && a.price > 0 ? ` — ${fmtEur(a.price)}` : "";
+  return `${name}${qty}${price}`;
+}
+
+function fmtDrink(d: LineItem): string {
+  const name = String(d?.name ?? d?.id ?? "?");
+  const qty  = typeof d?.qty === "number" ? ` × ${d.qty}` : "";
+  return `${name}${qty}`;
+}
+
+/** Render an array-field diff as a human-readable Added / Removed / Changed list. */
+function fmtArrayDiff(field: "addons" | "drinks", before: unknown, after: unknown): string {
+  const b: LineItem[] = Array.isArray(before) ? before as LineItem[] : [];
+  const a: LineItem[] = Array.isArray(after)  ? after  as LineItem[] : [];
+  const bMap = new Map(b.filter(x => x?.id).map(x => [x.id!, x]));
+  const aMap = new Map(a.filter(x => x?.id).map(x => [x.id!, x]));
+
+  const removed = b.filter(x => x?.id && !aMap.has(x.id));
+  const added   = a.filter(x => x?.id && !bMap.has(x.id));
+  const changed = a
+    .filter(x => x?.id && bMap.has(x.id))
+    .map(x => ({ from: bMap.get(x.id!)!, to: x }))
+    .filter(p => (p.from.qty ?? 0) !== (p.to.qty ?? 0)
+              || (p.from.price ?? 0) !== (p.to.price ?? 0));
+
+  const fmt = field === "addons" ? fmtAddon : fmtDrink;
+  const lines: string[] = [];
+  if (removed.length) {
+    lines.push("    Removed:");
+    for (const r of removed) lines.push(`      − ${fmt(r)}`);
+  }
+  if (added.length) {
+    lines.push("    Added:");
+    for (const x of added) lines.push(`      + ${fmt(x)}`);
+  }
+  if (changed.length) {
+    lines.push("    Changed:");
+    for (const c of changed) lines.push(`      • ${fmt(c.from)}  →  ${fmt(c.to)}`);
+  }
+  return lines.length ? lines.join("\n") : "    (no item-level differences)";
+}
+
+function fmtScalar(v: unknown): string {
+  if (v == null || v === "") return "—";
+  return String(v);
+}
+
 /** Render the owner email (plain text, with optional diff). */
 export function renderOwnerEmail(
   e: Enquiry,
@@ -257,8 +318,18 @@ export function renderOwnerEmail(
     ? [
         "CHANGED FIELDS",
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
-        ...diff.map(d => `  ${d.field}:\n    before: ${JSON.stringify(d.before)}\n    after:  ${JSON.stringify(d.after)}`),
-        "",
+        ...diff.flatMap(d => {
+          const label = FIELD_LABEL[d.field] ?? d.field;
+          if (d.field === "addons" || d.field === "drinks") {
+            return [`  ${label}:`, fmtArrayDiff(d.field, d.before, d.after), ""];
+          }
+          return [
+            `  ${label}:`,
+            `    before: ${fmtScalar(d.before)}`,
+            `    after:  ${fmtScalar(d.after)}`,
+            "",
+          ];
+        }),
       ]
     : [];
 
