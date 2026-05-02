@@ -1,6 +1,6 @@
 const translations = {
   bg: {
-    nav_home: 'Събития', nav_gallery: 'Галерия', nav_faq: 'FAQ',
+    nav_home: 'Събития', nav_gallery: 'Галерия', nav_faq: 'Често задавани въпроси',
     nav_services: 'Услуги', nav_drinks: 'Меню', nav_contact: 'Контакти', nav_reserve: 'Запитване',
     drinks_title: 'Меню с напитки',
     drinks_sub: 'Шампанско, вино, спиртни и безалкохолни за вашето събитие',

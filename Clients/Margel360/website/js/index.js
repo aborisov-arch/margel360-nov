@@ -61,6 +61,9 @@ const equipment = [
   { icon: '🛗', label_bg: 'Асансьор', label_en: 'Elevator' },
   { icon: '❄️', label_bg: '3 хладилни витрини', label_en: '3 refrigerated displays' },
   { icon: '🎤', label_bg: 'Микрофони', label_en: 'Microphones' },
+  { icon: '🍸', label_bg: 'Собствен бар', label_en: 'In-house bar' },
+  { icon: '🎧', label_bg: 'DJ пулт', label_en: 'DJ console' },
+  { icon: '🧥', label_bg: 'Гардеробна', label_en: 'Cloakroom' },
 ];
 
 function setText(el, text) { el.textContent = text; }

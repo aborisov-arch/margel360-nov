@@ -1,6 +1,6 @@
 const translations = {
   bg: {
-    nav_home: 'Събития', nav_gallery: 'Галерия', nav_faq: 'FAQ',
+    nav_home: 'Събития', nav_gallery: 'Галерия', nav_faq: 'Често задавани въпроси',
     nav_services: 'Услуги', nav_drinks: 'Меню', nav_contact: 'Контакти', nav_reserve: 'Запитване',
     gallery_title: 'Галерия', gallery_sub: 'Моменти от изминали тържества',
     videos_title: 'Видео от Маргел 360°',
