@@ -250,8 +250,14 @@ function renderDrinkTiles() {
     qtyWrap.className = 'drink-qty';
     const minus = document.createElement('button');
     minus.type = 'button'; minus.textContent = '−'; minus.setAttribute('aria-label', 'Намали');
-    const num = document.createElement('span');
-    num.textContent = qty;
+    const num = document.createElement('input');
+    num.type = 'number';
+    num.min = '0';
+    num.max = '999';
+    num.step = '1';
+    num.inputMode = 'numeric';
+    num.value = qty;
+    num.setAttribute('aria-label', 'Количество');
     const plus = document.createElement('button');
     plus.type = 'button'; plus.textContent = '+'; plus.setAttribute('aria-label', 'Увеличи');
 
@@ -260,16 +266,17 @@ function renderDrinkTiles() {
     li.append(img, body);
     grid.appendChild(li);
 
-    minus.addEventListener('click', () => {
-      state.drinkQtys[drink.id] = Math.max(0, (state.drinkQtys[drink.id] || 0) - 1);
-      num.textContent = state.drinkQtys[drink.id];
-      li.classList.toggle('has-qty', state.drinkQtys[drink.id] > 0);
-    });
-    plus.addEventListener('click', () => {
-      state.drinkQtys[drink.id] = (state.drinkQtys[drink.id] || 0) + 1;
-      num.textContent = state.drinkQtys[drink.id];
-      li.classList.add('has-qty');
-    });
+    function setQty(next) {
+      const n = Math.max(0, Math.min(999, Math.floor(Number(next) || 0)));
+      state.drinkQtys[drink.id] = n;
+      num.value = n;
+      li.classList.toggle('has-qty', n > 0);
+    }
+    minus.addEventListener('click', () => setQty((state.drinkQtys[drink.id] || 0) - 1));
+    plus.addEventListener('click',  () => setQty((state.drinkQtys[drink.id] || 0) + 1));
+    num.addEventListener('input', () => setQty(num.value));
+    num.addEventListener('focus', () => num.select());
+    num.addEventListener('blur',  () => { if (num.value === '' || isNaN(Number(num.value))) setQty(0); });
   });
 }
 

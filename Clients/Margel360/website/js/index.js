@@ -51,9 +51,9 @@ const events = [
 ];
 
 const equipment = [
-  { icon: '🔊', label_bg: '12 колони EV/YAMAHA 360°', label_en: '12 EV/YAMAHA speakers 360°' },
-  { icon: '💡', label_bg: 'Модерно осветление', label_en: 'Modern lighting' },
-  { icon: '🌿', label_bg: 'Панорамна тераса 260 м²', label_en: '260 m² panoramic terrace' },
+  { icon: '🔊', label_bg: 'Професионално 360° озвучаване', label_en: 'Professional 360° sound' },
+  { icon: '💡', label_bg: 'Професионално осветление', label_en: 'Professional lighting' },
+  { icon: '🌿', label_bg: 'Панорамна тераса 360 м²', label_en: '360 m² panoramic terrace' },
   { icon: '🧊', label_bg: '2 ледогенератора 50л', label_en: '2 ice makers 50L each' },
   { icon: '🍽️', label_bg: 'Кетъринг оборудване', label_en: 'Catering equipment' },
   { icon: '🚗', label_bg: '70+ паркоместа', label_en: '70+ parking spaces' },
@@ -61,7 +61,6 @@ const equipment = [
   { icon: '🛗', label_bg: 'Асансьор', label_en: 'Elevator' },
   { icon: '❄️', label_bg: '3 хладилни витрини', label_en: '3 refrigerated displays' },
   { icon: '🎤', label_bg: 'Микрофони', label_en: 'Microphones' },
-  { icon: '🕺', label_bg: 'Танцова площадка', label_en: 'Dance floor' },
 ];
 
 function setText(el, text) { el.textContent = text; }

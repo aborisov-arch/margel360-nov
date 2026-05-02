@@ -19,8 +19,8 @@ const eventTypes = [
 ];
 
 const includedLabels = {
-  bg: { sound:'12 колони EV/YAMAHA 360°', lighting:'Проф. осветление', bar:'Бар с ледогенератори', fridge:'3 хладилни витрини', parking:'70+ паркоместа', wc:'Санитарни помещения', elevator:'Асансьор', tables_conf:'Конф. маси и столове', furniture:'50 стола, маси, бар столове', projector:'Проектор и екран', dance:'Танцова площадка', terrace:'Тераса 260м²', redcarpet:'Червен килим' },
-  en: { sound:'12 EV/YAMAHA speakers',    lighting:'Prof. lighting',    bar:'Bar with ice makers',  fridge:'3 fridges',          parking:'70+ parking',    wc:'Restrooms',            elevator:'Elevator',   tables_conf:'Conf. tables & chairs',  furniture:'50 chairs, tables, bar stools',     projector:'Projector & screen', dance:'Dance floor', terrace:'260m² terrace', redcarpet:'Red carpet' },
+  bg: { sound:'Професионално 360° озвучаване', lighting:'Проф. осветление', bar:'Бар с ледогенератори', fridge:'3 хладилни витрини', parking:'70+ паркоместа', wc:'Санитарни помещения', elevator:'Асансьор', tables_conf:'Конф. маси и столове', furniture:'50 стола, маси, бар столове', projector:'Проектор и екран', dance:'Танцова площадка', terrace:'Тераса 360м²', redcarpet:'Червен килим' },
+  en: { sound:'Professional 360° sound',    lighting:'Prof. lighting',    bar:'Bar with ice makers',  fridge:'3 fridges',          parking:'70+ parking',    wc:'Restrooms',            elevator:'Elevator',   tables_conf:'Conf. tables & chairs',  furniture:'50 chairs, tables, bar stools',     projector:'Projector & screen', dance:'Dance floor', terrace:'360m² terrace', redcarpet:'Red carpet' },
 };
 
 // ── Paid add-on services (from margel360.bg services page) ──

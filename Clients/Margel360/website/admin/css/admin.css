@@ -339,6 +339,81 @@ body {
   color: #a12828;
 }
 
+/* ── Destructive button ── */
+.btn-danger {
+  background: transparent;
+  border: 1px solid rgba(217, 79, 79, 0.4);
+  color: #a12828;
+}
+.btn-danger:hover:not(:disabled) {
+  background: #c62828;
+  border-color: #c62828;
+  color: #fff;
+}
+.btn-danger:disabled { opacity: 0.5; cursor: wait; }
+
+/* ── Editable drink list (admin) ── */
+.admin-drink-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+.admin-drink-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.92rem;
+}
+.admin-drink-row:last-child { border-bottom: 0; }
+.admin-drink-name {
+  color: var(--text);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-drink-qty {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.admin-drink-qty__times {
+  color: var(--text-muted, #888);
+  font-size: 0.88rem;
+}
+.drink-qty-input {
+  width: 64px;
+  padding: 5px 8px;
+  font-family: inherit;
+  font-size: 0.92rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--text);
+  background: var(--surface-2, #fafafa);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  transition: border-color 160ms, background 200ms;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.drink-qty-input::-webkit-outer-spin-button,
+.drink-qty-input::-webkit-inner-spin-button {
+  -webkit-appearance: none; margin: 0;
+}
+.drink-qty-input:hover { border-color: rgba(0,0,0,0.25); }
+.drink-qty-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-dim);
+  background: #fff;
+}
+.drink-qty-input:disabled { opacity: 0.55; cursor: wait; }
+
 /* ── Payment tracking section ── */
 .payment-tracking {
   margin-top: 16px;

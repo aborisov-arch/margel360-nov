@@ -83,7 +83,7 @@ function renderEnquiries(enquiries) {
             <div><strong>${t('detail_payment')}:</strong> ${esc(e.payment_method)}</div>
           </div>
           ${fmtAddons(e.addons)}
-          ${fmtDrinks(e.drinks)}
+          ${fmtDrinks(e.drinks, e.id)}
           ${e.notes ? `<div class="detail-notes"><strong>${t('detail_notes')}:</strong> ${esc(e.notes)}</div>` : ''}
           ${renderPaymentTracking(e)}
           <div class="detail-actions">
@@ -100,6 +100,11 @@ function renderEnquiries(enquiries) {
             <span style="color:#888;font-size:0.9em;margin-left:auto">
               ${t('edit_count_label')}: ${e.edit_count ?? 0}
             </span>
+            <button class="btn btn-sm btn-danger btn-delete-enquiry"
+              data-id="${esc(e.id)}"
+              data-name="${esc(e.full_name)}">
+              ${t('delete_btn')}
+            </button>
           </div>
         </div>
       </td>
@@ -112,6 +117,42 @@ function bindTableHandlers() {
   const tbody = document.getElementById('enquiries-body');
   if (!tbody || tbody.dataset.bound === '1') return;
   tbody.dataset.bound = '1';
+
+  // Drink-qty inline editor: save on blur or Enter, clamp 0..999.
+  tbody.addEventListener('change', async evt => {
+    const inp = evt.target.closest('.drink-qty-input');
+    if (!inp) return;
+    const id = inp.getAttribute('data-enquiry-id');
+    const idx = parseInt(inp.getAttribute('data-drink-index'), 10);
+    const enquiry = allEnquiries.find(x => String(x.id) === String(id));
+    if (!enquiry || !Array.isArray(enquiry.drinks) || !enquiry.drinks[idx]) return;
+
+    const next = Math.max(0, Math.min(999, Math.floor(Number(inp.value) || 0)));
+    inp.value = next;
+    enquiry.drinks[idx].qty = next;
+
+    inp.disabled = true;
+    const { error } = await db
+      .from('enquiries')
+      .update({ drinks: enquiry.drinks })
+      .eq('id', id);
+    inp.disabled = false;
+
+    if (error) {
+      console.error('Drink qty save failed:', error);
+      inp.style.outline = '2px solid #c62828';
+      setTimeout(() => { inp.style.outline = ''; }, 1500);
+      return;
+    }
+    inp.style.background = 'rgba(39,174,96,0.16)';
+    setTimeout(() => { inp.style.background = ''; }, 800);
+  });
+  tbody.addEventListener('keydown', evt => {
+    if (evt.key === 'Enter' && evt.target.closest('.drink-qty-input')) {
+      evt.preventDefault();
+      evt.target.blur();
+    }
+  });
 
   tbody.addEventListener('click', async evt => {
     // Expand button
@@ -260,6 +301,47 @@ function bindTableHandlers() {
         wrap.querySelector('.btn-edit-payment').style.display = '';
         wrap.querySelector('.btn-cancel-payment').style.display = 'none';
       }, 800);
+      return;
+    }
+
+    // Delete enquiry — destructive, requires confirmation. Cleans up the
+    // linked occupied_dates row too so the calendar doesn't keep a ghost.
+    const delBtn = evt.target.closest('.btn-delete-enquiry');
+    if (delBtn) {
+      const id = delBtn.getAttribute('data-id');
+      const name = delBtn.getAttribute('data-name') || '';
+      const ok = window.confirm(t('delete_confirm').replace('{name}', name));
+      if (!ok) return;
+
+      delBtn.disabled = true;
+
+      // Try to clean up the occupied_dates row first (best-effort; ignore if missing).
+      const enquiry = allEnquiries.find(x => String(x.id) === String(id));
+      const dd = enquiry?.preferred_date;
+      if (dd && /^\d{2}\/\d{2}\/\d{4}$/.test(dd)) {
+        const [d, m, y] = dd.split('/');
+        const iso = `${y}-${m}-${d}`;
+        await db.from('occupied_dates').delete().eq('date', iso);
+      }
+
+      const { error } = await db.from('enquiries').delete().eq('id', id);
+      delBtn.disabled = false;
+
+      if (error) {
+        console.error('Delete failed:', error);
+        alert(t('delete_failed'));
+        return;
+      }
+
+      // Drop both rows from DOM and from the cache.
+      const detailRow = delBtn.closest('tr.detail-row');
+      const summaryRow = detailRow?.previousElementSibling;
+      detailRow?.remove();
+      summaryRow?.remove();
+      const idx = allEnquiries.findIndex(x => String(x.id) === String(id));
+      if (idx >= 0) allEnquiries.splice(idx, 1);
+
+      if (allEnquiries.length === 0) renderEnquiries(allEnquiries);
       return;
     }
 
@@ -413,12 +495,25 @@ function fmtAddons(addons) {
   return `<div class="detail-section"><strong>${t('detail_addons')}:</strong><ul>${items}</ul></div>`;
 }
 
-function fmtDrinks(drinks) {
+function fmtDrinks(drinks, enquiryId) {
   if (!Array.isArray(drinks) || !drinks.length) return '';
-  const items = drinks.map(d => {
+  // Editable: typable qty input per drink. Saves on blur via the
+  // .drink-qty-input handler bound in bindTableHandlers().
+  const items = drinks.map((d, i) => {
     const qty = Number(d?.qty);
-    const qtyStr = Number.isInteger(qty) && qty >= 0 ? qty : '?';
-    return `<li>${esc(d?.name)} × ${qtyStr}</li>`;
+    const qtyVal = Number.isInteger(qty) && qty >= 0 ? qty : 0;
+    return `<li class="admin-drink-row">
+      <span class="admin-drink-name">${esc(d?.name)}</span>
+      <span class="admin-drink-qty">
+        <span class="admin-drink-qty__times">×</span>
+        <input type="number" class="drink-qty-input"
+               data-enquiry-id="${esc(enquiryId)}"
+               data-drink-index="${i}"
+               value="${qtyVal}" min="0" max="999" step="1" inputmode="numeric"
+               aria-label="Количество">
+      </span>
+    </li>`;
   }).join('');
-  return `<div class="detail-section"><strong>${t('detail_drinks')}:</strong><ul>${items}</ul></div>`;
+  return `<div class="detail-section"><strong>${t('detail_drinks')}:</strong><ul class="admin-drink-list">${items}</ul></div>`;
 }
+

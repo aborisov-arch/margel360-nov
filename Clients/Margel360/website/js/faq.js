@@ -14,7 +14,7 @@ const faqs = [
   {
     q_bg: 'Може ли да си доведем музика?',
     q_en: 'Can we bring our own DJ or band?',
-    a_bg: 'Да, можете да доведете свой DJ или жива музика. Маргел 360° разполага с пълна звукова система — 12 колони EV/YAMAHA 360°.',
+    a_bg: 'Да, можете да доведете свой DJ или жива музика. Маргел 360° разполага с пълна звукова система — Професионално 360° озвучаване.',
     a_en: 'Yes, you can bring your own DJ or live band. Margel 360° has a full sound system — 12 EV/YAMAHA 360° speakers.'
   },
   {
@@ -44,14 +44,14 @@ const faqs = [
   {
     q_bg: 'Какво е включено в наема на залата?',
     q_en: 'What is included in the venue rental?',
-    a_bg: 'В наема на зала Маргел 360° са включени: 12 колони EV/YAMAHA звукова система, професионално осветление, бар с ледогенератори, 3 хладилни витрини, маси и столове, климатизация, асансьор, танцова площадка и 70+ безплатни паркоместа.',
-    a_en: 'Margel 360° rental includes: 12 EV/YAMAHA speakers, professional lighting, bar with ice makers, 3 fridges, tables and chairs, air conditioning, elevator, dance floor, and 70+ free parking spaces.'
+    a_bg: 'В наема на зала Маргел 360° са включени: Професионално 360° озвучаване, професионално осветление, бар с ледогенератори, 3 хладилни витрини, маси и столове, климатизация, асансьор, танцова площадка и 70+ безплатни паркоместа.',
+    a_en: 'Margel 360° rental includes: Professional 360° sound, professional lighting, bar with ice makers, 3 fridges, tables and chairs, air conditioning, elevator, dance floor, and 70+ free parking spaces.'
   },
   {
     q_bg: 'С какво оборудване разполага залата?',
     q_en: 'What equipment does the venue have?',
-    a_bg: 'Маргел 360° разполага с: 12 колони EV/YAMAHA, проектор и екран, модерно LED осветление, бар, оборудвана кухня, панорамна тераса 260м² и 70+ паркоместа. Цени за наем от €330 (4ч. корпоративно) до €1500 (сватба).',
-    a_en: 'Margel 360° has: 12 EV/YAMAHA speakers, projector and screen, modern LED lighting, bar, equipped kitchen, 260m² panoramic terrace, and 70+ parking spaces. Rental from €330 (4h corporate) to €1500 (wedding).'
+    a_bg: 'Маргел 360° разполага с: 12 колони EV/YAMAHA, проектор и екран, модерно LED осветление, бар, оборудвана кухня, панорамна тераса 360м² и 70+ паркоместа. Цени за наем от €330 (4ч. корпоративно) до €1500 (сватба).',
+    a_en: 'Margel 360° has: Professional 360° sound, projector and screen, modern LED lighting, bar, equipped kitchen, 360m² panoramic terrace, and 70+ parking spaces. Rental from €330 (4h corporate) to €1500 (wedding).'
   },
   {
     q_bg: 'Какви допълнителни услуги се предлагат?',
