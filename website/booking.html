@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Вашата резервация · Маргел 360°</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Manrope:wght@300..800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/venue.css?v=1">
+</head>
+<body class="venue">
+
+  <div class="venue__container">
+
+    <header class="venue__masthead">
+      <a class="venue__wordmark" href="index.html">МАРГЕЛ&nbsp;<em>360°</em></a>
+      <div class="venue__sigil" aria-hidden="true">360°</div>
+    </header>
+
+    <main class="stage">
+
+      <section class="spread" id="state-loading">
+        <p class="label-caps">Зареждане</p>
+        <h1 class="display display-lg">Подготвяме вашата програма…</h1>
+      </section>
+
+      <section class="spread state-page" id="state-not-found" hidden>
+        <p class="label-caps">Упс</p>
+        <h1 class="display display-lg">Резервацията не е намерена.</h1>
+        <hr class="rule-gold">
+        <p class="lead">Линкът изглежда невалиден. Моля свържете се с нас и ще намерим вашата резервация заедно.</p>
+        <a class="btn btn-ghost" href="mailto:360@margel.info">Свържете се с нас</a>
+      </section>
+
+      <section class="spread state-page" id="state-expired" hidden>
+        <p class="label-caps">Линкът е изтекъл</p>
+        <h1 class="display display-lg">Линкът вече не е активен.</h1>
+        <hr class="rule-gold">
+        <p class="lead">Пишете ни и ще ви препратим актуално обобщение.</p>
+        <a class="btn btn-ghost" href="mailto:360@margel.info">360@margel.info</a>
+      </section>
+
+      <section class="spread" id="state-program" hidden>
+        <div class="program">
+          <div class="spread__eyebrow">
+            <span class="label-caps" id="program-eyebrow">Вашата резервация</span>
+          </div>
+
+          <h1 class="display display-xl program__title" id="program-title">Вечер в <em>Маргел&nbsp;360°</em>.</h1>
+          <p class="lead" id="program-lead"></p>
+
+          <section class="program__meta" id="program-meta"></section>
+
+          <div class="program__columns">
+            <div>
+              <p class="label-caps">Програма · услуги</p>
+              <ul class="program__list" id="program-addons"></ul>
+            </div>
+            <div>
+              <p class="label-caps">Напитки</p>
+              <ul class="program__list" id="program-drinks"></ul>
+            </div>
+          </div>
+
+          <div class="program__notes" id="program-notes" hidden></div>
+
+          <hr class="rule-gold rule-gold--wide">
+
+          <div class="program__cta">
+            <div>
+              <p class="label-caps label-caps--muted">Желаете промени?</p>
+              <p class="lead" style="font-size:1rem; margin-top:0.35rem;">Можете да обновите детайлите <a id="edit-link" class="link link--underline" href="#">тук</a>.</p>
+            </div>
+            <a class="btn btn-primary" href="mailto:360@margel.info">Свържете се с нас</a>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <footer class="venue__colophon">
+      <hr class="rule-gold">
+      <div class="colophon__grid">
+        <div>
+          <p class="label-caps label-caps--ink">Маргел&nbsp;360°</p>
+          <p>бул. Околовръстен път 155 · ет. 4 · София 1618</p>
+        </div>
+        <div>
+          <p class="label-caps label-caps--ink">Контакт</p>
+          <p><a href="mailto:360@margel.info">360@margel.info</a><br><a href="tel:+359888100042">+359&nbsp;888&nbsp;100&nbsp;042</a></p>
+        </div>
+        <div>
+          <p class="label-caps label-caps--ink">По вашата дата</p>
+          <p id="colophon-date">—</p>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <script src="js/booking.js?v=1"></script>
+</body>
+</html>
