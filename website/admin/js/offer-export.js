@@ -28,23 +28,26 @@ const ADDON_TO_CELL = {
   conf_chair:  'AA77',
 };
 
-// Base party price by event id (overrides Q15 if not Evening).
-const EVENT_BASE_PRICE = {
-  evening:  1280,
-  corp4:    330,
-  corp8:    440,
-  bday_day: 700,
-  bday_eve: 970,
-  wedding:  1500,
+// Base party config by event id. `title` rewrites A15 so the offer reads
+// correctly for non-Evening events; `start`/`end` populate Z8/AF8.
+const EVENT_CONFIG = {
+  evening:  { price:1280, title:'Парти /19:00–24:00/ за 5 часа до 40 човека -',           start:'19:00', end:'24:00', label:'Вечерно парти' },
+  corp4:    { price:330,  title:'Корпоративно събитие /4 часа, 08:00–12:00/ до 40 човека -', start:'08:00', end:'12:00', label:'Корпоративно — 4 часа' },
+  corp8:    { price:440,  title:'Корпоративно събитие /8 часа, 08:00–17:30/ до 40 човека -', start:'08:00', end:'17:30', label:'Корпоративно — 8 часа' },
+  bday_day: { price:700,  title:'Детски рожден ден /дневно, до 17:30, 5 часа/ до 40 човека -', start:'12:00', end:'17:30', label:'Детски рожден ден — Дневно' },
+  bday_eve: { price:970,  title:'Детски рожден ден /16:00–24:00, 5 часа/ до 40 човека -',  start:'16:00', end:'24:00', label:'Детски рожден ден — Вечерно' },
+  wedding:  { price:1500, title:'Сватба до 40 човека -',                                    start:'',      end:'',      label:'Сватба' },
 };
 
-const EVENT_TYPE_LABEL = {
-  evening:  { bg: 'Вечерно парти',                  en: 'Evening Party' },
-  corp4:    { bg: 'Корпоративно събитие — 4 часа',  en: 'Corporate Event — 4 hours' },
-  corp8:    { bg: 'Корпоративно събитие — 8 часа',  en: 'Corporate Event — 8 hours' },
-  bday_day: { bg: 'Детски рожден ден — Дневно',     en: "Children's Birthday — Daytime" },
-  bday_eve: { bg: 'Детски рожден ден — Вечерно',    en: "Children's Birthday — Evening" },
-  wedding:  { bg: 'Сватба',                         en: 'Wedding' },
+// Furniture extras: first N pieces are included free with the venue rental;
+// only the count over this threshold is charged. Mirrors reservation-catalog.js.
+const FURNITURE_FREE_UNTIL = {
+  bar_stool:   40,
+  conf_chair:  40,
+  chiavari:    10,
+  cocktail_t:  16,
+  rect_table:   1,
+  round_table:  1,
 };
 
 // Lazy-load ExcelJS once.
@@ -105,40 +108,41 @@ async function exportOfferXLSX(enquiry) {
   const evDate = parseDDMMYYYY(enquiry.preferred_date);
   if (evDate) ws.getCell('J8').value = evDate;
 
-  // Time slot — evening default is 19:00–24:00; daytime is 11:00–17:30.
-  // The DB stores time_of_day as 'day' or 'eve' (or null).
-  const isDaytime = enquiry.time_of_day === 'day';
-  ws.getCell('Z8').value  = isDaytime ? '11:00' : '19:00';
-  ws.getCell('AF8').value = isDaytime ? '17:30' : '24:00';
-
-  // Event type label
+  // ── Event config: title row, base price, time slot, type label.
   const evId = enquiry.event_id;
-  const evLabel = EVENT_TYPE_LABEL[evId] || { bg: enquiry.event_type || '', en: enquiry.event_type || '' };
-  ws.getCell('AA11').value = evLabel.bg;
+  const cfg = EVENT_CONFIG[evId];
+  if (cfg) {
+    ws.getCell('A15').value  = cfg.title;
+    ws.getCell('Q15').value  = cfg.price;
+    if (cfg.start) ws.getCell('Z8').value  = cfg.start;
+    if (cfg.end)   ws.getCell('AF8').value = cfg.end;
+    ws.getCell('AA11').value = cfg.label;
+  } else {
+    ws.getCell('AA11').value = enquiry.event_type || '';
+  }
 
   // ── Client info
   ws.getCell('E11').value = enquiry.full_name || '';
   ws.getCell('E12').value = enquiry.phone || '';
   ws.getCell('E13').value = enquiry.email || '';
 
-  // ── Base party price — override Q15 if event is not Evening (template default)
-  if (evId && evId !== 'evening' && EVENT_BASE_PRICE[evId] != null) {
-    ws.getCell('Q15').value = EVENT_BASE_PRICE[evId];
-  }
-
   // ── Guests over 40 (extra-person fee)
   const guests = Number(enquiry.guests) || 0;
   ws.getCell('AA16').value = Math.max(0, guests - 40);
 
-  // ── Addons → quantity cells. Anything that doesn't map gets summed
-  // into AA80 ("Други услуги").
+  // ── Addons → quantity cells. Furniture extras get charged only for
+  // the count over the venue's free baseline (e.g. first 40 bar stools
+  // included). Non-furniture services get qty=1 (yes/no checkbox in the
+  // booking form). Anything not in the template falls into "Други услуги".
   const addons = Array.isArray(enquiry.addons) ? enquiry.addons : [];
   let otherTotal = 0;
   const unmapped = [];
   for (const a of addons) {
     const cell = ADDON_TO_CELL[a.id];
     if (cell) {
-      ws.getCell(cell).value = 1;
+      const free = FURNITURE_FREE_UNTIL[a.id];
+      const qty  = free != null ? Math.max(0, guests - free) : 1;
+      ws.getCell(cell).value = qty;
     } else {
       otherTotal += Number(a.price) || 0;
       unmapped.push(a.name || a.id);
