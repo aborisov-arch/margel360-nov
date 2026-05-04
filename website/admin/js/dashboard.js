@@ -100,6 +100,10 @@ function renderEnquiries(enquiries) {
             <span style="color:#888;font-size:0.9em;margin-left:auto">
               ${t('edit_count_label')}: ${e.edit_count ?? 0}
             </span>
+            <button class="btn btn-sm btn-outline btn-export-offer"
+              data-id="${esc(e.id)}">
+              ${t('btn_export_offer')}
+            </button>
             <button class="btn btn-sm btn-danger btn-delete-enquiry"
               data-id="${esc(e.id)}"
               data-name="${esc(e.full_name)}">
@@ -304,6 +308,32 @@ function bindTableHandlers() {
       return;
     }
 
+    // Export offer — generate populated .xlsx for download.
+    const exportBtn = evt.target.closest('.btn-export-offer');
+    if (exportBtn) {
+      const id = exportBtn.getAttribute('data-id');
+      const enquiry = allEnquiries.find(x => String(x.id) === String(id));
+      if (!enquiry) return;
+
+      const origText = exportBtn.textContent;
+      exportBtn.disabled = true;
+      exportBtn.textContent = t('export_working');
+
+      try {
+        const result = await window.exportOfferXLSX(enquiry);
+        if (result?.unmapped?.length) {
+          alert(t('export_unmapped').replace('{list}', result.unmapped.join(', ')));
+        }
+      } catch (err) {
+        console.error('Offer export failed:', err);
+        alert(t('export_failed'));
+      } finally {
+        exportBtn.disabled = false;
+        exportBtn.textContent = origText;
+      }
+      return;
+    }
+
     // Delete enquiry — destructive, requires confirmation. Cleans up the
     // linked occupied_dates row too so the calendar doesn't keep a ghost.
     const delBtn = evt.target.closest('.btn-delete-enquiry');
@@ -489,7 +519,7 @@ function fmtAddons(addons) {
   if (!Array.isArray(addons) || !addons.length) return '';
   const items = addons.map(a => {
     const price = Number(a?.price);
-    const priceStr = Number.isFinite(price) ? (price / 1.95583).toFixed(2) : '—';
+    const priceStr = Number.isFinite(price) ? price.toFixed(2) : '—';
     return `<li>${esc(a?.name)} — €${priceStr}</li>`;
   }).join('');
   return `<div class="detail-section"><strong>${t('detail_addons')}:</strong><ul>${items}</ul></div>`;
