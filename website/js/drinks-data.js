@@ -6,7 +6,7 @@ const drinkCategories = {
 
 const drinks = [
   // Champagne & Sparkling
-  { id:'dom',            cat:0, name_bg:'Dom Pérignon 0.75л',                    name_en:'Dom Pérignon 0.75L',                 price_eur:361.99, img:'assets/images/drinks/dom-perignon.png' },
+  { id:'dom',            cat:0, name_bg:'Dom Pérignon 0.75л',                    name_en:'Dom Pérignon 0.75L',                 price_eur:320.58, img:'assets/images/drinks/dom-perignon.png' },
   { id:'ruinart',        cat:0, name_bg:'Ruinart Blanc de Blanc 0.75л',          name_en:'Ruinart Blanc de Blanc 0.75L',       price_eur:122.71, img:'assets/images/drinks/ruinart.png' },
   { id:'veuve',          cat:0, name_bg:'Veuve Clicquot Brut',                   name_en:'Veuve Clicquot Brut',                price_eur:70.56,  img:'assets/images/drinks/veuve-clicquot.png' },
   { id:'moet',           cat:0, name_bg:'Moët & Chandon Brut',                   name_en:'Moët & Chandon Brut',                price_eur:62.38,  img:'assets/images/drinks/moet.png' },
@@ -25,7 +25,7 @@ const drinks = [
   { id:'cheval_sb',      cat:1, name_bg:'Cheval Sauvignon Blanc Катаржина',      name_en:'Cheval Sauvignon Blanc Katarzyna',   price_eur:7.67,   img:'assets/images/drinks/cheval-sauvignon-blanc.png' },
   { id:'miraval_jp',     cat:1, name_bg:'Miraval Studio Jolie & Pitt Rosé 0.75л',name_en:'Miraval Studio Jolie & Pitt Rosé 0.75L', price_eur:34.77, img:'assets/images/drinks/miraval-jolie-pitt-rose.png' },
   { id:'minuty',         cat:1, name_bg:'M Minuty Rosé Côtes de Provence',       name_en:'M Minuty Rosé Côtes de Provence',    price_eur:22.50,  img:'assets/images/drinks/minuty-rose.png' },
-  { id:'miraval_r',      cat:1, name_bg:'Château Miraval Rosé 0.75л',            name_en:'Château Miraval Rosé 0.75L',         price_eur:35.79,  img:'assets/images/drinks/miraval-rose.png' },
+  { id:'miraval_r',      cat:1, name_bg:'Château Miraval Rosé 0.75л',            name_en:'Château Miraval Rosé 0.75L',         price_eur:34.77,  img:'assets/images/drinks/miraval-rose.png' },
   { id:'le_rose',        cat:1, name_bg:'Le Rosé Katarzyna 0.75л',               name_en:'Le Rosé Katarzyna 0.75L',            price_eur:13.29,  img:'assets/images/drinks/le-rose.png' },
   { id:'le_rose_375',    cat:1, name_bg:'Le Rosé Katarzyna Estate 0.375л',       name_en:'Le Rosé Katarzyna Estate 0.375L',    price_eur:5.16,   img:'assets/images/drinks/le-rose-375.png' },
   // Spirits & Whisky (incl. beer + vodka + tequila + liqueurs)

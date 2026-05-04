@@ -1,21 +1,21 @@
 // ── Event types ──
 const eventTypes = [
-  { id:'evening',   title_bg:'Вечерно събитие',       title_en:'Evening Event',      duration_bg:'след 19:00',    duration_en:'after 7:00 PM',   price_bgn:2503.46, price_eur:1280.46, img:'assets/images/event-evening.jpg',   included:['sound','lighting','bar','fridge','parking','wc','elevator','dance','terrace'] },
+  { id:'evening',   title_bg:'Вечерно събитие',       title_en:'Evening Event',      duration_bg:'след 19:00',    duration_en:'after 7:00 PM',   price_eur:1280, img:'assets/images/event-evening.jpg',   included:['sound','lighting','bar','fridge','parking','wc','elevator','dance','terrace'] },
   {
     id:'corporate', title_bg:'Корпоративно събитие',  title_en:'Corporate Event',    img:'assets/images/event-corporate.jpg',
     variants: [
-      { id:'corp4', label_bg:'4 часа', label_en:'4 hours', price_bgn:645.42,  price_eur:330.00, duration_bg:'08:00–17:30', duration_en:'8:00 AM–5:30 PM', included:['sound','lighting','bar','fridge','parking','wc','elevator','tables_conf'] },
-      { id:'corp8', label_bg:'8 часа', label_en:'8 hours', price_bgn:860.57,  price_eur:440.00, duration_bg:'08:00–17:30', duration_en:'8:00 AM–5:30 PM', included:['sound','lighting','bar','fridge','parking','wc','elevator','tables_conf','projector'] },
+      { id:'corp4', label_bg:'4 часа', label_en:'4 hours', price_eur:330, duration_bg:'08:00–17:30', duration_en:'8:00 AM–5:30 PM', included:['sound','lighting','bar','fridge','parking','wc','elevator','tables_conf'] },
+      { id:'corp8', label_bg:'8 часа', label_en:'8 hours', price_eur:440, duration_bg:'08:00–17:30', duration_en:'8:00 AM–5:30 PM', included:['sound','lighting','bar','fridge','parking','wc','elevator','tables_conf','projector'] },
     ],
   },
   {
     id:'birthday',  title_bg:'Детски рожден ден',     title_en:"Children's Birthday", img:'assets/images/event-birthday.jpg',
     variants: [
-      { id:'bday_day', label_bg:'Дневно', label_en:'Daytime', sub_bg:'(до 17:30) — 5 часа', sub_en:'(until 5:30 PM) — 5 hours', price_bgn:1369.08, price_eur:700.00,  duration_bg:'до 17:30',    duration_en:'until 5:30 PM',     included:['sound','lighting','bar','fridge','parking','wc','elevator','dance'] },
-      { id:'bday_eve', label_bg:'Вечерно', label_en:'Evening', sub_bg:'(16:00–24:00) — 5 часа', sub_en:'(4:00 PM–midnight) — 5 hours', price_bgn:1897.15, price_eur:970.00, duration_bg:'16:00–24:00', duration_en:'4:00 PM–midnight',   included:['sound','lighting','bar','fridge','parking','wc','elevator','dance','terrace'] },
+      { id:'bday_day', label_bg:'Дневно', label_en:'Daytime', sub_bg:'(до 17:30) — 5 часа', sub_en:'(until 5:30 PM) — 5 hours', price_eur:700, duration_bg:'до 17:30',    duration_en:'until 5:30 PM',     included:['sound','lighting','bar','fridge','parking','wc','elevator','dance'] },
+      { id:'bday_eve', label_bg:'Вечерно', label_en:'Evening', sub_bg:'(16:00–24:00) — 5 часа', sub_en:'(4:00 PM–midnight) — 5 hours', price_eur:970, duration_bg:'16:00–24:00', duration_en:'4:00 PM–midnight',   included:['sound','lighting','bar','fridge','parking','wc','elevator','dance','terrace'] },
     ],
   },
-  { id:'wedding',   title_bg:'Сватба',                title_en:'Wedding',            duration_bg:'По договаряне', duration_en:'By arrangement',  price_bgn:2933.75, price_eur:1500.00, img:'assets/images/event-wedding.jpg',   included:['sound','lighting','bar','fridge','parking','wc','elevator','dance','terrace','redcarpet'] },
+  { id:'wedding',   title_bg:'Сватба',                title_en:'Wedding',            duration_bg:'По договаряне', duration_en:'By arrangement',  price_eur:1500, img:'assets/images/event-wedding.jpg',   included:['sound','lighting','bar','fridge','parking','wc','elevator','dance','terrace','redcarpet'] },
 ];
 
 const includedLabels = {
@@ -23,63 +23,63 @@ const includedLabels = {
   en: { sound:'12 EV/YAMAHA speakers',    lighting:'Prof. lighting',    bar:'Bar with ice makers',  fridge:'3 fridges',          parking:'70+ parking',    wc:'Restrooms',            elevator:'Elevator',   tables_conf:'Conf. tables & chairs',  projector:'Projector & screen', dance:'Dance floor', terrace:'260m² terrace', redcarpet:'Red carpet' },
 };
 
-// ── Paid add-on services (from margel360.bg services page) ──
+// ── Paid add-on services (EUR, rounded — matches services page) ──
 const addonServices = [
-  { id:'dj',        name_bg:'DJ за 5 часа',                name_en:'DJ for 5 hours',             price:587,  img:'assets/images/services/dj.jpg' },
-  { id:'photo2',    name_bg:'Фотограф за 2 часа',          name_en:'Photographer 2h',            price:340,  img:'assets/images/services/photographer.jpg' },
-  { id:'photo4',    name_bg:'Фотограф за 4 часа',          name_en:'Photographer 4h',            price:580,  img:'assets/images/services/photographer.jpg' },
-  { id:'booth2',    name_bg:'Фото будка 360° (2 часа)',    name_en:'360° Photo Booth (2 hours)', price:390,  img:'assets/images/services/booth.jpg' },
-  { id:'booth4',    name_bg:'Фото будка 360° (4 часа)',    name_en:'360° Photo Booth (4 hours)', price:560,  img:'assets/images/services/booth.jpg' },
-  { id:'arch',      name_bg:'Декоративна арка с осветление',name_en:'Decorative arch + lights',  price:760,  img:'assets/images/services/arch.jpg' },
-  { id:'wall_s',    name_bg:'Декоративна стена SILVER',    name_en:'Decorative wall SILVER',     price:355,  img:'assets/images/services/wall-silver.jpg' },
-  { id:'wall_g',    name_bg:'Декоративна стена GOLD',      name_en:'Decorative wall GOLD',       price:355,  img:'assets/images/services/wall-gold.jpg' },
-  { id:'flare_s',   name_bg:'Заря 150–170 сек.',           name_en:'Sparkle fountain 150–170s',  price:440,  img:'assets/images/services/fireworks.jpg' },
-  { id:'flare_l',   name_bg:'Заря 300–340 сек.',           name_en:'Sparkle fountain 300–340s',  price:790,  img:'assets/images/services/fireworks.jpg' },
-  { id:'fountain_s',name_bg:'Светлинен фонтан 1300мм',     name_en:'Light fountain 1300mm',      price:96,   img:'assets/images/services/fountain-s.jpg' },
-  { id:'fountain_l',name_bg:'Светлинен фонтан 2600мм',     name_en:'Light fountain 2600mm',      price:160,  img:'assets/images/services/fountain-l.jpg' },
-  { id:'led',       name_bg:'LED екран',                   name_en:'LED screen',                 price:290,  img:'assets/images/services/led.jpg' },
-  { id:'mic',       name_bg:'Микрофони — 3бр. + брошка',   name_en:'Microphones set',            price:97,   img:'assets/images/services/mic.jpg' },
-  { id:'proj',      name_bg:'Мултимедия EPSON',             name_en:'EPSON multimedia projector', price:180,  img:'assets/images/services/projector.jpg' },
-  { id:'security',  name_bg:'Охрана VTA за 6 часа',        name_en:'VTA security 6h',            price:196,  img:'assets/images/services/security.jpg' },
-  { id:'hygiene',   name_bg:'Хигиенист за 5 часа',         name_en:'Hygienist 5h',               price:156,  img:'assets/images/services/wardrobe.jpg' },
-  { id:'wardrobe',  name_bg:'Гардеробиер за 5 часа',       name_en:'Wardrobe attendant 5h',      price:176,  img:'assets/images/services/wardrobe.jpg' },
-  { id:'valet',     name_bg:'Вале-паркинг за 5 часа',      name_en:'Valet parking 5h',           price:275,  img:'assets/images/services/valet.jpg' },
-  { id:'carpet_l',  name_bg:'Червена пътека (8 бр.)',       name_en:'Red carpet (8 pieces)',      price:148,  img:'assets/images/services/redcarpet.jpg' },
-  { id:'candles_h', name_bg:'Свещи в залата — 60 бр.',     name_en:'Hall candles 60 pcs',        price:100,  img:'assets/images/services/candles.jpg' },
-  { id:'numbers',   name_bg:'Светещи цифри',                name_en:'Light-up numbers',           price:68,   img:'assets/images/services/glow-numbers.jpg' },
+  { id:'dj',        name_bg:'DJ за 5 часа',                name_en:'DJ for 5 hours',             price:300,  img:'assets/images/services/dj.jpg' },
+  { id:'photo2',    name_bg:'Фотограф за 2 часа',          name_en:'Photographer 2h',            price:174,  img:'assets/images/services/photographer.jpg' },
+  { id:'photo4',    name_bg:'Фотограф за 4 часа',          name_en:'Photographer 4h',            price:297,  img:'assets/images/services/photographer.jpg' },
+  { id:'booth2',    name_bg:'Фото будка 360° (2 часа)',    name_en:'360° Photo Booth (2 hours)', price:199,  img:'assets/images/services/booth.jpg' },
+  { id:'booth4',    name_bg:'Фото будка 360° (4 часа)',    name_en:'360° Photo Booth (4 hours)', price:286,  img:'assets/images/services/booth.jpg' },
+  { id:'arch',      name_bg:'Декоративна арка с осветление',name_en:'Decorative arch + lights',  price:389,  img:'assets/images/services/arch.jpg' },
+  { id:'wall_s',    name_bg:'Декоративна стена SILVER',    name_en:'Decorative wall SILVER',     price:182,  img:'assets/images/services/wall-silver.jpg' },
+  { id:'wall_g',    name_bg:'Декоративна стена GOLD',      name_en:'Decorative wall GOLD',       price:182,  img:'assets/images/services/wall-gold.jpg' },
+  { id:'flare_s',   name_bg:'Заря 150–170 сек.',           name_en:'Sparkle fountain 150–170s',  price:225,  img:'assets/images/services/fireworks.jpg' },
+  { id:'flare_l',   name_bg:'Заря 300–340 сек.',           name_en:'Sparkle fountain 300–340s',  price:404,  img:'assets/images/services/fireworks.jpg' },
+  { id:'fountain_s',name_bg:'Светлинен фонтан 1300мм',     name_en:'Light fountain 1300mm',      price:49,   img:'assets/images/services/fountain-s.jpg' },
+  { id:'fountain_l',name_bg:'Светлинен фонтан 2600мм',     name_en:'Light fountain 2600mm',      price:82,   img:'assets/images/services/fountain-l.jpg' },
+  { id:'led',       name_bg:'LED екран',                   name_en:'LED screen',                 price:148,  img:'assets/images/services/led.jpg' },
+  { id:'mic',       name_bg:'Микрофони — 3бр. + брошка',   name_en:'Microphones set',            price:50,   img:'assets/images/services/mic.jpg' },
+  { id:'proj',      name_bg:'Мултимедия EPSON',             name_en:'EPSON multimedia projector', price:92,   img:'assets/images/services/projector.jpg' },
+  { id:'security',  name_bg:'Охрана VTA за 6 часа',        name_en:'VTA security 6h',            price:100,  img:'assets/images/services/security.jpg' },
+  { id:'hygiene',   name_bg:'Хигиенист за 5 часа',         name_en:'Hygienist 5h',               price:80,   img:'assets/images/services/wardrobe.jpg' },
+  { id:'wardrobe',  name_bg:'Гардеробиер за 5 часа',       name_en:'Wardrobe attendant 5h',      price:90,   img:'assets/images/services/wardrobe.jpg' },
+  { id:'valet',     name_bg:'Вале-паркинг за 5 часа',      name_en:'Valet parking 5h',           price:141,  img:'assets/images/services/valet.jpg' },
+  { id:'carpet_l',  name_bg:'Червена пътека (8 бр.)',       name_en:'Red carpet (8 pieces)',      price:76,   img:'assets/images/services/redcarpet.jpg' },
+  { id:'candles_h', name_bg:'Свещи в залата — 60 бр.',     name_en:'Hall candles 60 pcs',        price:51,   img:'assets/images/services/candles.jpg' },
+  { id:'numbers',   name_bg:'Светещи цифри',                name_en:'Light-up numbers',           price:35,   img:'assets/images/services/glow-numbers.jpg' },
 ];
 
-// ── Drinks / Alcohol ──
+// ── Drinks / Alcohol (EUR, prices per the latest pricelist) ──
 const drinkCategories = {
   bg: ['Шампанско', 'Вино', 'Бира & Спиртни', 'Безалкохолно', 'Вода'],
   en: ['Champagne', 'Wine', 'Beer & Spirits', 'Soft Drinks', 'Water'],
 };
 const drinks = [
   // Champagne
-  { id:'dom',     cat:0, name_bg:'Dom Pérignon 0.75л',            name_en:'Dom Pérignon 0.75L',            price_bgn:627,  img:'assets/images/drinks/dom-perignon.png' },
-  { id:'ruinart', cat:0, name_bg:'Ruinart Blanc de Blanc 0.75л',  name_en:'Ruinart Blanc de Blanc 0.75L',  price_bgn:240,  img:'assets/images/drinks/ruinart.png' },
-  { id:'veuve',   cat:0, name_bg:'Veuve Clicquot Brut',           name_en:'Veuve Clicquot Brut',           price_bgn:138,  img:'assets/images/drinks/veuve-clicquot.png' },
-  { id:'moet',    cat:0, name_bg:'Moët & Chandon Brut',           name_en:'Moët & Chandon Brut',           price_bgn:122,  img:'assets/images/drinks/moet.png' },
-  { id:'prosecco',cat:0, name_bg:'Andreola Prosecco Dirupo 0.75л',name_en:'Andreola Prosecco Dirupo 0.75L',price_bgn:31,   img:'assets/images/drinks/prosecco.png' },
+  { id:'dom',     cat:0, name_bg:'Dom Pérignon 0.75л',            name_en:'Dom Pérignon 0.75L',            price_eur:320.58, img:'assets/images/drinks/dom-perignon.png' },
+  { id:'ruinart', cat:0, name_bg:'Ruinart Blanc de Blanc 0.75л',  name_en:'Ruinart Blanc de Blanc 0.75L',  price_eur:122.71, img:'assets/images/drinks/ruinart.png' },
+  { id:'veuve',   cat:0, name_bg:'Veuve Clicquot Brut',           name_en:'Veuve Clicquot Brut',           price_eur:70.56,  img:'assets/images/drinks/veuve-clicquot.png' },
+  { id:'moet',    cat:0, name_bg:'Moët & Chandon Brut',           name_en:'Moët & Chandon Brut',           price_eur:62.38,  img:'assets/images/drinks/moet.png' },
+  { id:'prosecco',cat:0, name_bg:'Andreola Prosecco Dirupo 0.75л',name_en:'Andreola Prosecco Dirupo 0.75L',price_eur:15.85,  img:'assets/images/drinks/prosecco.png' },
   // Wine
-  { id:'miraval_r',cat:1, name_bg:'Шато Мираваль Розе',           name_en:'Château Miraval Rosé',          price_bgn:68,   img:'assets/images/drinks/miraval-rose.png' },
-  { id:'miraval_w',cat:1, name_bg:'Шато Мираваль STUDIO бяло',    name_en:'Château Miraval Studio White',  price_bgn:44,   img:'assets/images/drinks/miraval-white.png' },
-  { id:'villa',   cat:1, name_bg:'Villa Maria Sauvignon Blanc',   name_en:'Villa Maria Sauvignon Blanc',   price_bgn:34,   img:'assets/images/drinks/sauvignon-villa.png' },
-  { id:'le_rose', cat:1, name_bg:'Le Rosé',                       name_en:'Le Rosé',                       price_bgn:26,   img:'assets/images/drinks/le-rose.png' },
+  { id:'miraval_r',cat:1, name_bg:'Шато Мираваль Розе',           name_en:'Château Miraval Rosé',          price_eur:34.77,  img:'assets/images/drinks/miraval-rose.png' },
+  { id:'miraval_w',cat:1, name_bg:'Шато Мираваль STUDIO бяло',    name_en:'Château Miraval Studio White',  price_eur:22.50,  img:'assets/images/drinks/miraval-white.png' },
+  { id:'villa',   cat:1, name_bg:'Villa Maria Sauvignon Blanc',   name_en:'Villa Maria Sauvignon Blanc',   price_eur:17.38,  img:'assets/images/drinks/sauvignon-villa.png' },
+  { id:'le_rose', cat:1, name_bg:'Le Rosé',                       name_en:'Le Rosé',                       price_eur:13.29,  img:'assets/images/drinks/le-rose.png' },
   // Beer & Spirits
-  { id:'heineken',cat:2, name_bg:'Heineken 0.33л',                name_en:'Heineken 0.33L',                price_bgn:2.30, img:'assets/images/drinks/heineken.png' },
-  { id:'patron',  cat:2, name_bg:'Patrón Silver Tequila',         name_en:'Patrón Silver Tequila',         price_bgn:null, img:'assets/images/drinks/patron.png' },
-  { id:'chivas18',cat:2, name_bg:'Chivas Regal 18 год.',          name_en:'Chivas Regal 18 year',          price_bgn:null, img:'assets/images/drinks/chivas18.png' },
-  { id:'chivas12',cat:2, name_bg:'Chivas Regal 12 год.',          name_en:'Chivas Regal 12 year',          price_bgn:null, img:'assets/images/drinks/chivas12.png' },
-  { id:'uzo',     cat:2, name_bg:'Узо Пломари',                   name_en:'Uzo Plomari',                   price_bgn:null, img:'assets/images/drinks/uzo.png' },
+  { id:'heineken',cat:2, name_bg:'Heineken 0.33л',                name_en:'Heineken 0.33L',                price_eur:1.18,   img:'assets/images/drinks/heineken.png' },
+  { id:'patron',  cat:2, name_bg:'Patrón Silver Tequila',         name_en:'Patrón Silver Tequila',         price_eur:64.42,  img:'assets/images/drinks/patron.png' },
+  { id:'chivas18',cat:2, name_bg:'Chivas Regal 18 год.',          name_en:'Chivas Regal 18 year',          price_eur:75.16,  img:'assets/images/drinks/chivas18.png' },
+  { id:'chivas12',cat:2, name_bg:'Chivas Regal 12 год.',          name_en:'Chivas Regal 12 year',          price_eur:29.65,  img:'assets/images/drinks/chivas12.png' },
+  { id:'uzo',     cat:2, name_bg:'Узо Пломари',                   name_en:'Uzo Plomari',                   price_eur:4.60,   img:'assets/images/drinks/uzo.png' },
   // Soft Drinks
-  { id:'cola',    cat:3, name_bg:'Кока Кола',                     name_en:'Coca-Cola',                     price_bgn:1.80, img:'assets/images/drinks/coca-cola.png' },
-  { id:'cola0',   cat:3, name_bg:'Кока Кола Зеро',                name_en:'Coca-Cola Zero',                price_bgn:1.80, img:'assets/images/drinks/coca-zero.png' },
-  { id:'fanta',   cat:3, name_bg:'Фанта Портокал',                name_en:'Fanta Orange',                  price_bgn:1.80, img:'assets/images/drinks/fanta.png' },
-  { id:'redbull', cat:3, name_bg:'Red Bull',                      name_en:'Red Bull',                      price_bgn:3.10, img:'assets/images/drinks/red-bull.png' },
+  { id:'cola',    cat:3, name_bg:'Кока Кола',                     name_en:'Coca-Cola',                     price_eur:1.07,   img:'assets/images/drinks/coca-cola.png' },
+  { id:'cola0',   cat:3, name_bg:'Кока Кола Зеро',                name_en:'Coca-Cola Zero',                price_eur:1.07,   img:'assets/images/drinks/coca-zero.png' },
+  { id:'fanta',   cat:3, name_bg:'Фанта Портокал',                name_en:'Fanta Orange',                  price_eur:1.07,   img:'assets/images/drinks/fanta.png' },
+  { id:'redbull', cat:3, name_bg:'Red Bull',                      name_en:'Red Bull',                      price_eur:1.59,   img:'assets/images/drinks/red-bull.png' },
   // Water
-  { id:'pelegrino',cat:4, name_bg:'San Pellegrino 0.75л',         name_en:'San Pellegrino 0.75L',          price_bgn:5.60, img:'assets/images/drinks/san-pelegrino.png' },
-  { id:'benedo',  cat:4, name_bg:'San Benedetto газирана',        name_en:'San Benedetto sparkling',       price_bgn:1.20, img:'assets/images/drinks/san-benedetto.png' },
+  { id:'pelegrino',cat:4, name_bg:'San Pellegrino 0.75л',         name_en:'San Pellegrino 0.75L',          price_eur:2.86,   img:'assets/images/drinks/san-pelegrino.png' },
+  { id:'benedo',  cat:4, name_bg:'San Benedetto газирана 0.5л',   name_en:'San Benedetto sparkling 0.5L',  price_eur:0.82,   img:'assets/images/drinks/san-benedetto.png' },
 ];
 
 // ── State ──
@@ -89,19 +89,18 @@ let booking = { event:null, date:'', time:'day', addons:{}, drinkQtys:{}, name:'
 let activeDrinkCat = 0;
 
 function getLang() { return localStorage.getItem('margel_lang') || 'bg'; }
-const RATE = 1.95583;
-function toEur(bgn) { return (bgn / RATE).toFixed(2); }
-function fmt(bgn) {
-  if (!bgn || bgn == null) return getLang() === 'bg' ? 'По запитване' : 'On request';
-  return '€' + toEur(bgn);
+
+// Display helpers — EUR throughout. Services are stored as integers, drinks as decimals.
+function fmtSvc(eur) {
+  if (eur == null) return getLang() === 'bg' ? 'По запитване' : 'On request';
+  return '€' + eur;
 }
-function fmtDual(bgn) {
-  // Returns { eur, bgn } strings for two-line display
-  if (!bgn) return null;
-  return { eur: '€' + toEur(bgn), bgn: bgn.toLocaleString('bg-BG') + ' лв.' };
+function fmtDrink(eur) {
+  if (eur == null) return getLang() === 'bg' ? 'По запитване' : 'On request';
+  return '€' + eur.toFixed(2);
 }
 function fmtEvent(ev) {
-  return '€' + toEur(ev.price_bgn);
+  return '€' + ev.price_eur;
 }
 
 // ── Navigation ──
@@ -170,7 +169,7 @@ function renderEventPicker() {
       const priceRange = document.createElement('span'); priceRange.className = 'event-pick-price';
       const lo = Math.min(...ev.variants.map(v => v.price_eur));
       const hi = Math.max(...ev.variants.map(v => v.price_eur));
-      priceRange.textContent = '€' + lo.toFixed(0) + ' – €' + hi.toFixed(0);
+      priceRange.textContent = '€' + lo + ' – €' + hi;
       meta.appendChild(priceRange);
     }
 
@@ -229,7 +228,7 @@ function renderStep2VariantPicker() {
     btn.appendChild(lbEl);
 
     const prEl = document.createElement('span'); prEl.className = 'variant-btn-price';
-    prEl.textContent = '€' + variant.price_eur.toFixed(0) + ' / ' + variant.price_bgn.toLocaleString('bg-BG') + ' лв.';
+    prEl.textContent = '€' + variant.price_eur;
     btn.appendChild(prEl);
     btnWrap.appendChild(btn);
 
@@ -339,7 +338,7 @@ function updatePreview() {
     preview.appendChild(tag);
   }
 
-  // Price line — only show when variant is resolved (price_bgn available)
+  // Price line — only show when variant is resolved (price_eur available)
   if (!booking.event.variants) {
     const p = document.createElement('p');
     p.textContent = fmtEvent(booking.event) + (booking.date ? ' · ' + booking.date : '');
@@ -368,12 +367,7 @@ function renderAddons() {
     const info = document.createElement('div'); info.className = 'addon-info';
     const name = document.createElement('div'); name.className = 'addon-name'; name.textContent = l === 'bg' ? svc.name_bg : svc.name_en;
     const price = document.createElement('div'); price.className = 'addon-price';
-    const dual = fmtDual(svc.price);
-    if (dual) {
-      const eurEl = document.createElement('span'); eurEl.className = 'price-eur'; eurEl.textContent = dual.eur;
-      const bgnEl = document.createElement('span'); bgnEl.className = 'price-bgn'; bgnEl.textContent = dual.bgn;
-      price.appendChild(eurEl); price.appendChild(bgnEl);
-    } else { price.textContent = fmt(svc.price); }
+    price.textContent = fmtSvc(svc.price);
     info.appendChild(name); info.appendChild(price);
 
     const check = document.createElement('div'); check.className = 'addon-check'; check.setAttribute('aria-hidden','true'); check.textContent = '✓';
@@ -393,7 +387,7 @@ function renderAddons() {
 function updateAddonsTotal() {
   const total = Object.values(booking.addons).reduce((s, v) => s + (v || 0), 0);
   const el = document.getElementById('addons-total-val');
-  if (el) el.textContent = getLang() === 'bg' ? total.toLocaleString('bg-BG') + ' лв.' : '€' + (total / 1.956).toFixed(2);
+  if (el) el.textContent = '€' + total;
 }
 
 // ── Drinks prompt (between add-ons and drinks) ──
@@ -447,12 +441,7 @@ function renderDrinks() {
     const body = document.createElement('div'); body.className = 'drink-body';
     const name = document.createElement('div'); name.className = 'drink-name'; name.textContent = l === 'bg' ? drink.name_bg : drink.name_en;
     const price = document.createElement('div'); price.className = 'drink-price';
-    const dualD = fmtDual(drink.price_bgn);
-    if (dualD) {
-      const eurEl = document.createElement('span'); eurEl.className = 'price-eur'; eurEl.textContent = dualD.eur;
-      const bgnEl = document.createElement('span'); bgnEl.className = 'price-bgn'; bgnEl.textContent = dualD.bgn;
-      price.appendChild(eurEl); price.appendChild(bgnEl);
-    } else { price.textContent = l === 'bg' ? 'По запитване' : 'On request'; }
+    price.textContent = fmtDrink(drink.price_eur);
 
     const qtyWrap = document.createElement('div'); qtyWrap.className = 'drink-qty';
     const minus = document.createElement('button'); minus.className = 'qty-btn'; minus.textContent = '−'; minus.setAttribute('aria-label', 'Decrease');
@@ -480,9 +469,9 @@ function renderDrinks() {
 
 function updateDrinksTotal() {
   let total = 0;
-  drinks.forEach(d => { if (d.price_bgn) total += (booking.drinkQtys[d.id] || 0) * d.price_bgn; });
+  drinks.forEach(d => { if (d.price_eur) total += (booking.drinkQtys[d.id] || 0) * d.price_eur; });
   const el = document.getElementById('drinks-total-val');
-  if (el) el.textContent = getLang() === 'bg' ? total.toFixed(2) + ' лв.' : '€' + (total / 1.956).toFixed(2);
+  if (el) el.textContent = '€' + total.toFixed(2);
 }
 
 // ── Step 5: Contact ──
@@ -531,17 +520,17 @@ function renderSummary() {
   });
   container.appendChild(img); container.appendChild(body);
 
-  // Price breakdown
+  // Price breakdown — all in EUR
   if (priceSummary) {
     priceSummary.innerHTML = '';
     const addonsTotal = Object.values(booking.addons).reduce((s,v)=>s+(v||0),0);
-    let drinksTotal = 0; drinks.forEach(d => { if (d.price_bgn) drinksTotal += (booking.drinkQtys[d.id]||0)*d.price_bgn; });
-    const grandTotal = booking.event.price_bgn + addonsTotal + drinksTotal;
+    let drinksTotal = 0; drinks.forEach(d => { if (d.price_eur) drinksTotal += (booking.drinkQtys[d.id]||0)*d.price_eur; });
+    const grandTotal = booking.event.price_eur + addonsTotal + drinksTotal;
     const rows = [
       { label: l==='bg'?'Наем на зала':'Venue rental', value: fmtEvent(booking.event) },
-      ...(addonsTotal > 0 ? [{ label: l==='bg'?'Допълнителни услуги':'Add-on services', value: (l==='bg'?addonsTotal.toLocaleString('bg-BG')+' лв.':'€'+(addonsTotal/1.956).toFixed(2)) }] : []),
-      ...(drinksTotal > 0 ? [{ label: l==='bg'?'Напитки':'Drinks', value: (l==='bg'?drinksTotal.toFixed(2)+' лв.':'€'+(drinksTotal/1.956).toFixed(2)) }] : []),
-      { label: l==='bg'?'Обща сума':'Total', value: (l==='bg'?grandTotal.toFixed(2)+' лв.':'€'+(grandTotal/1.956).toFixed(2)), total: true },
+      ...(addonsTotal > 0 ? [{ label: l==='bg'?'Допълнителни услуги':'Add-on services', value: '€' + addonsTotal }] : []),
+      ...(drinksTotal > 0 ? [{ label: l==='bg'?'Напитки':'Drinks', value: '€' + drinksTotal.toFixed(2) }] : []),
+      { label: l==='bg'?'Обща сума':'Total', value: '€' + grandTotal.toFixed(2), total: true },
     ];
     rows.forEach(row => {
       const div = document.createElement('div'); div.className = 'price-summary-row';
@@ -578,7 +567,7 @@ function setupSubmit() {
       .filter(([, qty]) => qty > 0)
       .map(([id, qty]) => {
         const drink = drinks.find(d => d.id === id);
-        return { id, name: drink ? drink.name_en : id, qty, price_bgn: drink?.price_bgn ?? null };
+        return { id, name: drink ? drink.name_en : id, qty, price_eur: drink?.price_eur ?? null };
       });
 
     const payload = {
