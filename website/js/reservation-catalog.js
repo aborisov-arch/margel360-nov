@@ -29,7 +29,7 @@ const venueIncluded = [
   { icon:'💡',  label_bg:'Професионално осветление',                   label_en:'Professional lighting' },
   { icon:'🍸',  label_bg:'16 бр. маси тип „щъркел" + еластан',         label_en:'16 cocktail tables + stretch covers' },
   { icon:'🪑',  label_bg:'40 бр. бар столове',                          label_en:'40 bar stools' },
-  { icon:'🅿️',  label_bg:'Безплатен паркинг до 50 автомобила',         label_en:'Free parking up to 50 vehicles' },
+  { icon:'🅿️',  label_bg:'Безплатен паркинг до 70+ автомобила',        label_en:'Free parking up to 70+ vehicles' },
   { icon:'🧊',  label_bg:'Бар с 2 бр. ледогенератори',                  label_en:'Bar with 2 ice makers' },
   { icon:'🍷',  label_bg:'Хладилни витрини за вино и безалк. напитки', label_en:'Wine & soft-drinks fridges' },
   { icon:'🍽️',  label_bg:'Миялна машина',                              label_en:'Dishwasher' },
