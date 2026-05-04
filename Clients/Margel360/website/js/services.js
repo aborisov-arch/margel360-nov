@@ -43,8 +43,8 @@ const services = [
     img:      'assets/images/services/svc-valet.jpg',
     title_bg: 'Вале-паркинг',
     title_en: 'Valet Parking',
-    desc_bg:  'Вале-паркинг за 5 часа, овъртайм 50лв/ч.',
-    desc_en:  'Valet parking for 5 hours, overtime 50 BGN/hour.',
+    desc_bg:  'Вале-паркинг за 5 часа, овъртайм €25/час.',
+    desc_en:  'Valet parking for 5 hours, overtime €25/hour.',
     price:    '€140.61 / 5ч.',
   },
   {

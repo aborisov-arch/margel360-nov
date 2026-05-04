@@ -59,7 +59,7 @@ const addonServices = [
   { id:'security',   name_bg:'Охрана VTA за 6 часа',          name_en:'VTA security 6h',                price:100,    img:'assets/images/services/security.jpg' },
   { id:'hygiene',    name_bg:'Хигиенист за 5 часа',           name_en:'Hygienist 5h',                   price:80,     img:'assets/images/services/hygienist.jpg', hint_bg:'За всеки допълнителен час — €20',    hint_en:'Each additional hour — €20' },
   { id:'wardrobe',   name_bg:'Гардеробиер за 5 часа',         name_en:'Wardrobe attendant 5h',          price:90,     img:'assets/images/services/wardrobe.jpg',  hint_bg:'За всеки допълнителен час — €20',    hint_en:'Each additional hour — €20' },
-  { id:'valet',      name_bg:'Вале-паркинг за 5 часа',        name_en:'Valet parking 5h',               price:140.61, img:'assets/images/services/valet.jpg',     hint_bg:'За всеки допълнителен час — €25.56', hint_en:'Each additional hour — €25.56' },
+  { id:'valet',      name_bg:'Вале-паркинг за 5 часа',        name_en:'Valet parking 5h',               price:140.61, img:'assets/images/services/valet.jpg',     hint_bg:'За всеки допълнителен час — €25',    hint_en:'Each additional hour — €25' },
   { id:'cleaning',   name_bg:'Почистване зала',               name_en:'Hall cleaning',                  price:70,     img:'assets/images/services/cleaning.jpg' },
   { id:'carpet_l',   name_bg:'Червена пътека (8 бр.)',        name_en:'Red carpet (8 pieces)',          price:75.67,  img:'assets/images/services/redcarpet.jpg' },
   { id:'carpet_s',   name_bg:'Червена пътека (6 бр.)',        name_en:'Red carpet (6 pieces)',          price:64.93,  img:'assets/images/services/redcarpet.jpg' },
