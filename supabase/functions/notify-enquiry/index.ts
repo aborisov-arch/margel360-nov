@@ -9,9 +9,23 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "No record in payload" }), { status: 400 });
     }
 
+    // Old BGN prices (pre-2026-05-04) — convert if the stored price exactly
+    // matches the old BGN value for that addon id; otherwise treat as EUR.
+    const ADDON_BGN_PRICES: Record<string, number> = {
+      dj: 587, photo2: 340, photo4: 580, booth2: 390, booth4: 560,
+      arch: 760, wall_s: 355, wall_g: 355, flare_s: 440, flare_l: 790,
+      fountain_s: 96, fountain_l: 160, led: 290, mic: 97, proj: 180,
+      security: 196, hygiene: 156, wardrobe: 176, valet: 275,
+      carpet_l: 148, candles_h: 100, numbers: 68,
+    };
+    const addonEur = (id: string, p: number) => {
+      const old = ADDON_BGN_PRICES[id];
+      return old != null && p === old ? p / 1.95583 : p;
+    };
+
     const addonsText = Array.isArray(record.addons) && record.addons.length
-      ? record.addons.map((a: { name: string; price: number }) =>
-          `  - ${a.name}: €${(a.price / 1.95583).toFixed(2)}`
+      ? record.addons.map((a: { id: string; name: string; price: number }) =>
+          `  - ${a.name}: €${addonEur(a.id, a.price).toFixed(2)}`
         ).join("\n")
       : null;
 

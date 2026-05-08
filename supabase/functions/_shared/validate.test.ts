@@ -1,15 +1,15 @@
 import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import { isUuid, validateField } from "./validate.ts";
 
-Deno.test("validateField: guests accepts 1..400", () => {
+Deno.test("validateField: guests accepts 1..200", () => {
   assertEquals(validateField("guests", 50).ok, true);
   assertEquals(validateField("guests", 1).ok, true);
-  assertEquals(validateField("guests", 400).ok, true);
+  assertEquals(validateField("guests", 200).ok, true);
 });
 
 Deno.test("validateField: guests rejects out-of-range and non-integers", () => {
   assertEquals(validateField("guests", 0).ok, false);
-  assertEquals(validateField("guests", 401).ok, false);
+  assertEquals(validateField("guests", 201).ok, false);
   assertEquals(validateField("guests", -5).ok, false);
   assertEquals(validateField("guests", 12.5).ok, false);
   assertEquals(validateField("guests", "50").ok, false);

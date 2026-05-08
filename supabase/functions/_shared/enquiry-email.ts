@@ -22,9 +22,26 @@ function esc(s: unknown): string {
     .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-function fmtEur(n: number): string {
-  // Mirror notify-enquiry format for consistency with the existing owner email.
-  return "€" + (n / 1.95583).toFixed(2);
+// Old BGN prices used by the public reservation form before 2026-05-04.
+// Enquiries created before that cutover stored addon prices in BGN; everything
+// since stores them in EUR directly. Both shapes still live in the DB, so the
+// displayer detects which it has by checking whether the price matches the
+// old BGN value for the addon's id.
+const ADDON_BGN_PRICES: Record<string, number> = {
+  dj: 587, photo2: 340, photo4: 580, booth2: 390, booth4: 560,
+  arch: 760, wall_s: 355, wall_g: 355, flare_s: 440, flare_l: 790,
+  fountain_s: 96, fountain_l: 160, led: 290, mic: 97, proj: 180,
+  security: 196, hygiene: 156, wardrobe: 176, valet: 275,
+  carpet_l: 148, candles_h: 100, numbers: 68,
+};
+
+function addonPriceEur(id: string | undefined, price: number): number {
+  const oldBgn = id ? ADDON_BGN_PRICES[id] : undefined;
+  return oldBgn != null && price === oldBgn ? price / 1.95583 : price;
+}
+
+function fmtEur(n: number, addonId?: string): string {
+  return "€" + addonPriceEur(addonId, n).toFixed(2);
 }
 
 function fmtDateBg(stored: string): string {
@@ -54,7 +71,7 @@ export function renderCustomerEmail(e: Enquiry, siteUrl: string): { subject: str
   const addonRows = (e.addons ?? []).map(a =>
     `<tr>
        <td style="padding:9px 0;border-bottom:1px dashed rgba(185,137,74,0.25);font-family:Manrope,Arial,sans-serif;font-size:14px;color:#1A1815">${esc(a.name)}</td>
-       <td style="padding:9px 0;border-bottom:1px dashed rgba(185,137,74,0.25);font-family:Fraunces,Georgia,serif;font-style:italic;font-size:14px;color:#B9894A;text-align:right;white-space:nowrap">${fmtEur(a.price)}</td>
+       <td style="padding:9px 0;border-bottom:1px dashed rgba(185,137,74,0.25);font-family:Fraunces,Georgia,serif;font-style:italic;font-size:14px;color:#B9894A;text-align:right;white-space:nowrap">${fmtEur(a.price, a.id)}</td>
      </tr>`
   ).join("");
 
@@ -254,7 +271,7 @@ const FIELD_LABEL: Record<string, string> = {
 function fmtAddon(a: LineItem): string {
   const name  = String(a?.name ?? a?.id ?? "?");
   const qty   = typeof a?.qty   === "number" && a.qty   > 0 ? ` × ${a.qty}` : "";
-  const price = typeof a?.price === "number" && a.price > 0 ? ` — ${fmtEur(a.price)}` : "";
+  const price = typeof a?.price === "number" && a.price > 0 ? ` — ${fmtEur(a.price, a.id)}` : "";
   return `${name}${qty}${price}`;
 }
 
@@ -310,7 +327,7 @@ export function renderOwnerEmail(
   const subjectPrefix = reason === "updated" ? "[Редактирана резервация] " : "";
   const subject = `${subjectPrefix}${e.full_name} — ${e.event_type} — ${e.preferred_date}`;
 
-  const addonsText = (e.addons ?? []).map(a => `  - ${a.name}: ${fmtEur(a.price)}`).join("\n");
+  const addonsText = (e.addons ?? []).map(a => `  - ${a.name}: ${fmtEur(a.price, a.id)}`).join("\n");
   const drinksText = (e.drinks ?? []).map(d => `  - ${d.name} × ${d.qty}`).join("\n");
   const timeLabel = e.time_of_day === "day" ? "Daytime (until 17:30)" : "Evening (after 19:00)";
 
