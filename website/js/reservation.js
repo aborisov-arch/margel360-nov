@@ -88,6 +88,20 @@ const TOTAL_STEPS = 6;
 let booking = { event:null, date:'', time:'day', addons:{}, drinkQtys:{}, name:'', email:'', phone:'', guests:'', notes:'', payment:'cash' };
 let activeDrinkCat = 0;
 
+// Time-of-day per resolved event id. Fallback to 'eve' for unknowns since
+// most paid bookings happen in the evening.
+const EVENT_TIME_OF_DAY = {
+  evening:  'eve',
+  corp4:    'day',
+  corp8:    'day',
+  bday_day: 'day',
+  bday_eve: 'eve',
+  wedding:  'eve',
+};
+function timeOfDayFor(eventId) {
+  return EVENT_TIME_OF_DAY[eventId] || 'eve';
+}
+
 function getLang() { return localStorage.getItem('margel_lang') || 'bg'; }
 
 // Display helpers — EUR throughout. Services are stored as integers, drinks as decimals.
@@ -180,8 +194,11 @@ function renderEventPicker() {
     function pick() {
       grid.querySelectorAll('.event-pick-card').forEach(c => c.classList.remove('selected'));
       card.classList.add('selected');
-      // Store the event (parent if has variants, resolved if not)
+      // Store the event (parent if has variants, resolved if not). Set
+      // time_of_day eagerly for events without variants — for parents with
+      // variants, the time is set when the variant is picked.
       booking.event = ev;
+      if (!ev.variants) booking.time = timeOfDayFor(ev.id);
       setTimeout(() => goToStep(1), 280);
     }
 
@@ -240,6 +257,7 @@ function renderStep2VariantPicker() {
         title_en: parentEv.title_en + ' — ' + variant.label_en,
         img: parentEv.img,
       };
+      booking.time = timeOfDayFor(variant.id);
       btnWrap.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
       if (errMsg) errMsg.style.display = 'none';
@@ -486,7 +504,7 @@ function setupStep5() {
     v(name,'fg-name', val => val.trim().length >= 2);
     v(email,'fg-email', val => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim()));
     v(phone,'fg-phone', val => val.replace(/\D/g,'').length >= 7);
-    v(guests,'fg-guests', val => { const n=parseInt(val); return n>=1 && n<=140; });
+    v(guests,'fg-guests', val => { const n=parseInt(val); return n>=1 && n<=200; });
     if (!valid) return;
     booking.name = name.value.trim(); booking.email = email.value.trim();
     booking.phone = phone.value.trim(); booking.guests = guests.value;
@@ -501,6 +519,16 @@ function renderSummary() {
   const container = document.getElementById('booking-summary');
   const priceSummary = document.getElementById('price-summary');
   if (!container || !booking.event) return;
+  // Variant-bearing parents (e.g. 'corporate' before 4h/8h is picked) have no
+  // price_eur; rendering would produce '€NaN'. Bounce the user back to step 1
+  // to resolve the variant. The step 1→2 guard normally prevents this, but a
+  // direct nav (e.g. forward-button on the wizard) can still land here.
+  if (booking.event.variants) {
+    container.innerHTML = '';
+    if (priceSummary) priceSummary.innerHTML = '';
+    goToStep(1);
+    return;
+  }
   container.innerHTML = '';
 
   const img = document.createElement('img'); img.src = booking.event.img; img.alt = ''; img.className = 'summary-img';
@@ -609,6 +637,7 @@ function setupSubmit() {
 // ── Language change ──
 document.addEventListener('langChange', () => {
   renderEventPicker();
+  if (currentStep === 1) renderStep2VariantPicker();
   if (currentStep === 2) renderAddons();
   if (currentStep === 3) renderDrinks();
   if (currentStep === 5) renderSummary();
@@ -633,6 +662,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const match = eventTypes.find(e => e.id === preselect);
     if (match) {
       booking.event = match;
+      if (!match.variants) booking.time = timeOfDayFor(match.id);
       renderEventPicker();
       setTimeout(() => goToStep(1), 300);
     }

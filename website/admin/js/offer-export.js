@@ -50,6 +50,39 @@ const FURNITURE_FREE_UNTIL = {
   round_table:  1,
 };
 
+// Old BGN prices used by the public reservation form before 2026-05-04.
+// If an addon's stored price matches its old BGN value, treat as BGN and
+// convert to EUR. Otherwise treat as EUR.
+const ADDON_BGN_PRICES = {
+  dj: 587, photo2: 340, photo4: 580, booth2: 390, booth4: 560,
+  arch: 760, wall_s: 355, wall_g: 355, flare_s: 440, flare_l: 790,
+  fountain_s: 96, fountain_l: 160, led: 290, mic: 97, proj: 180,
+  security: 196, hygiene: 156, wardrobe: 176, valet: 275,
+  carpet_l: 148, candles_h: 100, numbers: 68,
+};
+function addonPriceEur(id, price) {
+  const old = ADDON_BGN_PRICES[id];
+  return old != null && price === old ? price / 1.95583 : price;
+}
+
+// Cells in the AA quantity column we may write to. Cleared at the start of
+// each export so leftover values from a previous customer's offer don't
+// silently auto-bill the new one (the supplied template has AA40=1 leftover
+// hygienist, which is exactly this kind of trap).
+const ADDON_QTY_CELLS = [
+  'AA17',                               // hours past 24:00
+  'AA21', 'AA24', 'AA27', 'AA30',
+  'AA37', 'AA38',                       // wardrobe + overtime
+  'AA40', 'AA41',                       // hygienist + overtime
+  'AA43', 'AA44',                       // valet + overtime
+  'AA46', 'AA47',                       // DJ + overtime
+  'AA50', 'AA51', 'AA52',               // photographer 2/3/4h
+  'AA54', 'AA55',                       // security + overtime
+  'AA59', 'AA62', 'AA65', 'AA68',
+  'AA71', 'AA74', 'AA77',
+  'AA80', 'AA82',                       // other services / alcohol
+];
+
 // Lazy-load ExcelJS once.
 let _excelJsPromise = null;
 function loadExcelJS() {
@@ -78,13 +111,14 @@ function formatDDMMYY(date) {
   return `${dd}.${mm}.${yy}`;
 }
 
-// Use the last 4 hex chars of the enquiry uuid as the offer number.
-// Stable per-enquiry (so re-exports give the same number) and short enough
-// to fit the template's offer-# field.
+// Use the last 6 hex chars of the enquiry uuid (% 1,000,000) as the offer
+// number. Stable per-enquiry so re-exports give the same number, and 1-in-a-
+// million collision odds across enquiries (vs ~1-in-10,000 with the prior
+// 4-hex window — too tight for a multi-year customer log).
 function offerNumberFromId(id) {
-  if (!id) return Date.now().toString().slice(-4);
+  if (!id) return Date.now().toString().slice(-6);
   const s = String(id).replace(/-/g, '');
-  return parseInt(s.slice(-4), 16) % 10000;
+  return parseInt(s.slice(-6), 16) % 1000000;
 }
 
 async function exportOfferXLSX(enquiry) {
@@ -99,6 +133,13 @@ async function exportOfferXLSX(enquiry) {
   await wb.xlsx.load(buf);
   const ws = wb.getWorksheet('ОФЕРТА');
   if (!ws) throw new Error('ОФЕРТА sheet missing in template');
+
+  // Reset every quantity cell we might write to. The supplied template
+  // includes leftover values from a previous customer (notably AA40 = 1 for
+  // hygienist) which would otherwise silently auto-bill the new customer.
+  for (const c of ADDON_QTY_CELLS) {
+    ws.getCell(c).value = null;
+  }
 
   // ── Header: offer number + date
   ws.getCell('T6').value = offerNumberFromId(enquiry.id);
@@ -144,7 +185,10 @@ async function exportOfferXLSX(enquiry) {
       const qty  = free != null ? Math.max(0, guests - free) : 1;
       ws.getCell(cell).value = qty;
     } else {
-      otherTotal += Number(a.price) || 0;
+      // Old enquiries (pre-2026-05-04) stored addon.price in BGN; new ones
+      // in EUR. Detect and convert before summing into the offer's EUR total.
+      const eur = addonPriceEur(a.id, Number(a.price) || 0);
+      otherTotal += eur;
       unmapped.push(a.name || a.id);
     }
   }
@@ -156,19 +200,18 @@ async function exportOfferXLSX(enquiry) {
   // ── Cleaning fee always applies
   ws.getCell('AA85').value = 1;
 
-  // Drinks: template only has a link, no per-item rows. Mark AA82=1 if any
-  // drinks were ordered so the line shows in the totals; admin handles
-  // itemized drinks separately (paid 100% in advance per template note).
-  const drinks = Array.isArray(enquiry.drinks) ? enquiry.drinks : [];
-  if (drinks.length > 0) {
-    ws.getCell('AA82').value = 1;
-  }
+  // Drinks: per user direction, alcohol stays "on standby" — the template
+  // shows just a link to the drinks menu and the admin handles itemized
+  // drinks separately (paid 100% in advance per template note). Do NOT set
+  // AA82; setting it to 1 would charge €1 on the alcohol line.
 
   // ── Trigger download
   const out = await wb.xlsx.writeBuffer();
   const blob = new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   const url = URL.createObjectURL(blob);
-  const safeName = (enquiry.full_name || 'offer').replace(/[^\w\s.-]/g, '').trim().replace(/\s+/g, '_') || 'offer';
+  // Allow Cyrillic + Latin letters, digits, dots and hyphens — \w would strip
+  // Bulgarian names (Иван Петров → empty) and the file would be named "offer".
+  const safeName = (enquiry.full_name || 'offer').replace(/[^\p{L}\p{N}\s.-]/gu, '').trim().replace(/\s+/g, '_') || 'offer';
   const filename = `Оферта_${safeName}_${formatDDMMYY(new Date())}.xlsx`;
 
   const a = document.createElement('a');
