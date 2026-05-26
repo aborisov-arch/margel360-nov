@@ -515,20 +515,6 @@ function fmtDate(iso) {
   });
 }
 
-// Old BGN prices (pre-2026-05-04). If a stored addon.price matches the old
-// BGN value for that id, treat it as BGN and convert; otherwise use as EUR.
-const ADDON_BGN_PRICES = {
-  dj: 587, photo2: 340, photo4: 580, booth2: 390, booth4: 560,
-  arch: 760, wall_s: 355, wall_g: 355, flare_s: 440, flare_l: 790,
-  fountain_s: 96, fountain_l: 160, led: 290, mic: 97, proj: 180,
-  security: 196, hygiene: 156, wardrobe: 176, valet: 275,
-  carpet_l: 148, candles_h: 100, numbers: 68,
-};
-function addonPriceEur(id, price) {
-  const old = ADDON_BGN_PRICES[id];
-  return old != null && price === old ? price / 1.95583 : price;
-}
-
 function fmtAddons(addons) {
   if (!Array.isArray(addons) || !addons.length) return '';
   const items = addons.map(a => {
