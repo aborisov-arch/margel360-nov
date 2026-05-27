@@ -414,6 +414,34 @@ body {
 }
 .drink-qty-input:disabled { opacity: 0.55; cursor: wait; }
 
+/* ── Totals breakdown ── */
+.detail-totals {
+  margin-top: 16px;
+  padding: 12px 14px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.detail-totals .payment-heading { margin-bottom: 10px; }
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 6px 0;
+  font-size: 0.9rem;
+  color: var(--muted, #555);
+}
+.total-row strong { color: var(--text); font-weight: 600; }
+.total-row.total-grand {
+  margin-top: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--text);
+  font-size: 1rem;
+}
+.total-row.total-grand span { font-weight: 700; color: var(--text); text-transform: uppercase; letter-spacing: 0.04em; }
+.total-row.total-grand strong { font-size: 1.25rem; color: #B9894A; }
+
 /* ── Payment tracking section ── */
 .payment-tracking {
   margin-top: 16px;

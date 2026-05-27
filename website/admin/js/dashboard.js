@@ -85,6 +85,7 @@ function renderEnquiries(enquiries) {
           ${fmtAddons(e.addons)}
           ${fmtDrinks(e.drinks, e.id)}
           ${e.notes ? `<div class="detail-notes"><strong>${t('detail_notes')}:</strong> ${esc(e.notes)}</div>` : ''}
+          ${renderTotals(e)}
           ${renderPaymentTracking(e)}
           <div class="detail-actions">
             <button class="btn btn-sm ${isAnswered ? 'btn-outline' : 'btn-primary'} btn-status"
@@ -453,6 +454,50 @@ function bindTableHandlers() {
       return;
     }
   });
+}
+
+// Venue base prices (EUR) keyed by event_id, mirroring the public reservation
+// catalog and the send-enquiry-summary edge function. Update all three places
+// together if pricing changes.
+const VENUE_BASE_PRICE_EUR = {
+  evening: 1280,
+  corp4: 330,
+  corp8: 440,
+  bday_day: 700,
+  bday_eve: 970,
+  wedding: 1500,
+};
+
+function computeTotals(e) {
+  const venue = VENUE_BASE_PRICE_EUR[e.event_id] || 0;
+  const addons = (e.addons || []).reduce(
+    (sum, a) => sum + addonPriceEur(a?.id, Number(a?.price) || 0), 0,
+  );
+  const drinks = (e.drinks || []).reduce(
+    (sum, d) => sum + (Number(d?.price_eur) || 0) * (Number(d?.qty) || 0), 0,
+  );
+  return { venue, addons, drinks, total: venue + addons + drinks };
+}
+
+function renderTotals(e) {
+  const totals = computeTotals(e);
+  const row = (label, value) => `
+    <div class="total-row">
+      <span>${label}</span>
+      <strong>€${value.toFixed(2)}</strong>
+    </div>`;
+  return `
+    <div class="detail-totals">
+      <h4 class="payment-heading">${t('total_heading')}</h4>
+      ${totals.venue  ? row(`${t('total_venue')} · ${esc(e.event_type)}`, totals.venue)  : ''}
+      ${totals.addons ? row(t('total_addons'), totals.addons) : ''}
+      ${totals.drinks ? row(t('total_drinks'), totals.drinks) : ''}
+      <div class="total-row total-grand">
+        <span>${t('total_grand')}</span>
+        <strong>€${totals.total.toFixed(2)}</strong>
+      </div>
+    </div>
+  `;
 }
 
 function renderPaymentTracking(e) {

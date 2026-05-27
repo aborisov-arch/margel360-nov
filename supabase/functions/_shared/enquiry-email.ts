@@ -6,6 +6,7 @@ type Enquiry = {
   email: string;
   phone: string;
   event_type: string;
+  event_id?: string | null;
   preferred_date: string;
   time_of_day: string;
   guests: number | null;
@@ -16,6 +17,36 @@ type Enquiry = {
   edit_token: string;
   token_expires_at: string | null;
 };
+
+// Venue base prices (EUR) keyed by event_id, mirroring the public reservation
+// catalog. Kept here so emails can show a single grand total without a network
+// round-trip; update both places if pricing changes.
+const VENUE_BASE_PRICE_EUR: Record<string, number> = {
+  evening: 1280,
+  corp4: 330,
+  corp8: 440,
+  bday_day: 700,
+  bday_eve: 970,
+  wedding: 1500,
+};
+
+function venueBasePrice(eventId: string | null | undefined): number {
+  if (!eventId) return 0;
+  return VENUE_BASE_PRICE_EUR[eventId] ?? 0;
+}
+
+function computeTotals(e: Enquiry): {
+  venue: number; addons: number; drinks: number; total: number;
+} {
+  const venue = venueBasePrice(e.event_id);
+  const addons = (e.addons ?? []).reduce(
+    (sum, a) => sum + addonPriceEur(a?.id, Number(a?.price) || 0), 0,
+  );
+  const drinks = (e.drinks ?? []).reduce(
+    (sum, d) => sum + (Number(d?.price_eur) || 0) * (Number(d?.qty) || 0), 0,
+  );
+  return { venue, addons, drinks, total: venue + addons + drinks };
+}
 
 function esc(s: unknown): string {
   return String(s ?? "")
@@ -64,189 +95,151 @@ function fmtExpiryBg(iso: string | null): string {
 export function renderCustomerEmail(e: Enquiry, siteUrl: string): { subject: string; html: string } {
   const site = siteUrl.replace(/\/$/, "");
   const editUrl = `${site}/edit.html?token=${e.edit_token}`;
-  const bookingUrl = `${site}/booking.html?token=${e.edit_token}`;
   const firstName = (e.full_name || "").split(" ")[0] || e.full_name || "";
   const timeLabel = e.time_of_day === "day" ? "Дневно · до 17:30" : "Вечерно · след 19:00";
 
+  const FONT  = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+  const INK   = "#111111";
+  const MUTED = "#666666";
+  const LINE  = "#E5E5E5";
+  const ACCENT = "#B9894A";
+
+  const rowCell  = `padding:10px 0;border-bottom:1px solid ${LINE};font:14px/1.4 ${FONT};color:${INK}`;
+  const rowPrice = `padding:10px 0;border-bottom:1px solid ${LINE};font:14px/1.4 ${FONT};color:${MUTED};text-align:right;white-space:nowrap`;
+
   const addonRows = (e.addons ?? []).map(a =>
-    `<tr>
-       <td style="padding:9px 0;border-bottom:1px dashed rgba(185,137,74,0.25);font-family:Manrope,Arial,sans-serif;font-size:14px;color:#1A1815">${esc(a.name)}</td>
-       <td style="padding:9px 0;border-bottom:1px dashed rgba(185,137,74,0.25);font-family:Fraunces,Georgia,serif;font-style:italic;font-size:14px;color:#B9894A;text-align:right;white-space:nowrap">${fmtEur(a.price, a.id)}</td>
-     </tr>`
+    `<tr><td style="${rowCell}">${esc(a.name)}</td><td style="${rowPrice}">${fmtEur(a.price, a.id)}</td></tr>`
   ).join("");
 
   const drinkRows = (e.drinks ?? []).map(d => {
     const qty = Number.isInteger(Number(d.qty)) ? Number(d.qty) : 0;
-    return `<tr>
-       <td style="padding:9px 0;border-bottom:1px dashed rgba(185,137,74,0.25);font-family:Manrope,Arial,sans-serif;font-size:14px;color:#1A1815">${esc(d.name)}</td>
-       <td style="padding:9px 0;border-bottom:1px dashed rgba(185,137,74,0.25);font-family:Fraunces,Georgia,serif;font-style:italic;font-size:14px;color:#B9894A;text-align:right;white-space:nowrap">× ${qty}</td>
-     </tr>`;
+    const lineTotal = (Number(d.price_eur) || 0) * qty;
+    const lineLabel = lineTotal > 0 ? `× ${qty} — €${lineTotal.toFixed(2)}` : `× ${qty}`;
+    return `<tr><td style="${rowCell}">${esc(d.name)}</td><td style="${rowPrice}">${lineLabel}</td></tr>`;
   }).join("");
 
-  const subject = `Вашата резервация в Маргел 360° · ${esc(e.event_type)} · ${fmtDateBg(e.preferred_date)}`;
+  const totals = computeTotals(e);
+  const totalRows = `
+    ${totals.venue ? `<tr><td style="padding:8px 0;font:14px/1.4 ${FONT};color:${MUTED}">Зала · ${esc(e.event_type)}</td><td style="padding:8px 0;font:14px/1.4 ${FONT};color:${INK};text-align:right;white-space:nowrap">€${totals.venue.toFixed(2)}</td></tr>` : ""}
+    ${totals.addons ? `<tr><td style="padding:8px 0;font:14px/1.4 ${FONT};color:${MUTED}">Допълнителни услуги</td><td style="padding:8px 0;font:14px/1.4 ${FONT};color:${INK};text-align:right;white-space:nowrap">€${totals.addons.toFixed(2)}</td></tr>` : ""}
+    ${totals.drinks ? `<tr><td style="padding:8px 0;font:14px/1.4 ${FONT};color:${MUTED}">Напитки</td><td style="padding:8px 0;font:14px/1.4 ${FONT};color:${INK};text-align:right;white-space:nowrap">€${totals.drinks.toFixed(2)}</td></tr>` : ""}
+    <tr><td style="padding:16px 0 0;border-top:1px solid ${INK};font:600 14px/1.4 ${FONT};color:${INK}">Обща сума</td><td style="padding:16px 0 0;border-top:1px solid ${INK};font:700 22px/1.2 ${FONT};color:${ACCENT};text-align:right;white-space:nowrap">€${totals.total.toFixed(2)}</td></tr>
+  `;
 
-  // Inline styles throughout for email-client compatibility. The <style>
-  // block only handles mobile reflow (many clients strip <style>).
+  const sectionTitle = (txt: string) =>
+    `<p style="margin:0 0 12px;font:600 11px/1.2 ${FONT};letter-spacing:0.12em;color:${MUTED};text-transform:uppercase">${txt}</p>`;
+
+  const subject = `Маргел 360° · ${esc(e.event_type)} · ${fmtDateBg(e.preferred_date)} · €${totals.total.toFixed(2)}`;
+
   const html = `<!doctype html>
 <html lang="bg"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(subject)}</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..600;1,9..144,400..600&family=Manrope:wght@300;400;500;600;700&display=swap');
   @media only screen and (max-width:540px) {
-    .email-wrap { padding: 0 !important; }
+    .email-wrap { padding: 16px 0 !important; }
     .email-card { width: 100% !important; max-width: 100% !important; }
-    .email-header { padding: 24px 24px !important; }
-    .email-body { padding: 28px 22px 24px !important; }
-    .display { font-size: 32px !important; line-height: 1.08 !important; }
-    .lead { font-size: 15px !important; }
-    .section-title { font-size: 11px !important; }
-    .email-cta { display: block !important; width: 100% !important; box-sizing: border-box !important; text-align: center !important; padding: 16px 20px !important; }
-    .email-footer { padding: 20px 22px !important; }
-    .meta-cell { display: block !important; width: 100% !important; text-align: left !important; padding: 6px 0 !important; }
+    .email-body { padding: 28px 22px !important; }
+    .h1 { font-size: 24px !important; }
+    .email-cta { display: block !important; width: 100% !important; box-sizing: border-box !important; text-align: center !important; }
+    .meta-cell { display: block !important; width: 100% !important; padding: 8px 0 !important; border-bottom: 1px solid ${LINE} !important; }
+    .meta-cell:last-child { border-bottom: 0 !important; }
   }
 </style>
 </head>
-<body style="margin:0;padding:0;background:#F6F1E8;font-family:Manrope,system-ui,-apple-system,'Segoe UI',Arial,sans-serif;color:#1A1815;-webkit-font-smoothing:antialiased">
+<body style="margin:0;padding:0;background:#F5F5F5;font-family:${FONT};color:${INK};-webkit-font-smoothing:antialiased">
 
-<!-- Preheader: hidden in body but shown in email list preview -->
-<div style="display:none;font-size:1px;color:#F6F1E8;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden">
-  Получихме запитването ви за ${esc(e.event_type)} на ${fmtDateBg(e.preferred_date)}. Благодарим, ${esc(firstName)}.
+<div style="display:none;font-size:1px;color:#F5F5F5;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden">
+  Запитване за ${esc(e.event_type)} на ${fmtDateBg(e.preferred_date)} · общо €${totals.total.toFixed(2)}.
 </div>
 
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="email-wrap" style="background:#F6F1E8;padding:32px 0">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="email-wrap" style="background:#F5F5F5;padding:32px 0">
   <tr><td align="center">
-    <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" class="email-card" style="background:#FDFBF7;max-width:600px;width:100%">
+    <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" class="email-card" style="background:#FFFFFF;max-width:560px;width:100%;border-radius:8px">
 
-      <!-- Masthead -->
-      <tr><td class="email-header" style="padding:36px 44px 28px;border-bottom:1px solid rgba(185,137,74,0.35)">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-          <tr>
-            <td align="left" style="font-family:Fraunces,Georgia,serif;font-weight:500;font-size:18px;letter-spacing:0.18em;color:#1A1815;text-transform:uppercase">
-              Маргел&nbsp;<em style="font-style:italic;color:#B9894A;font-weight:400">360°</em>
-            </td>
-            <td align="right" style="font-family:Fraunces,Georgia,serif;font-style:italic;font-size:12px;color:#7A7568">
-              ${fmtDateBg(e.preferred_date)}
-            </td>
-          </tr>
-        </table>
-      </td></tr>
+      <tr><td class="email-body" style="padding:40px 40px 32px">
 
-      <!-- Letter -->
-      <tr><td class="email-body" style="padding:44px 44px 36px">
-
-        <p style="margin:0 0 10px;font-family:Manrope,Arial,sans-serif;font-weight:600;font-size:11px;letter-spacing:0.2em;color:#B9894A;text-transform:uppercase" class="section-title">
-          Потвърждение на запитване
+        <p style="margin:0 0 32px;font:600 14px/1.2 ${FONT};letter-spacing:0.18em;color:${INK};text-transform:uppercase">
+          МАРГЕЛ 360°
         </p>
 
-        <h1 class="display" style="margin:0 0 22px;font-family:Fraunces,Georgia,serif;font-weight:400;font-size:42px;line-height:1.08;letter-spacing:-0.022em;color:#1A1815">
-          Благодарим, <em style="font-style:italic;color:#B9894A">${esc(firstName)}</em>.
+        <h1 class="h1" style="margin:0 0 8px;font:600 28px/1.2 ${FONT};color:${INK}">
+          Здравейте, ${esc(firstName)}
         </h1>
-
-        <p class="lead" style="margin:0 0 28px;font-family:Manrope,Arial,sans-serif;font-weight:400;font-size:16px;line-height:1.55;color:#2A2620">
-          Получихме вашето запитване за <strong style="font-weight:600">${esc(e.event_type)}</strong> на
-          <strong style="font-weight:600">${fmtDateBg(e.preferred_date)}</strong>. По-долу е обобщение на избраното от вас — ще се свържем с вас в рамките на 24 часа за потвърждение и финалните детайли.
+        <p style="margin:0 0 28px;font:16px/1.5 ${FONT};color:${MUTED}">
+          Получихме вашето запитване. Ще се свържем с вас до 24 часа за потвърждение.
         </p>
 
-        <hr style="border:0;border-top:1px solid rgba(185,137,74,0.35);margin:0 0 28px">
-
-        <!-- Meta -->
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 32px">
+        ${sectionTitle("Детайли")}
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 28px">
           <tr>
-            <td class="meta-cell" valign="top" style="padding:0 18px 0 0;width:33%">
-              <p style="margin:0 0 4px;font-family:Manrope,Arial,sans-serif;font-size:10px;letter-spacing:0.18em;color:#7A7568;text-transform:uppercase">Час</p>
-              <p style="margin:0;font-family:Fraunces,Georgia,serif;font-size:17px;color:#1A1815">${timeLabel}</p>
+            <td class="meta-cell" valign="top" style="padding:0 16px 0 0;width:33%">
+              <p style="margin:0 0 4px;font:13px/1.4 ${FONT};color:${MUTED}">Събитие</p>
+              <p style="margin:0;font:600 15px/1.4 ${FONT};color:${INK}">${esc(e.event_type)}</p>
             </td>
-            <td class="meta-cell" valign="top" style="padding:0 18px 0 0;width:33%">
-              <p style="margin:0 0 4px;font-family:Manrope,Arial,sans-serif;font-size:10px;letter-spacing:0.18em;color:#7A7568;text-transform:uppercase">Гости</p>
-              <p style="margin:0;font-family:Fraunces,Georgia,serif;font-size:17px;color:#1A1815">${e.guests ?? "—"}</p>
+            <td class="meta-cell" valign="top" style="padding:0 16px 0 0;width:33%">
+              <p style="margin:0 0 4px;font:13px/1.4 ${FONT};color:${MUTED}">Дата</p>
+              <p style="margin:0;font:600 15px/1.4 ${FONT};color:${INK}">${fmtDateBg(e.preferred_date)}</p>
             </td>
             <td class="meta-cell" valign="top" style="width:34%">
-              <p style="margin:0 0 4px;font-family:Manrope,Arial,sans-serif;font-size:10px;letter-spacing:0.18em;color:#7A7568;text-transform:uppercase">Телефон</p>
-              <p style="margin:0;font-family:Fraunces,Georgia,serif;font-size:17px;color:#1A1815">${esc(e.phone)}</p>
+              <p style="margin:0 0 4px;font:13px/1.4 ${FONT};color:${MUTED}">Гости</p>
+              <p style="margin:0;font:600 15px/1.4 ${FONT};color:${INK}">${e.guests ?? "—"}</p>
+            </td>
+          </tr>
+          <tr><td colspan="3" style="height:14px"></td></tr>
+          <tr>
+            <td class="meta-cell" valign="top" style="padding:0 16px 0 0;width:33%">
+              <p style="margin:0 0 4px;font:13px/1.4 ${FONT};color:${MUTED}">Час</p>
+              <p style="margin:0;font:15px/1.4 ${FONT};color:${INK}">${timeLabel}</p>
+            </td>
+            <td class="meta-cell" valign="top" colspan="2">
+              <p style="margin:0 0 4px;font:13px/1.4 ${FONT};color:${MUTED}">Телефон</p>
+              <p style="margin:0;font:15px/1.4 ${FONT};color:${INK}">${esc(e.phone)}</p>
             </td>
           </tr>
         </table>
 
         ${addonRows ? `
-        <p style="margin:0 0 14px;font-family:Manrope,Arial,sans-serif;font-weight:600;font-size:11px;letter-spacing:0.18em;color:#1A1815;text-transform:uppercase" class="section-title">
-          <span style="color:#B9894A;font-family:Fraunces,Georgia,serif;font-style:italic;font-weight:400">i.</span>&nbsp;&nbsp;Допълнителни услуги
-        </p>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 28px">
-          ${addonRows}
-        </table>` : ""}
+        ${sectionTitle("Допълнителни услуги")}
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 28px">${addonRows}</table>` : ""}
 
         ${drinkRows ? `
-        <p style="margin:0 0 14px;font-family:Manrope,Arial,sans-serif;font-weight:600;font-size:11px;letter-spacing:0.18em;color:#1A1815;text-transform:uppercase" class="section-title">
-          <span style="color:#B9894A;font-family:Fraunces,Georgia,serif;font-style:italic;font-weight:400">ii.</span>&nbsp;&nbsp;Напитки
-        </p>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 28px">
-          ${drinkRows}
-        </table>` : ""}
+        ${sectionTitle("Напитки")}
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 28px">${drinkRows}</table>` : ""}
 
         ${e.notes ? `
-        <p style="margin:0 0 12px;font-family:Manrope,Arial,sans-serif;font-weight:600;font-size:11px;letter-spacing:0.18em;color:#1A1815;text-transform:uppercase" class="section-title">
-          <span style="color:#B9894A;font-family:Fraunces,Georgia,serif;font-style:italic;font-weight:400">iii.</span>&nbsp;&nbsp;Бележки
-        </p>
-        <p style="margin:0 0 28px;padding:16px 18px;border-left:2px solid #B9894A;background:#F6F1E8;font-family:Fraunces,Georgia,serif;font-style:italic;font-size:16px;line-height:1.5;color:#2A2620;white-space:pre-wrap">„${esc(e.notes)}"</p>` : ""}
+        ${sectionTitle("Бележки")}
+        <p style="margin:0 0 28px;padding:14px 16px;background:#F5F5F5;border-radius:6px;font:14px/1.5 ${FONT};color:${INK};white-space:pre-wrap">${esc(e.notes)}</p>` : ""}
 
-        <hr style="border:0;border-top:1px solid rgba(185,137,74,0.35);margin:8px 0 28px">
-
-        <!-- CTA -->
-        <p style="margin:0 0 10px;font-family:Fraunces,Georgia,serif;font-style:italic;font-size:20px;color:#1A1815">
-          Желаете промени?
-        </p>
-        <p style="margin:0 0 20px;font-family:Manrope,Arial,sans-serif;font-size:14px;line-height:1.55;color:#2A2620">
-          Можете да обновите броя гости, услугите и датата директно. Всяка промяна ще бъде потвърдена с ново обобщение по имейл.
+        ${sectionTitle("Обобщение")}
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 12px">${totalRows}</table>
+        <p style="margin:0 0 32px;font:12px/1.5 ${FONT};color:${MUTED}">
+          Сумата е ориентировъчна и подлежи на потвърждение.
         </p>
 
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 14px">
-          <tr>
-            <td>
-              <a class="email-cta" href="${editUrl}" style="display:inline-block;padding:14px 28px;background:#1A1815;color:#F6F1E8;font-family:Manrope,Arial,sans-serif;font-weight:600;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;text-decoration:none">
-                Редактирай резервацията
-              </a>
-            </td>
-          </tr>
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px">
+          <tr><td>
+            <a class="email-cta" href="${editUrl}" style="display:inline-block;padding:14px 28px;background:${INK};color:#FFFFFF;font:600 14px/1 ${FONT};text-decoration:none;border-radius:6px">
+              Редактирай резервацията
+            </a>
+          </td></tr>
         </table>
 
-        <p style="margin:0 0 24px;font-family:Manrope,Arial,sans-serif;font-size:12px;line-height:1.55;color:#7A7568">
-          Или разгледайте програмата си <a href="${bookingUrl}" style="color:#1A1815;border-bottom:1px solid #B9894A;text-decoration:none">тук</a>.
+        <p style="margin:0;font:12px/1.5 ${FONT};color:${MUTED}">
+          Линкът е валиден до ${fmtExpiryBg(e.token_expires_at)}.
         </p>
 
-        <p style="margin:0;font-family:Manrope,Arial,sans-serif;font-size:11px;line-height:1.6;color:#7A7568">
-          Линкът е валиден до <em style="font-family:Fraunces,Georgia,serif;font-style:italic;color:#1A1815">${fmtExpiryBg(e.token_expires_at)}</em>. Ако трябва да променим датата извън този период, моля свържете се с нас.
-        </p>
-
-        <hr style="border:0;border-top:1px solid rgba(185,137,74,0.35);margin:32px 0 24px">
-
-        <!-- Signature -->
-        <p style="margin:0 0 2px;font-family:Fraunces,Georgia,serif;font-style:italic;font-size:17px;color:#1A1815">
-          С най-добри пожелания,
-        </p>
-        <p style="margin:0;font-family:Manrope,Arial,sans-serif;font-weight:600;font-size:12px;letter-spacing:0.16em;color:#1A1815;text-transform:uppercase">
-          — Екипът на Маргел&nbsp;360°
-        </p>
       </td></tr>
 
-      <!-- Colophon -->
-      <tr><td class="email-footer" style="padding:28px 44px;background:#1A1815;color:#C9A86A;font-family:Manrope,Arial,sans-serif;font-size:11px;line-height:1.6;letter-spacing:0.04em">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-          <tr>
-            <td valign="top" style="color:#C9A86A;text-transform:uppercase;letter-spacing:0.16em;font-weight:600">
-              Маргел&nbsp;<em style="font-style:italic;color:#F6F1E8;font-weight:400">360°</em>
-            </td>
-            <td valign="top" align="right" style="color:#7A7568">
-              <a href="mailto:360@margel.info" style="color:#F6F1E8;text-decoration:none;border-bottom:1px solid rgba(201,168,106,0.5)">360@margel.info</a>
-            </td>
-          </tr>
-          <tr>
-            <td colspan="2" style="padding-top:10px;color:#7A7568">
-              бул. Околовръстен път 155 · ет. 4 · София 1618
-            </td>
-          </tr>
-        </table>
+      <tr><td style="padding:24px 40px;border-top:1px solid ${LINE};background:#FAFAFA;border-radius:0 0 8px 8px">
+        <p style="margin:0 0 6px;font:600 13px/1.4 ${FONT};color:${INK}">Маргел 360°</p>
+        <p style="margin:0;font:13px/1.6 ${FONT};color:${MUTED}">
+          бул. Околовръстен път 155, ет. 4, София 1618<br>
+          <a href="mailto:360@margel.info" style="color:${MUTED};text-decoration:underline">360@margel.info</a>
+          &nbsp;·&nbsp;
+          <a href="tel:+359888100042" style="color:${MUTED};text-decoration:underline">+359 888 100 042</a>
+        </p>
       </td></tr>
 
     </table>
@@ -325,11 +318,28 @@ export function renderOwnerEmail(
   diff: DiffEntry[] | null,
 ): { subject: string; text: string } {
   const subjectPrefix = reason === "updated" ? "[Редактирана резервация] " : "";
-  const subject = `${subjectPrefix}${e.full_name} — ${e.event_type} — ${e.preferred_date}`;
+  const totals = computeTotals(e);
+  const subject = `${subjectPrefix}${e.full_name} — ${e.event_type} — ${e.preferred_date} — €${totals.total.toFixed(2)}`;
 
   const addonsText = (e.addons ?? []).map(a => `  - ${a.name}: ${fmtEur(a.price, a.id)}`).join("\n");
-  const drinksText = (e.drinks ?? []).map(d => `  - ${d.name} × ${d.qty}`).join("\n");
+  const drinksText = (e.drinks ?? []).map(d => {
+    const line = (Number(d.price_eur) || 0) * (Number(d.qty) || 0);
+    return line > 0
+      ? `  - ${d.name} × ${d.qty} — €${line.toFixed(2)}`
+      : `  - ${d.name} × ${d.qty}`;
+  }).join("\n");
   const timeLabel = e.time_of_day === "day" ? "Daytime (until 17:30)" : "Evening (after 19:00)";
+
+  const totalsBlock = [
+    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+    "TOTAL",
+    `  Venue base:     €${totals.venue.toFixed(2)}`,
+    `  Add-ons:        €${totals.addons.toFixed(2)}`,
+    `  Drinks:         €${totals.drinks.toFixed(2)}`,
+    `  ──────────────────────────`,
+    `  GRAND TOTAL:    €${totals.total.toFixed(2)}`,
+    "",
+  ];
 
   const diffBlock = reason === "updated" && diff && diff.length
     ? [
@@ -373,6 +383,7 @@ export function renderOwnerEmail(
     ...(addonsText ? ["Add-on services:", addonsText, ""] : []),
     ...(drinksText ? ["Drinks:", drinksText, ""] : []),
     ...(e.notes ? ["Notes:", e.notes, ""] : []),
+    ...totalsBlock,
     "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
   ].join("\n");
 
