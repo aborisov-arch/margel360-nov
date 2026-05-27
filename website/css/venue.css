@@ -465,7 +465,13 @@
   color: var(--ink);
 }
 .addon-qty button:hover { color: var(--gold); }
-.addon-qty input {
+/* Override the global `.addon-card input { opacity:0; position:absolute; ... }`
+   rule that was meant to hide the checkbox on standard addon cards. The
+   furniture qty card needs a real, visible, interactive number input. */
+.addon-card--qty input[type=number] {
+  position: static !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
   width: 48px;
   text-align: center;
   border: 0;

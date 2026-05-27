@@ -123,26 +123,29 @@ function renderForm() {
   show('state-form');
 }
 
-// Drinks are hidden by default behind a CTA. If the customer already has
-// drinks saved, expand the menu automatically so they can review/edit.
+// Drinks are always hidden behind a CTA so the form opens shorter. If the
+// customer already has drinks saved we surface a count on the button instead
+// of auto-expanding, so they still notice there are items to review.
 function setupDrinksToggle() {
   const btn = $('btn-toggle-drinks');
   const panel = $('drinks-panel');
   const wrap = $('drinks-toggle-wrap');
+  const prompt = wrap?.querySelector('.drinks-toggle-prompt');
   if (!btn || !panel) return;
 
-  const hasExisting = Array.isArray(state.enquiry.drinks) && state.enquiry.drinks.length > 0;
-  if (hasExisting) {
-    expandDrinks();
-  } else {
-    btn.addEventListener('click', expandDrinks, { once: true });
+  const existing = Array.isArray(state.enquiry.drinks) ? state.enquiry.drinks : [];
+  const existingCount = existing.reduce((n, d) => n + (Number(d.qty) || 0), 0);
+
+  if (existingCount > 0 && prompt) {
+    prompt.textContent = `Имате ${existingCount} избрани напитки. Желаете ли да ги прегледате или промените?`;
+    btn.textContent = 'Покажи напитките';
   }
 
-  function expandDrinks() {
+  btn.addEventListener('click', () => {
     if (wrap) wrap.hidden = true;
     panel.hidden = false;
     renderDrinks();
-  }
+  }, { once: true });
 }
 
 function initDatePicker() {
