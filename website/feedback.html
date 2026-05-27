@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Впечатления · Маргел 360°</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Manrope:wght@300..800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/venue.css?v=3">
+  <style>
+    .rating-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 1rem; padding: 0.9rem 0; border-bottom: 1px dashed rgba(185,137,74,0.3); }
+    .rating-row:last-of-type { border-bottom: 0; }
+    .rating-row__label { display: flex; flex-direction: column; }
+    .rating-row__label strong { font: 500 17px/1.3 'Fraunces', Georgia, serif; color: var(--ink); }
+    .rating-row__label span { font: 12px/1.4 'Manrope', sans-serif; color: var(--muted, #7A7568); }
+    .stars { display: inline-flex; gap: 4px; }
+    .stars button { background: transparent; border: 0; cursor: pointer; padding: 4px; font-size: 1.6rem; color: rgba(185,137,74,0.35); line-height: 1; transition: color 0.15s ease; }
+    .stars button.is-on, .stars button.is-hover { color: #B9894A; }
+    .stars button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 4px; }
+  </style>
+</head>
+<body class="venue">
+
+  <div class="venue__container">
+
+    <header class="venue__masthead">
+      <a class="venue__wordmark" href="index.html">МАРГЕЛ&nbsp;<em>360°</em></a>
+      <div class="venue__sigil" aria-hidden="true">360°</div>
+    </header>
+
+    <main class="stage">
+
+      <section class="spread" id="state-loading">
+        <p class="label-caps">Зареждане</p>
+        <h1 class="display display-lg">Подготвяме формата…</h1>
+      </section>
+
+      <section class="spread state-page" id="state-not-found" hidden>
+        <p class="label-caps">Упс</p>
+        <h1 class="display display-lg">Линкът не е намерен.</h1>
+        <hr class="rule-gold">
+        <p class="lead">Моля пишете ни директно — ще се радваме да чуем впечатленията ви.</p>
+        <a class="btn btn-ghost" href="mailto:360@margel.info">360@margel.info</a>
+      </section>
+
+      <section class="spread state-page" id="state-thanks" hidden>
+        <p class="label-caps">— получено —</p>
+        <h1 class="display display-xl"><em>Благодарим!</em></h1>
+        <p class="lead">Вашите впечатления вече са с нас. Очакваме ви отново.</p>
+      </section>
+
+      <section class="spread" id="state-form" hidden>
+        <header class="spread__header">
+          <span class="label-caps" id="form-eyebrow">Впечатления · след събитието</span>
+          <h1 class="display display-lg">Как премина <em>събитието</em>?</h1>
+          <p class="lead" id="form-sub">Една минутка от вашето време. Помага ни да правим всеки следващ празник още по-добър.</p>
+          <hr class="rule-gold">
+        </header>
+
+        <form id="feedback-form" class="composition" novalidate>
+          <section class="composition__section">
+            <h2 class="numeral" data-num="i.">Оценете</h2>
+
+            <div class="rating-row" data-rating="venue">
+              <div class="rating-row__label">
+                <strong>Залата</strong>
+                <span>Пространство, чистота, декор</span>
+              </div>
+              <div class="stars" role="radiogroup" aria-label="Оценка на залата"></div>
+            </div>
+
+            <div class="rating-row" data-rating="staff">
+              <div class="rating-row__label">
+                <strong>Екипът</strong>
+                <span>Отзивчивост, обслужване, организация</span>
+              </div>
+              <div class="stars" role="radiogroup" aria-label="Оценка на екипа"></div>
+            </div>
+
+            <div class="rating-row" data-rating="food">
+              <div class="rating-row__label">
+                <strong>Кетърингът</strong>
+                <span>Качество и поднасяне на хранителния продукт</span>
+              </div>
+              <div class="stars" role="radiogroup" aria-label="Оценка на кетъринга"></div>
+            </div>
+          </section>
+
+          <section class="composition__section">
+            <h2 class="numeral" data-num="ii.">Споделете</h2>
+            <label class="field">
+              <span class="label-caps">Какво ви хареса и какво можем да направим още по-добре?</span>
+              <textarea id="fb-comment" rows="5" maxlength="4000" placeholder="Свободен текст…"></textarea>
+            </label>
+          </section>
+
+          <footer class="composition__actions">
+            <button type="submit" class="btn btn-save" id="btn-submit">Изпрати впечатления</button>
+          </footer>
+
+          <div id="fb-error" class="alert hidden" role="alert"></div>
+        </form>
+      </section>
+
+    </main>
+
+    <footer class="venue__colophon">
+      <hr class="rule-gold">
+      <div class="colophon__grid">
+        <div>
+          <p class="label-caps label-caps--ink">Маргел&nbsp;360°</p>
+          <p>бул. Околовръстен път 155 · ет. 4 · София 1618</p>
+        </div>
+        <div>
+          <p class="label-caps label-caps--ink">Контакт</p>
+          <p><a href="mailto:360@margel.info">360@margel.info</a><br><a href="tel:+359888100042">+359&nbsp;888&nbsp;100&nbsp;042</a></p>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://wlxutsufrobzovdsiecb.supabase.co';
+    const FN_GET = `${SUPABASE_URL}/functions/v1/get-feedback-by-token`;
+    const FN_SUB = `${SUPABASE_URL}/functions/v1/submit-feedback`;
+
+    const $ = id => document.getElementById(id);
+    const state = { token: null, ratings: { venue: 0, staff: 0, food: 0 } };
+
+    function show(id) {
+      document.querySelectorAll('.spread').forEach(el => { el.hidden = true; });
+      const el = $(id); if (el) el.hidden = false;
+    }
+
+    function buildStars(row) {
+      const key = row.dataset.rating;
+      const wrap = row.querySelector('.stars');
+      wrap.innerHTML = '';
+      for (let i = 1; i <= 5; i++) {
+        const btn = document.createElement('button');
+        btn.type = 'button'; btn.dataset.value = i;
+        btn.setAttribute('role', 'radio');
+        btn.setAttribute('aria-label', `${i} от 5`);
+        btn.textContent = '★';
+        wrap.appendChild(btn);
+      }
+      wrap.addEventListener('click', evt => {
+        const b = evt.target.closest('button[data-value]');
+        if (!b) return;
+        const val = parseInt(b.dataset.value, 10);
+        state.ratings[key] = val;
+        paint(wrap, val);
+      });
+      wrap.addEventListener('mouseover', evt => {
+        const b = evt.target.closest('button[data-value]');
+        if (!b) return;
+        paintHover(wrap, parseInt(b.dataset.value, 10));
+      });
+      wrap.addEventListener('mouseleave', () => paintHover(wrap, 0));
+      paint(wrap, state.ratings[key]);
+    }
+
+    function paint(wrap, val) {
+      wrap.querySelectorAll('button').forEach(b => {
+        b.classList.toggle('is-on', parseInt(b.dataset.value, 10) <= val);
+        b.classList.remove('is-hover');
+      });
+    }
+    function paintHover(wrap, val) {
+      wrap.querySelectorAll('button').forEach(b => {
+        b.classList.toggle('is-hover', val > 0 && parseInt(b.dataset.value, 10) <= val);
+      });
+    }
+
+    async function main() {
+      const params = new URLSearchParams(location.search);
+      const token = params.get('token');
+      if (!token) return show('state-not-found');
+      state.token = token;
+
+      try {
+        const r = await fetch(FN_GET, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token }),
+        });
+        const body = await r.json().catch(() => ({}));
+        if (!r.ok) return show('state-not-found');
+
+        // If they already submitted, prefill their previous ratings.
+        if (body.existing) {
+          state.ratings.venue = body.existing.venue_rating || 0;
+          state.ratings.staff = body.existing.staff_rating || 0;
+          state.ratings.food  = body.existing.food_rating  || 0;
+          if (body.existing.comment) $('fb-comment').value = body.existing.comment;
+        }
+
+        document.querySelectorAll('.rating-row').forEach(buildStars);
+        show('state-form');
+      } catch {
+        show('state-not-found');
+      }
+
+      $('feedback-form').addEventListener('submit', onSubmit);
+    }
+
+    async function onSubmit(evt) {
+      evt.preventDefault();
+      const err = $('fb-error');
+      err.classList.add('hidden');
+
+      const { venue, staff, food } = state.ratings;
+      if (!venue || !staff || !food) {
+        err.textContent = 'Моля, оценете и трите категории.';
+        err.classList.remove('hidden');
+        return;
+      }
+
+      const btn = $('btn-submit');
+      btn.disabled = true; btn.textContent = 'Изпращане…';
+
+      try {
+        const r = await fetch(FN_SUB, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            token: state.token,
+            venue, staff, food,
+            comment: $('fb-comment').value.trim() || null,
+          }),
+        });
+        const body = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(body?.error || 'server_error');
+        show('state-thanks');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch (e) {
+        console.error(e);
+        err.textContent = 'Нещо се обърка. Моля опитайте отново или пишете на 360@margel.info.';
+        err.classList.remove('hidden');
+        btn.disabled = false; btn.textContent = 'Изпрати впечатления';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', main);
+  </script>
+
+</body>
+</html>

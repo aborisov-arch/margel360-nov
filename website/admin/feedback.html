@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Впечатления — Маргел 360° Админ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/admin.css?v=7">
+  <style>
+    .feedback-card { background:#fff; border:1px solid var(--border); border-radius:10px; padding:18px 20px; margin-bottom:14px; box-shadow:0 1px 3px rgba(0,0,0,0.04); }
+    .feedback-card__hdr { display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin-bottom:10px; }
+    .feedback-card__name { font-weight:600; font-size:1.02rem; }
+    .feedback-card__meta { color:#777; font-size:0.85rem; }
+    .feedback-ratings { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:10px; }
+    .feedback-ratings__cell { padding:10px 12px; background:#FBF8F2; border-radius:8px; }
+    .feedback-ratings__cell .lbl { display:block; font-size:0.7rem; letter-spacing:0.14em; color:#888; text-transform:uppercase; margin-bottom:4px; }
+    .feedback-ratings__cell .val { font-size:1.4rem; color:#B9894A; font-weight:600; }
+    .feedback-comment { padding:12px 14px; border-left:3px solid #B9894A; background:#FAFAFA; font-style:italic; color:#333; white-space:pre-wrap; }
+    .feedback-summary { display:flex; gap:24px; margin:0 0 22px; padding:16px 20px; background:#fff; border:1px solid var(--border); border-radius:10px; }
+    .feedback-summary > div { display:flex; flex-direction:column; }
+    .feedback-summary .lbl { font-size:0.72rem; letter-spacing:0.14em; color:#888; text-transform:uppercase; }
+    .feedback-summary .val { font-size:1.5rem; font-weight:700; color:#1A1815; }
+    .feedback-summary .val small { font-size:0.85rem; color:#B9894A; font-weight:500; margin-left:6px; }
+  </style>
+</head>
+<body>
+  <header class="admin-header">
+    <a href="dashboard.html" class="admin-logo">МАРГЕЛ <span>360°</span></a>
+    <nav class="admin-nav">
+      <a href="dashboard.html">Запитвания</a>
+      <a href="calendar.html">Календар</a>
+      <a href="feedback.html" class="active">Впечатления</a>
+    </nav>
+    <div class="lang-toggle">
+      <button class="lang-btn" data-lang="bg">БГ</button>
+      <button class="lang-btn" data-lang="en">EN</button>
+    </div>
+    <button class="btn btn-outline btn-sm" id="logout-btn">Изход</button>
+  </header>
+
+  <main class="admin-main">
+    <div class="admin-container">
+      <h1 class="page-title">Впечатления от събития</h1>
+      <div id="loading" class="loading-state">Зареждане…</div>
+      <div id="content" style="display:none">
+        <div id="summary" class="feedback-summary"></div>
+        <div id="list"></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="js/supabase-client.js?v=2" defer></script>
+  <script src="js/auth.js?v=2" defer></script>
+  <script defer>
+    function esc(s){ return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function fmt(iso){ if(!iso) return '—'; return new Date(iso).toLocaleString('bg-BG',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
+    function avg(arr){ if(!arr.length) return 0; return arr.reduce((s,n)=>s+n,0)/arr.length; }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const session = await requireAuth();
+      if (!session) return;
+
+      const { data, error } = await db
+        .from('event_feedback')
+        .select('id, enquiry_id, venue_rating, staff_rating, food_rating, comment, submitted_at, enquiries(full_name, event_type, preferred_date, email)')
+        .order('submitted_at', { ascending: false });
+
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('content').style.display = 'block';
+
+      if (error) {
+        document.getElementById('content').innerHTML = `<p style="color:var(--accent);padding:20px 0">Грешка: ${esc(error.message)}</p>`;
+        return;
+      }
+
+      const rows = data ?? [];
+      const sum = document.getElementById('summary');
+      if (rows.length === 0) {
+        sum.innerHTML = '<div><span class="lbl">Получени</span><span class="val">0</span></div>';
+        document.getElementById('list').innerHTML = '<p style="color:#777;padding:20px 0">Все още няма впечатления.</p>';
+        return;
+      }
+
+      const v = avg(rows.map(r => r.venue_rating).filter(Boolean));
+      const s = avg(rows.map(r => r.staff_rating).filter(Boolean));
+      const f = avg(rows.map(r => r.food_rating).filter(Boolean));
+
+      sum.innerHTML = `
+        <div><span class="lbl">Получени</span><span class="val">${rows.length}</span></div>
+        <div><span class="lbl">Зала</span><span class="val">${v.toFixed(1)}<small>/5</small></span></div>
+        <div><span class="lbl">Екип</span><span class="val">${s.toFixed(1)}<small>/5</small></span></div>
+        <div><span class="lbl">Кетъринг</span><span class="val">${f.toFixed(1)}<small>/5</small></span></div>
+      `;
+
+      document.getElementById('list').innerHTML = rows.map(r => {
+        const e = r.enquiries || {};
+        return `
+          <div class="feedback-card">
+            <div class="feedback-card__hdr">
+              <div>
+                <span class="feedback-card__name">${esc(e.full_name)}</span>
+                <span class="feedback-card__meta"> · ${esc(e.event_type || '—')} · ${esc(e.preferred_date || '—')}</span>
+              </div>
+              <span class="feedback-card__meta">${fmt(r.submitted_at)}</span>
+            </div>
+            <div class="feedback-ratings">
+              <div class="feedback-ratings__cell"><span class="lbl">Зала</span><span class="val">${r.venue_rating ?? '—'}/5</span></div>
+              <div class="feedback-ratings__cell"><span class="lbl">Екип</span><span class="val">${r.staff_rating ?? '—'}/5</span></div>
+              <div class="feedback-ratings__cell"><span class="lbl">Кетъринг</span><span class="val">${r.food_rating ?? '—'}/5</span></div>
+            </div>
+            ${r.comment ? `<div class="feedback-comment">„${esc(r.comment)}"</div>` : ''}
+          </div>
+        `;
+      }).join('');
+    });
+  </script>
+</body>
+</html>
