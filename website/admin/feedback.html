@@ -9,20 +9,30 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/admin.css?v=7">
   <style>
-    .feedback-card { background:#fff; border:1px solid var(--border); border-radius:10px; padding:18px 20px; margin-bottom:14px; box-shadow:0 1px 3px rgba(0,0,0,0.04); }
-    .feedback-card__hdr { display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin-bottom:10px; }
+    .feedback-summary { display:flex; flex-wrap:wrap; gap:20px; margin:0 0 22px; padding:18px 22px; background:#fff; border:1px solid var(--border); border-radius:10px; box-shadow:0 1px 3px rgba(0,0,0,0.04); }
+    .feedback-summary > div { display:flex; flex-direction:column; min-width:90px; }
+    .feedback-summary .lbl { font-size:0.7rem; letter-spacing:0.14em; color:#888; text-transform:uppercase; margin-bottom:4px; }
+    .feedback-summary .val { font-size:1.5rem; font-weight:700; color:#1A1815; }
+    .feedback-summary .val small { font-size:0.8rem; color:#B9894A; font-weight:500; margin-left:4px; }
+
+    .source-bars { display:flex; gap:14px; margin-top:14px; }
+    .source-bars__cell { flex:1; padding:10px 12px; background:#FBF8F2; border-radius:8px; text-align:center; }
+    .source-bars__cell .lbl { display:block; font-size:0.7rem; letter-spacing:0.12em; color:#888; text-transform:uppercase; margin-bottom:4px; }
+    .source-bars__cell .val { font-size:1.15rem; font-weight:700; color:#1A1815; }
+
+    .feedback-card { background:#fff; border:1px solid var(--border); border-radius:10px; padding:18px 22px; margin-bottom:14px; box-shadow:0 1px 3px rgba(0,0,0,0.04); }
+    .feedback-card__hdr { display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid var(--border); }
     .feedback-card__name { font-weight:600; font-size:1.02rem; }
     .feedback-card__meta { color:#777; font-size:0.85rem; }
-    .feedback-ratings { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:10px; }
-    .feedback-ratings__cell { padding:10px 12px; background:#FBF8F2; border-radius:8px; }
-    .feedback-ratings__cell .lbl { display:block; font-size:0.7rem; letter-spacing:0.14em; color:#888; text-transform:uppercase; margin-bottom:4px; }
-    .feedback-ratings__cell .val { font-size:1.4rem; color:#B9894A; font-weight:600; }
-    .feedback-comment { padding:12px 14px; border-left:3px solid #B9894A; background:#FAFAFA; font-style:italic; color:#333; white-space:pre-wrap; }
-    .feedback-summary { display:flex; gap:24px; margin:0 0 22px; padding:16px 20px; background:#fff; border:1px solid var(--border); border-radius:10px; }
-    .feedback-summary > div { display:flex; flex-direction:column; }
-    .feedback-summary .lbl { font-size:0.72rem; letter-spacing:0.14em; color:#888; text-transform:uppercase; }
-    .feedback-summary .val { font-size:1.5rem; font-weight:700; color:#1A1815; }
-    .feedback-summary .val small { font-size:0.85rem; color:#B9894A; font-weight:500; margin-left:6px; }
+
+    .qa-block { padding:10px 0; }
+    .qa-block:not(:last-child) { border-bottom:1px dashed #ECE6D9; }
+    .qa-block__q { display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin-bottom:6px; }
+    .qa-block__label { font-size:0.78rem; letter-spacing:0.12em; color:#888; text-transform:uppercase; font-weight:600; }
+    .qa-block__rating { color:#B9894A; font-weight:700; font-size:1rem; white-space:nowrap; }
+    .qa-block__comment { padding:8px 12px; background:#FAFAFA; border-left:3px solid #B9894A; font-style:italic; color:#333; white-space:pre-wrap; font-size:0.92rem; }
+    .qa-block__source { font-size:1rem; color:#1A1815; font-weight:500; }
+    .qa-block__source em { font-style:italic; color:#7A7568; margin-left:6px; font-weight:400; }
   </style>
 </head>
 <body>
@@ -45,7 +55,7 @@
       <h1 class="page-title">Впечатления от събития</h1>
       <div id="loading" class="loading-state">Зареждане…</div>
       <div id="content" style="display:none">
-        <div id="summary" class="feedback-summary"></div>
+        <div id="summary"></div>
         <div id="list"></div>
       </div>
     </div>
@@ -59,13 +69,15 @@
     function fmt(iso){ if(!iso) return '—'; return new Date(iso).toLocaleString('bg-BG',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
     function avg(arr){ if(!arr.length) return 0; return arr.reduce((s,n)=>s+n,0)/arr.length; }
 
+    const SOURCE_LABELS = { friends: 'Приятели', social: 'Социални мрежи', google: 'Google', other: 'Друго' };
+
     document.addEventListener('DOMContentLoaded', async () => {
       const session = await requireAuth();
       if (!session) return;
 
       const { data, error } = await db
         .from('event_feedback')
-        .select('id, enquiry_id, venue_rating, staff_rating, food_rating, comment, submitted_at, enquiries(full_name, event_type, preferred_date, email)')
+        .select('id, enquiry_id, experience_rating, experience_comment, service_rating, service_comment, venue_rating, venue_comment, source, source_other, rebook_rating, rebook_comment, submitted_at, enquiries(full_name, event_type, preferred_date, email)')
         .order('submitted_at', { ascending: false });
 
       document.getElementById('loading').style.display = 'none';
@@ -77,26 +89,58 @@
       }
 
       const rows = data ?? [];
-      const sum = document.getElementById('summary');
+      const sumEl = document.getElementById('summary');
+
       if (rows.length === 0) {
-        sum.innerHTML = '<div><span class="lbl">Получени</span><span class="val">0</span></div>';
+        sumEl.innerHTML = '<div class="feedback-summary"><div><span class="lbl">Получени</span><span class="val">0</span></div></div>';
         document.getElementById('list').innerHTML = '<p style="color:#777;padding:20px 0">Все още няма впечатления.</p>';
         return;
       }
 
-      const v = avg(rows.map(r => r.venue_rating).filter(Boolean));
-      const s = avg(rows.map(r => r.staff_rating).filter(Boolean));
-      const f = avg(rows.map(r => r.food_rating).filter(Boolean));
+      const a1 = avg(rows.map(r => r.experience_rating).filter(Boolean));
+      const a2 = avg(rows.map(r => r.service_rating).filter(Boolean));
+      const a3 = avg(rows.map(r => r.venue_rating).filter(Boolean));
+      const a5 = avg(rows.map(r => r.rebook_rating).filter(Boolean));
 
-      sum.innerHTML = `
-        <div><span class="lbl">Получени</span><span class="val">${rows.length}</span></div>
-        <div><span class="lbl">Зала</span><span class="val">${v.toFixed(1)}<small>/5</small></span></div>
-        <div><span class="lbl">Екип</span><span class="val">${s.toFixed(1)}<small>/5</small></span></div>
-        <div><span class="lbl">Кетъринг</span><span class="val">${f.toFixed(1)}<small>/5</small></span></div>
+      const srcCounts = { friends: 0, social: 0, google: 0, other: 0 };
+      rows.forEach(r => { if (r.source && srcCounts[r.source] != null) srcCounts[r.source]++; });
+
+      sumEl.innerHTML = `
+        <div class="feedback-summary">
+          <div><span class="lbl">Получени</span><span class="val">${rows.length}</span></div>
+          <div><span class="lbl">Преживяване</span><span class="val">${a1.toFixed(1)}<small>/4</small></span></div>
+          <div><span class="lbl">Обслужване</span><span class="val">${a2.toFixed(1)}<small>/4</small></span></div>
+          <div><span class="lbl">Зала</span><span class="val">${a3.toFixed(1)}<small>/4</small></span></div>
+          <div><span class="lbl">Резервация отново</span><span class="val">${a5.toFixed(1)}<small>/4</small></span></div>
+        </div>
+        <div class="feedback-summary" style="display:block">
+          <span class="lbl" style="display:block;margin-bottom:10px;font-size:0.7rem;letter-spacing:0.14em;color:#888;text-transform:uppercase;font-weight:600">Откъде научиха за нас</span>
+          <div class="source-bars">
+            <div class="source-bars__cell"><span class="lbl">Приятели</span><span class="val">${srcCounts.friends}</span></div>
+            <div class="source-bars__cell"><span class="lbl">Соц. мрежи</span><span class="val">${srcCounts.social}</span></div>
+            <div class="source-bars__cell"><span class="lbl">Google</span><span class="val">${srcCounts.google}</span></div>
+            <div class="source-bars__cell"><span class="lbl">Друго</span><span class="val">${srcCounts.other}</span></div>
+          </div>
+        </div>
       `;
 
       document.getElementById('list').innerHTML = rows.map(r => {
         const e = r.enquiries || {};
+        const qa = (label, rating, comment) => `
+          <div class="qa-block">
+            <div class="qa-block__q">
+              <span class="qa-block__label">${esc(label)}</span>
+              <span class="qa-block__rating">${rating ?? '—'}/4</span>
+            </div>
+            ${comment ? `<div class="qa-block__comment">„${esc(comment)}"</div>` : ''}
+          </div>`;
+        const sourceBlock = `
+          <div class="qa-block">
+            <div class="qa-block__q">
+              <span class="qa-block__label">Откъде научиха</span>
+            </div>
+            <div class="qa-block__source">${esc(SOURCE_LABELS[r.source] || r.source || '—')}${r.source === 'other' && r.source_other ? `<em>— ${esc(r.source_other)}</em>` : ''}</div>
+          </div>`;
         return `
           <div class="feedback-card">
             <div class="feedback-card__hdr">
@@ -106,12 +150,11 @@
               </div>
               <span class="feedback-card__meta">${fmt(r.submitted_at)}</span>
             </div>
-            <div class="feedback-ratings">
-              <div class="feedback-ratings__cell"><span class="lbl">Зала</span><span class="val">${r.venue_rating ?? '—'}/5</span></div>
-              <div class="feedback-ratings__cell"><span class="lbl">Екип</span><span class="val">${r.staff_rating ?? '—'}/5</span></div>
-              <div class="feedback-ratings__cell"><span class="lbl">Кетъринг</span><span class="val">${r.food_rating ?? '—'}/5</span></div>
-            </div>
-            ${r.comment ? `<div class="feedback-comment">„${esc(r.comment)}"</div>` : ''}
+            ${qa('Преживяване', r.experience_rating, r.experience_comment)}
+            ${qa('Обслужване', r.service_rating, r.service_comment)}
+            ${qa('Зала', r.venue_rating, r.venue_comment)}
+            ${sourceBlock}
+            ${qa('Резервация отново', r.rebook_rating, r.rebook_comment)}
           </div>
         `;
       }).join('');

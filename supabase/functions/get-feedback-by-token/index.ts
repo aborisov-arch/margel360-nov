@@ -31,7 +31,7 @@ serve(async (req) => {
 
   const { data: existing } = await sb
     .from("event_feedback")
-    .select("venue_rating, staff_rating, food_rating, comment, submitted_at")
+    .select("experience_rating, experience_comment, service_rating, service_comment, venue_rating, venue_comment, source, source_other, rebook_rating, rebook_comment, submitted_at")
     .eq("enquiry_id", e.id)
     .order("submitted_at", { ascending: false })
     .limit(1)

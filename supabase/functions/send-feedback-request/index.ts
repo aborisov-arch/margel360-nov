@@ -82,13 +82,16 @@ function renderFeedbackEmail(e: { full_name: string; event_type: string; preferr
         <p style="margin:0 0 24px;font:16px/1.55 ${SANS};color:#2A2620">
           Здравейте, ${esc(first)}. Благодарим, че празнувахте при нас на ${fmtDateBg(e.preferred_date)}. Бихме искали да чуем впечатленията ви — отнема по-малко от минута.
         </p>
+        <p style="margin:0 0 24px;padding:14px 18px;border-left:3px solid #B9894A;background:#F6F1E8;font:14px/1.55 ${SANS};color:#1A1815">
+          <strong style="color:#B9894A">Подарък от нас:</strong> за всяка попълнена анкета получавате <strong>3% отстъпка</strong> от наема на залата при следващото ви събитие при нас.
+        </p>
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 24px"><tr><td>
           <a href="${url}" style="display:inline-block;padding:14px 28px;background:#1A1815;color:#F6F1E8;font:600 12px/1 ${SANS};letter-spacing:0.14em;text-transform:uppercase;text-decoration:none">
             Споделете впечатления
           </a>
         </td></tr></table>
         <p style="margin:0;font:12px/1.5 ${SANS};color:#7A7568">
-          Вашата обратна връзка ни помага да правим следващите празници още по-добри.
+          Анкетата отнема около минута. Отстъпката се валидира автоматично при следваща резервация.
         </p>
       </td></tr>
       <tr><td style="padding:24px 44px;background:#1A1815;color:#C9A86A;font:11px/1.6 ${SANS}">

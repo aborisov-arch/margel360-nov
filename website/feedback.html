@@ -10,15 +10,46 @@
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Manrope:wght@300..800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/venue.css?v=3">
   <style>
-    .rating-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 1rem; padding: 0.9rem 0; border-bottom: 1px dashed rgba(185,137,74,0.3); }
-    .rating-row:last-of-type { border-bottom: 0; }
-    .rating-row__label { display: flex; flex-direction: column; }
-    .rating-row__label strong { font: 500 17px/1.3 'Fraunces', Georgia, serif; color: var(--ink); }
-    .rating-row__label span { font: 12px/1.4 'Manrope', sans-serif; color: var(--muted, #7A7568); }
-    .stars { display: inline-flex; gap: 4px; }
-    .stars button { background: transparent; border: 0; cursor: pointer; padding: 4px; font-size: 1.6rem; color: rgba(185,137,74,0.35); line-height: 1; transition: color 0.15s ease; }
-    .stars button.is-on, .stars button.is-hover { color: #B9894A; }
-    .stars button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 4px; }
+    .reward { padding:14px 18px; margin:0 0 28px; border-left:3px solid #B9894A; background:#F6F1E8; font: 14px/1.5 'Manrope', sans-serif; color:#1A1815; }
+    .reward strong { color:#B9894A; }
+
+    .question { padding: 22px 0; border-bottom: 1px dashed rgba(185,137,74,0.3); }
+    .question:last-of-type { border-bottom: 0; }
+    .question__title { font: 500 18px/1.35 'Fraunces', Georgia, serif; color: var(--ink); margin: 0 0 12px; }
+    .question__title em { color: #B9894A; font-style: italic; }
+
+    .scale { display: inline-flex; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; }
+    .scale__btn {
+      min-width: 48px; padding: 10px 14px;
+      font: 600 14px/1 'Manrope', sans-serif;
+      background: #fff; border: 1.5px solid rgba(185,137,74,0.45); border-radius: 6px;
+      color: var(--ink); cursor: pointer; transition: all 0.15s ease;
+    }
+    .scale__btn:hover { border-color: #B9894A; }
+    .scale__btn.is-on { background: #B9894A; color: #FDFBF7; border-color: #B9894A; }
+    .scale__legend { display: flex; justify-content: space-between; font: 11px/1.4 'Manrope', sans-serif; color: var(--muted, #7A7568); margin-bottom: 12px; max-width: 280px; }
+
+    .comment-field textarea {
+      width: 100%; box-sizing: border-box;
+      padding: 10px 12px;
+      font: 14px/1.5 'Manrope', sans-serif;
+      border: 1px solid rgba(185,137,74,0.35); border-radius: 6px;
+      background: #FDFBF7; color: var(--ink); resize: vertical;
+    }
+    .comment-field textarea:focus { outline: 2px solid #B9894A; outline-offset: 1px; border-color: #B9894A; }
+    .comment-label { display: block; font: 11px/1.4 'Manrope', sans-serif; letter-spacing: 0.14em; color: var(--muted, #7A7568); text-transform: uppercase; margin: 0 0 6px; }
+
+    .choices { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 12px; }
+    .choice {
+      padding: 10px 16px;
+      font: 500 14px/1 'Manrope', sans-serif;
+      background: #fff; border: 1.5px solid rgba(185,137,74,0.45); border-radius: 999px;
+      color: var(--ink); cursor: pointer; transition: all 0.15s ease;
+    }
+    .choice:hover { border-color: #B9894A; }
+    .choice.is-on { background: #B9894A; color: #FDFBF7; border-color: #B9894A; }
+
+    .other-comment { margin-top: 8px; }
   </style>
 </head>
 <body class="venue">
@@ -48,52 +79,80 @@
       <section class="spread state-page" id="state-thanks" hidden>
         <p class="label-caps">— получено —</p>
         <h1 class="display display-xl"><em>Благодарим!</em></h1>
-        <p class="lead">Вашите впечатления вече са с нас. Очакваме ви отново.</p>
+        <p class="lead">Вашите впечатления вече са с нас. Очакваме ви отново — с <strong>3% отстъпка</strong> от наема на залата при следващото ви събитие.</p>
       </section>
 
       <section class="spread" id="state-form" hidden>
         <header class="spread__header">
-          <span class="label-caps" id="form-eyebrow">Впечатления · след събитието</span>
-          <h1 class="display display-lg">Как премина <em>събитието</em>?</h1>
-          <p class="lead" id="form-sub">Една минутка от вашето време. Помага ни да правим всеки следващ празник още по-добър.</p>
+          <span class="label-caps">Впечатления · след събитието</span>
+          <h1 class="display display-lg">Една <em>минутка</em> от вашето време.</h1>
+          <p class="lead">Споделете впечатленията си — помагате ни да правим всеки следващ празник още по-добър.</p>
           <hr class="rule-gold">
         </header>
 
+        <p class="reward">
+          <strong>Подарък от нас:</strong> попълнете анкетата и получавате <strong>3% отстъпка</strong> от наема на залата при следваща резервация при нас.
+        </p>
+
         <form id="feedback-form" class="composition" novalidate>
-          <section class="composition__section">
-            <h2 class="numeral" data-num="i.">Оценете</h2>
 
-            <div class="rating-row" data-rating="venue">
-              <div class="rating-row__label">
-                <strong>Залата</strong>
-                <span>Пространство, чистота, декор</span>
-              </div>
-              <div class="stars" role="radiogroup" aria-label="Оценка на залата"></div>
-            </div>
-
-            <div class="rating-row" data-rating="staff">
-              <div class="rating-row__label">
-                <strong>Екипът</strong>
-                <span>Отзивчивост, обслужване, организация</span>
-              </div>
-              <div class="stars" role="radiogroup" aria-label="Оценка на екипа"></div>
-            </div>
-
-            <div class="rating-row" data-rating="food">
-              <div class="rating-row__label">
-                <strong>Кетърингът</strong>
-                <span>Качество и поднасяне на хранителния продукт</span>
-              </div>
-              <div class="stars" role="radiogroup" aria-label="Оценка на кетъринга"></div>
+          <!-- Q1 -->
+          <section class="question" data-q="experience">
+            <h2 class="question__title">i.&nbsp;&nbsp;Как бихте оценили <em>цялостното си преживяване</em>?</h2>
+            <div class="scale" role="radiogroup" aria-label="Оценка на преживяването"></div>
+            <div class="scale__legend"><span>1 — лошо</span><span>4 — отлично</span></div>
+            <div class="comment-field">
+              <label class="comment-label" for="c-experience">Коментар (по желание)</label>
+              <textarea id="c-experience" rows="3" maxlength="2000"></textarea>
             </div>
           </section>
 
-          <section class="composition__section">
-            <h2 class="numeral" data-num="ii.">Споделете</h2>
-            <label class="field">
-              <span class="label-caps">Какво ви хареса и какво можем да направим още по-добре?</span>
-              <textarea id="fb-comment" rows="5" maxlength="4000" placeholder="Свободен текст…"></textarea>
-            </label>
+          <!-- Q2 -->
+          <section class="question" data-q="service">
+            <h2 class="question__title">ii.&nbsp;&nbsp;Хареса ли ви нашето <em>обслужване</em>?</h2>
+            <div class="scale" role="radiogroup" aria-label="Оценка на обслужването"></div>
+            <div class="scale__legend"><span>1 — лошо</span><span>4 — отлично</span></div>
+            <div class="comment-field">
+              <label class="comment-label" for="c-service">Коментар (по желание)</label>
+              <textarea id="c-service" rows="3" maxlength="2000"></textarea>
+            </div>
+          </section>
+
+          <!-- Q3 -->
+          <section class="question" data-q="venue">
+            <h2 class="question__title">iii.&nbsp;&nbsp;Как намерихте нашата <em>зала</em>?</h2>
+            <div class="scale" role="radiogroup" aria-label="Оценка на залата"></div>
+            <div class="scale__legend"><span>1 — лошо</span><span>4 — отлично</span></div>
+            <div class="comment-field">
+              <label class="comment-label" for="c-venue">Коментар (по желание)</label>
+              <textarea id="c-venue" rows="3" maxlength="2000"></textarea>
+            </div>
+          </section>
+
+          <!-- Q4 -->
+          <section class="question" data-q="source">
+            <h2 class="question__title">iv.&nbsp;&nbsp;Откъде <em>научихте</em> за нас?</h2>
+            <div class="choices" id="source-choices" role="radiogroup" aria-label="Източник">
+              <button type="button" class="choice" data-source="friends">Приятели</button>
+              <button type="button" class="choice" data-source="social">Социални мрежи</button>
+              <button type="button" class="choice" data-source="google">Google</button>
+              <button type="button" class="choice" data-source="other">Друго</button>
+            </div>
+            <div class="comment-field other-comment" id="source-other-wrap" hidden>
+              <label class="comment-label" for="c-source-other">Откъде по-точно?</label>
+              <input type="text" id="c-source-other" maxlength="500" style="width:100%;box-sizing:border-box;padding:10px 12px;font:14px/1.5 'Manrope',sans-serif;border:1px solid rgba(185,137,74,0.35);border-radius:6px;background:#FDFBF7;color:var(--ink)">
+            </div>
+          </section>
+
+          <!-- Q5 -->
+          <section class="question" data-q="rebook">
+            <h2 class="question__title">v.&nbsp;&nbsp;Бихте ли <em>резервирали отново</em> при нас?</h2>
+            <div class="scale" role="radiogroup" aria-label="Бих резервирал отново"></div>
+            <div class="scale__legend"><span>1 — не</span><span>4 — със сигурност</span></div>
+            <div class="comment-field">
+              <label class="comment-label" for="c-rebook">Коментар (по желание)</label>
+              <textarea id="c-rebook" rows="3" maxlength="2000"></textarea>
+            </div>
           </section>
 
           <footer class="composition__actions">
@@ -128,51 +187,64 @@
     const FN_SUB = `${SUPABASE_URL}/functions/v1/submit-feedback`;
 
     const $ = id => document.getElementById(id);
-    const state = { token: null, ratings: { venue: 0, staff: 0, food: 0 } };
+    const state = {
+      token: null,
+      experience: 0, service: 0, venue: 0, rebook: 0,
+      source: null,
+    };
 
     function show(id) {
       document.querySelectorAll('.spread').forEach(el => { el.hidden = true; });
       const el = $(id); if (el) el.hidden = false;
     }
 
-    function buildStars(row) {
-      const key = row.dataset.rating;
-      const wrap = row.querySelector('.stars');
+    function buildScale(section) {
+      const key = section.dataset.q;
+      const wrap = section.querySelector('.scale');
       wrap.innerHTML = '';
-      for (let i = 1; i <= 5; i++) {
-        const btn = document.createElement('button');
-        btn.type = 'button'; btn.dataset.value = i;
-        btn.setAttribute('role', 'radio');
-        btn.setAttribute('aria-label', `${i} от 5`);
-        btn.textContent = '★';
-        wrap.appendChild(btn);
+      for (let i = 1; i <= 4; i++) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'scale__btn';
+        b.dataset.value = i;
+        b.textContent = i;
+        b.setAttribute('role', 'radio');
+        b.setAttribute('aria-label', `${i} от 4`);
+        wrap.appendChild(b);
       }
       wrap.addEventListener('click', evt => {
-        const b = evt.target.closest('button[data-value]');
+        const b = evt.target.closest('button.scale__btn');
         if (!b) return;
         const val = parseInt(b.dataset.value, 10);
-        state.ratings[key] = val;
-        paint(wrap, val);
+        state[key] = val;
+        wrap.querySelectorAll('button').forEach(x => x.classList.toggle('is-on', parseInt(x.dataset.value, 10) === val));
       });
-      wrap.addEventListener('mouseover', evt => {
-        const b = evt.target.closest('button[data-value]');
-        if (!b) return;
-        paintHover(wrap, parseInt(b.dataset.value, 10));
-      });
-      wrap.addEventListener('mouseleave', () => paintHover(wrap, 0));
-      paint(wrap, state.ratings[key]);
     }
 
-    function paint(wrap, val) {
-      wrap.querySelectorAll('button').forEach(b => {
-        b.classList.toggle('is-on', parseInt(b.dataset.value, 10) <= val);
-        b.classList.remove('is-hover');
+    function paintScale(section) {
+      const key = section.dataset.q;
+      const val = state[key];
+      section.querySelectorAll('.scale__btn').forEach(b =>
+        b.classList.toggle('is-on', parseInt(b.dataset.value, 10) === val));
+    }
+
+    function buildSource() {
+      const wrap = $('source-choices');
+      const otherWrap = $('source-other-wrap');
+      wrap.addEventListener('click', evt => {
+        const b = evt.target.closest('button.choice');
+        if (!b) return;
+        state.source = b.dataset.source;
+        wrap.querySelectorAll('button').forEach(x => x.classList.toggle('is-on', x === b));
+        otherWrap.hidden = state.source !== 'other';
       });
     }
-    function paintHover(wrap, val) {
-      wrap.querySelectorAll('button').forEach(b => {
-        b.classList.toggle('is-hover', val > 0 && parseInt(b.dataset.value, 10) <= val);
-      });
+
+    function paintSource() {
+      if (!state.source) return;
+      $('source-choices').querySelectorAll('button').forEach(b =>
+        b.classList.toggle('is-on', b.dataset.source === state.source));
+      $('source-other-wrap').hidden = state.source !== 'other';
     }
 
     async function main() {
@@ -190,15 +262,29 @@
         const body = await r.json().catch(() => ({}));
         if (!r.ok) return show('state-not-found');
 
-        // If they already submitted, prefill their previous ratings.
-        if (body.existing) {
-          state.ratings.venue = body.existing.venue_rating || 0;
-          state.ratings.staff = body.existing.staff_rating || 0;
-          state.ratings.food  = body.existing.food_rating  || 0;
-          if (body.existing.comment) $('fb-comment').value = body.existing.comment;
+        const ex = body.existing;
+        if (ex) {
+          state.experience = ex.experience_rating || 0;
+          state.service    = ex.service_rating    || 0;
+          state.venue      = ex.venue_rating      || 0;
+          state.rebook     = ex.rebook_rating     || 0;
+          state.source     = ex.source || null;
+          $('c-experience').value   = ex.experience_comment || '';
+          $('c-service').value      = ex.service_comment    || '';
+          $('c-venue').value        = ex.venue_comment      || '';
+          $('c-rebook').value       = ex.rebook_comment     || '';
+          $('c-source-other').value = ex.source_other       || '';
         }
 
-        document.querySelectorAll('.rating-row').forEach(buildStars);
+        document.querySelectorAll('.question').forEach(sec => {
+          if (sec.dataset.q !== 'source') buildScale(sec);
+        });
+        buildSource();
+        document.querySelectorAll('.question').forEach(sec => {
+          if (sec.dataset.q !== 'source') paintScale(sec);
+        });
+        paintSource();
+
         show('state-form');
       } catch {
         show('state-not-found');
@@ -212,25 +298,41 @@
       const err = $('fb-error');
       err.classList.add('hidden');
 
-      const { venue, staff, food } = state.ratings;
-      if (!venue || !staff || !food) {
-        err.textContent = 'Моля, оценете и трите категории.';
+      const missing = [];
+      if (!state.experience) missing.push('преживяване');
+      if (!state.service)    missing.push('обслужване');
+      if (!state.venue)      missing.push('зала');
+      if (!state.rebook)     missing.push('резервация отново');
+      if (!state.source)     missing.push('източник');
+      if (missing.length) {
+        err.textContent = 'Моля, отговорете на всички въпроси: ' + missing.join(', ') + '.';
         err.classList.remove('hidden');
+        err.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
       }
 
       const btn = $('btn-submit');
       btn.disabled = true; btn.textContent = 'Изпращане…';
 
+      const payload = {
+        token: state.token,
+        experience_rating: state.experience,
+        experience_comment: $('c-experience').value.trim() || null,
+        service_rating: state.service,
+        service_comment: $('c-service').value.trim() || null,
+        venue_rating: state.venue,
+        venue_comment: $('c-venue').value.trim() || null,
+        source: state.source,
+        source_other: state.source === 'other' ? ($('c-source-other').value.trim() || null) : null,
+        rebook_rating: state.rebook,
+        rebook_comment: $('c-rebook').value.trim() || null,
+      };
+
       try {
         const r = await fetch(FN_SUB, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            token: state.token,
-            venue, staff, food,
-            comment: $('fb-comment').value.trim() || null,
-          }),
+          body: JSON.stringify(payload),
         });
         const body = await r.json().catch(() => ({}));
         if (!r.ok) throw new Error(body?.error || 'server_error');
