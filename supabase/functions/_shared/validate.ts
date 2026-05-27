@@ -53,6 +53,11 @@ export function validateField(field: string, raw: unknown): ValidationResult {
         if (typeof o.price !== "number" || !Number.isFinite(o.price) || o.price < 0 || o.price > MAX_ADDON_PRICE) {
           return { ok: false, error: `addon.price must be a finite number 0..${MAX_ADDON_PRICE}` };
         }
+        if (o.qty !== undefined && o.qty !== null) {
+          if (!Number.isInteger(o.qty) || (o.qty as number) < 0 || (o.qty as number) > 999) {
+            return { ok: false, error: "addon.qty must be an integer 0..999 (or omitted)" };
+          }
+        }
       }
       return { ok: true, value: raw };
 

@@ -10,7 +10,18 @@ const FN_UPDATE = `${SUPABASE_URL}/functions/v1/update-enquiry-by-token`;
 // Catalogs loaded via reservation-catalog.js + drinks-data.js (window globals):
 //   addonServices, drinks, drinkCategories
 
-const state = { token: null, enquiry: null, occupiedDates: [], activeDrinkCat: 0, drinkQtys: {} };
+// addonQtys: id -> integer count. Used only for furniture addons that carry a
+// freeUntil baseline; non-furniture addons keep the checkbox UI and store qty:1
+// when selected.
+const state = { token: null, enquiry: null, occupiedDates: [], activeDrinkCat: 0, drinkQtys: {}, addonQtys: {} };
+
+function addonLinePrice(svc, qty) {
+  if (svc.freeUntil != null) {
+    const billable = Math.max(0, qty - svc.freeUntil);
+    return billable * svc.price;
+  }
+  return qty > 0 ? svc.price : 0;
+}
 
 const $ = id => document.getElementById(id);
 
@@ -104,12 +115,34 @@ function renderForm() {
 
   initDatePicker();
   renderAddons();
-  renderDrinks();
+  setupDrinksToggle();
 
   $('edit-form').addEventListener('submit', onSave);
   $('btn-reload').addEventListener('click', () => window.location.reload());
 
   show('state-form');
+}
+
+// Drinks are hidden by default behind a CTA. If the customer already has
+// drinks saved, expand the menu automatically so they can review/edit.
+function setupDrinksToggle() {
+  const btn = $('btn-toggle-drinks');
+  const panel = $('drinks-panel');
+  const wrap = $('drinks-toggle-wrap');
+  if (!btn || !panel) return;
+
+  const hasExisting = Array.isArray(state.enquiry.drinks) && state.enquiry.drinks.length > 0;
+  if (hasExisting) {
+    expandDrinks();
+  } else {
+    btn.addEventListener('click', expandDrinks, { once: true });
+  }
+
+  function expandDrinks() {
+    if (wrap) wrap.hidden = true;
+    panel.hidden = false;
+    renderDrinks();
+  }
 }
 
 function initDatePicker() {
@@ -152,25 +185,84 @@ function initDatePicker() {
 function renderAddons() {
   const grid = $('addon-grid');
   grid.innerHTML = '';
-  const selected = new Set((state.enquiry.addons ?? []).map(a => a.id));
+
+  // Seed state.addonQtys from saved enquiry once. Furniture rows persist qty
+  // explicitly; older non-furniture rows are treated as qty=1 when present.
+  if (Object.keys(state.addonQtys).length === 0) {
+    (state.enquiry.addons ?? []).forEach(a => {
+      const q = Number.isFinite(Number(a.qty)) && Number(a.qty) > 0 ? Number(a.qty) : 1;
+      state.addonQtys[a.id] = q;
+    });
+  }
 
   addonServices.forEach(svc => {
     const li = document.createElement('li');
+    const qty = state.addonQtys[svc.id] || 0;
+    const isFurniture = svc.freeUntil != null;
+
+    if (isFurniture) {
+      // Quantity card — typeable input similar to the drinks tiles.
+      li.className = 'addon-card addon-card--qty' + (qty > 0 ? ' is-selected' : '');
+
+      const visual = document.createElement('span');
+      visual.className = 'addon-card__img';
+      if (svc.img) {
+        const img = document.createElement('img');
+        img.src = svc.img; img.alt = ''; img.loading = 'lazy';
+        visual.appendChild(img);
+      }
+
+      const info = document.createElement('span');
+      info.className = 'addon-card__info';
+      info.innerHTML = `
+        <span class="addon-card__name">${esc(svc.name_bg)}</span>
+        <span class="addon-card__price">€${Math.round(svc.price)} / бр.</span>
+        <span class="addon-card__hint">Първите ${svc.freeUntil} са включени</span>
+      `;
+
+      const qtyWrap = document.createElement('span');
+      qtyWrap.className = 'addon-qty';
+      const minus = document.createElement('button');
+      minus.type = 'button'; minus.textContent = '−'; minus.setAttribute('aria-label', 'Намали');
+      const num = document.createElement('input');
+      num.type = 'number'; num.min = '0'; num.max = '999'; num.step = '1';
+      num.inputMode = 'numeric'; num.value = qty;
+      num.setAttribute('aria-label', 'Количество');
+      const plus = document.createElement('button');
+      plus.type = 'button'; plus.textContent = '+'; plus.setAttribute('aria-label', 'Увеличи');
+      qtyWrap.append(minus, num, plus);
+
+      li.append(visual, info, qtyWrap);
+      grid.appendChild(li);
+
+      const setQty = (next) => {
+        const n = Math.max(0, Math.min(999, Math.floor(Number(next) || 0)));
+        state.addonQtys[svc.id] = n;
+        num.value = n;
+        li.classList.toggle('is-selected', n > 0);
+      };
+      minus.addEventListener('click', () => setQty((state.addonQtys[svc.id] || 0) - 1));
+      plus.addEventListener('click',  () => setQty((state.addonQtys[svc.id] || 0) + 1));
+      num.addEventListener('input', () => setQty(num.value));
+      num.addEventListener('focus', () => num.select());
+      num.addEventListener('blur',  () => { if (num.value === '' || isNaN(Number(num.value))) setQty(0); });
+      return;
+    }
+
+    // Standard checkbox card for everything else.
     const label = document.createElement('label');
-    label.className = 'addon-card' + (selected.has(svc.id) ? ' is-selected' : '');
+    label.className = 'addon-card' + (qty > 0 ? ' is-selected' : '');
 
     const input = document.createElement('input');
     input.type = 'checkbox';
-    input.checked = selected.has(svc.id);
+    input.checked = qty > 0;
     input.dataset.addonId = svc.id;
 
     const visual = document.createElement('span');
     visual.className = 'addon-card__img';
     if (svc.img) {
       const img = document.createElement('img');
-      img.src = svc.img;
-      img.alt = '';
-      img.loading = 'lazy';
+      img.src = svc.img; img.alt = ''; img.loading = 'lazy';
       visual.appendChild(img);
     }
 
@@ -182,7 +274,10 @@ function renderAddons() {
     `;
 
     label.append(input, visual, info);
-    input.addEventListener('change', () => label.classList.toggle('is-selected', input.checked));
+    input.addEventListener('change', () => {
+      state.addonQtys[svc.id] = input.checked ? 1 : 0;
+      label.classList.toggle('is-selected', input.checked);
+    });
     li.appendChild(label);
     grid.appendChild(li);
   });
@@ -232,7 +327,13 @@ function renderDrinkTiles() {
       i.src = drink.img;
       i.alt = '';
       i.loading = 'lazy';
+      // If the asset is missing, drop the <img> and let the CSS placeholder
+      // (label-caps initial) show through — keeps the layout from collapsing.
+      i.addEventListener('error', () => { i.remove(); img.classList.add('drink-tile__img--fallback'); img.textContent = (drink.name_bg || drink.name_en || '?')[0]; });
       img.appendChild(i);
+    } else {
+      img.classList.add('drink-tile__img--fallback');
+      img.textContent = (drink.name_bg || drink.name_en || '?')[0];
     }
 
     const body = document.createElement('span');
@@ -304,10 +405,13 @@ async function onSave(evt) {
   }
 
   const addons = [];
-  document.querySelectorAll('#addon-grid input[type=checkbox]').forEach(cb => {
-    if (!cb.checked) return;
-    const svc = addonServices.find(s => s.id === cb.dataset.addonId);
-    if (svc) addons.push({ id: svc.id, name: svc.name_bg, price: svc.price });
+  addonServices.forEach(svc => {
+    const qty = state.addonQtys[svc.id] || 0;
+    if (qty <= 0) return;
+    const linePrice = addonLinePrice(svc, qty);
+    const entry = { id: svc.id, name: svc.name_bg, price: linePrice };
+    if (svc.freeUntil != null) entry.qty = qty;
+    addons.push(entry);
   });
 
   const drinksOut = [];

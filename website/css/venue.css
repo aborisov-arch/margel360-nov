@@ -408,6 +408,87 @@
 .btn-primary:active { transform: translateY(1px); }
 .btn-primary[disabled] { opacity: 0.55; cursor: wait; }
 
+/* Green "Save changes" pill — distinct affirmative action for the edit page. */
+.btn-save {
+  background: #2F8F4F;
+  color: #FFFFFF;
+  border-color: #2F8F4F;
+  font-weight: 600;
+}
+.btn-save:hover { background: #246F3C; border-color: #246F3C; color: #FFFFFF; }
+.btn-save:active { transform: translateY(1px); }
+.btn-save[disabled] { opacity: 0.55; cursor: wait; }
+
+/* Drinks-section CTA prompt + reveal. */
+.drinks-toggle-wrap { padding: 1.5rem 0 0.5rem; text-align: center; }
+.drinks-toggle-prompt { margin: 0 0 1rem; }
+
+/* Furniture qty card: quantity stepper baked into the addon card. */
+.addon-card--qty {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.75rem 0.9rem;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  cursor: default;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+.addon-card--qty.is-selected {
+  border-color: var(--gold);
+  background: rgba(185,137,74,0.06);
+}
+.addon-card--qty .addon-card__hint {
+  display: block;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  color: var(--muted, #7A7568);
+  margin-top: 0.15rem;
+}
+.addon-qty {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 4px;
+}
+.addon-qty button {
+  width: 28px; height: 28px;
+  background: transparent;
+  border: 0;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: var(--ink);
+}
+.addon-qty button:hover { color: var(--gold); }
+.addon-qty input {
+  width: 48px;
+  text-align: center;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: var(--ink);
+  -moz-appearance: textfield;
+}
+.addon-qty input::-webkit-outer-spin-button,
+.addon-qty input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* Missing-image fallback: monogram square instead of empty box. */
+.drink-tile__img--fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Fraunces', Georgia, serif;
+  font-style: italic;
+  font-size: 1.8rem;
+  color: var(--gold);
+  background: rgba(185,137,74,0.08);
+}
+
 .btn-ghost {
   background: transparent;
   color: var(--ink);

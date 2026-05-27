@@ -98,14 +98,20 @@ export function renderCustomerEmail(e: Enquiry, siteUrl: string): { subject: str
   const firstName = (e.full_name || "").split(" ")[0] || e.full_name || "";
   const timeLabel = e.time_of_day === "day" ? "Дневно · до 17:30" : "Вечерно · след 19:00";
 
-  const FONT  = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
-  const INK   = "#111111";
-  const MUTED = "#666666";
-  const LINE  = "#E5E5E5";
-  const ACCENT = "#B9894A";
+  // Editorial palette — cream paper + ink + brand gold accent.
+  const SERIF = "Fraunces,Georgia,'Times New Roman',serif";
+  const SANS  = "Manrope,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
+  const INK    = "#1A1815";
+  const SOFT   = "#2A2620";
+  const MUTED  = "#7A7568";
+  const PAPER  = "#FDFBF7";
+  const CREAM  = "#F6F1E8";
+  const GOLD   = "#B9894A";
+  const GOLD_LINE = "rgba(185,137,74,0.35)";
+  const GOLD_DASH = "rgba(185,137,74,0.25)";
 
-  const rowCell  = `padding:10px 0;border-bottom:1px solid ${LINE};font:14px/1.4 ${FONT};color:${INK}`;
-  const rowPrice = `padding:10px 0;border-bottom:1px solid ${LINE};font:14px/1.4 ${FONT};color:${MUTED};text-align:right;white-space:nowrap`;
+  const rowCell  = `padding:9px 0;border-bottom:1px dashed ${GOLD_DASH};font:14px/1.4 ${SANS};color:${INK}`;
+  const rowPrice = `padding:9px 0;border-bottom:1px dashed ${GOLD_DASH};font:italic 14px/1.4 ${SERIF};color:${GOLD};text-align:right;white-space:nowrap`;
 
   const addonRows = (e.addons ?? []).map(a =>
     `<tr><td style="${rowCell}">${esc(a.name)}</td><td style="${rowPrice}">${fmtEur(a.price, a.id)}</td></tr>`
@@ -119,15 +125,20 @@ export function renderCustomerEmail(e: Enquiry, siteUrl: string): { subject: str
   }).join("");
 
   const totals = computeTotals(e);
+  const totalLabel = `padding:8px 0;font:14px/1.4 ${SANS};color:${SOFT}`;
+  const totalValue = `padding:8px 0;font:italic 14px/1.4 ${SERIF};color:${GOLD};text-align:right;white-space:nowrap`;
   const totalRows = `
-    ${totals.venue ? `<tr><td style="padding:8px 0;font:14px/1.4 ${FONT};color:${MUTED}">Зала · ${esc(e.event_type)}</td><td style="padding:8px 0;font:14px/1.4 ${FONT};color:${INK};text-align:right;white-space:nowrap">€${totals.venue.toFixed(2)}</td></tr>` : ""}
-    ${totals.addons ? `<tr><td style="padding:8px 0;font:14px/1.4 ${FONT};color:${MUTED}">Допълнителни услуги</td><td style="padding:8px 0;font:14px/1.4 ${FONT};color:${INK};text-align:right;white-space:nowrap">€${totals.addons.toFixed(2)}</td></tr>` : ""}
-    ${totals.drinks ? `<tr><td style="padding:8px 0;font:14px/1.4 ${FONT};color:${MUTED}">Напитки</td><td style="padding:8px 0;font:14px/1.4 ${FONT};color:${INK};text-align:right;white-space:nowrap">€${totals.drinks.toFixed(2)}</td></tr>` : ""}
-    <tr><td style="padding:16px 0 0;border-top:1px solid ${INK};font:600 14px/1.4 ${FONT};color:${INK}">Обща сума</td><td style="padding:16px 0 0;border-top:1px solid ${INK};font:700 22px/1.2 ${FONT};color:${ACCENT};text-align:right;white-space:nowrap">€${totals.total.toFixed(2)}</td></tr>
+    ${totals.venue ? `<tr><td style="${totalLabel}">Зала · ${esc(e.event_type)}</td><td style="${totalValue}">€${totals.venue.toFixed(2)}</td></tr>` : ""}
+    ${totals.addons ? `<tr><td style="${totalLabel}">Допълнителни услуги</td><td style="${totalValue}">€${totals.addons.toFixed(2)}</td></tr>` : ""}
+    ${totals.drinks ? `<tr><td style="${totalLabel}">Напитки</td><td style="${totalValue}">€${totals.drinks.toFixed(2)}</td></tr>` : ""}
+    <tr>
+      <td style="padding:14px 0 0;border-top:2px solid ${INK};font:700 12px/1.4 ${SANS};letter-spacing:0.16em;color:${INK};text-transform:uppercase">Обща сума</td>
+      <td style="padding:14px 0 0;border-top:2px solid ${INK};font:22px/1.2 ${SERIF};color:${GOLD};text-align:right;white-space:nowrap">€${totals.total.toFixed(2)}</td>
+    </tr>
   `;
 
   const sectionTitle = (txt: string) =>
-    `<p style="margin:0 0 12px;font:600 11px/1.2 ${FONT};letter-spacing:0.12em;color:${MUTED};text-transform:uppercase">${txt}</p>`;
+    `<p style="margin:0 0 14px;font:600 11px/1.2 ${SANS};letter-spacing:0.18em;color:${GOLD};text-transform:uppercase">${txt}</p>`;
 
   const subject = `Маргел 360° · ${esc(e.event_type)} · ${fmtDateBg(e.preferred_date)} · €${totals.total.toFixed(2)}`;
 
@@ -137,65 +148,77 @@ export function renderCustomerEmail(e: Enquiry, siteUrl: string): { subject: str
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(subject)}</title>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..600;1,9..144,400..600&family=Manrope:wght@300;400;500;600;700&display=swap');
   @media only screen and (max-width:540px) {
     .email-wrap { padding: 16px 0 !important; }
     .email-card { width: 100% !important; max-width: 100% !important; }
-    .email-body { padding: 28px 22px !important; }
-    .h1 { font-size: 24px !important; }
+    .email-body { padding: 32px 24px !important; }
+    .display { font-size: 30px !important; line-height: 1.1 !important; }
     .email-cta { display: block !important; width: 100% !important; box-sizing: border-box !important; text-align: center !important; }
-    .meta-cell { display: block !important; width: 100% !important; padding: 8px 0 !important; border-bottom: 1px solid ${LINE} !important; }
+    .meta-cell { display: block !important; width: 100% !important; padding: 8px 0 !important; border-bottom: 1px dashed ${GOLD_DASH} !important; }
     .meta-cell:last-child { border-bottom: 0 !important; }
   }
 </style>
 </head>
-<body style="margin:0;padding:0;background:#F5F5F5;font-family:${FONT};color:${INK};-webkit-font-smoothing:antialiased">
+<body style="margin:0;padding:0;background:${CREAM};font-family:${SANS};color:${INK};-webkit-font-smoothing:antialiased">
 
-<div style="display:none;font-size:1px;color:#F5F5F5;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden">
+<div style="display:none;font-size:1px;color:${CREAM};line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden">
   Запитване за ${esc(e.event_type)} на ${fmtDateBg(e.preferred_date)} · общо €${totals.total.toFixed(2)}.
 </div>
 
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="email-wrap" style="background:#F5F5F5;padding:32px 0">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="email-wrap" style="background:${CREAM};padding:32px 0">
   <tr><td align="center">
-    <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" class="email-card" style="background:#FFFFFF;max-width:560px;width:100%;border-radius:8px">
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" class="email-card" style="background:${PAPER};max-width:600px;width:100%">
 
-      <tr><td class="email-body" style="padding:40px 40px 32px">
+      <tr><td style="padding:32px 44px 24px;border-bottom:1px solid ${GOLD_LINE}">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td align="left" style="font:500 18px/1.2 ${SERIF};letter-spacing:0.18em;color:${INK};text-transform:uppercase">
+              Маргел&nbsp;<em style="font-style:italic;color:${GOLD};font-weight:400">360°</em>
+            </td>
+            <td align="right" style="font:italic 12px/1.2 ${SERIF};color:${MUTED}">
+              ${fmtDateBg(e.preferred_date)}
+            </td>
+          </tr>
+        </table>
+      </td></tr>
 
-        <p style="margin:0 0 32px;font:600 14px/1.2 ${FONT};letter-spacing:0.18em;color:${INK};text-transform:uppercase">
-          МАРГЕЛ 360°
-        </p>
+      <tr><td class="email-body" style="padding:40px 44px 32px">
 
-        <h1 class="h1" style="margin:0 0 8px;font:600 28px/1.2 ${FONT};color:${INK}">
-          Здравейте, ${esc(firstName)}
+        <h1 class="display" style="margin:0 0 10px;font:400 38px/1.1 ${SERIF};letter-spacing:-0.02em;color:${INK}">
+          Здравейте, <em style="font-style:italic;color:${GOLD}">${esc(firstName)}</em>
         </h1>
-        <p style="margin:0 0 28px;font:16px/1.5 ${FONT};color:${MUTED}">
+        <p style="margin:0 0 32px;font:16px/1.55 ${SANS};color:${SOFT}">
           Получихме вашето запитване. Ще се свържем с вас до 24 часа за потвърждение.
         </p>
+
+        <hr style="border:0;border-top:1px solid ${GOLD_LINE};margin:0 0 28px">
 
         ${sectionTitle("Детайли")}
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 28px">
           <tr>
             <td class="meta-cell" valign="top" style="padding:0 16px 0 0;width:33%">
-              <p style="margin:0 0 4px;font:13px/1.4 ${FONT};color:${MUTED}">Събитие</p>
-              <p style="margin:0;font:600 15px/1.4 ${FONT};color:${INK}">${esc(e.event_type)}</p>
+              <p style="margin:0 0 4px;font:10px/1.2 ${SANS};letter-spacing:0.18em;color:${MUTED};text-transform:uppercase">Събитие</p>
+              <p style="margin:0;font:17px/1.3 ${SERIF};color:${INK}">${esc(e.event_type)}</p>
             </td>
             <td class="meta-cell" valign="top" style="padding:0 16px 0 0;width:33%">
-              <p style="margin:0 0 4px;font:13px/1.4 ${FONT};color:${MUTED}">Дата</p>
-              <p style="margin:0;font:600 15px/1.4 ${FONT};color:${INK}">${fmtDateBg(e.preferred_date)}</p>
+              <p style="margin:0 0 4px;font:10px/1.2 ${SANS};letter-spacing:0.18em;color:${MUTED};text-transform:uppercase">Дата</p>
+              <p style="margin:0;font:17px/1.3 ${SERIF};color:${INK}">${fmtDateBg(e.preferred_date)}</p>
             </td>
             <td class="meta-cell" valign="top" style="width:34%">
-              <p style="margin:0 0 4px;font:13px/1.4 ${FONT};color:${MUTED}">Гости</p>
-              <p style="margin:0;font:600 15px/1.4 ${FONT};color:${INK}">${e.guests ?? "—"}</p>
+              <p style="margin:0 0 4px;font:10px/1.2 ${SANS};letter-spacing:0.18em;color:${MUTED};text-transform:uppercase">Гости</p>
+              <p style="margin:0;font:17px/1.3 ${SERIF};color:${INK}">${e.guests ?? "—"}</p>
             </td>
           </tr>
-          <tr><td colspan="3" style="height:14px"></td></tr>
+          <tr><td colspan="3" style="height:18px"></td></tr>
           <tr>
             <td class="meta-cell" valign="top" style="padding:0 16px 0 0;width:33%">
-              <p style="margin:0 0 4px;font:13px/1.4 ${FONT};color:${MUTED}">Час</p>
-              <p style="margin:0;font:15px/1.4 ${FONT};color:${INK}">${timeLabel}</p>
+              <p style="margin:0 0 4px;font:10px/1.2 ${SANS};letter-spacing:0.18em;color:${MUTED};text-transform:uppercase">Час</p>
+              <p style="margin:0;font:17px/1.3 ${SERIF};color:${INK}">${timeLabel}</p>
             </td>
             <td class="meta-cell" valign="top" colspan="2">
-              <p style="margin:0 0 4px;font:13px/1.4 ${FONT};color:${MUTED}">Телефон</p>
-              <p style="margin:0;font:15px/1.4 ${FONT};color:${INK}">${esc(e.phone)}</p>
+              <p style="margin:0 0 4px;font:10px/1.2 ${SANS};letter-spacing:0.18em;color:${MUTED};text-transform:uppercase">Телефон</p>
+              <p style="margin:0;font:17px/1.3 ${SERIF};color:${INK}">${esc(e.phone)}</p>
             </td>
           </tr>
         </table>
@@ -210,36 +233,46 @@ export function renderCustomerEmail(e: Enquiry, siteUrl: string): { subject: str
 
         ${e.notes ? `
         ${sectionTitle("Бележки")}
-        <p style="margin:0 0 28px;padding:14px 16px;background:#F5F5F5;border-radius:6px;font:14px/1.5 ${FONT};color:${INK};white-space:pre-wrap">${esc(e.notes)}</p>` : ""}
+        <p style="margin:0 0 28px;padding:16px 18px;border-left:2px solid ${GOLD};background:${CREAM};font:italic 16px/1.5 ${SERIF};color:${SOFT};white-space:pre-wrap">„${esc(e.notes)}"</p>` : ""}
 
         ${sectionTitle("Обобщение")}
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 12px">${totalRows}</table>
-        <p style="margin:0 0 32px;font:12px/1.5 ${FONT};color:${MUTED}">
+        <p style="margin:0 0 32px;font:11px/1.5 ${SANS};color:${MUTED}">
           Сумата е ориентировъчна и подлежи на потвърждение.
         </p>
 
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px">
+        <hr style="border:0;border-top:1px solid ${GOLD_LINE};margin:0 0 28px">
+
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 18px">
           <tr><td>
-            <a class="email-cta" href="${editUrl}" style="display:inline-block;padding:14px 28px;background:${INK};color:#FFFFFF;font:600 14px/1 ${FONT};text-decoration:none;border-radius:6px">
+            <a class="email-cta" href="${editUrl}" style="display:inline-block;padding:14px 28px;background:${INK};color:${CREAM};font:600 12px/1 ${SANS};letter-spacing:0.14em;text-transform:uppercase;text-decoration:none">
               Редактирай резервацията
             </a>
           </td></tr>
         </table>
 
-        <p style="margin:0;font:12px/1.5 ${FONT};color:${MUTED}">
-          Линкът е валиден до ${fmtExpiryBg(e.token_expires_at)}.
+        <p style="margin:0;font:11px/1.6 ${SANS};color:${MUTED}">
+          Линкът е валиден до <em style="font-style:italic;font-family:${SERIF};color:${INK}">${fmtExpiryBg(e.token_expires_at)}</em>.
         </p>
 
       </td></tr>
 
-      <tr><td style="padding:24px 40px;border-top:1px solid ${LINE};background:#FAFAFA;border-radius:0 0 8px 8px">
-        <p style="margin:0 0 6px;font:600 13px/1.4 ${FONT};color:${INK}">Маргел 360°</p>
-        <p style="margin:0;font:13px/1.6 ${FONT};color:${MUTED}">
-          бул. Околовръстен път 155, ет. 4, София 1618<br>
-          <a href="mailto:360@margel.info" style="color:${MUTED};text-decoration:underline">360@margel.info</a>
-          &nbsp;·&nbsp;
-          <a href="tel:+359888100042" style="color:${MUTED};text-decoration:underline">+359 888 100 042</a>
-        </p>
+      <tr><td style="padding:24px 44px;background:${INK};color:#C9A86A;font:11px/1.6 ${SANS};letter-spacing:0.04em">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td valign="top" style="color:#C9A86A;text-transform:uppercase;letter-spacing:0.16em;font-weight:600">
+              Маргел&nbsp;<em style="font-style:italic;color:${CREAM};font-weight:400">360°</em>
+            </td>
+            <td valign="top" align="right" style="color:${MUTED}">
+              <a href="mailto:360@margel.info" style="color:${CREAM};text-decoration:none;border-bottom:1px solid rgba(201,168,106,0.5)">360@margel.info</a>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2" style="padding-top:10px;color:${MUTED}">
+              бул. Околовръстен път 155 · ет. 4 · София 1618
+            </td>
+          </tr>
+        </table>
       </td></tr>
 
     </table>
