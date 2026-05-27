@@ -50,6 +50,27 @@
     .choice.is-on { background: #B9894A; color: #FDFBF7; border-color: #B9894A; }
 
     .other-comment { margin-top: 8px; }
+
+    /* Mobile: give the form real breathing room. The .stage container can be
+       tight on phones, so add horizontal padding here and loosen vertical
+       rhythm. */
+    @media (max-width: 640px) {
+      .venue__container { padding: 0 18px !important; }
+      .stage { padding: 12px 0 32px; }
+      .spread__header { margin-bottom: 24px; }
+      .question { padding: 18px 0; }
+      .question__title { font-size: 17px; line-height: 1.4; margin-bottom: 14px; }
+      .reward { margin: 0 -2px 28px; padding: 16px 18px; font-size: 14px; line-height: 1.55; }
+      .scale { gap: 6px; }
+      .scale__btn { min-width: 44px; padding: 12px 12px; font-size: 15px; }
+      .scale__legend { max-width: none; }
+      .choices { gap: 8px; }
+      .choice { padding: 10px 14px; font-size: 13.5px; }
+      .comment-field textarea { padding: 12px 14px; font-size: 15px; }
+      .composition__actions { padding: 12px 0 8px; }
+      .composition__actions .btn { width: 100%; padding: 14px 18px; font-size: 15px; }
+      #thank-code-box { margin: 24px -2px !important; padding: 22px 18px !important; }
+    }
   </style>
 </head>
 <body class="venue">
@@ -79,7 +100,12 @@
       <section class="spread state-page" id="state-thanks" hidden>
         <p class="label-caps">— получено —</p>
         <h1 class="display display-xl"><em>Благодарим!</em></h1>
-        <p class="lead">Вашите впечатления вече са с нас. Очакваме ви отново — с <strong>3% отстъпка</strong> от наема на залата при следващото ви събитие.</p>
+        <p class="lead">Вашите впечатления вече са с нас. Като благодарност ви подаряваме <strong>3% отстъпка</strong> от наема на залата при следващото ви събитие.</p>
+        <div id="thank-code-box" style="margin:32px auto;max-width:340px;padding:24px;border:2px dashed #B9894A;background:#F6F1E8;text-align:center" hidden>
+          <p class="label-caps" style="margin:0 0 8px">Вашият промо код</p>
+          <p id="thank-code" style="margin:0;font:600 28px/1.1 'Fraunces',serif;letter-spacing:0.06em;color:#1A1815"></p>
+          <p style="margin:10px 0 0;font:12px/1.5 'Manrope',sans-serif;color:#7A7568">Изпратихме го и на имейла ви. Валиден за една година, еднократна употреба.</p>
+        </div>
       </section>
 
       <section class="spread" id="state-form" hidden>
@@ -120,7 +146,7 @@
 
           <!-- Q3 -->
           <section class="question" data-q="venue">
-            <h2 class="question__title">iii.&nbsp;&nbsp;Как намерихте нашата <em>зала</em>?</h2>
+            <h2 class="question__title">iii.&nbsp;&nbsp;Как ви хареса нашата <em>зала</em>?</h2>
             <div class="scale" role="radiogroup" aria-label="Оценка на залата"></div>
             <div class="scale__legend"><span>1 — лошо</span><span>4 — отлично</span></div>
             <div class="comment-field">
@@ -336,6 +362,10 @@
         });
         const body = await r.json().catch(() => ({}));
         if (!r.ok) throw new Error(body?.error || 'server_error');
+        if (body.discount_code) {
+          document.getElementById('thank-code').textContent = body.discount_code;
+          document.getElementById('thank-code-box').hidden = false;
+        }
         show('state-thanks');
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } catch (e) {

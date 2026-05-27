@@ -553,11 +553,15 @@ function renderSummary() {
     priceSummary.innerHTML = '';
     const addonsTotal = Object.values(booking.addons).reduce((s,v)=>s+(v||0),0);
     let drinksTotal = 0; drinks.forEach(d => { if (d.price_eur) drinksTotal += (booking.drinkQtys[d.id]||0)*d.price_eur; });
-    const grandTotal = booking.event.price_eur + addonsTotal + drinksTotal;
+    const venuePrice = booking.event.price_eur;
+    const discountPercent = booking.discountPercent || 0;
+    const discountAmount = discountPercent > 0 ? venuePrice * (discountPercent / 100) : 0;
+    const grandTotal = venuePrice + addonsTotal + drinksTotal - discountAmount;
     const rows = [
       { label: l==='bg'?'Наем на зала':'Venue rental', value: fmtEvent(booking.event) },
       ...(addonsTotal > 0 ? [{ label: l==='bg'?'Допълнителни услуги':'Add-on services', value: '€' + addonsTotal }] : []),
       ...(drinksTotal > 0 ? [{ label: l==='bg'?'Напитки':'Drinks', value: '€' + drinksTotal.toFixed(2) }] : []),
+      ...(discountAmount > 0 ? [{ label: (l==='bg'?'Отстъпка':'Discount') + ` (${discountPercent}%)`, value: '−€' + discountAmount.toFixed(2), discount: true }] : []),
       { label: l==='bg'?'Обща сума':'Total', value: '€' + grandTotal.toFixed(2), total: true },
     ];
     rows.forEach(row => {
@@ -565,9 +569,68 @@ function renderSummary() {
       const lbl = document.createElement('span'); lbl.className = 'ps-label'; lbl.textContent = row.label;
       const val = document.createElement('span'); val.className = 'ps-value'; val.textContent = row.value;
       if (row.total) { div.style.fontWeight = '700'; div.style.fontSize = '1rem'; }
+      if (row.discount) { div.style.color = '#2F8F4F'; }
       div.appendChild(lbl); div.appendChild(val); priceSummary.appendChild(div);
     });
   }
+}
+
+// ── Promo code ──
+const SUPABASE_FN_BASE = 'https://wlxutsufrobzovdsiecb.supabase.co/functions/v1';
+
+function setupPromo() {
+  const input = document.getElementById('promo-input');
+  const apply = document.getElementById('promo-apply');
+  const status = document.getElementById('promo-status');
+  if (!input || !apply || !status) return;
+
+  apply.addEventListener('click', async () => {
+    const code = input.value.trim().toUpperCase();
+    if (!code) return;
+    apply.disabled = true;
+    status.textContent = getLang() === 'bg' ? 'Проверяваме…' : 'Checking…';
+    status.style.color = '#7A7568';
+
+    try {
+      const r = await fetch(`${SUPABASE_FN_BASE}/validate-discount-code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code }),
+      });
+      const body = await r.json().catch(() => ({}));
+      if (body.valid) {
+        booking.discountCode = code;
+        booking.discountPercent = body.percent;
+        status.textContent = (getLang() === 'bg' ? `✓ Кодът е валиден. Отстъпка: ${body.percent}%` : `✓ Valid. Discount: ${body.percent}%`);
+        status.style.color = '#2F8F4F';
+        input.disabled = true;
+        apply.textContent = getLang() === 'bg' ? 'Приложен' : 'Applied';
+      } else {
+        const msgs = { not_found: 'Кодът не е намерен.', already_used: 'Кодът вече е използван.', expired: 'Кодът е изтекъл.', invalid_format: 'Невалиден формат.' };
+        status.textContent = msgs[body.error] || 'Невалиден код.';
+        status.style.color = '#c62828';
+        apply.disabled = false;
+      }
+    } catch (err) {
+      console.error(err);
+      status.textContent = 'Грешка при проверката.';
+      status.style.color = '#c62828';
+      apply.disabled = false;
+    }
+    renderSummary();
+  });
+
+  input.addEventListener('input', () => {
+    if (booking.discountCode && input.value.trim().toUpperCase() !== booking.discountCode) {
+      booking.discountCode = null;
+      booking.discountPercent = 0;
+      status.textContent = '';
+      input.disabled = false;
+      apply.disabled = false;
+      apply.textContent = getLang() === 'bg' ? 'Приложи' : 'Apply';
+      renderSummary();
+    }
+  });
 }
 
 // ── Submit ──
@@ -613,7 +676,21 @@ function setupSubmit() {
       notes: booking.notes || null,
     };
 
-    const { error } = await reservationDb.from('enquiries').insert(payload);
+    const { data: inserted, error } = await reservationDb.from('enquiries').insert(payload).select('id').single();
+
+    // If a promo code was applied, redeem it now. Best-effort: a failure
+    // here does NOT block the booking — the customer still gets their event.
+    if (!error && inserted && booking.discountCode) {
+      try {
+        await fetch(`${SUPABASE_FN_BASE}/redeem-discount-code`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: booking.discountCode, enquiry_id: inserted.id }),
+        });
+      } catch (redeemErr) {
+        console.warn('Discount redeem failed:', redeemErr);
+      }
+    }
 
     if (error) {
       console.error('Enquiry submission error:', error);
@@ -652,6 +729,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderEventPicker();
   setupStep2();
   setupStep5();
+  setupPromo();
   setupSubmit();
   updateProgress();
 

@@ -314,6 +314,20 @@
 .sr-value { font-weight: 600; color: var(--text); }
 .sr-total .sr-label, .sr-total .sr-value { color: var(--accent); font-weight: 800; font-size: 1rem; }
 
+/* ── Promo code ── */
+.promo-box { background: var(--bg-2); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; margin: 0 0 20px; }
+.promo-box__label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text); margin-bottom: 10px; }
+.promo-box__row { display: flex; gap: 8px; align-items: center; }
+.promo-box__row input { flex: 1; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font: inherit; letter-spacing: 0.04em; }
+.promo-box__row input:focus { outline: 2px solid #B9894A; outline-offset: 1px; }
+.promo-box__row .btn { white-space: nowrap; }
+.promo-box__status { margin: 8px 0 0; font-size: 0.85rem; min-height: 1.2em; }
+@media (max-width: 640px) {
+  .promo-box { padding: 14px 16px; }
+  .promo-box__row { flex-direction: column; align-items: stretch; }
+  .promo-box__row .btn { width: 100%; }
+}
+
 /* ── Payment ── */
 .payment-methods { margin-bottom: 24px; }
 .payment-label { color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
