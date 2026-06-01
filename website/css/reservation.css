@@ -259,6 +259,24 @@
 
 @media (max-width: 600px) { .addon-grid { grid-template-columns: 1fr; } }
 
+/* ── Phone input with country-code dropdown ── */
+.phone-input-row { display: grid; grid-template-columns: 110px 1fr; gap: 8px; }
+.phone-input-row select {
+  padding: 10px 8px;
+  border: 1px solid var(--border); border-radius: 8px;
+  background: var(--bg); color: var(--text);
+  font-size: 0.95rem; cursor: pointer;
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%23999' d='M0 0l5 6 5-6z'/></svg>");
+  background-repeat: no-repeat; background-position: right 8px center;
+  padding-right: 24px;
+}
+.phone-input-row select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+@media (max-width: 480px) {
+  .phone-input-row { grid-template-columns: 100px 1fr; gap: 6px; }
+  .phone-input-row select { font-size: 0.88rem; padding: 9px 6px; padding-right: 22px; }
+}
+
 /* ── Drinks prompt overlay ── */
 .drinks-prompt {
   display: none;

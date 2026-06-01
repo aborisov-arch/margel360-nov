@@ -190,13 +190,16 @@
           <div class="form-wrapper">
             <div class="form-row">
               <div class="form-group" id="fg-name">
-                <label for="res-name" data-i18n="res_name">Три имена</label>
-                <input type="text" id="res-name" name="name" autocomplete="name" aria-describedby="err-name-msg">
-                <span class="form-error" id="err-name-msg" role="alert" data-i18n="err_name">Моля въведете вашето пълно име.</span>
+                <label for="res-name" data-i18n="res_name">Две имена</label>
+                <input type="text" id="res-name" name="name" autocomplete="name" aria-describedby="err-name-msg" placeholder="Иван Иванов">
+                <span class="form-error" id="err-name-msg" role="alert" data-i18n="err_name">Моля въведете име и фамилия.</span>
               </div>
               <div class="form-group" id="fg-phone">
                 <label for="res-phone" data-i18n="res_phone">Телефон</label>
-                <input type="tel" id="res-phone" name="phone" autocomplete="tel" aria-describedby="err-phone-msg">
+                <div class="phone-input-row">
+                  <select id="res-phone-dial" aria-label="Country code"></select>
+                  <input type="tel" id="res-phone" name="phone" autocomplete="tel-national" aria-describedby="err-phone-msg" inputmode="tel" placeholder="888 100 042">
+                </div>
                 <span class="form-error" id="err-phone-msg" role="alert" data-i18n="err_phone">Моля въведете валиден телефонен номер.</span>
               </div>
             </div>
