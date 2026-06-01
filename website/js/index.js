@@ -57,20 +57,6 @@ const events = [
   },
 ];
 
-const equipment = [
-  { icon: '🔊', label_bg: '12 колони EV/YAMAHA 360°', label_en: '12 EV/YAMAHA speakers 360°' },
-  { icon: '💡', label_bg: 'Модерно осветление', label_en: 'Modern lighting' },
-  { icon: '🌿', label_bg: 'Панорамна тераса 260 м²', label_en: '260 m² panoramic terrace' },
-  { icon: '🧊', label_bg: '2 ледогенератора 50л', label_en: '2 ice makers 50L each' },
-  { icon: '🍽️', label_bg: 'Кетъринг оборудване', label_en: 'Catering equipment' },
-  { icon: '🚗', label_bg: '70+ паркоместа', label_en: '70+ parking spaces' },
-  { icon: '🎬', label_bg: 'Проектор и LED екран', label_en: 'Projector & LED screen' },
-  { icon: '🛗', label_bg: 'Асансьор', label_en: 'Elevator' },
-  { icon: '❄️', label_bg: '3 хладилни витрини', label_en: '3 refrigerated displays' },
-  { icon: '🎤', label_bg: 'Микрофони', label_en: 'Microphones' },
-  { icon: '🕺', label_bg: 'Танцова площадка', label_en: 'Dance floor' },
-];
-
 function setText(el, text) { el.textContent = text; }
 
 function renderCards(lang) {
@@ -141,32 +127,6 @@ function renderCards(lang) {
     }
   }
 
-  const equipGrid = document.getElementById('equip-grid');
-  if (equipGrid) {
-    equipGrid.innerHTML = '';
-    equipment.forEach((item, idx) => {
-      const label = lang === 'bg' ? item.label_bg : item.label_en;
-
-      const el = document.createElement('div');
-      el.className = 'equip-item fade-up delay-' + ((idx % 4) + 1);
-      el.setAttribute('role', 'listitem');
-
-      const icon = document.createElement('div');
-      icon.className = 'equip-icon';
-      icon.setAttribute('aria-hidden', 'true');
-      icon.textContent = item.icon;
-
-      const span = document.createElement('span');
-      setText(span, label);
-
-      el.appendChild(icon);
-      el.appendChild(span);
-      equipGrid.appendChild(el);
-    });
-    if (window._animObserver) {
-      equipGrid.querySelectorAll('.fade-up').forEach(el => window._animObserver.observe(el));
-    }
-  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
