@@ -104,6 +104,16 @@ function renderFreeIncluded() {
   });
 }
 
+// Map event id to the dedicated detail sub-page. The detail page's "Резервирай"
+// CTA links back to /reservation.html?event=ID, where the URL handler at the
+// bottom of init() auto-selects that event and jumps to the date step.
+const EVENT_DETAIL_PAGE = {
+  evening:   'evening.html',
+  corporate: 'corporate.html',
+  birthday:  'birthday.html',
+  wedding:   'wedding.html',
+};
+
 function renderEventPicker() {
   renderFreeIncluded();
   const l = getLang();
@@ -112,51 +122,44 @@ function renderEventPicker() {
   grid.innerHTML = '';
 
   eventTypes.forEach(ev => {
-    const isSelected = booking.event?.id === ev.id ||
-      (ev.variants && ev.variants.some(v => v.id === booking.event?.id));
-
-    const card = document.createElement('div');
-    card.className = 'event-pick-card' + (isSelected ? ' selected' : '');
-    card.setAttribute('role', 'listitem'); card.setAttribute('tabindex', '0');
+    // Card is a real anchor so users can right-click / open in new tab.
+    const card = document.createElement('a');
+    card.className = 'event-pick-row';
+    card.setAttribute('role', 'listitem');
+    card.href = EVENT_DETAIL_PAGE[ev.id] || '#';
 
     const img = document.createElement('img');
+    img.className = 'event-pick-row__img';
     img.src = ev.img; img.alt = l === 'bg' ? ev.title_bg : ev.title_en; img.loading = 'lazy';
 
-    const body = document.createElement('div'); body.className = 'event-pick-body';
-    const h3 = document.createElement('h3'); h3.textContent = l === 'bg' ? ev.title_bg : ev.title_en;
-    const meta = document.createElement('div'); meta.className = 'event-pick-meta';
+    const body = document.createElement('div'); body.className = 'event-pick-row__body';
+    const h3 = document.createElement('h3'); h3.className = 'event-pick-row__title';
+    h3.textContent = l === 'bg' ? ev.title_bg : ev.title_en;
 
+    const desc = document.createElement('p'); desc.className = 'event-pick-row__desc';
+    desc.textContent = l === 'bg' ? (ev.desc_bg || '') : (ev.desc_en || '');
+
+    const meta = document.createElement('div'); meta.className = 'event-pick-row__meta';
     if (!ev.variants) {
-      const dur = document.createElement('span'); dur.className = 'event-pick-duration';
+      const dur = document.createElement('span'); dur.className = 'event-pick-row__dur';
       dur.textContent = l === 'bg' ? ev.duration_bg : ev.duration_en;
-      const price = document.createElement('span'); price.className = 'event-pick-price';
+      const price = document.createElement('span'); price.className = 'event-pick-row__price';
       price.textContent = fmtEvent(ev);
-      meta.appendChild(dur); meta.appendChild(price);
+      meta.append(dur, price);
     } else {
-      const priceRange = document.createElement('span'); priceRange.className = 'event-pick-price';
+      const priceRange = document.createElement('span'); priceRange.className = 'event-pick-row__price';
       const lo = Math.min(...ev.variants.map(v => v.price_eur));
       const hi = Math.max(...ev.variants.map(v => v.price_eur));
       priceRange.textContent = '€' + lo + ' – €' + hi;
-      meta.appendChild(priceRange);
+      meta.append(priceRange);
     }
 
-    body.appendChild(h3); body.appendChild(meta);
-    card.appendChild(img); card.appendChild(body);
+    const cta = document.createElement('span'); cta.className = 'event-pick-row__cta';
+    cta.textContent = l === 'bg' ? 'Виж повече →' : 'Learn more →';
+
+    body.append(h3, desc, meta, cta);
+    card.append(img, body);
     grid.appendChild(card);
-
-    function pick() {
-      grid.querySelectorAll('.event-pick-card').forEach(c => c.classList.remove('selected'));
-      card.classList.add('selected');
-      // Store the event (parent if has variants, resolved if not). Set
-      // time_of_day eagerly for events without variants — for parents with
-      // variants, the time is set when the variant is picked.
-      booking.event = ev;
-      if (!ev.variants) booking.time = timeOfDayFor(ev.id);
-      setTimeout(() => goToStep(1), 280);
-    }
-
-    card.addEventListener('click', pick);
-    card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
   });
 }
 
