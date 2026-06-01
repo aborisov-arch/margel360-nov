@@ -79,7 +79,7 @@ function renderEnquiries(enquiries) {
           <div class="detail-grid">
             <div><strong>${t('detail_email')}:</strong> ${esc(e.email)}</div>
             <div><strong>${t('detail_guests')}:</strong> ${e.guests != null ? esc(e.guests) : '—'}</div>
-            <div><strong>${t('detail_time')}:</strong> ${e.time_of_day === 'day' ? t('detail_time_day') : t('detail_time_eve')}</div>
+            <div><strong>${t('detail_time')}:</strong> ${e.arrival_time ? `${esc(e.arrival_time)} (${t('detail_time_eve')})` : (e.time_of_day === 'day' ? t('detail_time_day') : t('detail_time_eve'))}</div>
             <div><strong>${t('detail_payment')}:</strong> ${esc(e.payment_method)}</div>
           </div>
           ${fmtAddons(e.addons)}

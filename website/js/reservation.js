@@ -7,7 +7,7 @@
 // ── State ──
 let currentStep = 0;
 const TOTAL_STEPS = 6;
-let booking = { event:null, date:'', time:'day', addons:{}, drinkQtys:{}, name:'', email:'', phone:'', guests:'', notes:'', payment:'cash' };
+let booking = { event:null, date:'', time:'day', arrival_time:'', addons:{}, drinkQtys:{}, name:'', email:'', phone:'', guests:'', notes:'', payment:'cash' };
 let activeDrinkCat = 0;
 
 // Time-of-day per resolved event id. Fallback to 'eve' for unknowns since
@@ -130,6 +130,11 @@ function renderEventPicker() {
 }
 
 // ── Step 2 variant picker (shown inside step 2 for corporate/birthday) ──
+// Available arrival slots for the evening event. The customer picks one of
+// these on the date step; we store the literal "HH:MM" string in
+// booking.arrival_time and ship it to Supabase / the email summary.
+const EVENING_ARRIVAL_SLOTS = ['19:00', '19:30', '20:00', '20:30', '21:00'];
+
 function renderStep2VariantPicker() {
   const l = getLang();
   const wrap = document.getElementById('step2-variant-wrap');
@@ -137,7 +142,43 @@ function renderStep2VariantPicker() {
   if (!wrap) return;
 
   const ev = booking.event;
-  if (!ev || !ev.variants) {
+  if (!ev) {
+    wrap.setAttribute('style', 'display:none');
+    if (errMsg) errMsg.setAttribute('style', 'display:none');
+    return;
+  }
+
+  // Evening event has no variants but does need an arrival time slot. Render
+  // a chip picker instead of the variant grid.
+  if (ev.id === 'evening') {
+    wrap.setAttribute('style', 'display:block');
+    wrap.innerHTML = '';
+
+    const lbl = document.createElement('p'); lbl.className = 'variant-label';
+    lbl.textContent = l === 'bg' ? 'Изберете час на пристигане:' : 'Choose arrival time:';
+    wrap.appendChild(lbl);
+
+    const btnWrap = document.createElement('div'); btnWrap.className = 'variant-btn-wrap';
+    EVENING_ARRIVAL_SLOTS.forEach(slot => {
+      const btn = document.createElement('button');
+      btn.className = 'variant-btn arrival-btn' + (booking.arrival_time === slot ? ' selected' : '');
+      btn.type = 'button';
+      btn.textContent = slot;
+      btn.addEventListener('click', () => {
+        booking.arrival_time = slot;
+        btnWrap.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        if (errMsg) errMsg.style.display = 'none';
+        wrap.classList.remove('has-error');
+        updatePreview();
+      });
+      btnWrap.appendChild(btn);
+    });
+    wrap.appendChild(btnWrap);
+    return;
+  }
+
+  if (!ev.variants) {
     wrap.setAttribute('style', 'display:none');
     if (errMsg) errMsg.setAttribute('style', 'display:none');
     return;
@@ -253,6 +294,18 @@ function setupStep2() {
       const errMsg = document.getElementById('err-variant-msg');
       wrap?.classList.add('has-error');
       if (errMsg) errMsg.style.display = 'block';
+      return;
+    }
+
+    // Evening event: require an arrival time slot before advancing.
+    if (booking.event?.id === 'evening' && !booking.arrival_time) {
+      const wrap = document.getElementById('step2-variant-wrap');
+      const errMsg = document.getElementById('err-variant-msg');
+      wrap?.classList.add('has-error');
+      if (errMsg) {
+        errMsg.textContent = getLang() === 'bg' ? 'Моля изберете час на пристигане.' : 'Please choose an arrival time.';
+        errMsg.style.display = 'block';
+      }
       return;
     }
 
@@ -593,6 +646,7 @@ function setupSubmit() {
       full_name: booking.name,
       email: booking.email,
       phone: booking.phone,
+      arrival_time: booking.arrival_time || null,
       event_type: booking.event ? booking.event.title_en : '',
       event_id: booking.event ? booking.event.id : '',
       preferred_date: booking.date,

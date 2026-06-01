@@ -9,6 +9,7 @@ type Enquiry = {
   event_id?: string | null;
   preferred_date: string;
   time_of_day: string;
+  arrival_time?: string | null;
   guests: number | null;
   addons: Array<{ id: string; name: string; price: number }> | null;
   drinks: Array<{ id: string; name: string; qty: number; price_eur?: number | null }> | null;
@@ -110,7 +111,9 @@ export function renderCustomerEmail(e: Enquiry, siteUrl: string): { subject: str
   const site = siteUrl.replace(/\/$/, "");
   const editUrl = `${site}/edit.html?token=${e.edit_token}`;
   const firstName = (e.full_name || "").split(" ")[0] || e.full_name || "";
-  const timeLabel = e.time_of_day === "day" ? "Дневно · до 17:30" : "Вечерно · след 19:00";
+  const timeLabel = e.arrival_time
+    ? `Вечерно · от ${e.arrival_time}`
+    : (e.time_of_day === "day" ? "Дневно · до 17:30" : "Вечерно · след 19:00");
 
   // Editorial palette — cream paper + ink + brand gold accent.
   const SERIF = "Fraunces,Georgia,'Times New Roman',serif";
@@ -376,7 +379,9 @@ export function renderOwnerEmail(
       ? `  - ${d.name} × ${d.qty} — €${line.toFixed(2)}`
       : `  - ${d.name} × ${d.qty}`;
   }).join("\n");
-  const timeLabel = e.time_of_day === "day" ? "Daytime (until 17:30)" : "Evening (after 19:00)";
+  const timeLabel = e.arrival_time
+    ? `Evening · arrival ${e.arrival_time}`
+    : (e.time_of_day === "day" ? "Daytime (until 17:30)" : "Evening (after 19:00)");
 
   const totalsBlock = [
     "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
