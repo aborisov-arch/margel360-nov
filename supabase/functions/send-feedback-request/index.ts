@@ -11,6 +11,9 @@ const SERVICE_ROLE  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const RESEND_KEY    = Deno.env.get("RESEND_API_KEY")!;
 const FROM_EMAIL    = Deno.env.get("EVENT_HALL_FROM_EMAIL") ?? "enquiries@margel360.bg";
 const SITE_URL      = (Deno.env.get("PUBLIC_SITE_URL") ?? "https://margel360.bg").replace(/\/$/, "");
+// Shared secret required from the pg_cron caller. Without this anyone could
+// trigger the function and drain Resend quota / front-run feedback emails.
+const CRON_SECRET   = Deno.env.get("FEEDBACK_CRON_SECRET") ?? "";
 
 const sb = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
 
@@ -108,6 +111,13 @@ function renderFeedbackEmail(e: { full_name: string; event_type: string; preferr
 serve(async (req) => {
   const pre = preflight(req); if (pre) return pre;
   if (req.method !== "POST" && req.method !== "GET") return json({ error: "method_not_allowed" }, 405);
+
+  if (!CRON_SECRET) {
+    console.error("FEEDBACK_CRON_SECRET not configured");
+    return json({ error: "not_configured" }, 500);
+  }
+  const provided = req.headers.get("x-cron-secret") ?? "";
+  if (provided !== CRON_SECRET) return json({ error: "unauthorized" }, 401);
 
   // Pull recent enquiries (window of last 7 days for resilience if a cron run
   // was missed) that have not yet been emailed.

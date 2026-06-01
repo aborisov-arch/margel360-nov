@@ -72,9 +72,9 @@ serve(async (req) => {
   // Idempotent: re-submitting feedback returns the same code rather than
   // generating a new one each time.
   const code = await issueDiscountCode(e.id);
-  await sendDiscountEmail(e.email, e.full_name, code);
+  const emailDelivered = await sendDiscountEmail(e.email, e.full_name, code);
 
-  return json({ success: true, discount_code: code, discount_percent: 3 });
+  return json({ success: true, discount_code: code, discount_percent: 3, email_delivered: emailDelivered });
 });
 
 async function issueDiscountCode(enquiryId: string): Promise<string> {
@@ -103,10 +103,10 @@ async function issueDiscountCode(enquiryId: string): Promise<string> {
   throw new Error("code_collision");
 }
 
-async function sendDiscountEmail(to: string, fullName: string, code: string) {
+async function sendDiscountEmail(to: string, fullName: string, code: string): Promise<boolean> {
   const RESEND_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
   const FROM = Deno.env.get("EVENT_HALL_FROM_EMAIL") ?? "enquiries@margel360.bg";
-  if (!RESEND_KEY || !to) return;
+  if (!RESEND_KEY || !to) return false;
 
   const first = (fullName || "").split(" ")[0] || fullName || "";
   const SERIF = "Fraunces,Georgia,'Times New Roman',serif";
@@ -140,12 +140,18 @@ async function sendDiscountEmail(to: string, fullName: string, code: string) {
 </td></tr></table>
 </body></html>`;
   try {
-    await fetch("https://api.resend.com/emails", {
+    const r = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${RESEND_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({ from: FROM, to, subject, html }),
     });
+    if (!r.ok) {
+      console.error("discount email rejected:", r.status, await r.text());
+      return false;
+    }
+    return true;
   } catch (err) {
     console.error("discount email failed:", err);
+    return false;
   }
 }

@@ -7,7 +7,13 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const sb = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
 
-const CODE_RE = /^MG-[A-Z0-9]{4}-[A-Z0-9]{4}$/;
+// Codes are generated from an unambiguous alphabet (no 0/O, no 1/I), so a
+// real code can never contain 0, 1, I, or O. If we see any of those the
+// customer mistyped — return a specific error so the UI can prompt for a
+// retry rather than a generic "not found".
+const ALPHA = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+const CODE_RE = new RegExp(`^MG-[${ALPHA}]{4}-[${ALPHA}]{4}$`);
+const CONFUSABLE_RE = /[01IO]/;
 
 serve(async (req) => {
   const pre = preflight(req); if (pre) return pre;
@@ -21,7 +27,11 @@ serve(async (req) => {
   try { payload = await req.json(); } catch { return json({ valid: false, error: "bad_json" }, 400); }
 
   const code = typeof payload.code === "string" ? payload.code.trim().toUpperCase() : "";
-  if (!code || !CODE_RE.test(code)) {
+  if (!code) return json({ valid: false, error: "invalid_format" });
+  if (CONFUSABLE_RE.test(code)) {
+    return json({ valid: false, error: "confusable_chars" });
+  }
+  if (!CODE_RE.test(code)) {
     return json({ valid: false, error: "invalid_format" });
   }
 

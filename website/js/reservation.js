@@ -682,8 +682,22 @@ function setupPromo() {
         input.disabled = true;
         apply.textContent = getLang() === 'bg' ? 'Приложен' : 'Applied';
       } else {
-        const msgs = { not_found: 'Кодът не е намерен.', already_used: 'Кодът вече е използван.', expired: 'Кодът е изтекъл.', invalid_format: 'Невалиден формат.' };
-        status.textContent = msgs[body.error] || 'Невалиден код.';
+        const bg = {
+          not_found: 'Кодът не е намерен.',
+          already_used: 'Кодът вече е използван.',
+          expired: 'Кодът е изтекъл.',
+          invalid_format: 'Невалиден формат.',
+          confusable_chars: 'Проверете цифрите 0/1 и буквите O/I — кодовете ни не съдържат тези знаци.',
+        };
+        const en = {
+          not_found: 'Code not found.',
+          already_used: 'Code already used.',
+          expired: 'Code expired.',
+          invalid_format: 'Invalid format.',
+          confusable_chars: 'Check 0/1 and O/I — our codes never contain those characters.',
+        };
+        const dict = getLang() === 'bg' ? bg : en;
+        status.textContent = dict[body.error] || (getLang() === 'bg' ? 'Невалиден код.' : 'Invalid code.');
         status.style.color = '#c62828';
         apply.disabled = false;
       }

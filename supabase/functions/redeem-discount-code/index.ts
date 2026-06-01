@@ -7,7 +7,8 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const sb = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
 
-const CODE_RE = /^MG-[A-Z0-9]{4}-[A-Z0-9]{4}$/;
+const ALPHA = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+const CODE_RE = new RegExp(`^MG-[${ALPHA}]{4}-[${ALPHA}]{4}$`);
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 serve(async (req) => {
