@@ -29,7 +29,8 @@ const includedLabels = {
 // ── Free amenities included with every venue rental (margel360.bg) ──
 const venueIncluded = [
   { icon:'🔊',  label_bg:'Професионално озвучение',                    label_en:'Professional sound' },
-  { icon:'💡',  label_bg:'Професионално осветление',                   label_en:'Professional lighting' },
+  { icon:'💡',  label_bg:'Модерно осветление',                          label_en:'Modern lighting' },
+  { icon:'🌿',  label_bg:'Панорамна тераса 360 м²',                     label_en:'Panoramic terrace 360 m²' },
   { icon:'🍸',  label_bg:'16 бр. маси тип „щъркел" + еластан',         label_en:'16 cocktail tables + stretch covers' },
   { icon:'🪑',  label_bg:'40 бр. бар столове',                          label_en:'40 bar stools' },
   { icon:'🅿️',  label_bg:'Безплатен паркинг до 70+ автомобила',        label_en:'Free parking up to 70+ vehicles' },
