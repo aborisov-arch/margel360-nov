@@ -554,11 +554,17 @@ function renderSummary() {
     const addonsTotal = Object.values(booking.addons).reduce((s,v)=>s+(v||0),0);
     let drinksTotal = 0; drinks.forEach(d => { if (d.price_eur) drinksTotal += (booking.drinkQtys[d.id]||0)*d.price_eur; });
     const venuePrice = booking.event.price_eur;
+    const VENUE_MIN_GUESTS = 40;
+    const EXTRA_GUEST_FEE_EUR = 15;
+    const guests = Number(booking.guests) || 0;
+    const extraGuests = Math.max(0, guests - VENUE_MIN_GUESTS);
+    const extraGuestsCost = extraGuests * EXTRA_GUEST_FEE_EUR;
     const discountPercent = booking.discountPercent || 0;
     const discountAmount = discountPercent > 0 ? venuePrice * (discountPercent / 100) : 0;
-    const grandTotal = venuePrice + addonsTotal + drinksTotal - discountAmount;
+    const grandTotal = venuePrice + extraGuestsCost + addonsTotal + drinksTotal - discountAmount;
     const rows = [
-      { label: l==='bg'?'Наем на зала':'Venue rental', value: fmtEvent(booking.event) },
+      { label: (l==='bg'?'Наем на зала':'Venue rental') + ` (${l==='bg'?'до':'up to'} ${VENUE_MIN_GUESTS} ${l==='bg'?'гости':'guests'})`, value: fmtEvent(booking.event) },
+      ...(extraGuests > 0 ? [{ label: (l==='bg'?`+${extraGuests} допълнителни гости`:`+${extraGuests} extra guests`) + ` (× €${EXTRA_GUEST_FEE_EUR})`, value: '€' + extraGuestsCost.toFixed(2) }] : []),
       ...(addonsTotal > 0 ? [{ label: l==='bg'?'Допълнителни услуги':'Add-on services', value: '€' + addonsTotal }] : []),
       ...(drinksTotal > 0 ? [{ label: l==='bg'?'Напитки':'Drinks', value: '€' + drinksTotal.toFixed(2) }] : []),
       ...(discountAmount > 0 ? [{ label: (l==='bg'?'Отстъпка':'Discount') + ` (${discountPercent}%)`, value: '−€' + discountAmount.toFixed(2), discount: true }] : []),

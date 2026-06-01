@@ -35,17 +35,31 @@ function venueBasePrice(eventId: string | null | undefined): number {
   return VENUE_BASE_PRICE_EUR[eventId] ?? 0;
 }
 
+// Venue rental covers up to 40 guests; each guest above that is billed
+// separately at the rate below. Keep these constants in sync with the
+// admin dashboard and the public reservation form.
+const VENUE_MIN_GUESTS = 40;
+const EXTRA_GUEST_FEE_EUR = 15;
+
 function computeTotals(e: Enquiry): {
-  venue: number; addons: number; drinks: number; total: number;
+  venue: number;
+  extraGuests: number; extraGuestsCost: number;
+  addons: number; drinks: number; total: number;
 } {
   const venue = venueBasePrice(e.event_id);
+  const guests = Number(e.guests) || 0;
+  const extraGuests = Math.max(0, guests - VENUE_MIN_GUESTS);
+  const extraGuestsCost = extraGuests * EXTRA_GUEST_FEE_EUR;
   const addons = (e.addons ?? []).reduce(
     (sum, a) => sum + addonPriceEur(a?.id, Number(a?.price) || 0), 0,
   );
   const drinks = (e.drinks ?? []).reduce(
     (sum, d) => sum + (Number(d?.price_eur) || 0) * (Number(d?.qty) || 0), 0,
   );
-  return { venue, addons, drinks, total: venue + addons + drinks };
+  return {
+    venue, extraGuests, extraGuestsCost, addons, drinks,
+    total: venue + extraGuestsCost + addons + drinks,
+  };
 }
 
 function esc(s: unknown): string {
@@ -128,7 +142,8 @@ export function renderCustomerEmail(e: Enquiry, siteUrl: string): { subject: str
   const totalLabel = `padding:8px 0;font:14px/1.4 ${SANS};color:${SOFT}`;
   const totalValue = `padding:8px 0;font:italic 14px/1.4 ${SERIF};color:${GOLD};text-align:right;white-space:nowrap`;
   const totalRows = `
-    ${totals.venue ? `<tr><td style="${totalLabel}">Зала · ${esc(e.event_type)}</td><td style="${totalValue}">€${totals.venue.toFixed(2)}</td></tr>` : ""}
+    ${totals.venue ? `<tr><td style="${totalLabel}">Зала · ${esc(e.event_type)} <span style="color:${MUTED};font-size:12px">(до ${VENUE_MIN_GUESTS} гости)</span></td><td style="${totalValue}">€${totals.venue.toFixed(2)}</td></tr>` : ""}
+    ${totals.extraGuests > 0 ? `<tr><td style="${totalLabel}">+${totals.extraGuests} допълнителни гости <span style="color:${MUTED};font-size:12px">(× €${EXTRA_GUEST_FEE_EUR})</span></td><td style="${totalValue}">€${totals.extraGuestsCost.toFixed(2)}</td></tr>` : ""}
     ${totals.addons ? `<tr><td style="${totalLabel}">Допълнителни услуги</td><td style="${totalValue}">€${totals.addons.toFixed(2)}</td></tr>` : ""}
     ${totals.drinks ? `<tr><td style="${totalLabel}">Напитки</td><td style="${totalValue}">€${totals.drinks.toFixed(2)}</td></tr>` : ""}
     <tr>
@@ -366,11 +381,12 @@ export function renderOwnerEmail(
   const totalsBlock = [
     "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
     "TOTAL",
-    `  Venue base:     €${totals.venue.toFixed(2)}`,
-    `  Add-ons:        €${totals.addons.toFixed(2)}`,
-    `  Drinks:         €${totals.drinks.toFixed(2)}`,
+    `  Venue base (up to ${VENUE_MIN_GUESTS} guests): €${totals.venue.toFixed(2)}`,
+    ...(totals.extraGuests > 0 ? [`  +${totals.extraGuests} extra guests × €${EXTRA_GUEST_FEE_EUR}:           €${totals.extraGuestsCost.toFixed(2)}`] : []),
+    `  Add-ons:                          €${totals.addons.toFixed(2)}`,
+    `  Drinks:                           €${totals.drinks.toFixed(2)}`,
     `  ──────────────────────────`,
-    `  GRAND TOTAL:    €${totals.total.toFixed(2)}`,
+    `  GRAND TOTAL:                      €${totals.total.toFixed(2)}`,
     "",
   ];
 

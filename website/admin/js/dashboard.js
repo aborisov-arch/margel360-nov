@@ -468,15 +468,27 @@ const VENUE_BASE_PRICE_EUR = {
   wedding: 1500,
 };
 
+// Venue covers up to VENUE_MIN_GUESTS guests; each one above that is billed
+// at EXTRA_GUEST_FEE_EUR. Keep in sync with the email module and the public
+// reservation form.
+const VENUE_MIN_GUESTS = 40;
+const EXTRA_GUEST_FEE_EUR = 15;
+
 function computeTotals(e) {
   const venue = VENUE_BASE_PRICE_EUR[e.event_id] || 0;
+  const guests = Number(e.guests) || 0;
+  const extraGuests = Math.max(0, guests - VENUE_MIN_GUESTS);
+  const extraGuestsCost = extraGuests * EXTRA_GUEST_FEE_EUR;
   const addons = (e.addons || []).reduce(
     (sum, a) => sum + addonPriceEur(a?.id, Number(a?.price) || 0), 0,
   );
   const drinks = (e.drinks || []).reduce(
     (sum, d) => sum + (Number(d?.price_eur) || 0) * (Number(d?.qty) || 0), 0,
   );
-  return { venue, addons, drinks, total: venue + addons + drinks };
+  return {
+    venue, extraGuests, extraGuestsCost, addons, drinks,
+    total: venue + extraGuestsCost + addons + drinks,
+  };
 }
 
 function renderTotals(e) {
@@ -489,7 +501,8 @@ function renderTotals(e) {
   return `
     <div class="detail-totals">
       <h4 class="payment-heading">${t('total_heading')}</h4>
-      ${totals.venue  ? row(`${t('total_venue')} · ${esc(e.event_type)}`, totals.venue)  : ''}
+      ${totals.venue  ? row(`${t('total_venue')} · ${esc(e.event_type)} <span style="color:#888;font-size:0.78rem">(до ${VENUE_MIN_GUESTS} гости)</span>`, totals.venue) : ''}
+      ${totals.extraGuests > 0 ? row(`+${totals.extraGuests} допълнителни гости <span style="color:#888;font-size:0.78rem">(× €${EXTRA_GUEST_FEE_EUR})</span>`, totals.extraGuestsCost) : ''}
       ${totals.addons ? row(t('total_addons'), totals.addons) : ''}
       ${totals.drinks ? row(t('total_drinks'), totals.drinks) : ''}
       <div class="total-row total-grand">
