@@ -1,101 +1,40 @@
-# AB Intelligence — Claude Code Guide
+# Margel 360° — Claude Code Guide
 
-## Project Context
+## Project context
 
-AB Intelligence is a web development agency building client websites. Work lives under `Clients/[ClientName]/` following the structure defined in `README.md`. Each client gets their own folder with `website/`, `assets/`, `docs/`, and `notes.md`.
+Event venue in Sofia (margel360.bg) — weddings, birthdays, corporate. The site is the public-facing booking front door, paired with an internal admin platform for the team to receive enquiries and manage occupied dates.
 
----
+**Live site:** [margel360.bg](https://margel360.bg)  
+**GitHub:** [aborisov-arch/margel360-nov](https://github.com/aborisov-arch/margel360-nov) — this folder is its own git repo, separate from the parent AB Intelligence repo.  
+**Deploy:** Netlify, configured via `netlify.toml` (`base = "website"`, `publish = "."`).
 
-## Tech Stack
+## What's different from the parent AB Intelligence CLAUDE.md
 
-- **HTML/CSS/JS only** — no frameworks, no build tools unless the client specifically requires it
-- **No npm, no bundlers** by default — keep dependencies at zero for simple sites
-- **Vanilla JS** for interactivity; only reach for a library (e.g. Alpine.js, GSAP) when the task is genuinely complex and vanilla would be disproportionately verbose
-- **Deployment:** Netlify or Vercel — static file hosting, no server-side code unless explicitly scoped
+The root [CLAUDE.md](../../CLAUDE.md) applies. Departures:
 
----
+- **Supabase backend** — Postgres + Auth + Edge Functions for the enquiry inbox, calendar, and email notifications. Backend code lives in `supabase/`. Edge Functions are deployed via the Supabase CLI, not Netlify.
+- **Resend** for transactional email on new enquiry (admin notification + customer confirmation).
+- **Admin panel** at `website/admin/` — plain HTML/CSS/JS but gated by Supabase Auth on every page load.
+- **Edit-token flow** for customers to amend their own enquiry without an account (token is emailed, expires after 14 days).
 
-## File & Folder Conventions
+## File structure
 
-```
-Clients/[ClientName]/
-├── website/
-│   ├── index.html
-│   ├── css/
-│   │   └── style.css
-│   ├── js/
-│   │   └── main.js
-│   └── assets/
-│       ├── images/
-│       └── fonts/
-├── assets/        ← raw brand files (logos, photos from client)
-├── docs/          ← contracts, proposals, invoices
-└── notes.md       ← project status and notes
-```
+- `website/` — public site (HTML/CSS/JS). Multi-page static; shared `style.css` and `main.js`. BG/EN i18n via per-page `translations.js` + `data-i18n` attributes + `localStorage` for language preference.
+- `website/admin/` — internal admin panel (login-protected).
+- `supabase/` — migrations, Edge Functions (`notify-enquiry/`, shared validators), config.
+- `docs/superpowers/plans/` and `specs/` — implementation plans and design specs (website rebuild, event management platform, SEO/GEO).
 
-- File names: lowercase, hyphenated (`about-us.html`, `hero-bg.jpg`)
-- One CSS file per project unless complexity justifies splitting
-- Keep JS minimal and in `main.js` unless multiple distinct features warrant separate files
+## Things to know
 
----
+- **Reservation form** posts a JSON payload to a Supabase Edge Function via a database webhook.
+- **Email diff** (`enquiry-email.ts`) shows owner-readable diffs as Added / Removed / Changed when an enquiry is updated — preserve that vocabulary.
+- **EXCLUDE constraints via `btree_gist`** prevent double-booking at the database level. Keep that — application-level checks alone aren't safe.
 
-## Code Standards
+## Currency / pricing notes
 
-### HTML
-- Use semantic elements (`<header>`, `<main>`, `<section>`, `<article>`, `<footer>`, `<nav>`)
-- Every `<img>` must have a meaningful `alt` attribute (empty `alt=""` only for decorative images)
-- Use `<button>` for interactive elements, not `<div>` or `<span>`
-- Include `lang` attribute on `<html>`, proper `<meta charset>` and viewport tag
+- Site shows prices in EUR.
+- Overtime hints follow the convention "in EUR", with valet rounded to €25/hour (per recent commits).
 
-### Accessibility
-- Ensure keyboard navigation works for all interactive elements
-- Use ARIA labels where semantic HTML is insufficient
-- Sufficient color contrast (WCAG AA minimum)
-- Focus styles must be visible — never `outline: none` without a replacement
+## Open / next steps
 
-### CSS
-- **Mobile-first** — base styles for small screens, use `min-width` media queries to scale up
-- Use CSS custom properties (`--color-primary`, `--font-base`, etc.) for consistency
-- Avoid inline styles
-- Keep specificity low — prefer class selectors
-
-### Performance
-- Compress and size images appropriately before using them (use WebP where possible)
-- Minimize JS — no script should run that isn't needed on that page
-- Avoid render-blocking resources — defer or async scripts where possible
-- Aim for fast initial load; no heavy animations that aren't justified by the brief
-
----
-
-## Per-Project Scope Guidance
-
-### Brochure / Landing Page
-- Static HTML only, no JS unless needed for nav toggle or minor UI
-- Focus on fast load, clean layout, strong visual hierarchy
-- No backend — contact forms use a service like Netlify Forms or Formspree
-
-### Contact Forms + Interactivity
-- Use Netlify Forms (preferred) or Formspree for form handling
-- Validate inputs client-side with vanilla JS; never rely solely on HTML5 validation
-- Keep JS focused — one clear purpose per function
-
-### E-commerce / Booking
-- Clarify with the client before starting: are we integrating a third-party (Stripe, Shopify Buy Button, Calendly embed) or building custom?
-- Default to embedding a trusted third-party tool rather than building payment/booking logic from scratch
-- Document the integration in `notes.md`
-
----
-
-## Deployment
-
-### Before deploying to Netlify/Vercel:
-- All links are relative and work from the root
-- No hardcoded localhost URLs
-- Images and assets are referenced by correct relative paths
-- Forms are wired to Netlify Forms or external service
-- Site has been tested on mobile (375px) and desktop (1280px+)
-- Page titles and meta descriptions are set per page
-
-### Netlify specifics:
-- Drag-and-drop the `website/` folder, or connect the repo and set publish directory to `Clients/[ClientName]/website`
-- Use `_redirects` file for any URL redirect rules
+Check `git log` and `docs/superpowers/plans/*.md` for the latest in-flight work — there are usually multiple parallel threads (admin panel iteration, SEO/GEO, drinks menu images, etc.).
