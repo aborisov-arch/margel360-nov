@@ -118,6 +118,7 @@
               <div>
                 <h4 data-i18n="contact_address_label">Адрес</h4>
                 <p data-i18n="contact_address">бул. Околовръстен път 155, ет.4, София</p>
+                <p style="margin-top:6px"><a href="https://www.google.com/maps/search/?api=1&query=%D0%9C%D0%B0%D1%80%D0%B3%D0%B5%D0%BB+360%C2%B0+%D0%91%D1%83%D0%BB.+%D0%9E%D0%BA%D0%BE%D0%BB%D0%BE%D0%B2%D1%80%D1%8A%D1%81%D1%82%D0%B5%D0%BD+%D0%BF%D1%8A%D1%82+155%2C+%D0%A1%D0%BE%D1%84%D0%B8%D1%8F" target="_blank" rel="noopener" data-i18n="contact_open_maps">Отворете в Google Maps →</a></p>
               </div>
             </div>
             <div class="contact-detail">
@@ -133,8 +134,11 @@
             </div>
           </div>
           <div class="contact-map">
+            <!-- Pinned embed of the venue. q= takes either coordinates or a place query;
+                 we use the venue name + address so the pin and info card resolve to the
+                 actual Google Maps listing. -->
             <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2932.5!2d23.38!3d42.69!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x40aa8574e7f2b9a9%3A0x0!2z0JHRg9C70C4g0J7QutC-0LvQvtCy0YDRitGB0YLQtdC9INC_0YrRgiAxNTU!5e0!3m2!1sbg!2sbg!4v1"
+              src="https://maps.google.com/maps?q=%D0%9C%D0%B0%D1%80%D0%B3%D0%B5%D0%BB+360%C2%B0+%D0%91%D1%83%D0%BB.+%D0%9E%D0%BA%D0%BE%D0%BB%D0%BE%D0%B2%D1%80%D1%8A%D1%81%D1%82%D0%B5%D0%BD+%D0%BF%D1%8A%D1%82+155%2C+%D0%A1%D0%BE%D1%84%D0%B8%D1%8F&t=&z=15&ie=UTF8&iwloc=&output=embed"
               allowfullscreen=""
               loading="lazy"
               referrerpolicy="no-referrer-when-downgrade"
