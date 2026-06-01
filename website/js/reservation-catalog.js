@@ -43,11 +43,11 @@ const venueIncluded = [
 
 // ── Paid add-on services (from margel360.bg services page) ──
 const addonServices = [
-  { id:'dj',         name_bg:'DJ за 5 часа',                  name_en:'DJ for 5 hours',                 price:300,    img:'assets/images/services/dj.jpg', hint_bg:'За всеки допълнителен час — €60', hint_en:'Each additional hour — €60' },
+  { id:'dj',         name_bg:'DJ за 5 часа',                  name_en:'DJ for 5 hours',                 price:300,    img:'assets/images/services/svc-dj-new.jpg', hint_bg:'За всеки допълнителен час — €60', hint_en:'Each additional hour — €60' },
   { id:'photo2',     name_bg:'Фотограф за 2 часа',            name_en:'Photographer 2h',                price:174, img:'assets/images/services/photographer.jpg' },
   { id:'photo4',     name_bg:'Фотограф за 4 часа',            name_en:'Photographer 4h',                price:297, img:'assets/images/services/photographer.jpg' },
-  { id:'booth2',     name_bg:'Фото будка 360° (2 часа)',      name_en:'360° Photo Booth (2 hours)',     price:199, img:'assets/images/services/booth.jpg' },
-  { id:'booth4',     name_bg:'Фото будка 360° (4 часа)',      name_en:'360° Photo Booth (4 hours)',     price:286, img:'assets/images/services/booth.jpg' },
+  { id:'booth2',     name_bg:'Фото будка 360° (2 часа)',      name_en:'360° Photo Booth (2 hours)',     price:199, img:'assets/images/services/svc-photobooth.jpg' },
+  { id:'booth4',     name_bg:'Фото будка 360° (4 часа)',      name_en:'360° Photo Booth (4 hours)',     price:286, img:'assets/images/services/svc-photobooth.jpg' },
   { id:'arch',       name_bg:'Декоративна арка с осветление', name_en:'Decorative arch + lights',       price:389, img:'assets/images/services/arch.jpg' },
   { id:'wall_s',     name_bg:'Декоративна стена SILVER',      name_en:'Decorative wall SILVER',         price:182, img:'assets/images/services/wall-silver.jpg' },
   { id:'wall_g',     name_bg:'Декоративна стена GOLD',        name_en:'Decorative wall GOLD',           price:182, img:'assets/images/services/wall-gold.jpg' },
@@ -60,10 +60,10 @@ const addonServices = [
   { id:'mic',        name_bg:'Микрофони — 3бр. + брошка',     name_en:'Microphones set',                price:50,  img:'assets/images/services/mic.jpg' },
   { id:'proj',       name_bg:'Мултимедия EPSON',              name_en:'EPSON multimedia projector',     price:92,  img:'assets/images/services/projector.jpg' },
   { id:'flipchart',  name_bg:'Флипчарт',                      name_en:'Flipchart',                      price:25,  img:'assets/images/services/flipchart.jpg' },
-  { id:'security',   name_bg:'Охрана VTA за 6 часа',          name_en:'VTA security 6h',                price:100,    img:'assets/images/services/security.jpg' },
+  { id:'security',   name_bg:'Охрана VTA за 6 часа',          name_en:'VTA security 6h',                price:100,    img:'assets/images/services/svc-security.jpg' },
   { id:'hygiene',    name_bg:'Хигиенист за 5 часа',           name_en:'Hygienist 5h',                   price:80,     img:'assets/images/services/hygienist.jpg', hint_bg:'За всеки допълнителен час — €20',    hint_en:'Each additional hour — €20' },
   { id:'wardrobe',   name_bg:'Гардеробиер за 5 часа',         name_en:'Wardrobe attendant 5h',          price:90,     img:'assets/images/services/wardrobe.jpg',  hint_bg:'За всеки допълнителен час — €20',    hint_en:'Each additional hour — €20' },
-  { id:'valet',      name_bg:'Вале-паркинг за 5 часа',        name_en:'Valet parking 5h',               price:141, img:'assets/images/services/valet.jpg',     hint_bg:'За всеки допълнителен час — €25',    hint_en:'Each additional hour — €25' },
+  { id:'valet',      name_bg:'Вале-паркинг за 5 часа',        name_en:'Valet parking 5h',               price:141, img:'assets/images/services/svc-valet.jpg',     hint_bg:'За всеки допълнителен час — €25',    hint_en:'Each additional hour — €25' },
   { id:'cleaning',   name_bg:'Почистване зала',               name_en:'Hall cleaning',                  price:70,     img:'assets/images/services/cleaning.jpg' },
   { id:'carpet_l',   name_bg:'Червена пътека (8 бр.)',        name_en:'Red carpet (8 pieces)',          price:76,  img:'assets/images/services/redcarpet.jpg' },
   { id:'carpet_s',   name_bg:'Червена пътека (6 бр.)',        name_en:'Red carpet (6 pieces)',          price:65,  img:'assets/images/services/redcarpet.jpg' },
