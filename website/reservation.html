@@ -23,7 +23,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="css/reservation.css?v=3">
+  <link rel="stylesheet" href="css/reservation.css?v=4">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <script type="application/ld+json">
 {
@@ -117,6 +117,10 @@
         <div class="wizard-step active" id="step-0">
           <h2 class="step-heading" data-i18n="s1_title">Изберете тип събитие</h2>
           <div class="event-picker" id="event-picker" role="list"></div>
+          <section class="free-included">
+            <h3 class="free-included__title">Включено безплатно с всяка резервация</h3>
+            <ul class="free-included__list" id="free-included-list"></ul>
+          </section>
         </div>
 
         <!-- Step 2: Date -->
@@ -203,7 +207,8 @@
             </div>
             <div class="form-group" id="fg-guests">
               <label for="res-guests" data-i18n="res_guests">Брой гости (1–200)</label>
-              <input type="number" id="res-guests" name="guests" min="1" max="200" placeholder="50" aria-describedby="err-guests-msg">
+              <input type="number" id="res-guests" name="guests" min="1" max="200" placeholder="50" aria-describedby="err-guests-msg guests-hint">
+              <span class="field-hint" id="guests-hint">До 40 гости са включени в наема. Всеки следващ гост — €15.</span>
               <span class="form-error" id="err-guests-msg" role="alert" data-i18n="err_guests">Моля въведете брой гости (1–200).</span>
             </div>
             <div class="form-group">
@@ -311,7 +316,7 @@
   <script src="js/reservation-supabase.js"></script>
   <script src="js/reservation-catalog.js?v=1"></script>
   <script src="js/drinks-data.js?v=1"></script>
-  <script src="js/reservation.js?v=6"></script>
+  <script src="js/reservation.js?v=7"></script>
   <a href="tel:+359888100042" class="fab-phone" aria-label="Обадете се"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg></a>
 </body>
 </html>

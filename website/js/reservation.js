@@ -7,7 +7,21 @@
 // ── State ──
 let currentStep = 0;
 const TOTAL_STEPS = 6;
+// `addons` is keyed by svc.id; the value is the integer qty (0 = unselected).
+// Furniture items (freeUntil) and heater items have a typeable stepper; every
+// other addon behaves as a checkbox where qty toggles between 0 and 1.
 let booking = { event:null, date:'', time:'day', arrival_time:'', addons:{}, drinkQtys:{}, name:'', email:'', phone:'', guests:'', notes:'', payment:'cash' };
+
+// Addons that take a stepper instead of a checkbox. Heaters cap at 5 (we
+// physically have only that many), furniture uses freeUntil from the catalog.
+const ADDON_MAX_QTY = { heater: 5, heater_tbl: 5 };
+function isQtyAddon(svc) { return svc.freeUntil != null || ADDON_MAX_QTY[svc.id] != null; }
+function addonMaxQty(svc) { return ADDON_MAX_QTY[svc.id] ?? 999; }
+function addonLinePrice(svc, qty) {
+  if (!qty || qty < 1) return 0;
+  if (svc.freeUntil != null) return Math.max(0, qty - svc.freeUntil) * svc.price;
+  return qty * svc.price;
+}
 let activeDrinkCat = 0;
 
 // Time-of-day per resolved event id. Fallback to 'eve' for unknowns since
@@ -74,7 +88,24 @@ document.querySelectorAll('.wstep').forEach(btn => {
 });
 
 // ── Step 1: Event picker ──
+function renderFreeIncluded() {
+  const l = getLang();
+  const list = document.getElementById('free-included-list');
+  if (!list || typeof venueIncluded === 'undefined') return;
+  list.innerHTML = '';
+  venueIncluded.forEach(item => {
+    const li = document.createElement('li');
+    li.className = 'free-included__item';
+    const icon = document.createElement('span'); icon.className = 'free-included__icon'; icon.textContent = item.icon || '✓';
+    const text = document.createElement('span'); text.className = 'free-included__text';
+    text.textContent = l === 'bg' ? item.label_bg : item.label_en;
+    li.append(icon, text);
+    list.appendChild(li);
+  });
+}
+
 function renderEventPicker() {
+  renderFreeIncluded();
   const l = getLang();
   const grid = document.getElementById('event-picker');
   if (!grid) return;
@@ -348,39 +379,96 @@ function renderAddons() {
   const grid = document.getElementById('addon-grid');
   if (!grid) return;
   grid.innerHTML = '';
+
   addonServices.forEach(svc => {
-    const item = document.createElement('label');
-    item.className = 'addon-item' + (booking.addons[svc.id] ? ' selected' : '');
-    const input = document.createElement('input'); input.type = 'checkbox'; input.checked = !!booking.addons[svc.id];
-
-    const visual = document.createElement('div');
-    if (svc.img) { visual.className = 'addon-img'; const i = document.createElement('img'); i.src = svc.img; i.alt = ''; visual.appendChild(i); }
-    else { visual.className = 'addon-emoji'; visual.textContent = svc.emoji || '⭐'; visual.setAttribute('aria-hidden', 'true'); }
-
-    const info = document.createElement('div'); info.className = 'addon-info';
-    const name = document.createElement('div'); name.className = 'addon-name'; name.textContent = l === 'bg' ? svc.name_bg : svc.name_en;
-    const price = document.createElement('div'); price.className = 'addon-price';
-    price.textContent = fmtSvc(svc.price);
-    info.appendChild(name); info.appendChild(price);
-
-    const check = document.createElement('div'); check.className = 'addon-check'; check.setAttribute('aria-hidden','true'); check.textContent = '✓';
-
-    item.appendChild(input); item.appendChild(visual); item.appendChild(info); item.appendChild(check);
-    grid.appendChild(item);
-
-    item.addEventListener('change', () => {
-      booking.addons[svc.id] = input.checked ? svc.price : 0;
-      item.classList.toggle('selected', input.checked);
-      updateAddonsTotal();
-    });
+    if (isQtyAddon(svc)) {
+      renderQtyAddon(grid, svc, l);
+    } else {
+      renderCheckboxAddon(grid, svc, l);
+    }
   });
   updateAddonsTotal();
 }
 
+function renderCheckboxAddon(grid, svc, l) {
+  const qty = booking.addons[svc.id] || 0;
+  const item = document.createElement('label');
+  item.className = 'addon-item' + (qty > 0 ? ' selected' : '');
+  const input = document.createElement('input'); input.type = 'checkbox'; input.checked = qty > 0;
+
+  const visual = document.createElement('div');
+  if (svc.img) { visual.className = 'addon-img'; const i = document.createElement('img'); i.src = svc.img; i.alt = ''; visual.appendChild(i); }
+  else { visual.className = 'addon-emoji'; visual.textContent = svc.emoji || '⭐'; visual.setAttribute('aria-hidden', 'true'); }
+
+  const info = document.createElement('div'); info.className = 'addon-info';
+  const name = document.createElement('div'); name.className = 'addon-name'; name.textContent = l === 'bg' ? svc.name_bg : svc.name_en;
+  const price = document.createElement('div'); price.className = 'addon-price'; price.textContent = fmtSvc(svc.price);
+  info.appendChild(name); info.appendChild(price);
+
+  const check = document.createElement('div'); check.className = 'addon-check'; check.setAttribute('aria-hidden','true'); check.textContent = '✓';
+
+  item.appendChild(input); item.appendChild(visual); item.appendChild(info); item.appendChild(check);
+  grid.appendChild(item);
+
+  item.addEventListener('change', () => {
+    booking.addons[svc.id] = input.checked ? 1 : 0;
+    item.classList.toggle('selected', input.checked);
+    updateAddonsTotal();
+  });
+}
+
+function renderQtyAddon(grid, svc, l) {
+  const qty = booking.addons[svc.id] || 0;
+  const item = document.createElement('div');
+  item.className = 'addon-item addon-item--qty' + (qty > 0 ? ' selected' : '');
+
+  const visual = document.createElement('div');
+  if (svc.img) { visual.className = 'addon-img'; const i = document.createElement('img'); i.src = svc.img; i.alt = ''; visual.appendChild(i); }
+  else { visual.className = 'addon-emoji'; visual.textContent = svc.emoji || '⭐'; visual.setAttribute('aria-hidden', 'true'); }
+
+  const info = document.createElement('div'); info.className = 'addon-info';
+  const name = document.createElement('div'); name.className = 'addon-name'; name.textContent = l === 'bg' ? svc.name_bg : svc.name_en;
+  const price = document.createElement('div'); price.className = 'addon-price';
+  price.textContent = '€' + Math.round(svc.price) + (l === 'bg' ? ' / бр.' : ' / pc');
+  info.appendChild(name); info.appendChild(price);
+
+  if (svc.freeUntil != null) {
+    const hint = document.createElement('div'); hint.className = 'addon-hint';
+    hint.textContent = l === 'bg' ? `Първите ${svc.freeUntil} са включени` : `First ${svc.freeUntil} included`;
+    info.appendChild(hint);
+  }
+
+  const stepper = document.createElement('div'); stepper.className = 'addon-qty';
+  const minus = document.createElement('button'); minus.type = 'button'; minus.textContent = '−'; minus.setAttribute('aria-label', 'Намали');
+  const num = document.createElement('input'); num.type = 'number'; num.min = '0'; num.max = String(addonMaxQty(svc)); num.step = '1'; num.inputMode = 'numeric'; num.value = qty;
+  const plus = document.createElement('button'); plus.type = 'button'; plus.textContent = '+'; plus.setAttribute('aria-label', 'Увеличи');
+  stepper.append(minus, num, plus);
+
+  item.append(visual, info, stepper);
+  grid.appendChild(item);
+
+  const setQty = (next) => {
+    const n = Math.max(0, Math.min(addonMaxQty(svc), Math.floor(Number(next) || 0)));
+    booking.addons[svc.id] = n;
+    num.value = n;
+    item.classList.toggle('selected', n > 0);
+    updateAddonsTotal();
+  };
+  minus.addEventListener('click', () => setQty((booking.addons[svc.id] || 0) - 1));
+  plus.addEventListener('click',  () => setQty((booking.addons[svc.id] || 0) + 1));
+  num.addEventListener('input', () => setQty(num.value));
+  num.addEventListener('focus', () => num.select());
+  num.addEventListener('blur',  () => { if (num.value === '' || isNaN(Number(num.value))) setQty(0); });
+}
+
 function updateAddonsTotal() {
-  const total = Object.values(booking.addons).reduce((s, v) => s + (v || 0), 0);
+  let total = 0;
+  for (const [id, qty] of Object.entries(booking.addons)) {
+    const svc = addonServices.find(s => s.id === id);
+    if (svc) total += addonLinePrice(svc, qty);
+  }
   const el = document.getElementById('addons-total-val');
-  if (el) el.textContent = '€' + total;
+  if (el) el.textContent = '€' + total.toFixed(total % 1 ? 2 : 0);
 }
 
 // ── Drinks prompt (between add-ons and drinks) ──
@@ -526,7 +614,11 @@ function renderSummary() {
   // Price breakdown — all in EUR
   if (priceSummary) {
     priceSummary.innerHTML = '';
-    const addonsTotal = Object.values(booking.addons).reduce((s,v)=>s+(v||0),0);
+    let addonsTotal = 0;
+    for (const [id, q] of Object.entries(booking.addons)) {
+      const svc = addonServices.find(s => s.id === id);
+      if (svc) addonsTotal += addonLinePrice(svc, q);
+    }
     let drinksTotal = 0; drinks.forEach(d => { if (d.price_eur) drinksTotal += (booking.drinkQtys[d.id]||0)*d.price_eur; });
     const venuePrice = booking.event.price_eur;
     const VENUE_MIN_GUESTS = 40;
@@ -626,12 +718,18 @@ function setupSubmit() {
     const origText = btn.textContent;
     btn.textContent = getLang() === 'bg' ? 'Изпращане…' : 'Sending…';
 
-    // Serialize add-ons: only the ones selected (price > 0)
+    // Serialize add-ons: only those with qty > 0. Each row stores the LINE
+    // price (qty already factored in, freeUntil applied) so the email/admin
+    // totals don't need to know about freeUntil. qty is included for
+    // furniture + heater rows so the admin can see the count.
     const addonsPayload = Object.entries(booking.addons)
-      .filter(([, price]) => price > 0)
-      .map(([id, price]) => {
+      .filter(([, qty]) => qty > 0)
+      .map(([id, qty]) => {
         const svc = addonServices.find(s => s.id === id);
-        return { id, name: svc ? svc.name_en : id, price };
+        const linePrice = svc ? addonLinePrice(svc, qty) : 0;
+        const entry = { id, name: svc ? svc.name_en : id, price: linePrice };
+        if (svc && isQtyAddon(svc)) entry.qty = qty;
+        return entry;
       });
 
     // Serialize drinks: only items with qty > 0

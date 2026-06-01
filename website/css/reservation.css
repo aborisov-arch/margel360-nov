@@ -198,6 +198,48 @@
 }
 .addon-item.selected .addon-check { background: var(--accent); border-color: var(--accent); color: #fff; }
 
+/* ── Qty-stepper addon (furniture + heaters) ── */
+.addon-item--qty { cursor: default; }
+.addon-item--qty .addon-check { display: none; }
+.addon-hint { margin-top: 4px; font-size: 0.72rem; color: var(--text-muted); letter-spacing: 0.02em; }
+.addon-qty {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 4px;
+  flex-shrink: 0;
+}
+.addon-qty button {
+  width: 30px; height: 30px;
+  background: transparent; border: 0;
+  font-size: 1.15rem; cursor: pointer; color: var(--text);
+}
+.addon-qty button:hover { color: var(--accent); }
+.addon-qty input[type=number] {
+  position: static; opacity: 1; pointer-events: auto;
+  width: 48px; text-align: center;
+  border: 0; background: transparent;
+  font: inherit; color: var(--text);
+  -moz-appearance: textfield;
+}
+.addon-qty input::-webkit-outer-spin-button,
+.addon-qty input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* Hint under input fields (e.g. guest fee note). */
+.field-hint {
+  display: block;
+  margin: 6px 0 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* ── Free-included panel on the event picker step ── */
+.free-included { margin-top: 32px; padding: 22px 24px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 14px; }
+.free-included__title { margin: 0 0 14px; font-size: 0.95rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); }
+.free-included__list { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px 18px; }
+.free-included__item { display: flex; align-items: center; gap: 10px; font-size: 0.92rem; color: var(--text); }
+.free-included__icon { font-size: 1.05rem; flex-shrink: 0; }
+@media (max-width: 600px) { .free-included__list { grid-template-columns: 1fr; } }
+
 @media (max-width: 600px) { .addon-grid { grid-template-columns: 1fr; } }
 
 /* ── Drinks prompt overlay ── */
