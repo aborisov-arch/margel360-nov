@@ -194,6 +194,11 @@
       font-weight: 500; font-size: 0.82rem; width: 28px;
       font-variant-numeric: tabular-nums;
     }
+    /* Income ledger column widths — without these the Client column claims
+       all leftover space and leaves a giant gap after "#". */
+    .ledger--income th:nth-child(1), .ledger--income td:nth-child(1) { width: 40px; }
+    .ledger--income th:nth-child(2), .ledger--income td:nth-child(2) { width: 200px; min-width: 160px; }
+    .ledger--income th:nth-child(3), .ledger--income td:nth-child(3) { width: 130px; }
 
     /* Income breakdown columns get a barely-there gold tint to signal
        "this is the new categorised view" without shouting. */

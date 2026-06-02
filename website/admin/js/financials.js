@@ -53,19 +53,30 @@ const EXPENSE_CATS = [
 const EXPENSE_CAT_LABEL = Object.fromEntries(EXPENSE_CATS.map(c => [c.id, c.label]));
 
 const EVENT_BASE = { evening: 1280, wedding: 1500, corp4: 330, corp8: 440, bday_day: 700, bday_eve: 970 };
+// Venue covers up to 40 guests; each extra guest costs €15. Must match
+// dashboard.js, offer-export.js, reservation.js and enquiry-email.ts.
+const VENUE_MIN_GUESTS = 40;
+const EXTRA_GUEST_FEE_EUR = 15;
 
 // Used when promoting an enquiry — gives the manager a head start by
-// splitting the lifetime-value estimate across the 4 categories.
+// splitting the lifetime-value estimate across the 3 categories. The
+// "Оферта" (rent) line is the venue base + extra-guest surcharge, so the
+// imported amount matches what the customer was actually quoted (e.g.
+// €1500 wedding + 40 extra guests × €15 = €2100).
 function enquiryBreakdown(e) {
-  const rent = EVENT_BASE[e.event_id] || 0;
+  const base = EVENT_BASE[e.event_id] || 0;
+  const guests = Number(e.guests) || 0;
+  const extraGuests = Math.max(0, guests - VENUE_MIN_GUESTS);
+  const extraGuestsCost = extraGuests * EXTRA_GUEST_FEE_EUR;
   const addons = Array.isArray(e.addons)
     ? e.addons.reduce((s, a) => s + (Number(a.price) || 0) * (Number(a.qty) || 1), 0) : 0;
   const drinks = Array.isArray(e.drinks)
     ? e.drinks.reduce((s, d) => s + (Number(d.price) || 0) * (Number(d.qty) || 0), 0) : 0;
   const pct = Number(e.applied_discount_percent || 0);
-  const discount = pct > 0 ? rent * pct / 100 : 0;
+  const discount = pct > 0 ? base * pct / 100 : 0;
+  const rent = base - discount + extraGuestsCost;
   return {
-    rent:   Math.max(0, Math.round((rent - discount) * 100) / 100),
+    rent:   Math.max(0, Math.round(rent * 100) / 100),
     drinks: Math.round(drinks * 100) / 100,
     addons: Math.round(addons * 100) / 100,
   };
@@ -766,7 +777,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (monthInput) monthInput.value = currentMonth;
 
   const [{ data: enq, error }, { data: occ, error: occErr }] = await Promise.all([
-    db.from('enquiries').select('id,full_name,preferred_date,event_type,event_id,pipeline_status,addons,drinks,applied_discount_percent'),
+    db.from('enquiries').select('id,full_name,preferred_date,event_type,event_id,pipeline_status,addons,drinks,applied_discount_percent,guests'),
     db.from('occupied_dates').select('date'),
   ]);
   if (error) { showError('Грешка при зареждане на запитванията', error); }
