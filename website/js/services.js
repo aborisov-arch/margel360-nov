@@ -3,6 +3,80 @@
 // wizard never drift apart. Adding/renaming a service or swapping its image
 // in the catalog updates both surfaces.
 
+// Services that come in multiple sizes/lengths/styles are merged into a
+// single card on this page (e.g. fireworks 150-170s vs 300-340s render as
+// one "Заря" card with two side-by-side variant pills). The catalog stays
+// flat — the grouping is presentation-only and only on the services page;
+// the reservation wizard still lists each variant separately.
+const SERVICE_GROUPS = [
+  { key:'photographer', ids:['photo2','photo4'],
+    title_bg:'Фотограф',          title_en:'Photographer',
+    desc_bg:'Професионален фотограф за вашето събитие.',
+    desc_en:'Professional photographer for your event.',
+    variants:[
+      { id:'photo2', label_bg:'2 часа', label_en:'2 hours' },
+      { id:'photo4', label_bg:'4 часа', label_en:'4 hours' },
+    ] },
+  { key:'booth', ids:['booth2','booth4'],
+    title_bg:'Фото будка 360°',   title_en:'360° Photo Booth',
+    desc_bg:'Фото будка 360°, RGB Ø100 см.',
+    desc_en:'360° photo booth, RGB Ø100 cm.',
+    variants:[
+      { id:'booth2', label_bg:'2 часа', label_en:'2 hours' },
+      { id:'booth4', label_bg:'4 часа', label_en:'4 hours' },
+    ] },
+  { key:'fireworks', ids:['flare_s','flare_l'],
+    title_bg:'Заря',               title_en:'Sparkle Fountains',
+    desc_bg:'Студена заря за торта или ефектен момент.',
+    desc_en:'Cold sparkle fountains for the cake or showpiece moment.',
+    variants:[
+      { id:'flare_s', label_bg:'150–170 сек.', label_en:'150–170 sec.' },
+      { id:'flare_l', label_bg:'300–340 сек.', label_en:'300–340 sec.' },
+    ] },
+  { key:'light_fountain', ids:['fountain_s','fountain_l'],
+    title_bg:'Светлинен фонтан',  title_en:'Light Fountain',
+    desc_bg:'Светлинни фонтани за вход, торта или сцена.',
+    desc_en:'Light fountains for entrance, cake or stage moments.',
+    variants:[
+      { id:'fountain_s', label_bg:'1300 мм', label_en:'1300 mm' },
+      { id:'fountain_l', label_bg:'2600 мм', label_en:'2600 mm' },
+    ] },
+  { key:'wall', ids:['wall_s','wall_g'],
+    title_bg:'Декоративна стена', title_en:'Decorative Wall',
+    desc_bg:'Декоративна стена L-3000 × H2500 за фон или фото зона.',
+    desc_en:'Decorative wall L-3000 × H2500 as backdrop or photo wall.',
+    variants:[
+      { id:'wall_s', label_bg:'SILVER', label_en:'SILVER' },
+      { id:'wall_g', label_bg:'GOLD',   label_en:'GOLD' },
+    ] },
+  { key:'carpet', ids:['carpet_s','carpet_l'],
+    title_bg:'Червена пътека',    title_en:'Red Carpet',
+    desc_bg:'Червена пътека с оградни стойки и въже.',
+    desc_en:'Red carpet with barrier posts and rope.',
+    variants:[
+      { id:'carpet_s', label_bg:'6 бр.', label_en:'6 pieces' },
+      { id:'carpet_l', label_bg:'8 бр.', label_en:'8 pieces' },
+    ] },
+  { key:'candles', ids:['candles_h','candles_t'],
+    title_bg:'Декоративни свещи', title_en:'Decorative Candles',
+    desc_bg:'Свещи за залата и терасата.',
+    desc_en:'Candles for the hall and the terrace.',
+    variants:[
+      { id:'candles_h', label_bg:'Залата — 60 бр.',    label_en:'Hall — 60 pcs' },
+      { id:'candles_t', label_bg:'Терасата — 50 бр.', label_en:'Terrace — 50 pcs' },
+    ] },
+  { key:'heating', ids:['heater','heater_tbl'],
+    title_bg:'Газово отопление',  title_en:'Gas Heating',
+    desc_bg:'Газово отопление за терасата.',
+    desc_en:'Gas heating for the terrace.',
+    variants:[
+      { id:'heater',     label_bg:'Гъба', label_en:'Patio heater' },
+      { id:'heater_tbl', label_bg:'Маса', label_en:'Heating table' },
+    ] },
+];
+const GROUPED_IDS = new Set(SERVICE_GROUPS.flatMap(g => g.ids));
+const FIRST_ID_OF_GROUP = new Map(SERVICE_GROUPS.map(g => [g.ids[0], g]));
+
 function fmtPrice(svc) {
   // Bake the duration suffix into the price for items priced per session.
   const perSession = {
@@ -94,47 +168,104 @@ function descFor(svc, lang) {
   return (lang === 'bg' ? bg : en)[svc.id] || '';
 }
 
+function renderSingleCard(svc, lang) {
+  const card = document.createElement('div');
+  card.className = 'service-card';
+
+  const imgWrap = document.createElement('div');
+  imgWrap.className = 'service-card-img';
+  const img = document.createElement('img');
+  img.src = svc.img;
+  img.alt = lang === 'bg' ? svc.name_bg : svc.name_en;
+  img.loading = 'lazy';
+  imgWrap.appendChild(img);
+
+  const body = document.createElement('div');
+  body.className = 'service-card-body';
+
+  const h3 = document.createElement('h3');
+  h3.textContent = lang === 'bg' ? svc.name_bg : svc.name_en;
+
+  const p = document.createElement('p');
+  p.textContent = descFor(svc, lang);
+
+  const price = document.createElement('p');
+  price.className = 'service-card-price';
+  price.textContent = fmtPrice(svc);
+
+  body.appendChild(h3);
+  body.appendChild(p);
+  if (svc.hint_bg || svc.hint_en) {
+    const hint = document.createElement('p');
+    hint.style.cssText = 'font-size:0.82rem;color:var(--text-muted);margin-top:4px';
+    hint.textContent = lang === 'bg' ? svc.hint_bg : svc.hint_en;
+    body.appendChild(hint);
+  }
+  body.appendChild(price);
+  card.appendChild(imgWrap);
+  card.appendChild(body);
+  return card;
+}
+
+function renderGroupCard(group, lang) {
+  const variantsData = group.variants
+    .map(v => ({ v, svc: addonServices.find(s => s.id === v.id) }))
+    .filter(x => x.svc);
+  if (!variantsData.length) return null;
+  const firstSvc = variantsData[0].svc;
+
+  const card = document.createElement('div');
+  card.className = 'service-card';
+
+  const imgWrap = document.createElement('div');
+  imgWrap.className = 'service-card-img';
+  const img = document.createElement('img');
+  img.src = firstSvc.img;
+  img.alt = lang === 'bg' ? group.title_bg : group.title_en;
+  img.loading = 'lazy';
+  imgWrap.appendChild(img);
+
+  const body = document.createElement('div');
+  body.className = 'service-card-body';
+
+  const h3 = document.createElement('h3');
+  h3.textContent = lang === 'bg' ? group.title_bg : group.title_en;
+
+  const p = document.createElement('p');
+  p.textContent = lang === 'bg' ? group.desc_bg : group.desc_en;
+
+  const variants = document.createElement('div');
+  variants.className = 'service-variants';
+  variantsData.forEach(({ v, svc }) => {
+    const cell = document.createElement('div');
+    cell.className = 'service-variant';
+    const lbl = document.createElement('span');
+    lbl.className = 'service-variant__label';
+    lbl.textContent = lang === 'bg' ? v.label_bg : v.label_en;
+    const pr = document.createElement('span');
+    pr.className = 'service-variant__price';
+    pr.textContent = '€' + svc.price;
+    cell.append(lbl, pr);
+    variants.appendChild(cell);
+  });
+
+  body.append(h3, p, variants);
+  card.append(imgWrap, body);
+  return card;
+}
+
 function renderServices(currentLang) {
   const grid = document.getElementById('services-grid');
   if (!grid || typeof addonServices === 'undefined') return;
   grid.innerHTML = '';
   addonServices.forEach(svc => {
-    const card = document.createElement('div');
-    card.className = 'service-card';
-
-    const imgWrap = document.createElement('div');
-    imgWrap.className = 'service-card-img';
-    const img = document.createElement('img');
-    img.src = svc.img;
-    img.alt = currentLang === 'bg' ? svc.name_bg : svc.name_en;
-    img.loading = 'lazy';
-    imgWrap.appendChild(img);
-
-    const body = document.createElement('div');
-    body.className = 'service-card-body';
-
-    const h3 = document.createElement('h3');
-    h3.textContent = currentLang === 'bg' ? svc.name_bg : svc.name_en;
-
-    const p = document.createElement('p');
-    p.textContent = descFor(svc, currentLang);
-
-    const price = document.createElement('p');
-    price.className = 'service-card-price';
-    price.textContent = fmtPrice(svc);
-
-    body.appendChild(h3);
-    body.appendChild(p);
-    if (svc.hint_bg || svc.hint_en) {
-      const hint = document.createElement('p');
-      hint.style.cssText = 'font-size:0.82rem;color:var(--text-muted);margin-top:4px';
-      hint.textContent = currentLang === 'bg' ? svc.hint_bg : svc.hint_en;
-      body.appendChild(hint);
+    if (FIRST_ID_OF_GROUP.has(svc.id)) {
+      const groupCard = renderGroupCard(FIRST_ID_OF_GROUP.get(svc.id), currentLang);
+      if (groupCard) grid.appendChild(groupCard);
+      return;
     }
-    body.appendChild(price);
-    card.appendChild(imgWrap);
-    card.appendChild(body);
-    grid.appendChild(card);
+    if (GROUPED_IDS.has(svc.id)) return; // already rendered as part of its group
+    grid.appendChild(renderSingleCard(svc, currentLang));
   });
 }
 
