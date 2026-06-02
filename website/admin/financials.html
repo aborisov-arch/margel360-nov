@@ -523,8 +523,8 @@
             </table>
           </div>
           <div class="fin-actions">
-            <button class="btn-add" id="btn-add-event">+ Добави ред (ръчно)</button>
-            <button class="btn-ghost" id="btn-toggle-pay">Покажи разбивка по плащане</button>
+            <button type="button" class="btn-add" id="btn-add-event" onclick="window.addManualEvent && window.addManualEvent()">+ Добави ред (ръчно)</button>
+            <button type="button" class="btn-ghost" id="btn-toggle-pay">Покажи разбивка по плащане</button>
           </div>
         </section>
 
@@ -559,7 +559,7 @@
             </table>
           </div>
           <div class="fin-actions">
-            <button class="btn-add" id="btn-add-expense">+ Добави разход</button>
+            <button type="button" class="btn-add" id="btn-add-expense" onclick="window.addManualExpense && window.addManualExpense()">+ Добави разход</button>
           </div>
         </section>
       </div>
@@ -609,6 +609,6 @@
   <script src="js/supabase-client.js?v=2" defer></script>
   <script src="js/admin-i18n.js?v=3" defer></script>
   <script src="js/auth.js?v=2" defer></script>
-  <script src="js/financials.js?v=5" defer></script>
+  <script src="js/financials.js?v=6" defer></script>
 </body>
 </html>

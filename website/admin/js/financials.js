@@ -249,7 +249,26 @@ function recalcTotals() {
 
 function showError(msg, err) {
   console.error(msg, err);
-  alert(msg + (err?.message ? '\n\n' + err.message : ''));
+  showToast(msg + (err?.message ? ': ' + err.message : ''), 'error');
+}
+
+// On-page status toast so users see feedback even if console is closed and
+// alerts are blocked (Safari has aggressive alert suppression on some pages).
+function showToast(msg, kind) {
+  let host = document.getElementById('fin-toast-host');
+  if (!host) {
+    host = document.createElement('div');
+    host.id = 'fin-toast-host';
+    host.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px;max-width:380px;';
+    document.body.appendChild(host);
+  }
+  const t = document.createElement('div');
+  const bg = kind === 'error' ? '#dc2626' : (kind === 'ok' ? '#16a34a' : '#0a0a0a');
+  t.style.cssText = `padding:12px 16px;border-radius:8px;background:${bg};color:#fff;font:500 0.875rem/1.4 'Inter',sans-serif;box-shadow:0 8px 24px rgba(0,0,0,0.18);opacity:0;transform:translateY(-8px);transition:opacity .2s,transform .2s;`;
+  t.textContent = msg;
+  host.appendChild(t);
+  requestAnimationFrame(() => { t.style.opacity = '1'; t.style.transform = 'translateY(0)'; });
+  setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateY(-8px)'; setTimeout(() => t.remove(), 250); }, 3800);
 }
 
 async function loadMonth(month) {
@@ -292,8 +311,10 @@ async function promoteEnquiry(enquiryId) {
 }
 
 async function addManualEvent() {
-  console.log('[fin] addManualEvent', { currentMonth });
+  console.log('[fin] addManualEvent called', { currentMonth, hasDb: !!window.db });
+  showToast('Добавяне на ред…');
   if (!currentMonth) { showError('Първо изберете месец', { message: 'currentMonth е празен' }); return; }
+  if (!window.db) { showError('Supabase не е зареден', { message: 'window.db is undefined — auth.js / supabase-client.js не са се изпълнили' }); return; }
   const row = {
     month: currentMonth,
     customer_name: '',
@@ -307,24 +328,30 @@ async function addManualEvent() {
     if (error) { showError('Грешка при добавяне на ред', error); return; }
     events.push(data);
     renderEvents();
+    showToast('Редът е добавен', 'ok');
   } catch (err) {
     showError('Неочаквана грешка', err);
   }
 }
+window.addManualEvent = addManualEvent;
 
 async function addManualExpense() {
-  console.log('[fin] addManualExpense', { currentMonth });
+  console.log('[fin] addManualExpense called', { currentMonth, hasDb: !!window.db });
+  showToast('Добавяне на разход…');
   if (!currentMonth) { showError('Първо изберете месец', { message: 'currentMonth е празен' }); return; }
+  if (!window.db) { showError('Supabase не е зареден', { message: 'window.db is undefined — auth.js / supabase-client.js не са се изпълнили' }); return; }
   const row = { month: currentMonth, description: '', amount_eur: 0, category: 'other' };
   try {
     const { data, error } = await db.from('financial_expenses').insert(row).select().single();
     if (error) { showError('Грешка при добавяне на разход', error); return; }
     expenses.push(data);
     renderExpenses();
+    showToast('Разходът е добавен', 'ok');
   } catch (err) {
     showError('Неочаквана грешка', err);
   }
 }
+window.addManualExpense = addManualExpense;
 
 async function deleteEvent(id) {
   if (!confirm('Изтриване на този ред?')) return;
