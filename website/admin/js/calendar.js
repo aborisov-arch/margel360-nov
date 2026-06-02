@@ -18,12 +18,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     currentMonth--;
     if (currentMonth < 0) { currentMonth = 11; currentYear--; }
     renderCalendar();
+    renderSidePanel();
   });
 
   document.getElementById('next-month').addEventListener('click', () => {
     currentMonth++;
     if (currentMonth > 11) { currentMonth = 0; currentYear++; }
     renderCalendar();
+    renderSidePanel();
   });
 });
 
@@ -154,19 +156,23 @@ async function toggleDate(dateStr, btn) {
   }
 }
 
-// Side-panel rendering — sorted chronologically. For every occupied date
-// we either show the customer(s) who booked it (from bookingsByDate) OR
-// a placeholder "Заето" pill when the date was marked occupied manually
-// without an enquiry attached (legacy data or admin-blocked dates).
+// Side-panel rendering — only the currently displayed month. For every
+// occupied date in that month we either show the customer(s) who booked
+// it (from bookingsByDate) OR a placeholder "Заето" pill when the date
+// was marked occupied manually without an enquiry attached.
 function renderSidePanel() {
   const wrap = document.getElementById('cal-bookings');
   if (!wrap) return;
 
-  // Union of dates: dates with bookings + manually-occupied dates.
+  // Union of dates: bookings + manually-occupied dates, filtered to the
+  // month the calendar is currently displaying. ISO format is YYYY-MM-DD
+  // so a startsWith prefix is enough.
+  const monthPrefix = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-`;
+  const inMonth = iso => iso.startsWith(monthPrefix);
   const allDates = new Set([...occupiedDates, ...bookingsByDate.keys()]);
-  const sorted = Array.from(allDates).sort();
+  const sorted = Array.from(allDates).filter(inMonth).sort();
   if (!sorted.length) {
-    wrap.innerHTML = `<div class="empty">Няма заети дати.</div>`;
+    wrap.innerHTML = `<div class="empty">Няма заети дати този месец.</div>`;
     return;
   }
   wrap.innerHTML = sorted.map(iso => {
