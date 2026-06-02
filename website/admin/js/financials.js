@@ -1,36 +1,74 @@
-// Financials page — monthly bookkeeping that mirrors the existing Excel
-// template Angel uses. Two manual tables (income events + expenses), plus
-// an auto-suggested "from CRM" list of confirmed/completed enquiries for
-// the month that the manager can promote into the report with one click.
+// Financials page — monthly bookkeeping that mirrors Angel's Excel template
+// plus category breakdown for both income and expenses.
 //
-// All amounts stored in EUR. BGN derived live using the fixed peg 1.95583.
-// The XLSX export reproduces the original template layout one-to-one with
-// the same column letters, totals, and (corrected) formulas.
+// Income side: each event has 4 sub-amounts (rent / drinks / addons / other)
+// so reports can show where the revenue came from. The legacy payment-method
+// breakdown (cash/bank deposit + balance) is still there but hidden by
+// default — toggle with "Детайли по плащане".
+//
+// Expense side: every row has a controlled-vocab category.
+//
+// All amounts in EUR. BGN derived live via the fixed peg 1.95583.
+// XLSX export reproduces the original template layout plus a category
+// breakdown block at the bottom.
 
 const BGN_RATE = 1.95583;
 const fmtEur = n => '€' + (Number(n) || 0).toFixed(2);
 const fmtBgn = n => 'лв ' + (Number(n) || 0).toFixed(2);
 
-// Mirrors the lifetime-value estimator in customers.js — used to prefill
-// the offer amount on pending rows. Manager can edit it.
+// Income breakdown categories (event-side).
+const INCOME_CATS = [
+  { id: 'rent',   field: 'income_rent_eur',   label: 'Наем на зала' },
+  { id: 'drinks', field: 'income_drinks_eur', label: 'Напитки' },
+  { id: 'addons', field: 'income_addons_eur', label: 'Доп. услуги' },
+  { id: 'other',  field: 'income_other_eur',  label: 'Друго' },
+];
+
+// Expense categories (controlled vocab matching the CHECK constraint).
+const EXPENSE_CATS = [
+  { id: 'staff',       label: 'Заплати / хонорари' },
+  { id: 'catering',    label: 'Кетъринг' },
+  { id: 'drinks',      label: 'Напитки / алкохол' },
+  { id: 'decoration',  label: 'Декорация' },
+  { id: 'music',       label: 'DJ / музика' },
+  { id: 'maintenance', label: 'Поддръжка' },
+  { id: 'utilities',   label: 'Сметки / комунални' },
+  { id: 'marketing',   label: 'Маркетинг / реклама' },
+  { id: 'other',       label: 'Други' },
+];
+const EXPENSE_CAT_LABEL = Object.fromEntries(EXPENSE_CATS.map(c => [c.id, c.label]));
+
 const EVENT_BASE = { evening: 1280, wedding: 1500, corp4: 330, corp8: 440, bday_day: 700, bday_eve: 970 };
-function estimateEnquiryTotal(e) {
-  let total = EVENT_BASE[e.event_id] || 0;
-  if (Array.isArray(e.addons)) total += e.addons.reduce((s, a) => s + (Number(a.price) || 0) * (Number(a.qty) || 1), 0);
-  if (Array.isArray(e.drinks)) total += e.drinks.reduce((s, d) => s + (Number(d.price) || 0) * (Number(d.qty) || 0), 0);
+
+// Used when promoting an enquiry — gives the manager a head start by
+// splitting the lifetime-value estimate across the 4 categories.
+function enquiryBreakdown(e) {
+  const rent = EVENT_BASE[e.event_id] || 0;
+  const addons = Array.isArray(e.addons)
+    ? e.addons.reduce((s, a) => s + (Number(a.price) || 0) * (Number(a.qty) || 1), 0) : 0;
+  const drinks = Array.isArray(e.drinks)
+    ? e.drinks.reduce((s, d) => s + (Number(d.price) || 0) * (Number(d.qty) || 0), 0) : 0;
   const pct = Number(e.applied_discount_percent || 0);
-  if (pct > 0) total = Math.round(total * (1 - pct / 100));
-  return total;
+  const discount = pct > 0 ? rent * pct / 100 : 0;
+  return {
+    rent:   Math.max(0, Math.round((rent - discount) * 100) / 100),
+    drinks: Math.round(drinks * 100) / 100,
+    addons: Math.round(addons * 100) / 100,
+    other:  0,
+  };
+}
+function estimateEnquiryTotal(e) {
+  const b = enquiryBreakdown(e);
+  return Math.round((b.rent + b.drinks + b.addons + b.other) * 100) / 100;
 }
 
-// preferred_date is stored as "DD/MM/YYYY". Convert to "YYYY-MM-DD".
 function parsePreferredDate(s) {
   const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(s || '');
   if (!m) return null;
   return `${m[3]}-${m[2]}-${m[1]}`;
 }
 
-let currentMonth = ''; // 'YYYY-MM'
+let currentMonth = '';
 let allEnquiries = [];
 let events = [];
 let expenses = [];
@@ -48,10 +86,15 @@ function enquiriesForMonth(month) {
     return d && d.startsWith(month);
   });
 }
-
 function pendingEnquiries() {
   const linked = new Set(events.map(ev => ev.enquiry_id).filter(Boolean));
   return enquiriesForMonth(currentMonth).filter(e => !linked.has(e.id));
+}
+
+// Per-row category total. This is what counts as actual income for the
+// month (deposits/balances are just the payment timing).
+function eventTotalEur(ev) {
+  return INCOME_CATS.reduce((s, c) => s + Number(ev[c.field] || 0), 0);
 }
 
 // ────────────────────────────────────────────────────────────────────────
@@ -77,32 +120,38 @@ function renderPending() {
 }
 
 function eventRowHtml(ev, idx) {
-  const totalEur = Number(ev.deposit_cash_eur || 0) + Number(ev.deposit_bank_eur || 0)
-                 + Number(ev.balance_cash_eur || 0) + Number(ev.balance_bank_eur || 0);
-  const totalBgn = totalEur * BGN_RATE;
+  const total = eventTotalEur(ev);
   return `
     <tr data-id="${esc(ev.id)}">
       <td>${idx + 1}</td>
       <td><input type="date" data-f="event_date" value="${ev.event_date || ''}"></td>
       <td><input type="text" data-f="customer_name" value="${esc(ev.customer_name || '')}"></td>
       <td class="num"><input type="number" step="0.01" data-f="offer_total_eur" value="${ev.offer_total_eur || ''}"></td>
-      <td><input type="date" data-f="deposit_date" value="${ev.deposit_date || ''}"></td>
-      <td class="num"><input type="number" step="0.01" data-f="deposit_cash_eur" value="${ev.deposit_cash_eur || ''}"></td>
-      <td class="num"><input type="number" step="0.01" data-f="deposit_bank_eur" value="${ev.deposit_bank_eur || ''}"></td>
-      <td><input type="date" data-f="balance_date" value="${ev.balance_date || ''}"></td>
-      <td class="num"><input type="number" step="0.01" data-f="balance_cash_eur" value="${ev.balance_cash_eur || ''}"></td>
-      <td class="num"><input type="number" step="0.01" data-f="balance_bank_eur" value="${ev.balance_bank_eur || ''}"></td>
-      <td class="num">${fmtEur(totalEur)}</td>
-      <td class="num col-bgn">${fmtBgn(totalBgn)}</td>
+      <td class="num col-cat"><input type="number" step="0.01" data-f="income_rent_eur"   value="${ev.income_rent_eur   || ''}"></td>
+      <td class="num col-cat"><input type="number" step="0.01" data-f="income_drinks_eur" value="${ev.income_drinks_eur || ''}"></td>
+      <td class="num col-cat"><input type="number" step="0.01" data-f="income_addons_eur" value="${ev.income_addons_eur || ''}"></td>
+      <td class="num col-cat"><input type="number" step="0.01" data-f="income_other_eur"  value="${ev.income_other_eur  || ''}"></td>
+      <td class="num">${fmtEur(total)}</td>
+      <td class="num col-bgn">${fmtBgn(total * BGN_RATE)}</td>
+      <td class="pay-col"><input type="date" data-f="deposit_date" value="${ev.deposit_date || ''}"></td>
+      <td class="num pay-col"><input type="number" step="0.01" data-f="deposit_cash_eur" value="${ev.deposit_cash_eur || ''}"></td>
+      <td class="num pay-col"><input type="number" step="0.01" data-f="deposit_bank_eur" value="${ev.deposit_bank_eur || ''}"></td>
+      <td class="pay-col"><input type="date" data-f="balance_date" value="${ev.balance_date || ''}"></td>
+      <td class="num pay-col"><input type="number" step="0.01" data-f="balance_cash_eur" value="${ev.balance_cash_eur || ''}"></td>
+      <td class="num pay-col"><input type="number" step="0.01" data-f="balance_bank_eur" value="${ev.balance_bank_eur || ''}"></td>
       <td><button class="del-btn" data-del-event="${esc(ev.id)}" title="Изтрий">×</button></td>
     </tr>
   `;
 }
 
 function expenseRowHtml(ex) {
+  const opts = EXPENSE_CATS.map(c =>
+    `<option value="${c.id}" ${ex.category === c.id ? 'selected' : ''}>${esc(c.label)}</option>`
+  ).join('');
   return `
     <tr data-id="${esc(ex.id)}">
       <td><input type="date" data-f="expense_date" value="${ex.expense_date || ''}"></td>
+      <td><select data-f="category">${opts}</select></td>
       <td><input type="text" data-f="description" value="${esc(ex.description || '')}"></td>
       <td class="num"><input type="number" step="0.01" data-f="amount_eur" value="${ex.amount_eur || ''}"></td>
       <td class="num col-bgn">${fmtBgn((Number(ex.amount_eur) || 0) * BGN_RATE)}</td>
@@ -115,7 +164,7 @@ function renderEvents() {
   document.getElementById('events-count').textContent = events.length;
   document.getElementById('events-body').innerHTML =
     events.length ? events.map(eventRowHtml).join('')
-                  : `<tr><td colspan="13" style="text-align:center;color:#999;padding:18px">Няма записи. Добавете от списъка отгоре или ръчно.</td></tr>`;
+                  : `<tr><td colspan="17" style="text-align:center;color:#999;padding:18px">Няма записи. Добавете от списъка отгоре или ръчно.</td></tr>`;
   recalcTotals();
 }
 
@@ -123,55 +172,95 @@ function renderExpenses() {
   document.getElementById('expenses-count').textContent = expenses.length;
   document.getElementById('expenses-body').innerHTML =
     expenses.length ? expenses.map(expenseRowHtml).join('')
-                    : `<tr><td colspan="5" style="text-align:center;color:#999;padding:18px">Няма записи.</td></tr>`;
+                    : `<tr><td colspan="6" style="text-align:center;color:#999;padding:18px">Няма записи.</td></tr>`;
   recalcTotals();
 }
 
 function recalcTotals() {
-  let offer = 0, depCash = 0, depBank = 0, balCash = 0, balBank = 0;
+  let offer = 0, rent = 0, drinks = 0, addons = 0, other = 0;
+  let depCash = 0, depBank = 0, balCash = 0, balBank = 0;
   events.forEach(e => {
     offer   += Number(e.offer_total_eur  || 0);
+    rent    += Number(e.income_rent_eur  || 0);
+    drinks  += Number(e.income_drinks_eur|| 0);
+    addons  += Number(e.income_addons_eur|| 0);
+    other   += Number(e.income_other_eur || 0);
     depCash += Number(e.deposit_cash_eur || 0);
     depBank += Number(e.deposit_bank_eur || 0);
     balCash += Number(e.balance_cash_eur || 0);
     balBank += Number(e.balance_bank_eur || 0);
   });
-  const incomeEur = depCash + depBank + balCash + balBank;
-  document.getElementById('ev-tot-offer').textContent     = fmtEur(offer);
-  document.getElementById('ev-tot-dep-cash').textContent  = fmtEur(depCash);
-  document.getElementById('ev-tot-dep-bank').textContent  = fmtEur(depBank);
-  document.getElementById('ev-tot-bal-cash').textContent  = fmtEur(balCash);
-  document.getElementById('ev-tot-bal-bank').textContent  = fmtEur(balBank);
-  document.getElementById('ev-tot-eur').textContent       = fmtEur(incomeEur);
-  document.getElementById('ev-tot-bgn').textContent       = fmtBgn(incomeEur * BGN_RATE);
+  const incomeEur = rent + drinks + addons + other;
+  const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+  set('ev-tot-offer',  fmtEur(offer));
+  set('ev-tot-rent',   fmtEur(rent));
+  set('ev-tot-drinks', fmtEur(drinks));
+  set('ev-tot-addons', fmtEur(addons));
+  set('ev-tot-other',  fmtEur(other));
+  set('ev-tot-eur',    fmtEur(incomeEur));
+  set('ev-tot-bgn',    fmtBgn(incomeEur * BGN_RATE));
+  set('ev-tot-dep-cash', fmtEur(depCash));
+  set('ev-tot-dep-bank', fmtEur(depBank));
+  set('ev-tot-bal-cash', fmtEur(balCash));
+  set('ev-tot-bal-bank', fmtEur(balBank));
 
   const expenseEur = expenses.reduce((s, x) => s + Number(x.amount_eur || 0), 0);
-  document.getElementById('ex-tot-eur').textContent = fmtEur(expenseEur);
-  document.getElementById('ex-tot-bgn').textContent = fmtBgn(expenseEur * BGN_RATE);
+  set('ex-tot-eur', fmtEur(expenseEur));
+  set('ex-tot-bgn', fmtBgn(expenseEur * BGN_RATE));
 
   const profitEur = incomeEur - expenseEur;
-  document.getElementById('sum-income-eur').textContent   = fmtEur(incomeEur);
-  document.getElementById('sum-income-bgn').textContent   = fmtBgn(incomeEur * BGN_RATE);
-  document.getElementById('sum-expense-eur').textContent  = fmtEur(expenseEur);
-  document.getElementById('sum-expense-bgn').textContent  = fmtBgn(expenseEur * BGN_RATE);
-  document.getElementById('sum-profit-eur').textContent   = fmtEur(profitEur);
-  document.getElementById('sum-profit-bgn').textContent   = fmtBgn(profitEur * BGN_RATE);
+  set('sum-income-eur',   fmtEur(incomeEur));
+  set('sum-income-bgn',   fmtBgn(incomeEur * BGN_RATE));
+  set('sum-expense-eur',  fmtEur(expenseEur));
+  set('sum-expense-bgn',  fmtBgn(expenseEur * BGN_RATE));
+  set('sum-profit-eur',   fmtEur(profitEur));
+  set('sum-profit-bgn',   fmtBgn(profitEur * BGN_RATE));
   document.getElementById('sum-profit-eur').className = 'val ' + (profitEur >= 0 ? 'profit' : 'loss');
-  document.getElementById('sum-taxable-eur').textContent  = fmtEur(profitEur);
-  document.getElementById('sum-taxable-bgn').textContent  = fmtBgn(profitEur * BGN_RATE);
+  set('sum-taxable-eur',  fmtEur(profitEur));
+  set('sum-taxable-bgn',  fmtBgn(profitEur * BGN_RATE));
+
+  // Category breakdown pills
+  const incomeCats = { rent, drinks, addons, other };
+  document.getElementById('income-cat-breakdown').innerHTML = INCOME_CATS.map(c => `
+    <div class="pill">
+      <div class="lbl">${esc(c.label)}</div>
+      <div class="val">${fmtEur(incomeCats[c.id])}</div>
+      <div class="sub">${fmtBgn(incomeCats[c.id] * BGN_RATE)}${incomeEur ? ` · ${Math.round(incomeCats[c.id] / incomeEur * 100)}%` : ''}</div>
+    </div>
+  `).join('');
+
+  const expenseCatTotals = {};
+  EXPENSE_CATS.forEach(c => expenseCatTotals[c.id] = 0);
+  expenses.forEach(x => { expenseCatTotals[x.category || 'other'] = (expenseCatTotals[x.category || 'other'] || 0) + Number(x.amount_eur || 0); });
+  document.getElementById('expense-cat-breakdown').innerHTML = EXPENSE_CATS
+    .filter(c => expenseCatTotals[c.id] > 0)
+    .map(c => `
+      <div class="pill">
+        <div class="lbl">${esc(c.label)}</div>
+        <div class="val">${fmtEur(expenseCatTotals[c.id])}</div>
+        <div class="sub">${fmtBgn(expenseCatTotals[c.id] * BGN_RATE)}${expenseEur ? ` · ${Math.round(expenseCatTotals[c.id] / expenseEur * 100)}%` : ''}</div>
+      </div>
+    `).join('') || '<div style="color:#999;font-style:italic">Няма разходи в този месец.</div>';
 }
 
 // ────────────────────────────────────────────────────────────────────────
 // Persistence
 // ────────────────────────────────────────────────────────────────────────
 
+function showError(msg, err) {
+  console.error(msg, err);
+  alert(msg + (err?.message ? '\n\n' + err.message : ''));
+}
+
 async function loadMonth(month) {
   currentMonth = month;
   document.getElementById('fin-month').value = month;
-  const [{ data: ev }, { data: ex }] = await Promise.all([
+  const [{ data: ev, error: evErr }, { data: ex, error: exErr }] = await Promise.all([
     db.from('financial_events').select('*').eq('month', month).order('event_date', { ascending: true }),
     db.from('financial_expenses').select('*').eq('month', month).order('expense_date', { ascending: true }),
   ]);
+  if (evErr) showError('Грешка при зареждане на събитията', evErr);
+  if (exErr) showError('Грешка при зареждане на разходите', exErr);
   events = ev || [];
   expenses = ex || [];
   renderPending();
@@ -182,17 +271,22 @@ async function loadMonth(month) {
 async function promoteEnquiry(enquiryId) {
   const e = allEnquiries.find(x => x.id === enquiryId);
   if (!e) return;
+  const b = enquiryBreakdown(e);
   const row = {
     month: currentMonth,
     event_date: parsePreferredDate(e.preferred_date),
     customer_name: e.full_name || '—',
     offer_total_eur: estimateEnquiryTotal(e),
+    income_rent_eur:   b.rent,
+    income_drinks_eur: b.drinks,
+    income_addons_eur: b.addons,
+    income_other_eur:  b.other,
     enquiry_id: e.id,
     confirmed_by: userEmail,
     confirmed_at: new Date().toISOString(),
   };
   const { data, error } = await db.from('financial_events').insert(row).select().single();
-  if (error) { console.error(error); alert('Грешка при добавяне.'); return; }
+  if (error) { showError('Грешка при добавяне на ред', error); return; }
   events.push(data);
   renderPending(); renderEvents();
 }
@@ -202,19 +296,20 @@ async function addManualEvent() {
     month: currentMonth,
     customer_name: '',
     offer_total_eur: 0,
+    income_rent_eur: 0, income_drinks_eur: 0, income_addons_eur: 0, income_other_eur: 0,
     confirmed_by: userEmail,
     confirmed_at: new Date().toISOString(),
   };
   const { data, error } = await db.from('financial_events').insert(row).select().single();
-  if (error) { console.error(error); return; }
+  if (error) { showError('Грешка при добавяне на ред', error); return; }
   events.push(data);
   renderEvents();
 }
 
 async function addManualExpense() {
-  const row = { month: currentMonth, description: '', amount_eur: 0 };
+  const row = { month: currentMonth, description: '', amount_eur: 0, category: 'other' };
   const { data, error } = await db.from('financial_expenses').insert(row).select().single();
-  if (error) { console.error(error); return; }
+  if (error) { showError('Грешка при добавяне на разход', error); return; }
   expenses.push(data);
   renderExpenses();
 }
@@ -222,7 +317,7 @@ async function addManualExpense() {
 async function deleteEvent(id) {
   if (!confirm('Изтриване на този ред?')) return;
   const { error } = await db.from('financial_events').delete().eq('id', id);
-  if (error) { console.error(error); return; }
+  if (error) { showError('Грешка при изтриване', error); return; }
   events = events.filter(x => x.id !== id);
   renderPending(); renderEvents();
 }
@@ -230,166 +325,150 @@ async function deleteEvent(id) {
 async function deleteExpense(id) {
   if (!confirm('Изтриване на този разход?')) return;
   const { error } = await db.from('financial_expenses').delete().eq('id', id);
-  if (error) { console.error(error); return; }
+  if (error) { showError('Грешка при изтриване', error); return; }
   expenses = expenses.filter(x => x.id !== id);
   renderExpenses();
 }
 
-// Inline-edit save: writes the changed field to Supabase on blur/change.
 function bindInlineEdit() {
   document.getElementById('events-body').addEventListener('change', async evt => {
-    const inp = evt.target.closest('input[data-f]');
+    const inp = evt.target.closest('[data-f]');
     if (!inp) return;
     const tr = inp.closest('tr[data-id]');
     const id = tr.dataset.id;
     const field = inp.dataset.f;
     let value = inp.value;
-    if (inp.type === 'number') value = value === '' ? null : Number(value);
-    if (inp.type === 'date')   value = value || null;
+    if (inp.tagName === 'INPUT' && inp.type === 'number') value = value === '' ? 0 : Number(value);
+    if (inp.tagName === 'INPUT' && inp.type === 'date')   value = value || null;
     inp.disabled = true;
     const patch = { [field]: value, updated_at: new Date().toISOString() };
     const { error } = await db.from('financial_events').update(patch).eq('id', id);
     inp.disabled = false;
-    if (error) { console.error(error); inp.style.outline = '2px solid #c62828'; setTimeout(() => inp.style.outline = '', 1500); return; }
+    if (error) { showError('Грешка при запис', error); inp.style.outline = '2px solid #c62828'; setTimeout(() => inp.style.outline = '', 1500); return; }
     const ev = events.find(x => x.id === id);
     if (ev) ev[field] = value;
-    // Recalc this row's totals without full re-render.
-    const totalEur = Number(ev.deposit_cash_eur || 0) + Number(ev.deposit_bank_eur || 0)
-                   + Number(ev.balance_cash_eur || 0) + Number(ev.balance_bank_eur || 0);
-    tr.children[10].textContent = fmtEur(totalEur);
-    tr.children[11].textContent = fmtBgn(totalEur * BGN_RATE);
+    // Recalc the per-row total cell (col index 8 = Общо €, 9 = Общо лв)
+    const total = eventTotalEur(ev);
+    tr.children[8].textContent = fmtEur(total);
+    tr.children[9].textContent = fmtBgn(total * BGN_RATE);
     recalcTotals();
   });
 
   document.getElementById('expenses-body').addEventListener('change', async evt => {
-    const inp = evt.target.closest('input[data-f]');
+    const inp = evt.target.closest('[data-f]');
     if (!inp) return;
     const tr = inp.closest('tr[data-id]');
     const id = tr.dataset.id;
     const field = inp.dataset.f;
     let value = inp.value;
-    if (inp.type === 'number') value = value === '' ? 0 : Number(value);
-    if (inp.type === 'date')   value = value || null;
+    if (inp.tagName === 'INPUT' && inp.type === 'number') value = value === '' ? 0 : Number(value);
+    if (inp.tagName === 'INPUT' && inp.type === 'date')   value = value || null;
     inp.disabled = true;
     const patch = { [field]: value, updated_at: new Date().toISOString() };
     const { error } = await db.from('financial_expenses').update(patch).eq('id', id);
     inp.disabled = false;
-    if (error) { console.error(error); inp.style.outline = '2px solid #c62828'; setTimeout(() => inp.style.outline = '', 1500); return; }
+    if (error) { showError('Грешка при запис', error); inp.style.outline = '2px solid #c62828'; setTimeout(() => inp.style.outline = '', 1500); return; }
     const ex = expenses.find(x => x.id === id);
     if (ex) ex[field] = value;
-    if (field === 'amount_eur') tr.children[3].textContent = fmtBgn((Number(value) || 0) * BGN_RATE);
+    if (field === 'amount_eur') tr.children[4].textContent = fmtBgn((Number(value) || 0) * BGN_RATE);
     recalcTotals();
   });
 }
 
 // ────────────────────────────────────────────────────────────────────────
-// XLSX export — mirrors Отчет 02.2026.xlsx layout
+// XLSX export — template layout + category breakdown block
 // ────────────────────────────────────────────────────────────────────────
 
 function exportXlsx() {
   if (!window.XLSX) { alert('XLSX library не е заредена.'); return; }
-
-  // Build the sheet as Array-of-Arrays so we control exact cell placement.
-  // Header columns mirror the original template — extra columns left blank.
   const header = [
     'бр. събития', '', ' дата на събитие', 'клиент', 'сума по оферта',
     'дата на плащане', 'платено в брой аванс', 'платено  аванс по банка ', '',
     'дата на плащане', 'доплащане в брой', 'платено по банка ',
     'В €', 'в лв', '', '',
-    'дата', 'описание др. Разходи', 'други разходи сума лв', '', 'в €',
+    'дата', 'категория', 'описание др. Разходи', 'други разходи сума лв', '', 'в €',
+    '', 'Наем €', 'Напитки €', 'Доп. услуги €', 'Друго €',
   ];
-
-  // Determine row span: at least 25 rows so the template feels familiar,
-  // but extend if the data is bigger.
   const dataRows = Math.max(events.length, expenses.length, 25);
-
   const aoa = [header];
   for (let i = 0; i < dataRows; i++) {
     const ev = events[i] || {};
     const ex = expenses[i] || {};
-    const r = new Array(21).fill(null);
-    r[0]  = i + 1;                                        // A
-    r[2]  = ev.event_date     ? new Date(ev.event_date)     : null;  // C
-    r[3]  = ev.customer_name  || null;                    // D
-    r[4]  = ev.offer_total_eur ?? null;                   // E
-    r[5]  = ev.deposit_date   ? new Date(ev.deposit_date)   : null;  // F
-    r[6]  = ev.deposit_cash_eur ?? null;                  // G
-    r[7]  = ev.deposit_bank_eur ?? null;                  // H
-    r[9]  = ev.balance_date   ? new Date(ev.balance_date)   : null;  // J
-    r[10] = ev.balance_cash_eur ?? null;                  // K
-    r[11] = ev.balance_bank_eur ?? null;                  // L
-    // M (12) and N (13) are formula-driven (set below as formula cells).
-    r[16] = ex.expense_date   ? new Date(ex.expense_date)   : null;  // Q
-    r[17] = ex.description    || null;                    // R
-    // S (18) — BGN expense, formula =U*1.95583 (per-row).
-    r[20] = ex.amount_eur ?? null;                        // U
+    const r = new Array(27).fill(null);
+    r[0]  = i + 1;
+    r[2]  = ev.event_date     ? new Date(ev.event_date)     : null;
+    r[3]  = ev.customer_name  || null;
+    r[4]  = ev.offer_total_eur ?? null;
+    r[5]  = ev.deposit_date   ? new Date(ev.deposit_date)   : null;
+    r[6]  = ev.deposit_cash_eur ?? null;
+    r[7]  = ev.deposit_bank_eur ?? null;
+    r[9]  = ev.balance_date   ? new Date(ev.balance_date)   : null;
+    r[10] = ev.balance_cash_eur ?? null;
+    r[11] = ev.balance_bank_eur ?? null;
+    r[16] = ex.expense_date   ? new Date(ex.expense_date)   : null;
+    r[17] = ex.category ? (EXPENSE_CAT_LABEL[ex.category] || ex.category) : null;
+    r[18] = ex.description    || null;
+    r[20] = ex.amount_eur ?? null;
+    // Category breakdown columns X-AA (23-26) for events
+    r[23] = ev.income_rent_eur   ?? null;
+    r[24] = ev.income_drinks_eur ?? null;
+    r[25] = ev.income_addons_eur ?? null;
+    r[26] = ev.income_other_eur  ?? null;
     aoa.push(r);
   }
 
-  // Totals row (one after the last data row).
-  const totalsRow = dataRows + 2; // 1-indexed Excel row; aoa includes header at row 1
-  const totals = new Array(21).fill(null);
-  // Income totals: E,G,H,K,L,M,N use SUMs / formulas; placed by formula below.
-  aoa.push(totals);
-
-  // Summary rows (5 rows after totals)
-  const D29 = ['', '', '', 'приходи',          null, null, null, null, '', 'Ели',     null, null];
-  const D30 = ['', '', '', 'разходи',          null, null, null, null, '', 'Шушма',   null, null];
-  const D31 = ['', '', '', 'печалба',          null, null, null, null, '', 'Иван',    null, null];
-  const D32 = ['', '', '', 'облагане заплата', null, null];
-  aoa.push(D29, D30, D31, D32);
+  const totalsRow = dataRows + 2;
+  aoa.push(new Array(27).fill(null));
 
   const ws = XLSX.utils.aoa_to_sheet(aoa);
 
-  // Add per-row formulas (М and Н for income, S for expense) and totals.
   for (let i = 1; i <= dataRows; i++) {
-    const r = i + 1; // header is row 1
-    ws[`M${r}`] = { t: 'n', f: `K${r}+L${r}+G${r}+H${r}` };
+    const r = i + 1;
+    ws[`M${r}`] = { t: 'n', f: `X${r}+Y${r}+Z${r}+AA${r}` };
     ws[`N${r}`] = { t: 'n', f: `M${r}*${BGN_RATE}` };
-    ws[`S${r}`] = { t: 'n', f: `U${r}*${BGN_RATE}` };
+    ws[`T${r}`] = { t: 'n', f: `V${r}*${BGN_RATE}` };
   }
-  // Income totals row
   const tr = totalsRow;
   ws[`E${tr}`] = { t: 'n', f: `SUM(E2:E${dataRows + 1})` };
   ws[`G${tr}`] = { t: 'n', f: `SUM(G2:G${dataRows + 1})` };
   ws[`H${tr}`] = { t: 'n', f: `SUM(H2:H${dataRows + 1})` };
   ws[`K${tr}`] = { t: 'n', f: `SUM(K2:K${dataRows + 1})` };
   ws[`L${tr}`] = { t: 'n', f: `SUM(L2:L${dataRows + 1})` };
-  ws[`M${tr}`] = { t: 'n', f: `K${tr}+L${tr}+G${tr}+H${tr}` };
+  ws[`X${tr}`]  = { t: 'n', f: `SUM(X2:X${dataRows + 1})` };
+  ws[`Y${tr}`]  = { t: 'n', f: `SUM(Y2:Y${dataRows + 1})` };
+  ws[`Z${tr}`]  = { t: 'n', f: `SUM(Z2:Z${dataRows + 1})` };
+  ws[`AA${tr}`] = { t: 'n', f: `SUM(AA2:AA${dataRows + 1})` };
+  ws[`M${tr}`] = { t: 'n', f: `X${tr}+Y${tr}+Z${tr}+AA${tr}` };
   ws[`N${tr}`] = { t: 'n', f: `M${tr}*${BGN_RATE}` };
-  // Expense totals
-  ws[`U${tr}`] = { t: 'n', f: `SUM(U2:U${dataRows + 1})` };
-  ws[`S${tr}`] = { t: 'n', f: `U${tr}*${BGN_RATE}` };
+  ws[`V${tr}`] = { t: 'n', f: `SUM(V2:V${dataRows + 1})` };
+  ws[`T${tr}`] = { t: 'n', f: `V${tr}*${BGN_RATE}` };
 
-  // Summary block — row indexes (header at 1, data 2..dataRows+1, totals tr, then +2 rows of spacing? Template puts these immediately after; we put them right after totals).
-  const sumStart = tr + 2;
-  // приходи
-  ws[`E${sumStart}`]   = { t: 'n', f: `M${tr}` };
-  ws[`F${sumStart}`]   = { t: 'n', f: `N${tr}` };
-  // разходи
-  ws[`E${sumStart+1}`] = { t: 'n', f: `U${tr}` };
-  ws[`F${sumStart+1}`] = { t: 'n', f: `S${tr}` };
-  // печалба
-  ws[`E${sumStart+2}`] = { t: 'n', f: `E${sumStart}-E${sumStart+1}` };
-  ws[`F${sumStart+2}`] = { t: 'n', f: `F${sumStart}-F${sumStart+1}` };
-  // облагане заплата
-  ws[`E${sumStart+3}`] = { t: 'n', f: `E${sumStart+2}` };
-  ws[`F${sumStart+3}`] = { t: 'n', f: `F${sumStart+2}` };
+  // Summary block immediately after totals row
+  const ss = tr + 2;
+  ws[`D${ss}`]   = { t: 's', v: 'приходи' };
+  ws[`E${ss}`]   = { t: 'n', f: `M${tr}` };
+  ws[`F${ss}`]   = { t: 'n', f: `N${tr}` };
+  ws[`D${ss+1}`] = { t: 's', v: 'разходи' };
+  ws[`E${ss+1}`] = { t: 'n', f: `V${tr}` };
+  ws[`F${ss+1}`] = { t: 'n', f: `T${tr}` };
+  ws[`D${ss+2}`] = { t: 's', v: 'печалба' };
+  ws[`E${ss+2}`] = { t: 'n', f: `E${ss}-E${ss+1}` };
+  ws[`F${ss+2}`] = { t: 'n', f: `F${ss}-F${ss+1}` };
+  ws[`D${ss+3}`] = { t: 's', v: 'облагане заплата' };
+  ws[`E${ss+3}`] = { t: 'n', f: `E${ss+2}` };
+  ws[`F${ss+3}`] = { t: 'n', f: `F${ss+2}` };
 
-  // Column widths similar to the source.
   ws['!cols'] = [
     { wch: 9 }, { wch: 1 }, { wch: 12 }, { wch: 22 }, { wch: 11 }, { wch: 11 }, { wch: 12 }, { wch: 12 }, { wch: 1 },
     { wch: 11 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 1 }, { wch: 1 },
-    { wch: 11 }, { wch: 32 }, { wch: 14 }, { wch: 1 }, { wch: 10 },
+    { wch: 11 }, { wch: 18 }, { wch: 32 }, { wch: 14 }, { wch: 1 }, { wch: 10 },
+    { wch: 1 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 10 },
   ];
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
-
-  // Filename mirrors the source ("Отчет 02.2026.xlsx").
   const [y, m] = currentMonth.split('-');
-  const fname = `Отчет ${m}.${y}.xlsx`;
-  XLSX.writeFile(wb, fname);
+  XLSX.writeFile(wb, `Отчет ${m}.${y}.xlsx`);
 }
 
 // ────────────────────────────────────────────────────────────────────────
@@ -401,15 +480,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!session) return;
   userEmail = session.user?.email || null;
 
-  // Default to last completed month (events usually get reconciled the
-  // month after they happened).
   const now = new Date();
   const def = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   currentMonth = isoMonth(def);
   document.getElementById('fin-month').value = currentMonth;
 
   const { data: enq, error } = await db.from('enquiries').select('id,full_name,preferred_date,event_type,event_id,pipeline_status,addons,drinks,applied_discount_percent');
-  if (error) { console.error(error); return; }
+  if (error) { showError('Грешка при зареждане на запитванията', error); return; }
   allEnquiries = enq || [];
 
   await loadMonth(currentMonth);
@@ -419,6 +496,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('btn-add-event').addEventListener('click', addManualEvent);
   document.getElementById('btn-add-expense').addEventListener('click', addManualExpense);
   document.getElementById('btn-export-xlsx').addEventListener('click', exportXlsx);
+  document.getElementById('btn-toggle-pay').addEventListener('click', () => {
+    document.getElementById('events-table').classList.toggle('compact');
+  });
 
   document.getElementById('pending-list').addEventListener('click', evt => {
     const b = evt.target.closest('[data-promote]');

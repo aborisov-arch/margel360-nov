@@ -7,7 +7,7 @@
   <title>Финанси — Маргел 360° Админ</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/admin.css?v=9">
+  <link rel="stylesheet" href="css/admin.css?v=10">
   <style>
     .fin-toolbar { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; margin-bottom: 24px; padding: 16px 18px; background: #fff; border: 1px solid var(--border); border-radius: 10px; }
     .fin-toolbar label { display: flex; flex-direction: column; gap: 4px; font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; color: #777; font-weight: 600; }
@@ -25,15 +25,17 @@
 
     .fin-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
     .fin-table th, .fin-table td { padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle; }
-    .fin-table th { background: #fafafa; font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: #777; }
-    .fin-table input[type=text], .fin-table input[type=number], .fin-table input[type=date] {
+    .fin-table th { background: #fafafa; font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: #777; white-space: nowrap; }
+    .fin-table input[type=text], .fin-table input[type=number], .fin-table input[type=date], .fin-table select {
       padding: 5px 7px; border: 1px solid transparent; background: transparent;
       width: 100%; font-size: 0.88rem; border-radius: 4px; font-family: inherit;
     }
-    .fin-table input:focus { outline: none; border-color: var(--accent); background: #fff; }
+    .fin-table select { background: #fff; border-color: var(--border); }
+    .fin-table input:focus, .fin-table select:focus { outline: none; border-color: var(--accent); background: #fff; }
     .fin-table .num { text-align: right; }
     .fin-table .num input { text-align: right; }
     .fin-table .col-bgn { color: #666; font-size: 0.82rem; }
+    .fin-table .col-cat { background: rgba(201,168,76,0.06); }
     .fin-table .total-row td { font-weight: 700; background: #fbf7ee; border-top: 2px solid var(--accent); color: var(--text); }
     .fin-table .del-btn { background: none; border: 0; color: #c62828; cursor: pointer; padding: 4px 8px; border-radius: 4px; font-size: 1rem; }
     .fin-table .del-btn:hover { background: rgba(198,40,40,0.1); }
@@ -46,7 +48,18 @@
     .fin-summary .val.loss { color: #c62828; }
     .fin-summary .sub { font-size: 0.85rem; color: #777; margin-top: 4px; }
 
+    .cat-breakdown { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-top: 14px; }
+    .cat-breakdown .pill { background: #fafafa; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .cat-breakdown .pill .lbl { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: #888; font-weight: 600; margin-bottom: 4px; }
+    .cat-breakdown .pill .val { font-size: 1.05rem; font-weight: 700; color: var(--text); }
+    .cat-breakdown .pill .sub { font-size: 0.78rem; color: #888; }
+
     .fin-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+
+    /* Hide the legacy payment-method columns by default; the new income
+       layout uses category breakdown. Toggle them with the "Детайли по
+       плащане" button below the events table. */
+    .fin-table.events.compact .pay-col { display: none; }
 
     @media (max-width: 900px) {
       .fin-table { font-size: 0.82rem; }
@@ -93,25 +106,29 @@
         </div>
       </section>
 
-      <!-- 2. Income (events) -->
+      <!-- 2. Income (events) — categorised -->
       <section class="fin-section">
         <h2>Приходи — събития <span class="count" id="events-count">—</span></h2>
         <div style="overflow-x:auto">
-          <table class="fin-table" id="events-table">
+          <table class="fin-table events compact" id="events-table">
             <thead>
               <tr>
                 <th>#</th>
-                <th>Дата на събитие</th>
+                <th>Дата</th>
                 <th>Клиент</th>
                 <th class="num">Оферта €</th>
-                <th>Дата плащане</th>
-                <th class="num">Аванс брой €</th>
-                <th class="num">Аванс банка €</th>
-                <th>Дата доплащане</th>
-                <th class="num">Доплащ. брой €</th>
-                <th class="num">Доплащ. банка €</th>
+                <th class="num col-cat">Наем €</th>
+                <th class="num col-cat">Напитки €</th>
+                <th class="num col-cat">Доп. услуги €</th>
+                <th class="num col-cat">Друго €</th>
                 <th class="num">Общо €</th>
                 <th class="num">Общо лв</th>
+                <th class="pay-col">Дата плащане</th>
+                <th class="num pay-col">Аванс брой €</th>
+                <th class="num pay-col">Аванс банка €</th>
+                <th class="pay-col">Дата доплащане</th>
+                <th class="num pay-col">Доплащ. брой €</th>
+                <th class="num pay-col">Доплащ. банка €</th>
                 <th></th>
               </tr>
             </thead>
@@ -120,21 +137,26 @@
               <tr class="total-row">
                 <td colspan="3">Общо</td>
                 <td class="num" id="ev-tot-offer">€0.00</td>
-                <td></td>
-                <td class="num" id="ev-tot-dep-cash">€0.00</td>
-                <td class="num" id="ev-tot-dep-bank">€0.00</td>
-                <td></td>
-                <td class="num" id="ev-tot-bal-cash">€0.00</td>
-                <td class="num" id="ev-tot-bal-bank">€0.00</td>
+                <td class="num col-cat" id="ev-tot-rent">€0.00</td>
+                <td class="num col-cat" id="ev-tot-drinks">€0.00</td>
+                <td class="num col-cat" id="ev-tot-addons">€0.00</td>
+                <td class="num col-cat" id="ev-tot-other">€0.00</td>
                 <td class="num" id="ev-tot-eur">€0.00</td>
                 <td class="num" id="ev-tot-bgn">лв 0.00</td>
+                <td class="pay-col"></td>
+                <td class="num pay-col" id="ev-tot-dep-cash">€0.00</td>
+                <td class="num pay-col" id="ev-tot-dep-bank">€0.00</td>
+                <td class="pay-col"></td>
+                <td class="num pay-col" id="ev-tot-bal-cash">€0.00</td>
+                <td class="num pay-col" id="ev-tot-bal-bank">€0.00</td>
                 <td></td>
               </tr>
             </tfoot>
           </table>
         </div>
         <div class="fin-actions">
-          <button class="btn btn-sm btn-outline" id="btn-add-event">+ Добави ред (ръчно)</button>
+          <button class="btn btn-sm btn-primary" id="btn-add-event">+ Добави ред (ръчно)</button>
+          <button class="btn btn-sm btn-outline" id="btn-toggle-pay">Детайли по плащане</button>
         </div>
       </section>
 
@@ -146,6 +168,7 @@
             <thead>
               <tr>
                 <th>Дата</th>
+                <th>Категория</th>
                 <th>Описание</th>
                 <th class="num">Сума €</th>
                 <th class="num">Сума лв</th>
@@ -155,7 +178,7 @@
             <tbody id="expenses-body"></tbody>
             <tfoot>
               <tr class="total-row">
-                <td colspan="2">Общо разходи</td>
+                <td colspan="3">Общо разходи</td>
                 <td class="num" id="ex-tot-eur">€0.00</td>
                 <td class="num" id="ex-tot-bgn">лв 0.00</td>
                 <td></td>
@@ -164,7 +187,7 @@
           </table>
         </div>
         <div class="fin-actions">
-          <button class="btn btn-sm btn-outline" id="btn-add-expense">+ Добави разход</button>
+          <button class="btn btn-sm btn-primary" id="btn-add-expense">+ Добави разход</button>
         </div>
       </section>
 
@@ -193,6 +216,15 @@
             <div class="sub" id="sum-taxable-bgn">лв 0.00</div>
           </div>
         </div>
+
+        <div style="margin-top:18px">
+          <div style="font-size:0.78rem;letter-spacing:0.06em;text-transform:uppercase;color:#888;font-weight:600;margin-bottom:8px">Приходи по категория</div>
+          <div class="cat-breakdown" id="income-cat-breakdown"></div>
+        </div>
+        <div style="margin-top:18px">
+          <div style="font-size:0.78rem;letter-spacing:0.06em;text-transform:uppercase;color:#888;font-weight:600;margin-bottom:8px">Разходи по категория</div>
+          <div class="cat-breakdown" id="expense-cat-breakdown"></div>
+        </div>
       </section>
     </div>
   </main>
@@ -202,6 +234,6 @@
   <script src="js/supabase-client.js?v=2" defer></script>
   <script src="js/admin-i18n.js?v=3" defer></script>
   <script src="js/auth.js?v=2" defer></script>
-  <script src="js/financials.js?v=1" defer></script>
+  <script src="js/financials.js?v=2" defer></script>
 </body>
 </html>
