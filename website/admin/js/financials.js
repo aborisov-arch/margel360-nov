@@ -240,7 +240,8 @@ function recalcTotals() {
   set('sum-expense-bgn',  fmtBgn(expenseEur * BGN_RATE));
   set('sum-profit-eur',   fmtEur(profitEur));
   set('sum-profit-bgn',   fmtBgn(profitEur * BGN_RATE));
-  document.getElementById('sum-profit-eur').className = 'kpi__value ' + (profitEur >= 0 ? 'is-positive' : 'is-negative');
+  const profitEl = document.getElementById('sum-profit-eur');
+  if (profitEl) profitEl.className = 'kpi__value ' + (profitEur >= 0 ? 'is-positive' : 'is-negative');
   set('sum-taxable-eur',  fmtEur(profitEur));
   set('sum-taxable-bgn',  fmtBgn(profitEur * BGN_RATE));
 
