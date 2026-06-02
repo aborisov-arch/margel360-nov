@@ -7,7 +7,52 @@
   <title>Финанси — Маргел 360° Админ</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/admin.css?v=8">
+  <link rel="stylesheet" href="css/admin.css?v=9">
+  <style>
+    .fin-toolbar { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; margin-bottom: 24px; padding: 16px 18px; background: #fff; border: 1px solid var(--border); border-radius: 10px; }
+    .fin-toolbar label { display: flex; flex-direction: column; gap: 4px; font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; color: #777; font-weight: 600; }
+    .fin-toolbar input[type=month] { padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem; }
+    .fin-toolbar .rate { color: #888; font-size: 0.85rem; letter-spacing: 0; text-transform: none; margin-left: auto; }
+    .fin-section { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; margin-bottom: 18px; }
+    .fin-section h2 { font-size: 1rem; letter-spacing: 0.06em; text-transform: uppercase; color: #555; margin: 0 0 12px; }
+    .fin-section h2 .count { font-size: 0.75rem; color: #B9894A; margin-left: 8px; }
+    .pending-list { display: flex; flex-direction: column; gap: 6px; }
+    .pending-row { display: flex; gap: 10px; align-items: center; padding: 8px 10px; background: #fafafa; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; }
+    .pending-row .name { font-weight: 600; flex: 1; }
+    .pending-row .meta { color: #777; font-size: 0.85rem; }
+    .pending-row .est { font-weight: 700; color: var(--accent); margin-right: 8px; }
+    .pending-row.empty { color: #999; font-style: italic; background: transparent; border: 0; }
+
+    .fin-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    .fin-table th, .fin-table td { padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    .fin-table th { background: #fafafa; font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: #777; }
+    .fin-table input[type=text], .fin-table input[type=number], .fin-table input[type=date] {
+      padding: 5px 7px; border: 1px solid transparent; background: transparent;
+      width: 100%; font-size: 0.88rem; border-radius: 4px; font-family: inherit;
+    }
+    .fin-table input:focus { outline: none; border-color: var(--accent); background: #fff; }
+    .fin-table .num { text-align: right; }
+    .fin-table .num input { text-align: right; }
+    .fin-table .col-bgn { color: #666; font-size: 0.82rem; }
+    .fin-table .total-row td { font-weight: 700; background: #fbf7ee; border-top: 2px solid var(--accent); color: var(--text); }
+    .fin-table .del-btn { background: none; border: 0; color: #c62828; cursor: pointer; padding: 4px 8px; border-radius: 4px; font-size: 1rem; }
+    .fin-table .del-btn:hover { background: rgba(198,40,40,0.1); }
+
+    .fin-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; padding: 16px 0; }
+    .fin-summary .card { background: #fafafa; border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+    .fin-summary .lbl { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: #888; font-weight: 600; margin-bottom: 6px; }
+    .fin-summary .val { font-size: 1.5rem; font-weight: 700; color: var(--text); }
+    .fin-summary .val.profit { color: #1e6a35; }
+    .fin-summary .val.loss { color: #c62828; }
+    .fin-summary .sub { font-size: 0.85rem; color: #777; margin-top: 4px; }
+
+    .fin-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+
+    @media (max-width: 900px) {
+      .fin-table { font-size: 0.82rem; }
+      .fin-table th, .fin-table td { padding: 5px 5px; }
+    }
+  </style>
 </head>
 <body>
   <header class="admin-header">
@@ -29,28 +74,134 @@
 
   <main class="admin-main">
     <div class="admin-container">
-      <h1 class="page-title" data-i18n="financials_title">Финансови отчети</h1>
-      <p class="page-sub" data-i18n="financials_lead" style="max-width:720px;color:#666;margin-bottom:24px">
-        Финансовите записи се добавят ръчно. Тази страница ви позволява да въвеждате приходи и разходи по събитие и да експортирате месечния отчет.
-      </p>
+      <h1 class="page-title">Финансов отчет</h1>
 
-      <div class="financials-stub">
-        <strong data-i18n="financials_pending">Формата за финансов запис ще бъде добавена след като предоставите шаблона.</strong>
-        Очакваме шаблон с колоните, които искате да следите (приход / разход / категория / дата / контрагент / номер на фактура / и т.н.).
+      <div class="fin-toolbar">
+        <label>
+          Месец
+          <input type="month" id="fin-month">
+        </label>
+        <button class="btn btn-outline btn-sm" id="btn-export-xlsx">Свали .xlsx</button>
+        <span class="rate">1 € = 1.95583 лв (фиксиран курс)</span>
       </div>
+
+      <!-- 1. Pending — confirmed/completed enquiries this month not yet in the report -->
+      <section class="fin-section">
+        <h2>Очаквани от CRM <span class="count" id="pending-count">—</span></h2>
+        <div class="pending-list" id="pending-list">
+          <div class="pending-row empty">Зареждане…</div>
+        </div>
+      </section>
+
+      <!-- 2. Income (events) -->
+      <section class="fin-section">
+        <h2>Приходи — събития <span class="count" id="events-count">—</span></h2>
+        <div style="overflow-x:auto">
+          <table class="fin-table" id="events-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Дата на събитие</th>
+                <th>Клиент</th>
+                <th class="num">Оферта €</th>
+                <th>Дата плащане</th>
+                <th class="num">Аванс брой €</th>
+                <th class="num">Аванс банка €</th>
+                <th>Дата доплащане</th>
+                <th class="num">Доплащ. брой €</th>
+                <th class="num">Доплащ. банка €</th>
+                <th class="num">Общо €</th>
+                <th class="num">Общо лв</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="events-body"></tbody>
+            <tfoot>
+              <tr class="total-row">
+                <td colspan="3">Общо</td>
+                <td class="num" id="ev-tot-offer">€0.00</td>
+                <td></td>
+                <td class="num" id="ev-tot-dep-cash">€0.00</td>
+                <td class="num" id="ev-tot-dep-bank">€0.00</td>
+                <td></td>
+                <td class="num" id="ev-tot-bal-cash">€0.00</td>
+                <td class="num" id="ev-tot-bal-bank">€0.00</td>
+                <td class="num" id="ev-tot-eur">€0.00</td>
+                <td class="num" id="ev-tot-bgn">лв 0.00</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <div class="fin-actions">
+          <button class="btn btn-sm btn-outline" id="btn-add-event">+ Добави ред (ръчно)</button>
+        </div>
+      </section>
+
+      <!-- 3. Expenses -->
+      <section class="fin-section">
+        <h2>Разходи <span class="count" id="expenses-count">—</span></h2>
+        <div style="overflow-x:auto">
+          <table class="fin-table" id="expenses-table">
+            <thead>
+              <tr>
+                <th>Дата</th>
+                <th>Описание</th>
+                <th class="num">Сума €</th>
+                <th class="num">Сума лв</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="expenses-body"></tbody>
+            <tfoot>
+              <tr class="total-row">
+                <td colspan="2">Общо разходи</td>
+                <td class="num" id="ex-tot-eur">€0.00</td>
+                <td class="num" id="ex-tot-bgn">лв 0.00</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <div class="fin-actions">
+          <button class="btn btn-sm btn-outline" id="btn-add-expense">+ Добави разход</button>
+        </div>
+      </section>
+
+      <!-- 4. Summary -->
+      <section class="fin-section">
+        <h2>Обобщение</h2>
+        <div class="fin-summary">
+          <div class="card">
+            <div class="lbl">Приходи</div>
+            <div class="val" id="sum-income-eur">€0.00</div>
+            <div class="sub" id="sum-income-bgn">лв 0.00</div>
+          </div>
+          <div class="card">
+            <div class="lbl">Разходи</div>
+            <div class="val" id="sum-expense-eur">€0.00</div>
+            <div class="sub" id="sum-expense-bgn">лв 0.00</div>
+          </div>
+          <div class="card">
+            <div class="lbl">Печалба</div>
+            <div class="val" id="sum-profit-eur">€0.00</div>
+            <div class="sub" id="sum-profit-bgn">лв 0.00</div>
+          </div>
+          <div class="card">
+            <div class="lbl">Облагане заплата</div>
+            <div class="val" id="sum-taxable-eur">€0.00</div>
+            <div class="sub" id="sum-taxable-bgn">лв 0.00</div>
+          </div>
+        </div>
+      </section>
     </div>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
   <script src="js/supabase-client.js?v=2" defer></script>
   <script src="js/admin-i18n.js?v=3" defer></script>
   <script src="js/auth.js?v=2" defer></script>
-  <script defer>
-    document.addEventListener('DOMContentLoaded', async () => {
-      const session = await requireAuth();
-      if (!session) return;
-    });
-    function rerenderPage(){}
-  </script>
+  <script src="js/financials.js?v=1" defer></script>
 </body>
 </html>
