@@ -6,6 +6,17 @@
 let allEnquiries = [];
 let grouped = []; // [{ key, label, contact, count, lastAt, lifetime, events:Set, marketing, enquiries:[...]}]
 
+// dashboard.js owns the canonical esc/fmtDate. This page doesn't load
+// dashboard.js, so re-declare the small helpers here.
+function esc(str) {
+  if (str == null) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function fmtDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('bg-BG', { day:'2-digit', month:'2-digit', year:'numeric' });
+}
+
 function customerKey(e) {
   const em = (e.email || '').trim().toLowerCase();
   if (em) return 'e:' + em;

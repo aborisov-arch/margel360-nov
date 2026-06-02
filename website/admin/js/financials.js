@@ -16,6 +16,17 @@ const BGN_RATE = 1.95583;
 const fmtEur = n => '€' + (Number(n) || 0).toFixed(2);
 const fmtBgn = n => 'лв ' + (Number(n) || 0).toFixed(2);
 
+// HTML-escape + date formatter. dashboard.js has its own copies but this
+// page doesn't load that file, so we duplicate the small helpers here.
+function esc(str) {
+  if (str == null) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function fmtDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('bg-BG', { day:'2-digit', month:'2-digit', year:'numeric' });
+}
+
 // Income breakdown categories (event-side).
 const INCOME_CATS = [
   { id: 'rent',   field: 'income_rent_eur',   label: 'Наем на зала' },
