@@ -14,7 +14,9 @@ let booking = { event:null, date:'', time:'day', arrival_time:'', addons:{}, dri
 
 // Addons that take a stepper instead of a checkbox. Heaters cap at 5 (we
 // physically have only that many), furniture uses freeUntil from the catalog.
-const ADDON_MAX_QTY = { heater: 5, heater_tbl: 5 };
+// Addons that use a +/- typeable qty input instead of an on/off toggle.
+// Heaters cap at 5 (physical inventory). glow_table caps at 10.
+const ADDON_MAX_QTY = { heater: 5, heater_tbl: 5, glow_table: 10 };
 function isQtyAddon(svc) { return svc.freeUntil != null || ADDON_MAX_QTY[svc.id] != null; }
 function addonMaxQty(svc) { return ADDON_MAX_QTY[svc.id] ?? 999; }
 function addonLinePrice(svc, qty) {
