@@ -343,6 +343,21 @@
 }
 .qty-btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
 .qty-num { font-size: 0.9rem; font-weight: 700; color: var(--text); min-width: 20px; text-align: center; }
+/* Typeable qty input for drinks — keep the +/− buttons; the input lets
+   guests type a larger number (e.g. 24 bottles) without clicking + 24 times. */
+.qty-num--input {
+  width: 44px; min-width: 44px; height: 26px;
+  padding: 0 4px;
+  border: 1px solid var(--border); border-radius: 6px;
+  background: var(--bg); color: var(--text);
+  font: 700 0.9rem/1 'Inter', sans-serif;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  appearance: textfield; -moz-appearance: textfield;
+}
+.qty-num--input::-webkit-outer-spin-button,
+.qty-num--input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.qty-num--input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(201,168,76,0.18); }
 
 @media (max-width: 768px) { .drinks-grid { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 480px) { .drinks-grid { grid-template-columns: repeat(2, 1fr); } }
