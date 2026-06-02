@@ -1,13 +1,18 @@
 let currentYear  = new Date().getFullYear();
 let currentMonth = new Date().getMonth(); // 0-based
 let occupiedDates = new Set();
+// Map of YYYY-MM-DD → [{ name, event_type, enquiry_id }, ...]
+// Populated from confirmed/completed enquiries so the side panel can
+// show who booked each red date.
+let bookingsByDate = new Map();
 
 document.addEventListener('DOMContentLoaded', async () => {
   const session = await requireAuth();
   if (!session) return;
 
-  await loadOccupiedDates();
+  await Promise.all([loadOccupiedDates(), loadBookings()]);
   renderCalendar();
+  renderSidePanel();
 
   document.getElementById('prev-month').addEventListener('click', () => {
     currentMonth--;
@@ -25,6 +30,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Called by admin-i18n.js on language switch
 function rerenderPage() {
   renderCalendar();
+  renderSidePanel();
 }
 
 async function loadOccupiedDates() {
@@ -34,6 +40,29 @@ async function loadOccupiedDates() {
     return;
   }
   occupiedDates = new Set(data.map(r => r.date));
+}
+
+// Pull every confirmed/completed enquiry and group by event date so the
+// side panel can show "DD.MM.YYYY — Name (Event type)" per booked day.
+// preferred_date is stored as "DD/MM/YYYY"; convert to ISO YYYY-MM-DD.
+async function loadBookings() {
+  const { data, error } = await db
+    .from('enquiries')
+    .select('id, full_name, event_type, preferred_date, pipeline_status')
+    .in('pipeline_status', ['confirmed', 'completed']);
+  if (error) { console.error('Failed to load bookings:', error); return; }
+  bookingsByDate = new Map();
+  (data || []).forEach(e => {
+    const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(e.preferred_date || '');
+    if (!m) return;
+    const iso = `${m[3]}-${m[2]}-${m[1]}`;
+    if (!bookingsByDate.has(iso)) bookingsByDate.set(iso, []);
+    bookingsByDate.get(iso).push({
+      name: e.full_name || '—',
+      event_type: e.event_type || '',
+      id: e.id,
+    });
+  });
 }
 
 function renderCalendar() {
@@ -123,4 +152,59 @@ async function toggleDate(dateStr, btn) {
       );
     }
   }
+}
+
+// Side-panel rendering — sorted chronologically. For every occupied date
+// we either show the customer(s) who booked it (from bookingsByDate) OR
+// a placeholder "Заето" pill when the date was marked occupied manually
+// without an enquiry attached (legacy data or admin-blocked dates).
+function renderSidePanel() {
+  const wrap = document.getElementById('cal-bookings');
+  if (!wrap) return;
+
+  // Union of dates: dates with bookings + manually-occupied dates.
+  const allDates = new Set([...occupiedDates, ...bookingsByDate.keys()]);
+  const sorted = Array.from(allDates).sort();
+  if (!sorted.length) {
+    wrap.innerHTML = `<div class="empty">Няма заети дати.</div>`;
+    return;
+  }
+  wrap.innerHTML = sorted.map(iso => {
+    const [y, m, d] = iso.split('-');
+    const dateLabel = `${d}.${m}.${y}`;
+    const items = bookingsByDate.get(iso) || [];
+    if (!items.length) {
+      return `
+        <button type="button" class="cal-booking unnamed" data-jump="${iso}">
+          <span class="cal-booking__date">${dateLabel}</span>
+          <span class="cal-booking__name">Заето (без запитване)</span>
+        </button>
+      `;
+    }
+    return items.map(b => `
+      <button type="button" class="cal-booking" data-jump="${iso}">
+        <span class="cal-booking__date">${dateLabel}</span>
+        <span class="cal-booking__name">${esc(b.name)}</span>
+        ${b.event_type ? `<span class="cal-booking__type">${esc(b.event_type)}</span>` : ''}
+      </button>
+    `).join('');
+  }).join('');
+
+  // Click a booking → jump the calendar to that month
+  wrap.querySelectorAll('[data-jump]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const iso = btn.getAttribute('data-jump');
+      const [y, m] = iso.split('-');
+      currentYear = parseInt(y, 10);
+      currentMonth = parseInt(m, 10) - 1;
+      renderCalendar();
+    });
+  });
+}
+
+// HTML-escape — same helper as the other admin pages (dashboard.js has its
+// own copy). Duplicated because this script doesn't load dashboard.js.
+function esc(str) {
+  if (str == null) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }

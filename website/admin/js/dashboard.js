@@ -614,9 +614,17 @@ function bindTableHandlers() {
       const summaryRow = detailRow?.previousElementSibling;
 
       lockBtn.disabled = true;
+      // "Потвърди резервация" now means: lock customer edits AND flip the
+      // pipeline stage to 'confirmed' (so the auto-block-date trigger
+      // marks the calendar). Undoing rolls the stage back to 'new' — we
+      // don't try to remember the previous stage, since the explicit
+      // pipeline dropdown above is the place to set anything finer.
+      const patch = newLocked
+        ? { edit_locked: true,  pipeline_status: 'confirmed' }
+        : { edit_locked: false, pipeline_status: 'new' };
       const { error } = await db
         .from('enquiries')
-        .update({ edit_locked: newLocked })
+        .update(patch)
         .eq('id', id);
 
       if (error) {
@@ -672,7 +680,20 @@ function bindTableHandlers() {
       }
 
       // Keep the cache in sync so a later render (e.g. language switch) is correct.
-      if (enquiry) enquiry.edit_locked = newLocked;
+      if (enquiry) {
+        enquiry.edit_locked = newLocked;
+        enquiry.pipeline_status = newLocked ? 'confirmed' : 'new';
+      }
+      // Reflect the pipeline change on the summary-row badge + the dropdown
+      // in the CRM panel, so the UI stays consistent without a full re-render.
+      const pipeBadge = summaryRow?.querySelector('.pipe-badge');
+      if (pipeBadge) {
+        const b = pipelineBadge(newLocked ? 'confirmed' : 'new');
+        pipeBadge.className = b.cls;
+        pipeBadge.textContent = b.label;
+      }
+      const stageSel = detailRow?.querySelector('.crm-stage-select');
+      if (stageSel) stageSel.value = newLocked ? 'confirmed' : 'new';
 
       if (syncWarning) {
         alert(`${t('edit_lock_btn')}: ${syncWarning}`);
