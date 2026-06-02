@@ -114,8 +114,10 @@ function eventTotalEur(ev) {
 
 function renderPending() {
   const list = document.getElementById('pending-list');
+  if (!list) return;
   const items = pendingEnquiries();
-  document.getElementById('pending-count').textContent = items.length;
+  const cnt = document.getElementById('pending-count');
+  if (cnt) cnt.textContent = items.length;
   if (!items.length) {
     list.innerHTML = `<div class="pending-row empty">Няма нови потвърдени запитвания за този месец.</div>`;
     return;
@@ -132,11 +134,12 @@ function renderPending() {
 
 function eventRowHtml(ev, idx) {
   const total = eventTotalEur(ev);
+  const linkTitle = ev.enquiry_id ? 'Свързано със събитие от CRM (смени)' : 'Свържи с минало събитие';
   return `
-    <tr data-id="${esc(ev.id)}">
+    <tr data-id="${esc(ev.id)}"${ev.enquiry_id ? ' class="is-linked"' : ''}>
       <td class="idx">${idx + 1}</td>
-      <td><input type="date" data-f="event_date" value="${ev.event_date || ''}"></td>
       <td><input type="text" data-f="customer_name" value="${esc(ev.customer_name || '')}"></td>
+      <td><input type="date" data-f="event_date" value="${ev.event_date || ''}"></td>
       <td class="num"><input type="number" step="0.01" data-f="offer_total_eur" value="${ev.offer_total_eur || ''}"></td>
       <td class="num col-cat"><input type="number" step="0.01" data-f="income_rent_eur"   value="${ev.income_rent_eur   || ''}"></td>
       <td class="num col-cat"><input type="number" step="0.01" data-f="income_drinks_eur" value="${ev.income_drinks_eur || ''}"></td>
@@ -150,7 +153,10 @@ function eventRowHtml(ev, idx) {
       <td class="pay-col"><input type="date" data-f="balance_date" value="${ev.balance_date || ''}"></td>
       <td class="num pay-col"><input type="number" step="0.01" data-f="balance_cash_eur" value="${ev.balance_cash_eur || ''}"></td>
       <td class="num pay-col"><input type="number" step="0.01" data-f="balance_bank_eur" value="${ev.balance_bank_eur || ''}"></td>
-      <td><button class="del-btn" data-del-event="${esc(ev.id)}" title="Изтрий">×</button></td>
+      <td class="actions-col"><div class="row-actions">
+        <button type="button" class="btn-link-event ${ev.enquiry_id ? 'is-linked' : ''}" data-link-event="${esc(ev.id)}" title="${esc(linkTitle)}">🔗</button>
+        <button type="button" class="del-btn" data-del-event="${esc(ev.id)}" title="Изтрий">×</button>
+      </div></td>
     </tr>
   `;
 }
@@ -172,18 +178,26 @@ function expenseRowHtml(ex) {
 }
 
 function renderEvents() {
-  document.getElementById('events-count').textContent = events.length;
-  document.getElementById('events-body').innerHTML =
-    events.length ? events.map(eventRowHtml).join('')
-                  : `<tr><td colspan="17" style="text-align:center;color:#999;padding:18px">Няма записи. Добавете от списъка отгоре или ръчно.</td></tr>`;
+  const body = document.getElementById('events-body');
+  const cnt = document.getElementById('events-count');
+  if (cnt) cnt.textContent = events.length;
+  if (body) {
+    body.innerHTML =
+      events.length ? events.map(eventRowHtml).join('')
+                    : `<tr><td colspan="17" style="text-align:center;color:#999;padding:18px">Няма записи. Добавете от списъка отгоре или ръчно.</td></tr>`;
+  }
   recalcTotals();
 }
 
 function renderExpenses() {
-  document.getElementById('expenses-count').textContent = expenses.length;
-  document.getElementById('expenses-body').innerHTML =
-    expenses.length ? expenses.map(expenseRowHtml).join('')
-                    : `<tr><td colspan="6" style="text-align:center;color:#999;padding:18px">Няма записи.</td></tr>`;
+  const body = document.getElementById('expenses-body');
+  const cnt = document.getElementById('expenses-count');
+  if (cnt) cnt.textContent = expenses.length;
+  if (body) {
+    body.innerHTML =
+      expenses.length ? expenses.map(expenseRowHtml).join('')
+                      : `<tr><td colspan="6" style="text-align:center;color:#999;padding:18px">Няма записи.</td></tr>`;
+  }
   recalcTotals();
 }
 
@@ -230,9 +244,23 @@ function recalcTotals() {
   set('sum-taxable-eur',  fmtEur(profitEur));
   set('sum-taxable-bgn',  fmtBgn(profitEur * BGN_RATE));
 
+  // Summary page nav-card mirrors
+  set('nav-income-total', fmtEur(incomeEur));
+  set('nav-income-count', String(events.length));
+  set('nav-income-pending', String(pendingEnquiries().length));
+  set('nav-expenses-total', fmtEur(expenseEur));
+  set('nav-expenses-count', String(expenses.length));
+  // Forward the current month to the detail pages so they open on the same window.
+  const navIncome = document.getElementById('nav-income');
+  const navExpenses = document.getElementById('nav-expenses');
+  if (navIncome   && currentMonth) navIncome.href   = `financials-income.html?month=${encodeURIComponent(currentMonth)}`;
+  if (navExpenses && currentMonth) navExpenses.href = `financials-expenses.html?month=${encodeURIComponent(currentMonth)}`;
+
   // Category breakdown pills
+  const incomeCatBreakdown = document.getElementById('income-cat-breakdown');
+  const expenseCatBreakdown = document.getElementById('expense-cat-breakdown');
   const incomeCats = { rent, drinks, addons, other };
-  document.getElementById('income-cat-breakdown').innerHTML = INCOME_CATS.map(c => `
+  if (incomeCatBreakdown) incomeCatBreakdown.innerHTML = INCOME_CATS.map(c => `
     <div class="pill" data-cat="${esc(c.id)}">
       <div class="pill__label">${esc(c.label)}</div>
       <div class="pill__value">${fmtEur(incomeCats[c.id])}</div>
@@ -243,15 +271,17 @@ function recalcTotals() {
   const expenseCatTotals = {};
   EXPENSE_CATS.forEach(c => expenseCatTotals[c.id] = 0);
   expenses.forEach(x => { expenseCatTotals[x.category || 'other'] = (expenseCatTotals[x.category || 'other'] || 0) + Number(x.amount_eur || 0); });
-  document.getElementById('expense-cat-breakdown').innerHTML = EXPENSE_CATS
-    .filter(c => expenseCatTotals[c.id] > 0)
-    .map(c => `
-      <div class="pill" data-cat="${esc(c.id)}">
-        <div class="pill__label">${esc(c.label)}</div>
-        <div class="pill__value">${fmtEur(expenseCatTotals[c.id])}</div>
-        <div class="pill__sub">${fmtBgn(expenseCatTotals[c.id] * BGN_RATE)}${expenseEur ? ` <span class="pill__pct">${Math.round(expenseCatTotals[c.id] / expenseEur * 100)}%</span>` : ''}</div>
-      </div>
-    `).join('') || '<div class="empty-state">Няма разходи в този месец.</div>';
+  if (expenseCatBreakdown) {
+    expenseCatBreakdown.innerHTML = EXPENSE_CATS
+      .filter(c => expenseCatTotals[c.id] > 0)
+      .map(c => `
+        <div class="pill" data-cat="${esc(c.id)}">
+          <div class="pill__label">${esc(c.label)}</div>
+          <div class="pill__value">${fmtEur(expenseCatTotals[c.id])}</div>
+          <div class="pill__sub">${fmtBgn(expenseCatTotals[c.id] * BGN_RATE)}${expenseEur ? ` <span class="pill__pct">${Math.round(expenseCatTotals[c.id] / expenseEur * 100)}%</span>` : ''}</div>
+        </div>
+      `).join('') || '<div class="empty-state">Няма разходи в този месец.</div>';
+  }
 }
 
 // ────────────────────────────────────────────────────────────────────────
@@ -378,8 +408,80 @@ async function deleteExpense(id) {
   renderExpenses();
 }
 
+// ── Link-to-completed-event modal ─────────────────────────────────────
+// Manually-added income rows can be promoted later: pick from any
+// confirmed/completed enquiry (across all months) and bind the row to it.
+// Useful when the bookkeeper enters a payment before realising the same
+// customer already exists in the CRM.
+let linkingEventId = null;
+
+function openLinkModal(eventId) {
+  const modal = document.getElementById('link-modal');
+  if (!modal) return;
+  linkingEventId = eventId;
+  modal.hidden = false;
+  renderLinkModalList('');
+  const search = document.getElementById('link-modal-search');
+  if (search) { search.value = ''; search.focus(); }
+}
+function closeLinkModal() {
+  const modal = document.getElementById('link-modal');
+  if (!modal) return;
+  modal.hidden = true;
+  linkingEventId = null;
+}
+function renderLinkModalList(q) {
+  const list = document.getElementById('link-modal-list');
+  if (!list) return;
+  const needle = (q || '').trim().toLowerCase();
+  const eligible = allEnquiries.filter(e => ['confirmed', 'completed'].includes(e.pipeline_status));
+  const matches = needle
+    ? eligible.filter(e =>
+        (e.full_name || '').toLowerCase().includes(needle) ||
+        (e.event_type || '').toLowerCase().includes(needle) ||
+        (e.preferred_date || '').includes(needle))
+    : eligible;
+  if (!matches.length) {
+    list.innerHTML = `<div class="empty-state">Няма съвпадения.</div>`;
+    return;
+  }
+  list.innerHTML = matches.slice(0, 50).map(e => `
+    <button type="button" class="link-modal__item" data-link-pick="${esc(e.id)}">
+      <span class="name">${esc(e.full_name || '—')}</span>
+      <span class="meta">${esc(e.preferred_date || '')} · ${esc(e.event_type || '')}</span>
+      <span class="stage">${esc(e.pipeline_status)}</span>
+    </button>
+  `).join('');
+}
+async function pickLinkTarget(enquiryId) {
+  if (!linkingEventId) return;
+  const e = allEnquiries.find(x => x.id === enquiryId);
+  if (!e) return;
+  const b = enquiryBreakdown(e);
+  const patch = {
+    enquiry_id: e.id,
+    customer_name: e.full_name || '',
+    event_date: parsePreferredDate(e.preferred_date),
+    offer_total_eur: estimateEnquiryTotal(e),
+    income_rent_eur:   b.rent,
+    income_drinks_eur: b.drinks,
+    income_addons_eur: b.addons,
+    income_other_eur:  b.other,
+    updated_at: new Date().toISOString(),
+  };
+  const { error } = await db.from('financial_events').update(patch).eq('id', linkingEventId);
+  if (error) { showError('Грешка при свързване', error); return; }
+  const ev = events.find(x => x.id === linkingEventId);
+  if (ev) Object.assign(ev, patch);
+  showToast('Редът е свързан със събитието', 'ok');
+  closeLinkModal();
+  renderPending(); renderEvents();
+}
+
 function bindInlineEdit() {
-  document.getElementById('events-body').addEventListener('change', async evt => {
+  const eventsBody = document.getElementById('events-body');
+  const expensesBody = document.getElementById('expenses-body');
+  eventsBody?.addEventListener('change', async evt => {
     const inp = evt.target.closest('[data-f]');
     if (!inp) return;
     const tr = inp.closest('tr[data-id]');
@@ -402,7 +504,7 @@ function bindInlineEdit() {
     recalcTotals();
   });
 
-  document.getElementById('expenses-body').addEventListener('change', async evt => {
+  expensesBody?.addEventListener('change', async evt => {
     const inp = evt.target.closest('[data-f]');
     if (!inp) return;
     const tr = inp.closest('tr[data-id]');
@@ -548,6 +650,18 @@ document.addEventListener('click', evt => {
   if (delEv)   { deleteEvent(delEv.getAttribute('data-del-event')); return; }
   const delEx = evt.target.closest('[data-del-expense]');
   if (delEx)   { deleteExpense(delEx.getAttribute('data-del-expense')); return; }
+  const linkEv = evt.target.closest('[data-link-event]');
+  if (linkEv)  { openLinkModal(linkEv.getAttribute('data-link-event')); return; }
+  const linkPick = evt.target.closest('[data-link-pick]');
+  if (linkPick) { pickLinkTarget(linkPick.getAttribute('data-link-pick')); return; }
+  if (evt.target.closest('[data-close-modal]')) { closeLinkModal(); return; }
+});
+
+document.addEventListener('input', evt => {
+  if (evt.target.id === 'link-modal-search') renderLinkModalList(evt.target.value);
+});
+document.addEventListener('keydown', evt => {
+  if (evt.key === 'Escape') closeLinkModal();
 });
 
 document.addEventListener('change', evt => {
@@ -559,9 +673,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!session) return;
   userEmail = session.user?.email || null;
 
-  const now = new Date();
-  const def = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  currentMonth = isoMonth(def);
+  // ?month=YYYY-MM in the URL wins (so navigating between summary and
+  // detail pages stays on the same month). Otherwise default to the
+  // previous calendar month — events get reconciled the month after.
+  const urlParams = new URLSearchParams(location.search);
+  const urlMonth = urlParams.get('month');
+  if (urlMonth && /^\d{4}-\d{2}$/.test(urlMonth)) {
+    currentMonth = urlMonth;
+  } else {
+    const now = new Date();
+    const def = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    currentMonth = isoMonth(def);
+  }
   const monthInput = document.getElementById('fin-month');
   if (monthInput) monthInput.value = currentMonth;
 

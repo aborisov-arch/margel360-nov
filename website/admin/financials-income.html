@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Финанси · Приходи — Маргел 360° Админ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/admin.css?v=12">
+  <link rel="stylesheet" href="css/financials.css?v=1">
+</head>
+<body>
+  <header class="admin-header">
+    <a href="dashboard.html" class="admin-logo">МАРГЕЛ <span>360°</span></a>
+    <nav class="admin-nav">
+      <a href="dashboard.html" data-i18n="nav_enquiries">Запитвания</a>
+      <a href="customers.html" data-i18n="nav_customers">Клиенти</a>
+      <a href="calendar.html" data-i18n="nav_calendar">Календар</a>
+      <a href="feedback.html">Впечатления</a>
+      <a href="marketing.html" data-i18n="nav_marketing">Маркетинг</a>
+      <a href="financials.html" class="active" data-i18n="nav_financials">Финанси</a>
+    </nav>
+    <div class="lang-toggle">
+      <button class="lang-btn" data-lang="bg">БГ</button>
+      <button class="lang-btn" data-lang="en">EN</button>
+    </div>
+    <button class="btn btn-outline btn-sm" id="logout-btn" data-i18n="nav_logout">Изход</button>
+  </header>
+
+  <main class="admin-main fin">
+    <div class="admin-container">
+      <div class="fin-breadcrumb">
+        <a href="financials.html">← Назад към обобщение</a>
+      </div>
+      <h1 class="page-title">Приходи · събития</h1>
+
+      <div class="fin-toolbar">
+        <div class="fin-toolbar__field">
+          <label for="fin-month">Месец</label>
+          <input type="month" id="fin-month">
+        </div>
+        <span class="fin-toolbar__rate"><strong>1 €</strong> = 1.95583 лв · фиксиран курс</span>
+      </div>
+
+      <section class="fin-section">
+        <div class="fin-section__head">
+          <h2>Очаквани от CRM</h2>
+          <span class="count" id="pending-count">—</span>
+          <span class="fin-section__hint">Потвърдените запитвания за месеца, които още не са в отчета</span>
+        </div>
+        <div class="pending-list" id="pending-list">
+          <div class="empty-state">Зареждане…</div>
+        </div>
+      </section>
+
+      <section class="fin-section">
+        <div class="fin-section__head">
+          <h2>Приходи — събития</h2>
+          <span class="count" id="events-count">—</span>
+          <span class="fin-section__hint">Разбивка по категория</span>
+        </div>
+        <div class="ledger-wrap">
+          <table class="ledger ledger--income" id="events-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Клиент</th>
+                <th>Дата</th>
+                <th class="num">Оферта €</th>
+                <th class="num col-cat">Наем €</th>
+                <th class="num col-cat">Напитки €</th>
+                <th class="num col-cat">Доп. услуги €</th>
+                <th class="num col-cat">Друго €</th>
+                <th class="num">Общо €</th>
+                <th class="num">Общо лв</th>
+                <th class="pay-col">Дата плащане</th>
+                <th class="num pay-col">Аванс брой €</th>
+                <th class="num pay-col">Аванс банка €</th>
+                <th class="pay-col">Дата доплащане</th>
+                <th class="num pay-col">Доплащ. брой €</th>
+                <th class="num pay-col">Доплащ. банка €</th>
+                <th class="actions-col"></th>
+              </tr>
+            </thead>
+            <tbody id="events-body"></tbody>
+            <tfoot>
+              <tr class="total-row">
+                <td colspan="3">Общо</td>
+                <td class="num" id="ev-tot-offer">€0.00</td>
+                <td class="num col-cat" id="ev-tot-rent">€0.00</td>
+                <td class="num col-cat" id="ev-tot-drinks">€0.00</td>
+                <td class="num col-cat" id="ev-tot-addons">€0.00</td>
+                <td class="num col-cat" id="ev-tot-other">€0.00</td>
+                <td class="num" id="ev-tot-eur">€0.00</td>
+                <td class="num col-bgn" id="ev-tot-bgn">лв 0.00</td>
+                <td class="pay-col"></td>
+                <td class="num pay-col" id="ev-tot-dep-cash">€0.00</td>
+                <td class="num pay-col" id="ev-tot-dep-bank">€0.00</td>
+                <td class="pay-col"></td>
+                <td class="num pay-col" id="ev-tot-bal-cash">€0.00</td>
+                <td class="num pay-col" id="ev-tot-bal-bank">€0.00</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <div class="fin-actions">
+          <button type="button" class="btn-add" id="btn-add-event" onclick="window.addManualEvent && window.addManualEvent()">+ Добави ред (ръчно)</button>
+          <button type="button" class="btn-ghost" id="btn-toggle-pay">Покажи разбивка по плащане</button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Link-to-completed-event modal -->
+  <div class="link-modal" id="link-modal" hidden>
+    <div class="link-modal__backdrop" data-close-modal></div>
+    <div class="link-modal__panel" role="dialog" aria-modal="true" aria-labelledby="link-modal-title">
+      <div class="link-modal__head">
+        <h2 id="link-modal-title">Свържи с минало събитие</h2>
+        <button type="button" class="link-modal__close" data-close-modal aria-label="Затвори">×</button>
+      </div>
+      <div class="link-modal__body">
+        <input type="text" id="link-modal-search" placeholder="Търсене по име, телефон или събитие…">
+        <div class="link-modal__list" id="link-modal-list">Зареждане…</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="js/supabase-client.js?v=3" defer></script>
+  <script src="js/admin-i18n.js?v=3" defer></script>
+  <script src="js/auth.js?v=2" defer></script>
+  <script src="js/financials.js?v=9" defer></script>
+</body>
+</html>

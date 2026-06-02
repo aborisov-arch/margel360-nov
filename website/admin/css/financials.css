@@ -1,0 +1,527 @@
+/* ── Tokens scoped to the financials page ──
+       Vanilla port of the shadcn Table + Badge component visual language
+       (taller rows, muted-foreground headers, hairline borders, subtle
+       hover, soft-bg badge pills per category) on the existing gold brand.
+       Inter is already loaded by the admin shell; tabular-nums on numeric
+       columns so totals stack like an accountant's ledger. */
+    .fin {
+      --fin-gap: 24px;
+      --fin-radius: 12px;
+      --fin-border: #e5e3df;
+      --fin-border-soft: #f1efeb;
+      --fin-bg-card: #ffffff;
+      --fin-bg-muted: #f5f4f1;
+      --fin-bg-muted-50: rgba(245,244,241,0.5);
+      --fin-text: #0a0a0a;
+      --fin-muted-foreground: #71717a;
+      --fin-muted-2: #a3a09a;
+      --fin-gold: #c9a84c;
+      --fin-gold-soft: rgba(201,168,76,0.12);
+      --fin-gold-line: rgba(201,168,76,0.32);
+      --fin-positive: #16a34a;
+      --fin-positive-soft: #dcfce7;
+      --fin-negative: #dc2626;
+      --fin-negative-soft: #fee2e2;
+      --shadow-card: 0 1px 2px rgba(0,0,0,0.02);
+      font-feature-settings: "ss01", "ss02";
+    }
+    .fin .num, .fin input[type=number], .fin .kpi__value, .fin .pill__value, .fin .total-row td {
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ── Sticky toolbar — keeps the month picker + export always reachable ── */
+    .fin-toolbar {
+      position: sticky; top: 0; z-index: 30;
+      display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;
+      margin: 0 0 var(--fin-gap);
+      padding: 16px 20px;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: saturate(140%) blur(8px);
+      -webkit-backdrop-filter: saturate(140%) blur(8px);
+      border: 1px solid var(--fin-border);
+      border-radius: var(--fin-radius);
+      box-shadow: var(--shadow-card);
+    }
+    .fin-toolbar__field { display: flex; flex-direction: column; gap: 4px; }
+    .fin-toolbar__field label { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fin-muted); font-weight: 600; }
+    .fin-toolbar input[type=month] {
+      padding: 9px 12px; border: 1px solid var(--fin-border); border-radius: 8px;
+      font: 500 0.95rem/1 'Inter', sans-serif; color: var(--fin-text);
+      background: #fff; min-width: 170px;
+    }
+    .fin-toolbar input[type=month]:focus { outline: 2px solid var(--fin-gold); outline-offset: 1px; border-color: var(--fin-gold); }
+    .fin-toolbar__rate {
+      margin-left: auto; align-self: center;
+      font-size: 0.78rem; color: var(--fin-muted);
+      padding: 4px 10px; background: var(--fin-gold-soft); border-radius: 999px;
+    }
+    .fin-toolbar__rate strong { color: var(--fin-text); font-weight: 600; }
+    .btn-export {
+      padding: 9px 14px; border-radius: 8px; border: 1px solid var(--fin-text);
+      background: var(--fin-text); color: #fff; font: 600 0.85rem/1 'Inter', sans-serif;
+      letter-spacing: 0.04em; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 6px;
+      transition: background 0.15s ease, transform 0.15s ease;
+    }
+    .btn-export:hover { background: #000; transform: translateY(-1px); }
+    .btn-export:focus-visible { outline: 2px solid var(--fin-gold); outline-offset: 2px; }
+    .btn-export svg { width: 14px; height: 14px; }
+
+    /* ── Section cards (shadcn Card pattern: subtle border, no shadow stack) ── */
+    .fin-section {
+      background: var(--fin-bg-card);
+      border: 1px solid var(--fin-border);
+      border-radius: var(--fin-radius);
+      padding: 24px;
+      margin-bottom: var(--fin-gap);
+    }
+    .fin-section__head {
+      display: flex; align-items: center; gap: 12px;
+      margin: 0 0 20px;
+    }
+    .fin-section__head h2 {
+      margin: 0;
+      font: 600 1rem/1.4 'Inter', sans-serif;
+      color: var(--fin-text);
+      letter-spacing: -0.01em;
+    }
+    .fin-section__head .count {
+      /* shadcn "badge appearance=light variant=primary" with gold */
+      display: inline-flex; align-items: center;
+      padding: 2px 10px;
+      font: 500 0.72rem/1.4 'Inter', sans-serif;
+      letter-spacing: 0;
+      color: var(--fin-gold);
+      background: var(--fin-gold-soft);
+      border-radius: 6px;
+    }
+    .fin-section__hint {
+      margin-left: auto;
+      color: var(--fin-muted-foreground);
+      font-size: 0.82rem;
+      font-weight: 400;
+    }
+
+    /* ── Pending list (CRM enquiries to confirm) ── */
+    .pending-list { display: flex; flex-direction: column; gap: 8px; }
+    .pending-row {
+      display: flex; gap: 14px; align-items: center;
+      padding: 12px 16px;
+      background: var(--fin-bg-muted-50);
+      border: 1px solid var(--fin-border-soft);
+      border-radius: 10px;
+      font-size: 0.9rem;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+    .pending-row:hover { border-color: var(--fin-gold-line); background: #fff; }
+    .pending-row .name { font-weight: 500; color: var(--fin-text); }
+    .pending-row .meta { color: var(--fin-muted-foreground); font-size: 0.85rem; flex: 1; }
+    .pending-row .est {
+      font-weight: 600; color: var(--fin-gold);
+      padding: 4px 10px; background: var(--fin-gold-soft); border-radius: 6px;
+      font-size: 0.82rem;
+      font-variant-numeric: tabular-nums;
+    }
+    .pending-row .btn-promote {
+      padding: 8px 14px; border-radius: 8px; border: 1px solid var(--fin-text);
+      background: var(--fin-text); color: #fff;
+      font: 500 0.82rem/1 'Inter'; letter-spacing: 0;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .pending-row .btn-promote:hover { background: #27272a; }
+    .empty-state {
+      padding: 32px 18px;
+      text-align: center;
+      color: var(--fin-muted-foreground);
+      font-size: 0.875rem;
+    }
+
+    /* ── Ledger table — shadcn Table aesthetic ──
+       - Tall 48px header (h-12), 16px cell padding (p-4)
+       - Header labels: muted-foreground, normal weight, sentence case
+       - Hairline border between rows only (no zebra, no border on tfoot)
+       - Hover only on rows that have td (not header)
+       - Footer = subtle muted background, NOT inverted
+       - Numeric columns: tabular-nums, right-aligned
+       Inputs slot inside the cells with no borders until focused, so the
+       table reads like a normal data table at rest. */
+    .ledger-wrap {
+      width: 100%; overflow-x: auto;
+      margin: 0 -24px;
+      padding: 0;
+    }
+    .ledger {
+      width: 100%; min-width: 100%;
+      border-collapse: collapse;
+      caption-side: bottom;
+      color: var(--fin-text);
+      font-size: 0.875rem;
+    }
+    .ledger thead tr { border-bottom: 1px solid var(--fin-border); }
+    .ledger thead th {
+      height: 48px;
+      padding: 0 16px;
+      text-align: left;
+      vertical-align: middle;
+      font: 400 0.8rem/1.4 'Inter', sans-serif;
+      color: var(--fin-muted-foreground);
+      letter-spacing: 0;
+      text-transform: none;
+      white-space: nowrap;
+      background: transparent;
+    }
+    .ledger thead th.num { text-align: right; }
+    .ledger thead th:first-child { padding-left: 24px; }
+    .ledger thead th:last-child  { padding-right: 24px; }
+
+    .ledger tbody tr {
+      border-bottom: 1px solid var(--fin-border-soft);
+      transition: background-color 0.15s ease;
+    }
+    .ledger tbody tr:last-child { border-bottom: 0; }
+    .ledger tbody tr:has(td):hover { background: var(--fin-bg-muted-50); }
+    .ledger td {
+      padding: 12px 16px;
+      vertical-align: middle;
+    }
+    .ledger td:first-child { padding-left: 24px; }
+    .ledger td:last-child  { padding-right: 24px; }
+    .ledger td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .ledger td.col-bgn { color: var(--fin-muted-foreground); font-size: 0.82rem; }
+    .ledger td.idx {
+      color: var(--fin-muted-foreground);
+      font-weight: 500; font-size: 0.82rem; width: 28px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Income breakdown columns get a barely-there gold tint to signal
+       "this is the new categorised view" without shouting. */
+    .ledger thead th.col-cat,
+    .ledger td.col-cat { background: rgba(201,168,76,0.04); }
+
+    .ledger input[type=text],
+    .ledger input[type=number],
+    .ledger input[type=date],
+    .ledger select {
+      width: 100%;
+      padding: 6px 8px;
+      border: 1px solid transparent;
+      background: transparent;
+      font: inherit;
+      color: var(--fin-text);
+      border-radius: 6px;
+      transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .ledger select { background: #fff; border-color: var(--fin-border); cursor: pointer; height: 32px; }
+    .ledger input:hover,
+    .ledger select:hover { border-color: var(--fin-border); }
+    .ledger input:focus,
+    .ledger select:focus {
+      outline: none;
+      border-color: var(--fin-gold);
+      background: #fff;
+      box-shadow: 0 0 0 3px var(--fin-gold-soft);
+    }
+    .ledger input.num, .ledger input[type=number] { text-align: right; font-variant-numeric: tabular-nums; }
+
+    /* Footer total row — shadcn TableFooter: muted bg, no inversion. */
+    .ledger tfoot {
+      border-top: 1px solid var(--fin-border);
+      background: var(--fin-bg-muted-50);
+      font-weight: 500;
+    }
+    .ledger tfoot tr { border-bottom: 0; }
+    .ledger tfoot td {
+      padding: 14px 16px;
+      color: var(--fin-text);
+    }
+    .ledger tfoot td:first-child { padding-left: 24px; }
+    .ledger tfoot td:last-child  { padding-right: 24px; }
+    .ledger tfoot td.num { font-variant-numeric: tabular-nums; }
+    .ledger tfoot td.col-bgn { color: var(--fin-muted-foreground); font-weight: 400; }
+
+    .del-btn {
+      background: none; border: 0; color: var(--fin-muted-2); cursor: pointer;
+      padding: 4px 8px; border-radius: 6px;
+      font-size: 1rem; line-height: 1;
+      transition: color 0.15s ease, background-color 0.15s ease;
+    }
+    .del-btn:hover { color: var(--fin-negative); background: var(--fin-negative-soft); }
+
+    .pay-col { display: none; } /* additive: revealed by .show-pay */
+    .ledger.show-pay .pay-col { display: table-cell; }
+
+    /* ── Category badge inside expense rows ──
+       Vanilla port of the shadcn Badge component (variant=light): soft
+       background + accent-text, rounded-md, h-6, px-2.5. One pill per
+       semantic category colour. */
+    .cat-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      height: 24px; padding: 0 10px;
+      border-radius: 6px;
+      font: 500 0.72rem/1.4 'Inter', sans-serif;
+      white-space: nowrap;
+      border: 1px solid transparent;
+    }
+    .cat-badge[data-cat="staff"]       { background: #dbeafe; color: #1d4ed8; }
+    .cat-badge[data-cat="catering"]    { background: #ffedd5; color: #c2410c; }
+    .cat-badge[data-cat="drinks"]      { background: #f3e8ff; color: #7e22ce; }
+    .cat-badge[data-cat="decoration"]  { background: #fce7f3; color: #be185d; }
+    .cat-badge[data-cat="music"]       { background: #cffafe; color: #0e7490; }
+    .cat-badge[data-cat="maintenance"] { background: #e2e8f0; color: #475569; }
+    .cat-badge[data-cat="utilities"]   { background: #fef3c7; color: #a16207; }
+    .cat-badge[data-cat="marketing"]   { background: #ccfbf1; color: #0f766e; }
+    .cat-badge[data-cat="other"]       { background: #f1f5f9; color: #475569; }
+    /* When the expense category cell holds a <select>, hide the badge
+       (the dropdown is the editable surface). We still keep the data-cat
+       attribute on the row so the summary pills can colour-match. */
+
+    .fin-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; padding: 0 24px; }
+    .fin-actions button {
+      padding: 8px 16px; border-radius: 8px; cursor: pointer;
+      font: 500 0.82rem/1 'Inter', sans-serif; letter-spacing: 0;
+      transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+    .btn-add {
+      border: 1px dashed var(--fin-gold-line);
+      background: var(--fin-gold-soft);
+      color: var(--fin-text);
+    }
+    .btn-add:hover { background: rgba(201,168,76,0.2); border-color: var(--fin-gold); }
+    .btn-ghost {
+      border: 1px solid var(--fin-border);
+      background: #fff;
+      color: var(--fin-muted-foreground);
+    }
+    .btn-ghost:hover { color: var(--fin-text); border-color: var(--fin-muted-foreground); }
+
+    /* ── Summary — KPI cards + category breakdown badges ──
+       shadcn Card aesthetic: clean white surface, subtle border, no shadow.
+       Profit card uses a soft tint instead of gradient. */
+    .kpi-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px; margin-bottom: 28px;
+    }
+    .kpi {
+      padding: 20px;
+      background: var(--fin-bg-card);
+      border: 1px solid var(--fin-border);
+      border-radius: 10px;
+    }
+    .kpi__label {
+      font: 500 0.82rem/1.4 'Inter', sans-serif;
+      color: var(--fin-muted-foreground);
+      margin-bottom: 8px;
+    }
+    .kpi__value {
+      font: 600 1.75rem/1 'Inter', sans-serif;
+      color: var(--fin-text);
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+    }
+    .kpi__value.is-positive { color: var(--fin-positive); }
+    .kpi__value.is-negative { color: var(--fin-negative); }
+    .kpi__sub {
+      margin-top: 6px;
+      font-size: 0.82rem;
+      color: var(--fin-muted-foreground);
+      font-variant-numeric: tabular-nums;
+    }
+    .kpi--highlight {
+      background: var(--fin-bg-muted);
+      border-color: var(--fin-border);
+    }
+
+    .breakdown { margin-top: 28px; }
+    .breakdown__title {
+      font: 500 0.82rem/1.4 'Inter', sans-serif;
+      color: var(--fin-muted-foreground);
+      margin-bottom: 12px;
+    }
+    .pill-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 12px;
+    }
+    /* ── shadcn Card pattern for breakdown pills ── */
+    .pill {
+      padding: 14px 16px;
+      background: var(--fin-bg-card);
+      border: 1px solid var(--fin-border);
+      border-radius: 10px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .pill__label {
+      display: inline-flex; align-items: center;
+      height: 22px; padding: 0 10px;
+      align-self: flex-start;
+      border-radius: 6px;
+      font: 500 0.7rem/1 'Inter', sans-serif;
+      background: var(--fin-gold-soft);
+      color: var(--fin-gold);
+      margin-bottom: 4px;
+    }
+    .pill__value {
+      font: 600 1.1rem/1.2 'Inter', sans-serif;
+      color: var(--fin-text);
+      letter-spacing: -0.01em;
+      font-variant-numeric: tabular-nums;
+    }
+    .pill__sub {
+      font-size: 0.78rem;
+      color: var(--fin-muted-foreground);
+      font-variant-numeric: tabular-nums;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .pill__pct {
+      display: inline-flex; align-items: center;
+      padding: 1px 6px;
+      background: var(--fin-bg-muted);
+      border-radius: 4px;
+      color: var(--fin-muted-foreground);
+      font-weight: 500;
+      font-size: 0.72rem;
+    }
+
+    /* Per-category coloured pill label (mirrors the cat-badge palette) */
+    .pill[data-cat="staff"]       .pill__label { background: #dbeafe; color: #1d4ed8; }
+    .pill[data-cat="catering"]    .pill__label { background: #ffedd5; color: #c2410c; }
+    .pill[data-cat="drinks"]      .pill__label { background: #f3e8ff; color: #7e22ce; }
+    .pill[data-cat="decoration"]  .pill__label { background: #fce7f3; color: #be185d; }
+    .pill[data-cat="music"]       .pill__label { background: #cffafe; color: #0e7490; }
+    .pill[data-cat="maintenance"] .pill__label { background: #e2e8f0; color: #475569; }
+    .pill[data-cat="utilities"]   .pill__label { background: #fef3c7; color: #a16207; }
+    .pill[data-cat="marketing"]   .pill__label { background: #ccfbf1; color: #0f766e; }
+    .pill[data-cat="other"]       .pill__label { background: #f1f5f9; color: #475569; }
+
+    /* ── Mobile tweaks ── */
+    @media (max-width: 720px) {
+      .fin-section { padding: 16px 14px; }
+      .ledger { font-size: 0.82rem; }
+      .ledger th, .ledger td { padding: 6px 6px; }
+      .fin-toolbar { padding: 12px 14px; gap: 10px; }
+      .fin-toolbar__rate { font-size: 0.72rem; margin-left: 0; }
+      .pending-row { flex-wrap: wrap; }
+      .pending-row .meta { flex-basis: 100%; order: 3; }
+      .kpi__value { font-size: 1.4rem; }
+    }
+
+    /* Respect reduced motion preference */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; }
+    }
+
+/* ── Breadcrumb back-link at the top of detail pages ── */
+.fin-breadcrumb { margin-bottom: 12px; font-size: 0.85rem; }
+.fin-breadcrumb a { color: var(--fin-muted-foreground); text-decoration: none; }
+.fin-breadcrumb a:hover { color: var(--fin-text); }
+
+/* ── Wider number inputs so values are legible at a glance ──
+   Number inputs in the income table need more horizontal room than the
+   default table cell affords; bump min-width on the cells they live in
+   and increase font-size slightly. */
+.ledger--income th.num,
+.ledger--income td.num { min-width: 110px; }
+.ledger--income th.col-cat,
+.ledger--income td.col-cat { min-width: 120px; }
+.ledger input[type=number] { font-size: 0.92rem; padding: 7px 10px; }
+.ledger--income td:nth-child(2) { min-width: 180px; }   /* Customer */
+
+/* Pull the actions column right; widen it so the link + delete buttons fit. */
+.ledger .actions-col { width: 1%; white-space: nowrap; }
+.ledger .row-actions {
+  display: inline-flex; gap: 4px; align-items: center;
+  white-space: nowrap;
+}
+
+/* "Link to completed event" button on a row */
+.btn-link-event {
+  background: none; border: 0; cursor: pointer;
+  padding: 4px 8px; border-radius: 6px;
+  color: var(--fin-muted-foreground);
+  font-size: 0.95rem; line-height: 1;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+.btn-link-event:hover { color: var(--fin-gold); background: var(--fin-gold-soft); }
+.btn-link-event.is-linked { color: var(--fin-gold); }
+
+/* Visual marker on rows already linked to an enquiry */
+.ledger tbody tr.is-linked td:first-child { position: relative; }
+.ledger tbody tr.is-linked td:first-child::after {
+  content: ''; position: absolute; left: 0; top: 25%; bottom: 25%;
+  width: 3px; border-radius: 0 2px 2px 0; background: var(--fin-gold);
+}
+
+/* ── Summary-only page: two big nav CTAs ── */
+.fin-nav-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  margin-bottom: var(--fin-gap);
+}
+@media (max-width: 720px) { .fin-nav-grid { grid-template-columns: 1fr; } }
+.fin-nav-card {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 20px 24px;
+  background: var(--fin-bg-card);
+  border: 1px solid var(--fin-border);
+  border-radius: var(--fin-radius);
+  text-decoration: none;
+  color: var(--fin-text);
+  transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
+}
+.fin-nav-card:hover { border-color: var(--fin-gold-line); background: rgba(201,168,76,0.04); transform: translateY(-1px); }
+.fin-nav-card__lbl {
+  display: inline-flex; align-items: center;
+  height: 22px; padding: 0 10px; align-self: flex-start;
+  border-radius: 6px;
+  font: 500 0.7rem/1 'Inter', sans-serif;
+  background: var(--fin-gold-soft);
+  color: var(--fin-gold);
+}
+.fin-nav-card__title { font: 600 1.1rem/1.3 'Inter', sans-serif; letter-spacing: -0.01em; }
+.fin-nav-card__sub { font-size: 0.85rem; color: var(--fin-muted-foreground); }
+.fin-nav-card__cta { margin-top: 6px; font-size: 0.85rem; font-weight: 500; color: var(--fin-gold); }
+.fin-nav-card__cta::after { content: ' →'; }
+
+/* ── Link-to-event modal ── */
+.link-modal[hidden] { display: none; }
+.link-modal { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.link-modal__backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(4px); }
+.link-modal__panel {
+  position: relative; z-index: 1;
+  width: 100%; max-width: 560px; max-height: 80vh;
+  display: flex; flex-direction: column;
+  background: #fff; border-radius: 12px; box-shadow: 0 24px 64px rgba(0,0,0,0.25);
+  overflow: hidden;
+}
+.link-modal__head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--fin-border);
+}
+.link-modal__head h2 { font: 600 1rem/1.3 'Inter', sans-serif; margin: 0; color: var(--fin-text); }
+.link-modal__close {
+  background: none; border: 0; cursor: pointer; color: var(--fin-muted-foreground);
+  font-size: 1.4rem; line-height: 1; padding: 4px 8px; border-radius: 6px;
+}
+.link-modal__close:hover { background: var(--fin-bg-muted); color: var(--fin-text); }
+.link-modal__body { padding: 16px 20px; overflow-y: auto; }
+.link-modal__body input[type=text] {
+  width: 100%; padding: 10px 12px;
+  border: 1px solid var(--fin-border); border-radius: 8px;
+  font: 0.92rem 'Inter', sans-serif; margin-bottom: 12px;
+}
+.link-modal__body input:focus { outline: 2px solid var(--fin-gold); outline-offset: 1px; border-color: var(--fin-gold); }
+.link-modal__list { display: flex; flex-direction: column; gap: 6px; }
+.link-modal__item {
+  display: flex; gap: 12px; align-items: center;
+  padding: 10px 12px;
+  background: var(--fin-bg-muted-50);
+  border: 1px solid var(--fin-border-soft);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.link-modal__item:hover { border-color: var(--fin-gold-line); background: #fff; }
+.link-modal__item .name { font-weight: 500; }
+.link-modal__item .meta { color: var(--fin-muted-foreground); font-size: 0.82rem; flex: 1; text-align: right; }
+.link-modal__item .stage { font-size: 0.7rem; padding: 2px 8px; border-radius: 6px; background: var(--fin-gold-soft); color: var(--fin-gold); }
