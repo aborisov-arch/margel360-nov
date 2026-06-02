@@ -83,6 +83,7 @@ function parsePreferredDate(s) {
 
 let currentMonth = '';
 let allEnquiries = [];
+let occupiedDateSet = new Set(); // ISO YYYY-MM-DD strings from `occupied_dates`
 let events = [];
 let expenses = [];
 let userEmail = null;
@@ -459,12 +460,16 @@ function renderLinkModalList(q) {
   const list = document.getElementById('link-modal-list');
   if (!list) return;
   const needle = (q || '').trim().toLowerCase();
-  // Link mode = confirmed/completed only. Import mode = all enquiries,
-  // sorted so confirmed/completed bubble to the top.
+  // Both modes: confirmed/completed only AND the event date must be
+  // blocked on the calendar (i.e. present in occupied_dates). That mirrors
+  // the manager's mental model — "an enquiry exists in the books iff it's
+  // a real booking on the calendar".
   const STAGE_RANK = { completed: 0, confirmed: 1, quoted: 2, contacted: 3, new: 4, lost: 5, archived: 6 };
-  let pool = (modalMode === 'link')
-    ? allEnquiries.filter(e => ['confirmed', 'completed'].includes(e.pipeline_status))
-    : allEnquiries.slice();
+  let pool = allEnquiries.filter(e => {
+    if (!['confirmed', 'completed'].includes(e.pipeline_status)) return false;
+    const iso = parsePreferredDate(e.preferred_date);
+    return iso && occupiedDateSet.has(iso);
+  });
   if (modalMode === 'import') {
     pool.sort((a, b) => (STAGE_RANK[a.pipeline_status] ?? 9) - (STAGE_RANK[b.pipeline_status] ?? 9));
   }
@@ -505,23 +510,23 @@ async function pickLinkTarget(enquiryId) {
       income_rent_eur:   b.rent,
       income_drinks_eur: b.drinks,
       income_addons_eur: b.addons,
-      income_other_eur:  b.other,
       enquiry_id: e.id,
       confirmed_by: userEmail,
       confirmed_at: new Date().toISOString(),
     };
     const { data, error } = await db.from('financial_events').insert(row).select().single();
     if (error) { showError('Грешка при импортиране', error); return; }
-    // If the new row belongs to the current month, append immediately;
-    // otherwise tell the user to switch months to see it.
-    if (data.month === currentMonth) {
+    closeLinkModal();
+    // Jump to the imported row's month so the manager sees it immediately
+    // instead of wondering where it went.
+    if (data.month !== currentMonth) {
+      showToast(`Превключване към ${data.month}`, 'ok');
+      await loadMonth(data.month);
+    } else {
       events.push(data);
       renderPending(); renderEvents();
+      showToast('Импортирано в текущия месец', 'ok');
     }
-    showToast(data.month === currentMonth
-      ? 'Импортирано в текущия месец'
-      : `Импортирано в ${data.month}`, 'ok');
-    closeLinkModal();
     return;
   }
 
@@ -760,9 +765,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   const monthInput = document.getElementById('fin-month');
   if (monthInput) monthInput.value = currentMonth;
 
-  const { data: enq, error } = await db.from('enquiries').select('id,full_name,preferred_date,event_type,event_id,pipeline_status,addons,drinks,applied_discount_percent');
+  const [{ data: enq, error }, { data: occ, error: occErr }] = await Promise.all([
+    db.from('enquiries').select('id,full_name,preferred_date,event_type,event_id,pipeline_status,addons,drinks,applied_discount_percent'),
+    db.from('occupied_dates').select('date'),
+  ]);
   if (error) { showError('Грешка при зареждане на запитванията', error); }
+  if (occErr) { showError('Грешка при зареждане на заетите дати', occErr); }
   allEnquiries = enq || [];
+  occupiedDateSet = new Set((occ || []).map(r => r.date));
 
   await loadMonth(currentMonth);
   bindInlineEdit();
