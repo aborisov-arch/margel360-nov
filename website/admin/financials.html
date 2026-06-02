@@ -7,63 +7,338 @@
   <title>Финанси — Маргел 360° Админ</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/admin.css?v=10">
+  <link rel="stylesheet" href="css/admin.css?v=11">
   <style>
-    .fin-toolbar { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; margin-bottom: 24px; padding: 16px 18px; background: #fff; border: 1px solid var(--border); border-radius: 10px; }
-    .fin-toolbar label { display: flex; flex-direction: column; gap: 4px; font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; color: #777; font-weight: 600; }
-    .fin-toolbar input[type=month] { padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem; }
-    .fin-toolbar .rate { color: #888; font-size: 0.85rem; letter-spacing: 0; text-transform: none; margin-left: auto; }
-    .fin-section { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; margin-bottom: 18px; }
-    .fin-section h2 { font-size: 1rem; letter-spacing: 0.06em; text-transform: uppercase; color: #555; margin: 0 0 12px; }
-    .fin-section h2 .count { font-size: 0.75rem; color: #B9894A; margin-left: 8px; }
-    .pending-list { display: flex; flex-direction: column; gap: 6px; }
-    .pending-row { display: flex; gap: 10px; align-items: center; padding: 8px 10px; background: #fafafa; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; }
-    .pending-row .name { font-weight: 600; flex: 1; }
-    .pending-row .meta { color: #777; font-size: 0.85rem; }
-    .pending-row .est { font-weight: 700; color: var(--accent); margin-right: 8px; }
-    .pending-row.empty { color: #999; font-style: italic; background: transparent; border: 0; }
-
-    .fin-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
-    .fin-table th, .fin-table td { padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle; }
-    .fin-table th { background: #fafafa; font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: #777; white-space: nowrap; }
-    .fin-table input[type=text], .fin-table input[type=number], .fin-table input[type=date], .fin-table select {
-      padding: 5px 7px; border: 1px solid transparent; background: transparent;
-      width: 100%; font-size: 0.88rem; border-radius: 4px; font-family: inherit;
+    /* ── Tokens scoped to the financials page ──
+       Inter is already loaded by the admin shell; we lean on tabular-nums
+       for number columns so totals line up across rows like an accountant's
+       ledger. */
+    .fin {
+      --fin-gap: 20px;
+      --fin-radius: 12px;
+      --fin-border: #ebe7e0;
+      --fin-border-soft: #f4f1ec;
+      --fin-bg-card: #ffffff;
+      --fin-bg-tint: #fafaf7;
+      --fin-bg-row-alt: #fbfaf6;
+      --fin-text: #1a1a1a;
+      --fin-muted: #7b7770;
+      --fin-muted-2: #a3a09a;
+      --fin-gold: #c9a84c;
+      --fin-gold-soft: rgba(201,168,76,0.12);
+      --fin-gold-line: rgba(201,168,76,0.32);
+      --fin-positive: #1e6a35;
+      --fin-positive-soft: rgba(30,106,53,0.08);
+      --fin-negative: #c62828;
+      --fin-negative-soft: rgba(198,40,40,0.07);
+      --shadow-card: 0 1px 2px rgba(0,0,0,0.02), 0 6px 16px -10px rgba(0,0,0,0.06);
+      font-feature-settings: "ss01", "ss02";
     }
-    .fin-table select { background: #fff; border-color: var(--border); }
-    .fin-table input:focus, .fin-table select:focus { outline: none; border-color: var(--accent); background: #fff; }
-    .fin-table .num { text-align: right; }
-    .fin-table .num input { text-align: right; }
-    .fin-table .col-bgn { color: #666; font-size: 0.82rem; }
-    .fin-table .col-cat { background: rgba(201,168,76,0.06); }
-    .fin-table .total-row td { font-weight: 700; background: #fbf7ee; border-top: 2px solid var(--accent); color: var(--text); }
-    .fin-table .del-btn { background: none; border: 0; color: #c62828; cursor: pointer; padding: 4px 8px; border-radius: 4px; font-size: 1rem; }
-    .fin-table .del-btn:hover { background: rgba(198,40,40,0.1); }
+    .fin .num, .fin input[type=number], .fin .kpi__value, .fin .pill__value, .fin .total-row td {
+      font-variant-numeric: tabular-nums;
+    }
 
-    .fin-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; padding: 16px 0; }
-    .fin-summary .card { background: #fafafa; border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
-    .fin-summary .lbl { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: #888; font-weight: 600; margin-bottom: 6px; }
-    .fin-summary .val { font-size: 1.5rem; font-weight: 700; color: var(--text); }
-    .fin-summary .val.profit { color: #1e6a35; }
-    .fin-summary .val.loss { color: #c62828; }
-    .fin-summary .sub { font-size: 0.85rem; color: #777; margin-top: 4px; }
+    /* ── Sticky toolbar — keeps the month picker + export always reachable ── */
+    .fin-toolbar {
+      position: sticky; top: 0; z-index: 30;
+      display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;
+      margin: 0 0 24px;
+      padding: 14px 18px;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: saturate(140%) blur(8px);
+      -webkit-backdrop-filter: saturate(140%) blur(8px);
+      border: 1px solid var(--fin-border);
+      border-radius: var(--fin-radius);
+      box-shadow: var(--shadow-card);
+    }
+    .fin-toolbar__field { display: flex; flex-direction: column; gap: 4px; }
+    .fin-toolbar__field label { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fin-muted); font-weight: 600; }
+    .fin-toolbar input[type=month] {
+      padding: 9px 12px; border: 1px solid var(--fin-border); border-radius: 8px;
+      font: 500 0.95rem/1 'Inter', sans-serif; color: var(--fin-text);
+      background: #fff; min-width: 170px;
+    }
+    .fin-toolbar input[type=month]:focus { outline: 2px solid var(--fin-gold); outline-offset: 1px; border-color: var(--fin-gold); }
+    .fin-toolbar__rate {
+      margin-left: auto; align-self: center;
+      font-size: 0.78rem; color: var(--fin-muted);
+      padding: 4px 10px; background: var(--fin-gold-soft); border-radius: 999px;
+    }
+    .fin-toolbar__rate strong { color: var(--fin-text); font-weight: 600; }
+    .btn-export {
+      padding: 9px 14px; border-radius: 8px; border: 1px solid var(--fin-text);
+      background: var(--fin-text); color: #fff; font: 600 0.85rem/1 'Inter', sans-serif;
+      letter-spacing: 0.04em; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 6px;
+      transition: background 0.15s ease, transform 0.15s ease;
+    }
+    .btn-export:hover { background: #000; transform: translateY(-1px); }
+    .btn-export:focus-visible { outline: 2px solid var(--fin-gold); outline-offset: 2px; }
+    .btn-export svg { width: 14px; height: 14px; }
 
-    .cat-breakdown { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-top: 14px; }
-    .cat-breakdown .pill { background: #fafafa; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
-    .cat-breakdown .pill .lbl { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: #888; font-weight: 600; margin-bottom: 4px; }
-    .cat-breakdown .pill .val { font-size: 1.05rem; font-weight: 700; color: var(--text); }
-    .cat-breakdown .pill .sub { font-size: 0.78rem; color: #888; }
+    /* ── Section cards ── */
+    .fin-section {
+      background: var(--fin-bg-card);
+      border: 1px solid var(--fin-border);
+      border-radius: var(--fin-radius);
+      padding: 22px 24px;
+      margin-bottom: var(--fin-gap);
+      box-shadow: var(--shadow-card);
+    }
+    .fin-section__head {
+      display: flex; align-items: baseline; gap: 12px;
+      margin: 0 0 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--fin-border-soft);
+    }
+    .fin-section__head h2 {
+      margin: 0;
+      font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--fin-text); font-weight: 700;
+    }
+    .fin-section__head .count {
+      font: 600 0.74rem/1 'Inter', sans-serif;
+      letter-spacing: 0.04em;
+      color: var(--fin-gold);
+      padding: 3px 8px;
+      background: var(--fin-gold-soft);
+      border-radius: 999px;
+    }
+    .fin-section__hint {
+      margin-left: auto; color: var(--fin-muted); font-size: 0.82rem;
+    }
 
-    .fin-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+    /* ── Pending list (CRM enquiries to confirm) ── */
+    .pending-list { display: flex; flex-direction: column; gap: 8px; }
+    .pending-row {
+      display: flex; gap: 14px; align-items: center;
+      padding: 12px 14px;
+      background: var(--fin-bg-tint);
+      border: 1px solid var(--fin-border-soft);
+      border-radius: 10px;
+      font-size: 0.92rem;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+    .pending-row:hover { border-color: var(--fin-gold-line); background: #fff; }
+    .pending-row .name { font-weight: 600; color: var(--fin-text); }
+    .pending-row .meta { color: var(--fin-muted); font-size: 0.85rem; flex: 1; }
+    .pending-row .est {
+      font-weight: 700; color: var(--fin-gold);
+      padding: 4px 10px; background: var(--fin-gold-soft); border-radius: 999px;
+      font-size: 0.85rem;
+    }
+    .pending-row .btn-promote {
+      padding: 7px 14px; border-radius: 6px; border: 1px solid var(--fin-text);
+      background: var(--fin-text); color: #fff; font: 600 0.78rem/1 'Inter';
+      letter-spacing: 0.04em; cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .pending-row .btn-promote:hover { background: #000; }
+    .empty-state {
+      padding: 28px 18px;
+      text-align: center;
+      color: var(--fin-muted-2);
+      font-size: 0.9rem; font-style: italic;
+    }
 
-    /* Hide the legacy payment-method columns by default; the new income
-       layout uses category breakdown. Toggle them with the "Детайли по
-       плащане" button below the events table. */
-    .fin-table.events.compact .pay-col { display: none; }
+    /* ── Ledger table ── */
+    .ledger-wrap { overflow-x: auto; margin: 0 -24px; padding: 0 24px; }
+    .ledger { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.88rem; }
+    .ledger thead th {
+      position: sticky; top: 0;
+      background: var(--fin-bg-tint);
+      padding: 10px 10px;
+      text-align: left;
+      font: 600 0.68rem/1.2 'Inter', sans-serif;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--fin-muted);
+      border-bottom: 1px solid var(--fin-border);
+      white-space: nowrap;
+    }
+    .ledger thead th.num { text-align: right; }
+    .ledger thead th.col-cat { color: var(--fin-gold); }
+    .ledger tbody tr { transition: background 0.15s ease; }
+    .ledger tbody tr:nth-child(even) { background: var(--fin-bg-row-alt); }
+    .ledger tbody tr:hover { background: var(--fin-gold-soft); }
+    .ledger td { padding: 6px 10px; border-bottom: 1px solid var(--fin-border-soft); vertical-align: middle; }
+    .ledger td.num { text-align: right; }
+    .ledger td.col-cat { background: rgba(201,168,76,0.05); }
+    .ledger tbody tr:hover td.col-cat { background: rgba(201,168,76,0.12); }
+    .ledger td.col-bgn { color: var(--fin-muted); font-size: 0.82rem; }
+    .ledger td.idx { color: var(--fin-muted-2); font-weight: 500; font-size: 0.82rem; width: 28px; }
+    .ledger input[type=text],
+    .ledger input[type=number],
+    .ledger input[type=date],
+    .ledger select {
+      width: 100%; padding: 6px 8px;
+      border: 1px solid transparent;
+      background: transparent;
+      font: 400 0.88rem/1.2 'Inter', sans-serif;
+      color: var(--fin-text);
+      border-radius: 5px;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+    .ledger select { background: #fff; border-color: var(--fin-border); cursor: pointer; }
+    .ledger input:hover, .ledger select:hover { background: rgba(255,255,255,0.7); border-color: var(--fin-border-soft); }
+    .ledger input:focus, .ledger select:focus {
+      outline: none;
+      border-color: var(--fin-gold);
+      background: #fff;
+      box-shadow: 0 0 0 3px var(--fin-gold-soft);
+    }
+    .ledger input.num, .ledger input[type=number] { text-align: right; font-variant-numeric: tabular-nums; }
+    .ledger tfoot .total-row td {
+      font-weight: 700;
+      background: var(--fin-text);
+      color: #fff;
+      border-top: 2px solid var(--fin-gold);
+      padding: 10px 10px;
+    }
+    .ledger tfoot .total-row td.col-bgn { color: rgba(255,255,255,0.7); font-weight: 500; }
+    .ledger tfoot .total-row td:first-child { border-radius: 0 0 0 8px; }
+    .ledger tfoot .total-row td:last-child  { border-radius: 0 0 8px 0; }
+    .del-btn {
+      background: none; border: 0; color: var(--fin-muted-2); cursor: pointer;
+      padding: 4px 8px; border-radius: 4px; font-size: 1rem; line-height: 1;
+      transition: color 0.15s ease, background 0.15s ease;
+    }
+    .del-btn:hover { color: var(--fin-negative); background: var(--fin-negative-soft); }
+    .pay-col { display: none; } /* hidden by default; toggled by .show-pay on .ledger */
+    .ledger.show-pay .pay-col { display: table-cell; }
 
-    @media (max-width: 900px) {
-      .fin-table { font-size: 0.82rem; }
-      .fin-table th, .fin-table td { padding: 5px 5px; }
+    /* Category swatches on expense rows */
+    .ledger tbody tr[data-cat] td:first-child { position: relative; }
+    .ledger tbody tr[data-cat] td:first-child::before {
+      content: ''; position: absolute; left: 0; top: 25%; bottom: 25%; width: 3px;
+      border-radius: 0 2px 2px 0;
+    }
+    .ledger tbody tr[data-cat="staff"]      td:first-child::before { background: #3b82f6; }
+    .ledger tbody tr[data-cat="catering"]   td:first-child::before { background: #f97316; }
+    .ledger tbody tr[data-cat="drinks"]     td:first-child::before { background: #a855f7; }
+    .ledger tbody tr[data-cat="decoration"] td:first-child::before { background: #ec4899; }
+    .ledger tbody tr[data-cat="music"]      td:first-child::before { background: #06b6d4; }
+    .ledger tbody tr[data-cat="maintenance"]td:first-child::before { background: #64748b; }
+    .ledger tbody tr[data-cat="utilities"]  td:first-child::before { background: #eab308; }
+    .ledger tbody tr[data-cat="marketing"]  td:first-child::before { background: #14b8a6; }
+    .ledger tbody tr[data-cat="other"]      td:first-child::before { background: #94a3b8; }
+
+    .fin-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+    .fin-actions button {
+      padding: 8px 14px; border-radius: 8px; cursor: pointer;
+      font: 600 0.82rem/1 'Inter', sans-serif; letter-spacing: 0.04em;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+    .btn-add {
+      border: 1px dashed var(--fin-gold-line);
+      background: var(--fin-gold-soft);
+      color: var(--fin-text);
+    }
+    .btn-add:hover { background: rgba(201,168,76,0.2); border-color: var(--fin-gold); }
+    .btn-ghost {
+      border: 1px solid var(--fin-border);
+      background: #fff; color: var(--fin-muted);
+    }
+    .btn-ghost:hover { color: var(--fin-text); border-color: var(--fin-muted); }
+
+    /* ── Summary — KPI cards + category breakdown pills ── */
+    .kpi-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px; margin-bottom: 22px;
+    }
+    .kpi {
+      padding: 18px 20px;
+      background: var(--fin-bg-card);
+      border: 1px solid var(--fin-border);
+      border-radius: 10px;
+    }
+    .kpi__label {
+      font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--fin-muted); font-weight: 600; margin-bottom: 10px;
+    }
+    .kpi__value {
+      font: 700 1.7rem/1 'Inter', sans-serif;
+      color: var(--fin-text);
+      letter-spacing: -0.02em;
+    }
+    .kpi__value.is-positive { color: var(--fin-positive); }
+    .kpi__value.is-negative { color: var(--fin-negative); }
+    .kpi__sub {
+      margin-top: 6px; font-size: 0.82rem; color: var(--fin-muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .kpi--highlight {
+      background: linear-gradient(135deg, var(--fin-gold-soft), rgba(201,168,76,0.04));
+      border-color: var(--fin-gold-line);
+    }
+
+    .breakdown { margin-top: 22px; }
+    .breakdown__title {
+      font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--fin-muted); font-weight: 700; margin-bottom: 10px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .breakdown__title::after {
+      content: ''; flex: 1; height: 1px; background: var(--fin-border-soft);
+    }
+    .pill-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 10px;
+    }
+    .pill {
+      padding: 12px 14px;
+      background: var(--fin-bg-tint);
+      border: 1px solid var(--fin-border-soft);
+      border-radius: 10px;
+      position: relative; overflow: hidden;
+    }
+    .pill::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+      background: var(--fin-gold);
+    }
+    .pill__label {
+      font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--fin-muted); font-weight: 600; margin-bottom: 6px;
+    }
+    .pill__value { font: 700 1.05rem/1.2 'Inter', sans-serif; color: var(--fin-text); }
+    .pill__sub { font-size: 0.78rem; color: var(--fin-muted); margin-top: 3px; }
+    .pill__pct {
+      display: inline-block; margin-left: 6px;
+      padding: 1px 6px; background: var(--fin-gold-soft);
+      border-radius: 4px; color: var(--fin-gold); font-weight: 600;
+    }
+
+    /* Per-category accent stripes on expense pills */
+    .pill[data-cat="staff"]::before       { background: #3b82f6; }
+    .pill[data-cat="catering"]::before    { background: #f97316; }
+    .pill[data-cat="drinks"]::before      { background: #a855f7; }
+    .pill[data-cat="decoration"]::before  { background: #ec4899; }
+    .pill[data-cat="music"]::before       { background: #06b6d4; }
+    .pill[data-cat="maintenance"]::before { background: #64748b; }
+    .pill[data-cat="utilities"]::before   { background: #eab308; }
+    .pill[data-cat="marketing"]::before   { background: #14b8a6; }
+    .pill[data-cat="other"]::before       { background: #94a3b8; }
+
+    /* ── Wide-screen layout: income + expenses side by side ── */
+    @media (min-width: 1400px) {
+      .fin-side-grid { display: grid; grid-template-columns: 1.45fr 1fr; gap: var(--fin-gap); }
+      .fin-side-grid > .fin-section { margin-bottom: 0; }
+    }
+
+    /* ── Mobile tweaks ── */
+    @media (max-width: 720px) {
+      .fin-section { padding: 16px 14px; }
+      .ledger { font-size: 0.82rem; }
+      .ledger th, .ledger td { padding: 6px 6px; }
+      .fin-toolbar { padding: 12px 14px; gap: 10px; }
+      .fin-toolbar__rate { font-size: 0.72rem; margin-left: 0; }
+      .pending-row { flex-wrap: wrap; }
+      .pending-row .meta { flex-basis: 100%; order: 3; }
+      .kpi__value { font-size: 1.4rem; }
+    }
+
+    /* Respect reduced motion preference */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; }
     }
   </style>
 </head>
@@ -85,145 +360,164 @@
     <button class="btn btn-outline btn-sm" id="logout-btn" data-i18n="nav_logout">Изход</button>
   </header>
 
-  <main class="admin-main">
+  <main class="admin-main fin">
     <div class="admin-container">
       <h1 class="page-title">Финансов отчет</h1>
 
       <div class="fin-toolbar">
-        <label>
-          Месец
+        <div class="fin-toolbar__field">
+          <label for="fin-month">Месец</label>
           <input type="month" id="fin-month">
-        </label>
-        <button class="btn btn-outline btn-sm" id="btn-export-xlsx">Свали .xlsx</button>
-        <span class="rate">1 € = 1.95583 лв (фиксиран курс)</span>
+        </div>
+        <button class="btn-export" id="btn-export-xlsx" title="Свали .xlsx за този месец">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Свали .xlsx
+        </button>
+        <span class="fin-toolbar__rate"><strong>1 €</strong> = 1.95583 лв · фиксиран курс</span>
       </div>
 
-      <!-- 1. Pending — confirmed/completed enquiries this month not yet in the report -->
+      <!-- 1. Pending from CRM -->
       <section class="fin-section">
-        <h2>Очаквани от CRM <span class="count" id="pending-count">—</span></h2>
+        <div class="fin-section__head">
+          <h2>Очаквани от CRM</h2>
+          <span class="count" id="pending-count">—</span>
+          <span class="fin-section__hint">Потвърдените запитвания за месеца, които още не са в отчета</span>
+        </div>
         <div class="pending-list" id="pending-list">
-          <div class="pending-row empty">Зареждане…</div>
+          <div class="empty-state">Зареждане…</div>
         </div>
       </section>
 
-      <!-- 2. Income (events) — categorised -->
-      <section class="fin-section">
-        <h2>Приходи — събития <span class="count" id="events-count">—</span></h2>
-        <div style="overflow-x:auto">
-          <table class="fin-table events compact" id="events-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Дата</th>
-                <th>Клиент</th>
-                <th class="num">Оферта €</th>
-                <th class="num col-cat">Наем €</th>
-                <th class="num col-cat">Напитки €</th>
-                <th class="num col-cat">Доп. услуги €</th>
-                <th class="num col-cat">Друго €</th>
-                <th class="num">Общо €</th>
-                <th class="num">Общо лв</th>
-                <th class="pay-col">Дата плащане</th>
-                <th class="num pay-col">Аванс брой €</th>
-                <th class="num pay-col">Аванс банка €</th>
-                <th class="pay-col">Дата доплащане</th>
-                <th class="num pay-col">Доплащ. брой €</th>
-                <th class="num pay-col">Доплащ. банка €</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="events-body"></tbody>
-            <tfoot>
-              <tr class="total-row">
-                <td colspan="3">Общо</td>
-                <td class="num" id="ev-tot-offer">€0.00</td>
-                <td class="num col-cat" id="ev-tot-rent">€0.00</td>
-                <td class="num col-cat" id="ev-tot-drinks">€0.00</td>
-                <td class="num col-cat" id="ev-tot-addons">€0.00</td>
-                <td class="num col-cat" id="ev-tot-other">€0.00</td>
-                <td class="num" id="ev-tot-eur">€0.00</td>
-                <td class="num" id="ev-tot-bgn">лв 0.00</td>
-                <td class="pay-col"></td>
-                <td class="num pay-col" id="ev-tot-dep-cash">€0.00</td>
-                <td class="num pay-col" id="ev-tot-dep-bank">€0.00</td>
-                <td class="pay-col"></td>
-                <td class="num pay-col" id="ev-tot-bal-cash">€0.00</td>
-                <td class="num pay-col" id="ev-tot-bal-bank">€0.00</td>
-                <td></td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-        <div class="fin-actions">
-          <button class="btn btn-sm btn-primary" id="btn-add-event">+ Добави ред (ръчно)</button>
-          <button class="btn btn-sm btn-outline" id="btn-toggle-pay">Детайли по плащане</button>
-        </div>
-      </section>
+      <div class="fin-side-grid">
+        <!-- 2. Income -->
+        <section class="fin-section">
+          <div class="fin-section__head">
+            <h2>Приходи — събития</h2>
+            <span class="count" id="events-count">—</span>
+            <span class="fin-section__hint">Разбивка по категория</span>
+          </div>
+          <div class="ledger-wrap">
+            <table class="ledger" id="events-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Дата</th>
+                  <th>Клиент</th>
+                  <th class="num">Оферта €</th>
+                  <th class="num col-cat">Наем €</th>
+                  <th class="num col-cat">Напитки €</th>
+                  <th class="num col-cat">Доп. услуги €</th>
+                  <th class="num col-cat">Друго €</th>
+                  <th class="num">Общо €</th>
+                  <th class="num">Общо лв</th>
+                  <th class="pay-col">Дата плащане</th>
+                  <th class="num pay-col">Аванс брой €</th>
+                  <th class="num pay-col">Аванс банка €</th>
+                  <th class="pay-col">Дата доплащане</th>
+                  <th class="num pay-col">Доплащ. брой €</th>
+                  <th class="num pay-col">Доплащ. банка €</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="events-body"></tbody>
+              <tfoot>
+                <tr class="total-row">
+                  <td colspan="3">Общо</td>
+                  <td class="num" id="ev-tot-offer">€0.00</td>
+                  <td class="num col-cat" id="ev-tot-rent">€0.00</td>
+                  <td class="num col-cat" id="ev-tot-drinks">€0.00</td>
+                  <td class="num col-cat" id="ev-tot-addons">€0.00</td>
+                  <td class="num col-cat" id="ev-tot-other">€0.00</td>
+                  <td class="num" id="ev-tot-eur">€0.00</td>
+                  <td class="num col-bgn" id="ev-tot-bgn">лв 0.00</td>
+                  <td class="pay-col"></td>
+                  <td class="num pay-col" id="ev-tot-dep-cash">€0.00</td>
+                  <td class="num pay-col" id="ev-tot-dep-bank">€0.00</td>
+                  <td class="pay-col"></td>
+                  <td class="num pay-col" id="ev-tot-bal-cash">€0.00</td>
+                  <td class="num pay-col" id="ev-tot-bal-bank">€0.00</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <div class="fin-actions">
+            <button class="btn-add" id="btn-add-event">+ Добави ред (ръчно)</button>
+            <button class="btn-ghost" id="btn-toggle-pay">Покажи разбивка по плащане</button>
+          </div>
+        </section>
 
-      <!-- 3. Expenses -->
-      <section class="fin-section">
-        <h2>Разходи <span class="count" id="expenses-count">—</span></h2>
-        <div style="overflow-x:auto">
-          <table class="fin-table" id="expenses-table">
-            <thead>
-              <tr>
-                <th>Дата</th>
-                <th>Категория</th>
-                <th>Описание</th>
-                <th class="num">Сума €</th>
-                <th class="num">Сума лв</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="expenses-body"></tbody>
-            <tfoot>
-              <tr class="total-row">
-                <td colspan="3">Общо разходи</td>
-                <td class="num" id="ex-tot-eur">€0.00</td>
-                <td class="num" id="ex-tot-bgn">лв 0.00</td>
-                <td></td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-        <div class="fin-actions">
-          <button class="btn btn-sm btn-primary" id="btn-add-expense">+ Добави разход</button>
-        </div>
-      </section>
+        <!-- 3. Expenses -->
+        <section class="fin-section">
+          <div class="fin-section__head">
+            <h2>Разходи</h2>
+            <span class="count" id="expenses-count">—</span>
+            <span class="fin-section__hint">По категория</span>
+          </div>
+          <div class="ledger-wrap">
+            <table class="ledger" id="expenses-table">
+              <thead>
+                <tr>
+                  <th>Дата</th>
+                  <th>Категория</th>
+                  <th>Описание</th>
+                  <th class="num">Сума €</th>
+                  <th class="num">Сума лв</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="expenses-body"></tbody>
+              <tfoot>
+                <tr class="total-row">
+                  <td colspan="3">Общо разходи</td>
+                  <td class="num" id="ex-tot-eur">€0.00</td>
+                  <td class="num col-bgn" id="ex-tot-bgn">лв 0.00</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <div class="fin-actions">
+            <button class="btn-add" id="btn-add-expense">+ Добави разход</button>
+          </div>
+        </section>
+      </div>
 
       <!-- 4. Summary -->
       <section class="fin-section">
-        <h2>Обобщение</h2>
-        <div class="fin-summary">
-          <div class="card">
-            <div class="lbl">Приходи</div>
-            <div class="val" id="sum-income-eur">€0.00</div>
-            <div class="sub" id="sum-income-bgn">лв 0.00</div>
+        <div class="fin-section__head">
+          <h2>Обобщение за месеца</h2>
+        </div>
+        <div class="kpi-grid">
+          <div class="kpi">
+            <div class="kpi__label">Приходи</div>
+            <div class="kpi__value" id="sum-income-eur">€0.00</div>
+            <div class="kpi__sub" id="sum-income-bgn">лв 0.00</div>
           </div>
-          <div class="card">
-            <div class="lbl">Разходи</div>
-            <div class="val" id="sum-expense-eur">€0.00</div>
-            <div class="sub" id="sum-expense-bgn">лв 0.00</div>
+          <div class="kpi">
+            <div class="kpi__label">Разходи</div>
+            <div class="kpi__value" id="sum-expense-eur">€0.00</div>
+            <div class="kpi__sub" id="sum-expense-bgn">лв 0.00</div>
           </div>
-          <div class="card">
-            <div class="lbl">Печалба</div>
-            <div class="val" id="sum-profit-eur">€0.00</div>
-            <div class="sub" id="sum-profit-bgn">лв 0.00</div>
+          <div class="kpi kpi--highlight">
+            <div class="kpi__label">Печалба</div>
+            <div class="kpi__value" id="sum-profit-eur">€0.00</div>
+            <div class="kpi__sub" id="sum-profit-bgn">лв 0.00</div>
           </div>
-          <div class="card">
-            <div class="lbl">Облагане заплата</div>
-            <div class="val" id="sum-taxable-eur">€0.00</div>
-            <div class="sub" id="sum-taxable-bgn">лв 0.00</div>
+          <div class="kpi">
+            <div class="kpi__label">Облагане заплата</div>
+            <div class="kpi__value" id="sum-taxable-eur">€0.00</div>
+            <div class="kpi__sub" id="sum-taxable-bgn">лв 0.00</div>
           </div>
         </div>
 
-        <div style="margin-top:18px">
-          <div style="font-size:0.78rem;letter-spacing:0.06em;text-transform:uppercase;color:#888;font-weight:600;margin-bottom:8px">Приходи по категория</div>
-          <div class="cat-breakdown" id="income-cat-breakdown"></div>
+        <div class="breakdown">
+          <div class="breakdown__title">Приходи по категория</div>
+          <div class="pill-grid" id="income-cat-breakdown"></div>
         </div>
-        <div style="margin-top:18px">
-          <div style="font-size:0.78rem;letter-spacing:0.06em;text-transform:uppercase;color:#888;font-weight:600;margin-bottom:8px">Разходи по категория</div>
-          <div class="cat-breakdown" id="expense-cat-breakdown"></div>
+        <div class="breakdown">
+          <div class="breakdown__title">Разходи по категория</div>
+          <div class="pill-grid" id="expense-cat-breakdown"></div>
         </div>
       </section>
     </div>
@@ -234,6 +528,6 @@
   <script src="js/supabase-client.js?v=2" defer></script>
   <script src="js/admin-i18n.js?v=3" defer></script>
   <script src="js/auth.js?v=2" defer></script>
-  <script src="js/financials.js?v=2" defer></script>
+  <script src="js/financials.js?v=3" defer></script>
 </body>
 </html>

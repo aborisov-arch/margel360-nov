@@ -123,7 +123,7 @@ function eventRowHtml(ev, idx) {
   const total = eventTotalEur(ev);
   return `
     <tr data-id="${esc(ev.id)}">
-      <td>${idx + 1}</td>
+      <td class="idx">${idx + 1}</td>
       <td><input type="date" data-f="event_date" value="${ev.event_date || ''}"></td>
       <td><input type="text" data-f="customer_name" value="${esc(ev.customer_name || '')}"></td>
       <td class="num"><input type="number" step="0.01" data-f="offer_total_eur" value="${ev.offer_total_eur || ''}"></td>
@@ -149,7 +149,7 @@ function expenseRowHtml(ex) {
     `<option value="${c.id}" ${ex.category === c.id ? 'selected' : ''}>${esc(c.label)}</option>`
   ).join('');
   return `
-    <tr data-id="${esc(ex.id)}">
+    <tr data-id="${esc(ex.id)}" data-cat="${esc(ex.category || 'other')}">
       <td><input type="date" data-f="expense_date" value="${ex.expense_date || ''}"></td>
       <td><select data-f="category">${opts}</select></td>
       <td><input type="text" data-f="description" value="${esc(ex.description || '')}"></td>
@@ -215,17 +215,17 @@ function recalcTotals() {
   set('sum-expense-bgn',  fmtBgn(expenseEur * BGN_RATE));
   set('sum-profit-eur',   fmtEur(profitEur));
   set('sum-profit-bgn',   fmtBgn(profitEur * BGN_RATE));
-  document.getElementById('sum-profit-eur').className = 'val ' + (profitEur >= 0 ? 'profit' : 'loss');
+  document.getElementById('sum-profit-eur').className = 'kpi__value ' + (profitEur >= 0 ? 'is-positive' : 'is-negative');
   set('sum-taxable-eur',  fmtEur(profitEur));
   set('sum-taxable-bgn',  fmtBgn(profitEur * BGN_RATE));
 
   // Category breakdown pills
   const incomeCats = { rent, drinks, addons, other };
   document.getElementById('income-cat-breakdown').innerHTML = INCOME_CATS.map(c => `
-    <div class="pill">
-      <div class="lbl">${esc(c.label)}</div>
-      <div class="val">${fmtEur(incomeCats[c.id])}</div>
-      <div class="sub">${fmtBgn(incomeCats[c.id] * BGN_RATE)}${incomeEur ? ` · ${Math.round(incomeCats[c.id] / incomeEur * 100)}%` : ''}</div>
+    <div class="pill" data-cat="${esc(c.id)}">
+      <div class="pill__label">${esc(c.label)}</div>
+      <div class="pill__value">${fmtEur(incomeCats[c.id])}</div>
+      <div class="pill__sub">${fmtBgn(incomeCats[c.id] * BGN_RATE)}${incomeEur ? ` <span class="pill__pct">${Math.round(incomeCats[c.id] / incomeEur * 100)}%</span>` : ''}</div>
     </div>
   `).join('');
 
@@ -235,12 +235,12 @@ function recalcTotals() {
   document.getElementById('expense-cat-breakdown').innerHTML = EXPENSE_CATS
     .filter(c => expenseCatTotals[c.id] > 0)
     .map(c => `
-      <div class="pill">
-        <div class="lbl">${esc(c.label)}</div>
-        <div class="val">${fmtEur(expenseCatTotals[c.id])}</div>
-        <div class="sub">${fmtBgn(expenseCatTotals[c.id] * BGN_RATE)}${expenseEur ? ` · ${Math.round(expenseCatTotals[c.id] / expenseEur * 100)}%` : ''}</div>
+      <div class="pill" data-cat="${esc(c.id)}">
+        <div class="pill__label">${esc(c.label)}</div>
+        <div class="pill__value">${fmtEur(expenseCatTotals[c.id])}</div>
+        <div class="pill__sub">${fmtBgn(expenseCatTotals[c.id] * BGN_RATE)}${expenseEur ? ` <span class="pill__pct">${Math.round(expenseCatTotals[c.id] / expenseEur * 100)}%</span>` : ''}</div>
       </div>
-    `).join('') || '<div style="color:#999;font-style:italic">Няма разходи в този месец.</div>';
+    `).join('') || '<div class="empty-state">Няма разходи в този месец.</div>';
 }
 
 // ────────────────────────────────────────────────────────────────────────
@@ -496,8 +496,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('btn-add-event').addEventListener('click', addManualEvent);
   document.getElementById('btn-add-expense').addEventListener('click', addManualExpense);
   document.getElementById('btn-export-xlsx').addEventListener('click', exportXlsx);
-  document.getElementById('btn-toggle-pay').addEventListener('click', () => {
-    document.getElementById('events-table').classList.toggle('compact');
+  document.getElementById('btn-toggle-pay').addEventListener('click', evt => {
+    const table = document.getElementById('events-table');
+    table.classList.toggle('show-pay');
+    evt.currentTarget.textContent = table.classList.contains('show-pay')
+      ? 'Скрий разбивка по плащане'
+      : 'Покажи разбивка по плащане';
   });
 
   document.getElementById('pending-list').addEventListener('click', evt => {
