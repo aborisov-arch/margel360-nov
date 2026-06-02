@@ -7,3 +7,9 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 const { createClient } = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Also expose as window.db so feature scripts can sanity-check whether
+// the client loaded before they try to use it (classic-script top-level
+// `const` is reachable as a bare identifier but is NOT a property of
+// window — that mismatch caused a false-negative guard on the financials
+// page).
+window.db = db;

@@ -314,7 +314,6 @@ async function addManualEvent() {
   console.log('[fin] addManualEvent called', { currentMonth, hasDb: !!window.db });
   showToast('Добавяне на ред…');
   if (!currentMonth) { showError('Първо изберете месец', { message: 'currentMonth е празен' }); return; }
-  if (!window.db) { showError('Supabase не е зареден', { message: 'window.db is undefined — auth.js / supabase-client.js не са се изпълнили' }); return; }
   const row = {
     month: currentMonth,
     customer_name: '',
@@ -339,7 +338,6 @@ async function addManualExpense() {
   console.log('[fin] addManualExpense called', { currentMonth, hasDb: !!window.db });
   showToast('Добавяне на разход…');
   if (!currentMonth) { showError('Първо изберете месец', { message: 'currentMonth е празен' }); return; }
-  if (!window.db) { showError('Supabase не е зареден', { message: 'window.db is undefined — auth.js / supabase-client.js не са се изпълнили' }); return; }
   const row = { month: currentMonth, description: '', amount_eur: 0, category: 'other' };
   try {
     const { data, error } = await db.from('financial_expenses').insert(row).select().single();
