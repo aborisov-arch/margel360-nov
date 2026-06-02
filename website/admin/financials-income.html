@@ -106,6 +106,7 @@
           </table>
         </div>
         <div class="fin-actions">
+          <button type="button" class="btn-add" id="btn-import-enquiry" onclick="window.openImportModal && window.openImportModal()">📥 Импортирай от запитване</button>
           <button type="button" class="btn-add" id="btn-add-event" onclick="window.addManualEvent && window.addManualEvent()">+ Добави ред (ръчно)</button>
           <button type="button" class="btn-ghost" id="btn-toggle-pay">Покажи разбивка по плащане</button>
         </div>
@@ -113,16 +114,21 @@
     </div>
   </main>
 
-  <!-- Link-to-completed-event modal -->
+  <!-- Enquiry picker modal: works in two modes
+       - 'link' (per-row 🔗 button): updates an existing financial_events
+         row to point at a chosen enquiry and refills its breakdown.
+       - 'import' (top-level "Импортирай" button): creates a brand-new
+         financial_events row for the chosen enquiry with the breakdown
+         pre-filled. -->
   <div class="link-modal" id="link-modal" hidden>
     <div class="link-modal__backdrop" data-close-modal></div>
     <div class="link-modal__panel" role="dialog" aria-modal="true" aria-labelledby="link-modal-title">
       <div class="link-modal__head">
-        <h2 id="link-modal-title">Свържи с минало събитие</h2>
+        <h2 id="link-modal-title">Избери запитване</h2>
         <button type="button" class="link-modal__close" data-close-modal aria-label="Затвори">×</button>
       </div>
       <div class="link-modal__body">
-        <input type="text" id="link-modal-search" placeholder="Търсене по име, телефон или събитие…">
+        <input type="text" id="link-modal-search" placeholder="Търсене по име, събитие или дата…">
         <div class="link-modal__list" id="link-modal-list">Зареждане…</div>
       </div>
     </div>
@@ -132,6 +138,6 @@
   <script src="js/supabase-client.js?v=3" defer></script>
   <script src="js/admin-i18n.js?v=3" defer></script>
   <script src="js/auth.js?v=2" defer></script>
-  <script src="js/financials.js?v=10" defer></script>
+  <script src="js/financials.js?v=11" defer></script>
 </body>
 </html>

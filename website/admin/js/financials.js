@@ -409,44 +409,81 @@ async function deleteExpense(id) {
   renderExpenses();
 }
 
-// ── Link-to-completed-event modal ─────────────────────────────────────
-// Manually-added income rows can be promoted later: pick from any
-// confirmed/completed enquiry (across all months) and bind the row to it.
-// Useful when the bookkeeper enters a payment before realising the same
-// customer already exists in the CRM.
-let linkingEventId = null;
+// ── Enquiry picker modal ──────────────────────────────────────────────
+// Two modes:
+//   'link'   — invoked by per-row 🔗 button. Updates an existing
+//              financial_events row to point at a chosen enquiry and
+//              refills its breakdown. Lists confirmed/completed only.
+//   'import' — invoked by the top-level "Импортирай от запитване"
+//              button. Creates a brand-new financial_events row for the
+//              chosen enquiry. Lists ALL enquiries (the bookkeeper
+//              decides whether to import — they know if the event
+//              happened, regardless of pipeline status).
+let modalMode = null;       // 'link' | 'import' | null
+let linkingEventId = null;  // only used in 'link' mode
+
+function setModalTitle(text) {
+  const el = document.getElementById('link-modal-title');
+  if (el) el.textContent = text;
+}
 
 function openLinkModal(eventId) {
   const modal = document.getElementById('link-modal');
   if (!modal) return;
+  modalMode = 'link';
   linkingEventId = eventId;
+  setModalTitle('Свържи с минало събитие');
   modal.hidden = false;
   renderLinkModalList('');
   const search = document.getElementById('link-modal-search');
   if (search) { search.value = ''; search.focus(); }
 }
+
+function openImportModal() {
+  const modal = document.getElementById('link-modal');
+  if (!modal) return;
+  modalMode = 'import';
+  linkingEventId = null;
+  setModalTitle('Импортирай от запитване');
+  modal.hidden = false;
+  renderLinkModalList('');
+  const search = document.getElementById('link-modal-search');
+  if (search) { search.value = ''; search.focus(); }
+}
+window.openImportModal = openImportModal;
+
 function closeLinkModal() {
   const modal = document.getElementById('link-modal');
   if (!modal) return;
   modal.hidden = true;
+  modalMode = null;
   linkingEventId = null;
 }
+
 function renderLinkModalList(q) {
   const list = document.getElementById('link-modal-list');
   if (!list) return;
   const needle = (q || '').trim().toLowerCase();
-  const eligible = allEnquiries.filter(e => ['confirmed', 'completed'].includes(e.pipeline_status));
+  // Link mode = confirmed/completed only. Import mode = all enquiries,
+  // sorted so confirmed/completed bubble to the top.
+  const STAGE_RANK = { completed: 0, confirmed: 1, quoted: 2, contacted: 3, new: 4, lost: 5, archived: 6 };
+  let pool = (modalMode === 'link')
+    ? allEnquiries.filter(e => ['confirmed', 'completed'].includes(e.pipeline_status))
+    : allEnquiries.slice();
+  if (modalMode === 'import') {
+    pool.sort((a, b) => (STAGE_RANK[a.pipeline_status] ?? 9) - (STAGE_RANK[b.pipeline_status] ?? 9));
+  }
   const matches = needle
-    ? eligible.filter(e =>
+    ? pool.filter(e =>
         (e.full_name || '').toLowerCase().includes(needle) ||
         (e.event_type || '').toLowerCase().includes(needle) ||
         (e.preferred_date || '').includes(needle))
-    : eligible;
+    : pool;
   if (!matches.length) {
     list.innerHTML = `<div class="empty-state">Няма съвпадения.</div>`;
     return;
   }
-  list.innerHTML = matches.slice(0, 50).map(e => `
+  list.innerHTML = matches.slice(0, 80).map(e => `
     <button type="button" class="link-modal__item" data-link-pick="${esc(e.id)}">
       <span class="name">${esc(e.full_name || '—')}</span>
       <span class="meta">${esc(e.preferred_date || '')} · ${esc(e.event_type || '')}</span>
@@ -454,11 +491,47 @@ function renderLinkModalList(q) {
     </button>
   `).join('');
 }
+
 async function pickLinkTarget(enquiryId) {
-  if (!linkingEventId) return;
   const e = allEnquiries.find(x => x.id === enquiryId);
   if (!e) return;
   const b = enquiryBreakdown(e);
+
+  if (modalMode === 'import') {
+    // Create a brand-new financial_events row for the chosen enquiry,
+    // using the enquiry's preferred_date to determine the month.
+    const evDate = parsePreferredDate(e.preferred_date);
+    const month = evDate ? evDate.slice(0, 7) : currentMonth;
+    const row = {
+      month,
+      event_date: evDate,
+      customer_name: e.full_name || '',
+      offer_total_eur: estimateEnquiryTotal(e),
+      income_rent_eur:   b.rent,
+      income_drinks_eur: b.drinks,
+      income_addons_eur: b.addons,
+      income_other_eur:  b.other,
+      enquiry_id: e.id,
+      confirmed_by: userEmail,
+      confirmed_at: new Date().toISOString(),
+    };
+    const { data, error } = await db.from('financial_events').insert(row).select().single();
+    if (error) { showError('Грешка при импортиране', error); return; }
+    // If the new row belongs to the current month, append immediately;
+    // otherwise tell the user to switch months to see it.
+    if (data.month === currentMonth) {
+      events.push(data);
+      renderPending(); renderEvents();
+    }
+    showToast(data.month === currentMonth
+      ? 'Импортирано в текущия месец'
+      : `Импортирано в ${data.month}`, 'ok');
+    closeLinkModal();
+    return;
+  }
+
+  // 'link' mode — update an existing row to point at the chosen enquiry.
+  if (!linkingEventId) return;
   const patch = {
     enquiry_id: e.id,
     customer_name: e.full_name || '',
