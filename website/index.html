@@ -122,10 +122,14 @@
   <main>
     <!-- HERO -->
     <section class="hero" aria-label="Hero">
-      <video class="hero-video" autoplay muted loop playsinline webkit-playsinline aria-hidden="true">
+      <!-- Primary featured spot — plays first so visitors immediately see it.
+           Falls back to hero-bg.mp4 if the primary source fails. -->
+      <video class="hero-video" autoplay muted loop playsinline webkit-playsinline aria-hidden="true" poster="assets/images/hero-featured-poster.jpg">
+        <source src="assets/images/hero-featured.mp4" type="video/mp4">
         <source src="assets/images/hero-bg.mp4" type="video/mp4">
       </video>
       <div class="hero-overlay" aria-hidden="true"></div>
+      <span class="hero-badge" aria-hidden="true" data-i18n="hero_featured">★ Спот на месеца</span>
       <div class="hero-content container">
         <h1><span class="gold-text" data-i18n="hero_title">Зала за всяко събитие</span></h1>
         <p data-i18n="hero_sub">Наслади се на всеки повод в Маргел 360°</p>
