@@ -124,6 +124,24 @@ function initCounters() {
   observer.observe(statsSection);
 }
 
+// ── Spotlight glow borders ──
+// Port of the React spotlight-card pattern: track the pointer in viewport
+// coordinates and expose it as --gx / --gy on the document root. Cards
+// styled with .glow-border use a fixed-attachment radial-gradient masked
+// to the border ring, so each card lights up the part of its edge nearest
+// to the cursor. One listener, all cards — no per-element work.
+function initGlowBorders() {
+  if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) return;
+  const root = document.documentElement;
+  let pending = false;
+  let lastX = 0, lastY = 0;
+  function flush() { root.style.setProperty('--gx', lastX + 'px'); root.style.setProperty('--gy', lastY + 'px'); pending = false; }
+  window.addEventListener('pointermove', e => {
+    lastX = e.clientX; lastY = e.clientY;
+    if (!pending) { pending = true; requestAnimationFrame(flush); }
+  }, { passive: true });
+}
+
 // ── Init on DOM ready ──
 document.addEventListener('DOMContentLoaded', () => {
   applyTranslations(currentLang);
@@ -133,4 +151,5 @@ document.addEventListener('DOMContentLoaded', () => {
   initAnimations();
   initParallax();
   initCounters();
+  initGlowBorders();
 });

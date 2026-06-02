@@ -18,6 +18,83 @@
   --section-pad:  96px;
   --max-width:    1200px;
   --transition:   0.25s ease;
+  --gx: -100vw; --gy: -100vh; /* off-screen until JS updates it */
+}
+
+/* ── Spotlight glow borders ──
+   Port of the React spotlight-card effect. Every card-like surface gets a
+   1px tinted border + a sibling pseudo-element painting a soft gold radial
+   gradient masked to the border ring. The gradient uses
+   background-attachment: fixed and reads --gx / --gy from :root, set once
+   per pointermove in main.js — so cards light up at the edge nearest the
+   cursor with zero per-card JS work. Skip on touch devices.
+
+   Apply by tagging the selector list below. To add a new card type, just
+   append its selector here. */
+.event-row,
+.service-card,
+.service-variant,
+.faq-item,
+.gl-item,
+.gl-featured-video__frame,
+.stat-item,
+.contact-detail,
+.contact-map,
+.contact-form,
+.about-image,
+.free-included,
+.addon-card,
+.drink-item,
+.summary-card,
+.event-pick-row {
+  position: relative;
+  isolation: isolate;
+}
+.event-row::after,
+.service-card::after,
+.service-variant::after,
+.faq-item::after,
+.gl-item::after,
+.gl-featured-video__frame::after,
+.stat-item::after,
+.contact-detail::after,
+.contact-map::after,
+.contact-form::after,
+.about-image::after,
+.free-included::after,
+.addon-card::after,
+.drink-item::after,
+.summary-card::after,
+.event-pick-row::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  padding: 1.5px;
+  border-radius: inherit;
+  background: radial-gradient(
+    260px 260px at var(--gx) var(--gy),
+    rgba(201,168,76,1) 0%,
+    rgba(201,168,76,0.5) 25%,
+    rgba(201,168,76,0) 70%
+  );
+  background-attachment: fixed;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.95;
+  transition: opacity 0.25s ease;
+}
+/* Touch / no-hover devices: hide the glow ring entirely. */
+@media (pointer: coarse), (hover: none) {
+  .event-row::after, .service-card::after, .service-variant::after,
+  .faq-item::after, .gl-item::after, .gl-featured-video__frame::after,
+  .stat-item::after, .contact-detail::after, .contact-map::after,
+  .contact-form::after, .about-image::after, .free-included::after,
+  .addon-card::after, .drink-item::after, .summary-card::after,
+  .event-pick-row::after { display: none; }
 }
 
 /* ── Reset ── */
