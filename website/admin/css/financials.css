@@ -416,16 +416,18 @@
 .fin-breadcrumb a { color: var(--fin-muted-foreground); text-decoration: none; }
 .fin-breadcrumb a:hover { color: var(--fin-text); }
 
-/* ── Wider number inputs so values are legible at a glance ──
-   Number inputs in the income table need more horizontal room than the
-   default table cell affords; bump min-width on the cells they live in
-   and increase font-size slightly. */
+/* ── Income table sizing ── Numeric columns get just enough width to
+   fit "€1,234.00" without wrapping. Customer + Date stay compact so the
+   table doesn't waste horizontal space when names are short. */
 .ledger--income th.num,
-.ledger--income td.num { min-width: 110px; }
+.ledger--income td.num       { min-width: 96px; }
 .ledger--income th.col-cat,
-.ledger--income td.col-cat { min-width: 120px; }
-.ledger input[type=number] { font-size: 0.92rem; padding: 7px 10px; }
-.ledger--income td:nth-child(2) { min-width: 180px; }   /* Customer */
+.ledger--income td.col-cat   { min-width: 100px; }
+.ledger--income th:nth-child(2),
+.ledger--income td:nth-child(2) { min-width: 160px; }  /* Client */
+.ledger--income th:nth-child(3),
+.ledger--income td:nth-child(3) { min-width: 120px; }  /* Date */
+.ledger input[type=number] { font-size: 0.9rem; padding: 6px 8px; }
 
 /* Pull the actions column right; widen it so the link + delete buttons fit. */
 .ledger .actions-col { width: 1%; white-space: nowrap; }

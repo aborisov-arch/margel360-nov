@@ -27,12 +27,15 @@ function fmtDate(iso) {
   return new Date(iso).toLocaleDateString('bg-BG', { day:'2-digit', month:'2-digit', year:'numeric' });
 }
 
-// Income breakdown categories (event-side).
+// Income breakdown categories (event-side). The DB column for rent is kept
+// (income_rent_eur) but the UI labels it "Оферта" — the bookkeeper enters
+// what the customer was quoted; drinks and addons are separate line items
+// on top. Total = offer + drinks + addons. The income_other_eur column
+// stays in the schema for backward compatibility but is no longer shown.
 const INCOME_CATS = [
-  { id: 'rent',   field: 'income_rent_eur',   label: 'Наем на зала' },
+  { id: 'rent',   field: 'income_rent_eur',   label: 'Оферта' },
   { id: 'drinks', field: 'income_drinks_eur', label: 'Напитки' },
   { id: 'addons', field: 'income_addons_eur', label: 'Доп. услуги' },
-  { id: 'other',  field: 'income_other_eur',  label: 'Друго' },
 ];
 
 // Expense categories (controlled vocab matching the CHECK constraint).
@@ -65,12 +68,11 @@ function enquiryBreakdown(e) {
     rent:   Math.max(0, Math.round((rent - discount) * 100) / 100),
     drinks: Math.round(drinks * 100) / 100,
     addons: Math.round(addons * 100) / 100,
-    other:  0,
   };
 }
 function estimateEnquiryTotal(e) {
   const b = enquiryBreakdown(e);
-  return Math.round((b.rent + b.drinks + b.addons + b.other) * 100) / 100;
+  return Math.round((b.rent + b.drinks + b.addons) * 100) / 100;
 }
 
 function parsePreferredDate(s) {
@@ -140,11 +142,9 @@ function eventRowHtml(ev, idx) {
       <td class="idx">${idx + 1}</td>
       <td><input type="text" data-f="customer_name" value="${esc(ev.customer_name || '')}"></td>
       <td><input type="date" data-f="event_date" value="${ev.event_date || ''}"></td>
-      <td class="num"><input type="number" step="0.01" data-f="offer_total_eur" value="${ev.offer_total_eur || ''}"></td>
       <td class="num col-cat"><input type="number" step="0.01" data-f="income_rent_eur"   value="${ev.income_rent_eur   || ''}"></td>
       <td class="num col-cat"><input type="number" step="0.01" data-f="income_drinks_eur" value="${ev.income_drinks_eur || ''}"></td>
       <td class="num col-cat"><input type="number" step="0.01" data-f="income_addons_eur" value="${ev.income_addons_eur || ''}"></td>
-      <td class="num col-cat"><input type="number" step="0.01" data-f="income_other_eur"  value="${ev.income_other_eur  || ''}"></td>
       <td class="num">${fmtEur(total)}</td>
       <td class="num col-bgn">${fmtBgn(total * BGN_RATE)}</td>
       <td class="pay-col"><input type="date" data-f="deposit_date" value="${ev.deposit_date || ''}"></td>
@@ -184,7 +184,7 @@ function renderEvents() {
   if (body) {
     body.innerHTML =
       events.length ? events.map(eventRowHtml).join('')
-                    : `<tr><td colspan="17" style="text-align:center;color:#999;padding:18px">Няма записи. Добавете от списъка отгоре или ръчно.</td></tr>`;
+                    : `<tr><td colspan="15" style="text-align:center;color:#999;padding:18px">Няма записи. Добавете от списъка отгоре или ръчно.</td></tr>`;
   }
   recalcTotals();
 }
@@ -202,26 +202,22 @@ function renderExpenses() {
 }
 
 function recalcTotals() {
-  let offer = 0, rent = 0, drinks = 0, addons = 0, other = 0;
+  let rent = 0, drinks = 0, addons = 0;
   let depCash = 0, depBank = 0, balCash = 0, balBank = 0;
   events.forEach(e => {
-    offer   += Number(e.offer_total_eur  || 0);
     rent    += Number(e.income_rent_eur  || 0);
     drinks  += Number(e.income_drinks_eur|| 0);
     addons  += Number(e.income_addons_eur|| 0);
-    other   += Number(e.income_other_eur || 0);
     depCash += Number(e.deposit_cash_eur || 0);
     depBank += Number(e.deposit_bank_eur || 0);
     balCash += Number(e.balance_cash_eur || 0);
     balBank += Number(e.balance_bank_eur || 0);
   });
-  const incomeEur = rent + drinks + addons + other;
+  const incomeEur = rent + drinks + addons;
   const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
-  set('ev-tot-offer',  fmtEur(offer));
   set('ev-tot-rent',   fmtEur(rent));
   set('ev-tot-drinks', fmtEur(drinks));
   set('ev-tot-addons', fmtEur(addons));
-  set('ev-tot-other',  fmtEur(other));
   set('ev-tot-eur',    fmtEur(incomeEur));
   set('ev-tot-bgn',    fmtBgn(incomeEur * BGN_RATE));
   set('ev-tot-dep-cash', fmtEur(depCash));
@@ -260,7 +256,7 @@ function recalcTotals() {
   // Category breakdown pills
   const incomeCatBreakdown = document.getElementById('income-cat-breakdown');
   const expenseCatBreakdown = document.getElementById('expense-cat-breakdown');
-  const incomeCats = { rent, drinks, addons, other };
+  const incomeCats = { rent, drinks, addons };
   if (incomeCatBreakdown) incomeCatBreakdown.innerHTML = INCOME_CATS.map(c => `
     <div class="pill" data-cat="${esc(c.id)}">
       <div class="pill__label">${esc(c.label)}</div>
@@ -341,7 +337,6 @@ async function promoteEnquiry(enquiryId) {
     income_rent_eur:   b.rent,
     income_drinks_eur: b.drinks,
     income_addons_eur: b.addons,
-    income_other_eur:  b.other,
     enquiry_id: e.id,
     confirmed_by: userEmail,
     confirmed_at: new Date().toISOString(),
@@ -360,7 +355,7 @@ async function addManualEvent() {
     month: currentMonth,
     customer_name: '',
     offer_total_eur: 0,
-    income_rent_eur: 0, income_drinks_eur: 0, income_addons_eur: 0, income_other_eur: 0,
+    income_rent_eur: 0, income_drinks_eur: 0, income_addons_eur: 0,
     confirmed_by: userEmail,
     confirmed_at: new Date().toISOString(),
   };
@@ -540,7 +535,6 @@ async function pickLinkTarget(enquiryId) {
     income_rent_eur:   b.rent,
     income_drinks_eur: b.drinks,
     income_addons_eur: b.addons,
-    income_other_eur:  b.other,
     updated_at: new Date().toISOString(),
   };
   const { error } = await db.from('financial_events').update(patch).eq('id', linkingEventId);
@@ -571,10 +565,11 @@ function bindInlineEdit() {
     if (error) { showError('Грешка при запис', error); inp.style.outline = '2px solid #c62828'; setTimeout(() => inp.style.outline = '', 1500); return; }
     const ev = events.find(x => x.id === id);
     if (ev) ev[field] = value;
-    // Recalc the per-row total cell (col index 8 = Общо €, 9 = Общо лв)
+    // Recalc per-row total cells. New column layout:
+    // 0:#  1:client  2:date  3:Оферта  4:Напитки  5:Доп.услуги  6:Общо€  7:Общолв
     const total = eventTotalEur(ev);
-    tr.children[8].textContent = fmtEur(total);
-    tr.children[9].textContent = fmtBgn(total * BGN_RATE);
+    tr.children[6].textContent = fmtEur(total);
+    tr.children[7].textContent = fmtBgn(total * BGN_RATE);
     recalcTotals();
   });
 
@@ -605,24 +600,29 @@ function bindInlineEdit() {
 
 function exportXlsx() {
   if (!window.XLSX) { alert('XLSX library не е заредена.'); return; }
+  // Columns mirror the original Excel template, plus a category breakdown
+  // block to the right of the expenses block (Оферта / Напитки / Доп.услуги).
+  // The legacy "Друго €" category is no longer shown — the income split is
+  // 3 categories only.
   const header = [
     'бр. събития', '', ' дата на събитие', 'клиент', 'сума по оферта',
     'дата на плащане', 'платено в брой аванс', 'платено  аванс по банка ', '',
     'дата на плащане', 'доплащане в брой', 'платено по банка ',
     'В €', 'в лв', '', '',
     'дата', 'категория', 'описание др. Разходи', 'други разходи сума лв', '', 'в €',
-    '', 'Наем €', 'Напитки €', 'Доп. услуги €', 'Друго €',
+    '', 'Оферта €', 'Напитки €', 'Доп. услуги €',
   ];
   const dataRows = Math.max(events.length, expenses.length, 25);
   const aoa = [header];
   for (let i = 0; i < dataRows; i++) {
     const ev = events[i] || {};
     const ex = expenses[i] || {};
-    const r = new Array(27).fill(null);
+    const r = new Array(26).fill(null);
     r[0]  = i + 1;
     r[2]  = ev.event_date     ? new Date(ev.event_date)     : null;
     r[3]  = ev.customer_name  || null;
-    r[4]  = ev.offer_total_eur ?? null;
+    // Column E "сума по оферта" is now the live total (rent+drinks+addons)
+    r[4]  = (Number(ev.income_rent_eur || 0) + Number(ev.income_drinks_eur || 0) + Number(ev.income_addons_eur || 0)) || null;
     r[5]  = ev.deposit_date   ? new Date(ev.deposit_date)   : null;
     r[6]  = ev.deposit_cash_eur ?? null;
     r[7]  = ev.deposit_bank_eur ?? null;
@@ -633,22 +633,21 @@ function exportXlsx() {
     r[17] = ex.category ? (EXPENSE_CAT_LABEL[ex.category] || ex.category) : null;
     r[18] = ex.description    || null;
     r[20] = ex.amount_eur ?? null;
-    // Category breakdown columns X-AA (23-26) for events
+    // Category breakdown columns X-Z (23-25) for events
     r[23] = ev.income_rent_eur   ?? null;
     r[24] = ev.income_drinks_eur ?? null;
     r[25] = ev.income_addons_eur ?? null;
-    r[26] = ev.income_other_eur  ?? null;
     aoa.push(r);
   }
 
   const totalsRow = dataRows + 2;
-  aoa.push(new Array(27).fill(null));
+  aoa.push(new Array(26).fill(null));
 
   const ws = XLSX.utils.aoa_to_sheet(aoa);
 
   for (let i = 1; i <= dataRows; i++) {
     const r = i + 1;
-    ws[`M${r}`] = { t: 'n', f: `X${r}+Y${r}+Z${r}+AA${r}` };
+    ws[`M${r}`] = { t: 'n', f: `X${r}+Y${r}+Z${r}` };
     ws[`N${r}`] = { t: 'n', f: `M${r}*${BGN_RATE}` };
     ws[`T${r}`] = { t: 'n', f: `V${r}*${BGN_RATE}` };
   }
@@ -658,11 +657,10 @@ function exportXlsx() {
   ws[`H${tr}`] = { t: 'n', f: `SUM(H2:H${dataRows + 1})` };
   ws[`K${tr}`] = { t: 'n', f: `SUM(K2:K${dataRows + 1})` };
   ws[`L${tr}`] = { t: 'n', f: `SUM(L2:L${dataRows + 1})` };
-  ws[`X${tr}`]  = { t: 'n', f: `SUM(X2:X${dataRows + 1})` };
-  ws[`Y${tr}`]  = { t: 'n', f: `SUM(Y2:Y${dataRows + 1})` };
-  ws[`Z${tr}`]  = { t: 'n', f: `SUM(Z2:Z${dataRows + 1})` };
-  ws[`AA${tr}`] = { t: 'n', f: `SUM(AA2:AA${dataRows + 1})` };
-  ws[`M${tr}`] = { t: 'n', f: `X${tr}+Y${tr}+Z${tr}+AA${tr}` };
+  ws[`X${tr}`] = { t: 'n', f: `SUM(X2:X${dataRows + 1})` };
+  ws[`Y${tr}`] = { t: 'n', f: `SUM(Y2:Y${dataRows + 1})` };
+  ws[`Z${tr}`] = { t: 'n', f: `SUM(Z2:Z${dataRows + 1})` };
+  ws[`M${tr}`] = { t: 'n', f: `X${tr}+Y${tr}+Z${tr}` };
   ws[`N${tr}`] = { t: 'n', f: `M${tr}*${BGN_RATE}` };
   ws[`V${tr}`] = { t: 'n', f: `SUM(V2:V${dataRows + 1})` };
   ws[`T${tr}`] = { t: 'n', f: `V${tr}*${BGN_RATE}` };
@@ -686,7 +684,7 @@ function exportXlsx() {
     { wch: 9 }, { wch: 1 }, { wch: 12 }, { wch: 22 }, { wch: 11 }, { wch: 11 }, { wch: 12 }, { wch: 12 }, { wch: 1 },
     { wch: 11 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 1 }, { wch: 1 },
     { wch: 11 }, { wch: 18 }, { wch: 32 }, { wch: 14 }, { wch: 1 }, { wch: 10 },
-    { wch: 1 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 10 },
+    { wch: 1 }, { wch: 10 }, { wch: 10 }, { wch: 12 },
   ];
 
   const wb = XLSX.utils.book_new();
