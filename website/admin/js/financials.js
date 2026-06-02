@@ -292,6 +292,8 @@ async function promoteEnquiry(enquiryId) {
 }
 
 async function addManualEvent() {
+  console.log('[fin] addManualEvent', { currentMonth });
+  if (!currentMonth) { showError('Първо изберете месец', { message: 'currentMonth е празен' }); return; }
   const row = {
     month: currentMonth,
     customer_name: '',
@@ -300,18 +302,28 @@ async function addManualEvent() {
     confirmed_by: userEmail,
     confirmed_at: new Date().toISOString(),
   };
-  const { data, error } = await db.from('financial_events').insert(row).select().single();
-  if (error) { showError('Грешка при добавяне на ред', error); return; }
-  events.push(data);
-  renderEvents();
+  try {
+    const { data, error } = await db.from('financial_events').insert(row).select().single();
+    if (error) { showError('Грешка при добавяне на ред', error); return; }
+    events.push(data);
+    renderEvents();
+  } catch (err) {
+    showError('Неочаквана грешка', err);
+  }
 }
 
 async function addManualExpense() {
+  console.log('[fin] addManualExpense', { currentMonth });
+  if (!currentMonth) { showError('Първо изберете месец', { message: 'currentMonth е празен' }); return; }
   const row = { month: currentMonth, description: '', amount_eur: 0, category: 'other' };
-  const { data, error } = await db.from('financial_expenses').insert(row).select().single();
-  if (error) { showError('Грешка при добавяне на разход', error); return; }
-  expenses.push(data);
-  renderExpenses();
+  try {
+    const { data, error } = await db.from('financial_expenses').insert(row).select().single();
+    if (error) { showError('Грешка при добавяне на разход', error); return; }
+    expenses.push(data);
+    renderExpenses();
+  } catch (err) {
+    showError('Неочаквана грешка', err);
+  }
 }
 
 async function deleteEvent(id) {
@@ -475,6 +487,37 @@ function exportXlsx() {
 // Boot
 // ────────────────────────────────────────────────────────────────────────
 
+// ── Boot ──
+// Click handlers are bound at the document level via delegation BEFORE the
+// async auth/data load so they fire even if part of the init throws later.
+// This was the symptom on the last build: an early error left the per-
+// element listeners unwired and the +Add buttons silently did nothing.
+document.addEventListener('click', evt => {
+  if (evt.target.closest('#btn-add-event'))     { addManualEvent(); return; }
+  if (evt.target.closest('#btn-add-expense'))   { addManualExpense(); return; }
+  if (evt.target.closest('#btn-export-xlsx'))   { exportXlsx(); return; }
+  if (evt.target.closest('#btn-toggle-pay')) {
+    const table = document.getElementById('events-table');
+    if (!table) return;
+    table.classList.toggle('show-pay');
+    const btn = evt.target.closest('#btn-toggle-pay');
+    if (btn) btn.textContent = table.classList.contains('show-pay')
+      ? 'Скрий разбивка по плащане'
+      : 'Покажи разбивка по плащане';
+    return;
+  }
+  const promote = evt.target.closest('[data-promote]');
+  if (promote) { promoteEnquiry(promote.getAttribute('data-promote')); return; }
+  const delEv = evt.target.closest('[data-del-event]');
+  if (delEv)   { deleteEvent(delEv.getAttribute('data-del-event')); return; }
+  const delEx = evt.target.closest('[data-del-expense]');
+  if (delEx)   { deleteExpense(delEx.getAttribute('data-del-expense')); return; }
+});
+
+document.addEventListener('change', evt => {
+  if (evt.target.id === 'fin-month') loadMonth(evt.target.value);
+});
+
 document.addEventListener('DOMContentLoaded', async () => {
   const session = await requireAuth();
   if (!session) return;
@@ -483,39 +526,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   const now = new Date();
   const def = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   currentMonth = isoMonth(def);
-  document.getElementById('fin-month').value = currentMonth;
+  const monthInput = document.getElementById('fin-month');
+  if (monthInput) monthInput.value = currentMonth;
 
   const { data: enq, error } = await db.from('enquiries').select('id,full_name,preferred_date,event_type,event_id,pipeline_status,addons,drinks,applied_discount_percent');
-  if (error) { showError('Грешка при зареждане на запитванията', error); return; }
+  if (error) { showError('Грешка при зареждане на запитванията', error); }
   allEnquiries = enq || [];
 
   await loadMonth(currentMonth);
   bindInlineEdit();
-
-  document.getElementById('fin-month').addEventListener('change', e => loadMonth(e.target.value));
-  document.getElementById('btn-add-event').addEventListener('click', addManualEvent);
-  document.getElementById('btn-add-expense').addEventListener('click', addManualExpense);
-  document.getElementById('btn-export-xlsx').addEventListener('click', exportXlsx);
-  document.getElementById('btn-toggle-pay').addEventListener('click', evt => {
-    const table = document.getElementById('events-table');
-    table.classList.toggle('show-pay');
-    evt.currentTarget.textContent = table.classList.contains('show-pay')
-      ? 'Скрий разбивка по плащане'
-      : 'Покажи разбивка по плащане';
-  });
-
-  document.getElementById('pending-list').addEventListener('click', evt => {
-    const b = evt.target.closest('[data-promote]');
-    if (b) promoteEnquiry(b.getAttribute('data-promote'));
-  });
-  document.getElementById('events-body').addEventListener('click', evt => {
-    const b = evt.target.closest('[data-del-event]');
-    if (b) deleteEvent(b.getAttribute('data-del-event'));
-  });
-  document.getElementById('expenses-body').addEventListener('click', evt => {
-    const b = evt.target.closest('[data-del-expense]');
-    if (b) deleteExpense(b.getAttribute('data-del-expense'));
-  });
 });
 
 function rerenderPage() { renderPending(); renderEvents(); renderExpenses(); }
