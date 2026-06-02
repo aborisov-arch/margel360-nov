@@ -194,11 +194,20 @@
       font-weight: 500; font-size: 0.82rem; width: 28px;
       font-variant-numeric: tabular-nums;
     }
-    /* Income ledger column widths — without these the Client column claims
-       all leftover space and leaves a giant gap after "#". */
-    .ledger--income th:nth-child(1), .ledger--income td:nth-child(1) { width: 40px; }
-    .ledger--income th:nth-child(2), .ledger--income td:nth-child(2) { width: 200px; min-width: 160px; }
-    .ledger--income th:nth-child(3), .ledger--income td:nth-child(3) { width: 130px; }
+    /* Income ledger column widths. table-layout:fixed makes the browser honor
+       these widths instead of redistributing leftover space to whichever cell
+       has the greediest content (the Client text input). The remaining space
+       is absorbed by the Client column. */
+    .ledger--income { table-layout: fixed; }
+    .ledger--income col.col-idx     { width: 48px; }
+    .ledger--income col.col-client  { width: auto; }
+    .ledger--income col.col-date    { width: 130px; }
+    .ledger--income col.col-amt     { width: 110px; }
+    .ledger--income col.col-total   { width: 110px; }
+    .ledger--income col.col-bgn     { width: 110px; }
+    .ledger--income col.col-pay     { width: 120px; }
+    .ledger--income col.col-actions { width: 80px; }
+    .ledger--income td input[type=text] { text-overflow: ellipsis; }
 
     /* Income breakdown columns get a barely-there gold tint to signal
        "this is the new categorised view" without shouting. */
@@ -256,6 +265,9 @@
 
     .pay-col { display: none; } /* additive: revealed by .show-pay */
     .ledger.show-pay .pay-col { display: table-cell; }
+    /* table-layout:fixed honors <col> widths even when cells are display:none,
+       so we also collapse the matching <col> elements when pay is hidden. */
+    .ledger:not(.show-pay) col.col-pay { visibility: collapse; }
 
     /* ── Category badge inside expense rows ──
        Vanilla port of the shadcn Badge component (variant=light): soft

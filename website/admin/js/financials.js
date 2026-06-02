@@ -68,10 +68,13 @@ function enquiryBreakdown(e) {
   const guests = Number(e.guests) || 0;
   const extraGuests = Math.max(0, guests - VENUE_MIN_GUESTS);
   const extraGuestsCost = extraGuests * EXTRA_GUEST_FEE_EUR;
+  // reservation.js serialises each addon with its LINE price (qty + freeUntil
+  // already applied), so we sum a.price directly. Multiplying by qty here
+  // double-counted. Drinks are stored with unit price as price_eur and a qty.
   const addons = Array.isArray(e.addons)
-    ? e.addons.reduce((s, a) => s + (Number(a.price) || 0) * (Number(a.qty) || 1), 0) : 0;
+    ? e.addons.reduce((s, a) => s + (Number(a.price) || 0), 0) : 0;
   const drinks = Array.isArray(e.drinks)
-    ? e.drinks.reduce((s, d) => s + (Number(d.price) || 0) * (Number(d.qty) || 0), 0) : 0;
+    ? e.drinks.reduce((s, d) => s + (Number(d.price_eur) || 0) * (Number(d.qty) || 0), 0) : 0;
   const pct = Number(e.applied_discount_percent || 0);
   const discount = pct > 0 ? base * pct / 100 : 0;
   const rent = base - discount + extraGuestsCost;
