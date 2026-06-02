@@ -1,4 +1,7 @@
 let allEnquiries = [];
+let notesByEnquiry = {}; // enquiry_id -> [{id, body, author_email, created_at}, ...]
+
+const PIPELINE_STAGES = ['new','contacted','quoted','confirmed','completed','lost','archived'];
 
 document.addEventListener('DOMContentLoaded', async () => {
   const session = await requireAuth();
@@ -7,10 +10,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   const loadingEl = document.getElementById('loading');
   const wrapEl    = document.getElementById('enquiries-wrap');
 
-  const { data: enquiries, error } = await db
-    .from('enquiries')
-    .select('*')
-    .order('created_at', { ascending: false });
+  const [{ data: enquiries, error }, { data: notes, error: notesErr }] = await Promise.all([
+    db.from('enquiries').select('*').order('created_at', { ascending: false }),
+    db.from('enquiry_notes').select('*').order('created_at', { ascending: false }),
+  ]);
 
   loadingEl.style.display = 'none';
   wrapEl.style.display = 'block';
@@ -20,14 +23,120 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.error('Failed to fetch enquiries:', error);
     return;
   }
+  if (notesErr) console.error('Failed to fetch notes:', notesErr);
 
   allEnquiries = enquiries || [];
+  notesByEnquiry = {};
+  (notes || []).forEach(n => {
+    (notesByEnquiry[n.enquiry_id] ||= []).push(n);
+  });
+
   renderEnquiries(allEnquiries);
 
   // Bind the tbody click handler exactly once. Doing it inside
   // renderEnquiries caused listeners to stack on every language switch.
   bindTableHandlers();
 });
+
+// Build a CSS class + readable label for the pipeline stage badge.
+function pipelineBadge(stage) {
+  const safe = PIPELINE_STAGES.includes(stage) ? stage : 'new';
+  return { cls: `pipe-badge pipe-${safe}`, label: t('crm_status_' + safe) };
+}
+
+// Returns one of '', 'overdue', 'today' for a follow-up date string (ISO).
+function followupClass(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d)) return '';
+  const today = new Date(); today.setHours(0,0,0,0);
+  const target = new Date(d); target.setHours(0,0,0,0);
+  if (target < today) return 'overdue';
+  if (target.getTime() === today.getTime()) return 'today';
+  return '';
+}
+
+// YYYY-MM-DD from a timestamptz, for <input type=date> binding.
+function dateInputValue(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d)) return '';
+  const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+
+// Normalised key for grouping enquiries by customer. Email wins when present
+// (most reliable); fall back to phone digits.
+function customerKey(e) {
+  const em = (e.email || '').trim().toLowerCase();
+  if (em) return 'e:' + em;
+  const ph = (e.phone || '').replace(/\D/g, '');
+  if (ph) return 'p:' + ph;
+  return '';
+}
+
+// CRM panel: pipeline dropdown, follow-up date input, marketing-consent
+// toggle, customer-history link, notes thread.
+function renderCrmPanel(e) {
+  const notes = notesByEnquiry[e.id] || [];
+  const stageOpts = PIPELINE_STAGES.map(s =>
+    `<option value="${s}" ${e.pipeline_status === s ? 'selected' : ''}>${t('crm_status_' + s)}</option>`
+  ).join('');
+
+  const followupVal = dateInputValue(e.next_followup_at);
+  const fuClass = followupClass(e.next_followup_at);
+  const fuLabel = fuClass === 'overdue' ? t('crm_followup_overdue')
+              : fuClass === 'today'   ? t('crm_followup_today') : '';
+
+  const notesHtml = notes.length
+    ? notes.map(n => `
+        <li class="crm-note" data-note-id="${n.id}">
+          <div class="crm-note__meta">
+            <span class="crm-note__time">${esc(fmtDate(n.created_at))}</span>
+            ${n.author_email ? `<span class="crm-note__author">· ${esc(n.author_email)}</span>` : ''}
+            <button class="crm-note__del" data-note-del="${n.id}" data-enquiry-id="${esc(e.id)}" title="${t('crm_note_delete')}">×</button>
+          </div>
+          <div class="crm-note__body">${esc(n.body)}</div>
+        </li>
+      `).join('')
+    : `<li class="crm-note crm-note--empty">${t('crm_note_empty')}</li>`;
+
+  const histKey = customerKey(e);
+  const histLink = histKey
+    ? `<a class="crm-history-link" href="customers.html?c=${encodeURIComponent(histKey)}" target="_blank" rel="noopener" title="${t('crm_view_history')}">📇 ${t('crm_customer_history')} →</a>`
+    : '';
+
+  return `
+    <div class="crm-panel" data-id="${esc(e.id)}">
+      <h4 class="crm-panel__title">${t('crm_status')} · ${t('crm_followup')} · ${t('crm_notes')}</h4>
+      <div class="crm-panel__row">
+        <label class="crm-field">
+          <span>${t('crm_status')}</span>
+          <select class="crm-stage-select" data-id="${esc(e.id)}">${stageOpts}</select>
+        </label>
+        <label class="crm-field">
+          <span>${t('crm_followup')}${fuLabel ? ` · <em class="fu-${fuClass}">${fuLabel}</em>` : ''}</span>
+          <span class="crm-followup-row">
+            <input type="date" class="crm-followup-input" data-id="${esc(e.id)}" value="${followupVal}">
+            ${followupVal ? `<button class="btn btn-sm btn-outline crm-followup-clear" data-id="${esc(e.id)}">${t('crm_followup_clear')}</button>` : ''}
+          </span>
+        </label>
+        <label class="crm-field crm-field--check">
+          <input type="checkbox" class="crm-consent-check" data-id="${esc(e.id)}" ${e.marketing_consent ? 'checked' : ''}>
+          <span>${t('crm_marketing_consent')}</span>
+        </label>
+        ${histLink}
+      </div>
+      <div class="crm-notes">
+        <ul class="crm-notes__list" id="notes-${esc(e.id)}">${notesHtml}</ul>
+        <form class="crm-notes__form" data-id="${esc(e.id)}">
+          <textarea class="crm-note-input" rows="2" maxlength="4000" placeholder="${esc(t('crm_note_placeholder'))}"></textarea>
+          <button type="submit" class="btn btn-sm btn-primary">${t('crm_note_add')}</button>
+        </form>
+      </div>
+    </div>
+  `;
+}
 
 // Called by admin-i18n.js when language is switched
 function rerenderPage() {
@@ -63,7 +172,9 @@ function renderEnquiries(enquiries) {
         <span class="status-badge ${isAnswered ? 'answered' : 'new'}">
           ${isAnswered ? t('status_answered') : t('status_new')}
         </span>
+        <span class="${pipelineBadge(e.pipeline_status).cls}" style="margin-left:6px">${pipelineBadge(e.pipeline_status).label}</span>
         ${e.edit_locked ? `<span class="status-badge locked" style="margin-left:6px">${t('edit_locked_badge')}</span>` : ''}
+        ${e.next_followup_at ? `<span class="followup-chip ${followupClass(e.next_followup_at)}" title="${t('crm_followup')}">⏰ ${esc(dateInputValue(e.next_followup_at))}</span>` : ''}
       </td>
       <td><button class="btn-expand" aria-expanded="false" data-id="${esc(e.id)}">${t('btn_view')}</button></td>
     `;
@@ -87,6 +198,7 @@ function renderEnquiries(enquiries) {
           ${e.notes ? `<div class="detail-notes"><strong>${t('detail_notes')}:</strong> ${esc(e.notes)}</div>` : ''}
           ${renderTotals(e)}
           ${renderPaymentTracking(e)}
+          ${renderCrmPanel(e)}
           <div class="detail-actions">
             <button class="btn btn-sm ${isAnswered ? 'btn-outline' : 'btn-primary'} btn-status"
               data-id="${esc(e.id)}"
@@ -123,8 +235,57 @@ function bindTableHandlers() {
   if (!tbody || tbody.dataset.bound === '1') return;
   tbody.dataset.bound = '1';
 
-  // Drink-qty inline editor: save on blur or Enter, clamp 0..999.
+  // CRM: pipeline stage dropdown — save on change
   tbody.addEventListener('change', async evt => {
+    const sel = evt.target.closest('.crm-stage-select');
+    if (sel) {
+      const id = sel.getAttribute('data-id');
+      const newStage = sel.value;
+      sel.disabled = true;
+      const { error } = await db.from('enquiries').update({ pipeline_status: newStage }).eq('id', id);
+      sel.disabled = false;
+      if (error) { console.error('Pipeline save failed:', error); sel.style.outline = '2px solid #c62828'; setTimeout(() => sel.style.outline = '', 1500); return; }
+      const enquiry = allEnquiries.find(x => String(x.id) === String(id));
+      if (enquiry) enquiry.pipeline_status = newStage;
+      // Update the summary-row badge live without re-rendering everything.
+      const detailRow = sel.closest('tr.detail-row');
+      const summaryRow = detailRow?.previousElementSibling;
+      const badge = summaryRow?.querySelector('.pipe-badge');
+      if (badge) { const b = pipelineBadge(newStage); badge.className = b.cls; badge.textContent = b.label; }
+      sel.style.background = 'rgba(39,174,96,0.16)'; setTimeout(() => sel.style.background = '', 800);
+      return;
+    }
+
+    // CRM: follow-up date input
+    const fu = evt.target.closest('.crm-followup-input');
+    if (fu) {
+      const id = fu.getAttribute('data-id');
+      const v = fu.value;
+      const iso = v ? new Date(v + 'T00:00:00').toISOString() : null;
+      fu.disabled = true;
+      const { error } = await db.from('enquiries').update({ next_followup_at: iso }).eq('id', id);
+      fu.disabled = false;
+      if (error) { console.error('Follow-up save failed:', error); fu.style.outline = '2px solid #c62828'; setTimeout(() => fu.style.outline = '', 1500); return; }
+      const enquiry = allEnquiries.find(x => String(x.id) === String(id));
+      if (enquiry) enquiry.next_followup_at = iso;
+      fu.style.background = 'rgba(39,174,96,0.16)'; setTimeout(() => fu.style.background = '', 800);
+      return;
+    }
+
+    // CRM: marketing consent toggle
+    const consent = evt.target.closest('.crm-consent-check');
+    if (consent) {
+      const id = consent.getAttribute('data-id');
+      const checked = consent.checked;
+      consent.disabled = true;
+      const { error } = await db.from('enquiries').update({ marketing_consent: checked }).eq('id', id);
+      consent.disabled = false;
+      if (error) { console.error('Consent save failed:', error); consent.checked = !checked; return; }
+      const enquiry = allEnquiries.find(x => String(x.id) === String(id));
+      if (enquiry) enquiry.marketing_consent = checked;
+      return;
+    }
+
     const inp = evt.target.closest('.drink-qty-input');
     if (!inp) return;
     const id = inp.getAttribute('data-enquiry-id');
@@ -159,7 +320,72 @@ function bindTableHandlers() {
     }
   });
 
+  // CRM: add note (form submit)
+  tbody.addEventListener('submit', async evt => {
+    const form = evt.target.closest('.crm-notes__form');
+    if (!form) return;
+    evt.preventDefault();
+    const id = form.getAttribute('data-id');
+    const ta = form.querySelector('.crm-note-input');
+    const body = (ta.value || '').trim();
+    if (!body) return;
+    const sub = form.querySelector('button[type=submit]');
+    sub.disabled = true;
+    const author = (await db.auth.getSession())?.data?.session?.user?.email || null;
+    const { data, error } = await db.from('enquiry_notes')
+      .insert({ enquiry_id: id, body, author_email: author })
+      .select().single();
+    sub.disabled = false;
+    if (error) { console.error('Note add failed:', error); ta.style.outline = '2px solid #c62828'; setTimeout(() => ta.style.outline = '', 1500); return; }
+    (notesByEnquiry[id] ||= []).unshift(data);
+    ta.value = '';
+    // Re-render only this enquiry's notes list.
+    const list = document.getElementById('notes-' + id);
+    if (list) {
+      const html = notesByEnquiry[id].map(n => `
+        <li class="crm-note" data-note-id="${n.id}">
+          <div class="crm-note__meta">
+            <span class="crm-note__time">${esc(fmtDate(n.created_at))}</span>
+            ${n.author_email ? `<span class="crm-note__author">· ${esc(n.author_email)}</span>` : ''}
+            <button class="crm-note__del" data-note-del="${n.id}" data-enquiry-id="${esc(id)}" title="${t('crm_note_delete')}">×</button>
+          </div>
+          <div class="crm-note__body">${esc(n.body)}</div>
+        </li>`).join('');
+      list.innerHTML = html;
+    }
+  });
+
   tbody.addEventListener('click', async evt => {
+    // CRM: delete note
+    const noteDel = evt.target.closest('.crm-note__del');
+    if (noteDel) {
+      const noteId = noteDel.getAttribute('data-note-del');
+      const enquiryId = noteDel.getAttribute('data-enquiry-id');
+      noteDel.disabled = true;
+      const { error } = await db.from('enquiry_notes').delete().eq('id', noteId);
+      if (error) { console.error('Note delete failed:', error); noteDel.disabled = false; return; }
+      notesByEnquiry[enquiryId] = (notesByEnquiry[enquiryId] || []).filter(n => String(n.id) !== String(noteId));
+      const li = noteDel.closest('.crm-note');
+      li?.remove();
+      const list = document.getElementById('notes-' + enquiryId);
+      if (list && !list.children.length) list.innerHTML = `<li class="crm-note crm-note--empty">${t('crm_note_empty')}</li>`;
+      return;
+    }
+
+    // CRM: clear follow-up date
+    const fuClear = evt.target.closest('.crm-followup-clear');
+    if (fuClear) {
+      const id = fuClear.getAttribute('data-id');
+      const { error } = await db.from('enquiries').update({ next_followup_at: null }).eq('id', id);
+      if (error) { console.error('Clear follow-up failed:', error); return; }
+      const enquiry = allEnquiries.find(x => String(x.id) === String(id));
+      if (enquiry) enquiry.next_followup_at = null;
+      const fuInput = fuClear.parentElement.querySelector('.crm-followup-input');
+      if (fuInput) fuInput.value = '';
+      fuClear.remove();
+      return;
+    }
+
     // Expand button
     const expandBtn = evt.target.closest('.btn-expand');
     if (expandBtn) {

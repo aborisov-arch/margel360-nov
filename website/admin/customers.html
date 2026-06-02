@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title>Запитвания — Маргел 360° Админ</title>
+  <title>Клиенти — Маргел 360° Админ</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/admin.css?v=8">
@@ -13,8 +13,8 @@
   <header class="admin-header">
     <a href="dashboard.html" class="admin-logo">МАРГЕЛ <span>360°</span></a>
     <nav class="admin-nav">
-      <a href="dashboard.html" class="active" data-i18n="nav_enquiries">Запитвания</a>
-      <a href="customers.html" data-i18n="nav_customers">Клиенти</a>
+      <a href="dashboard.html" data-i18n="nav_enquiries">Запитвания</a>
+      <a href="customers.html" class="active" data-i18n="nav_customers">Клиенти</a>
       <a href="calendar.html" data-i18n="nav_calendar">Календар</a>
       <a href="feedback.html">Впечатления</a>
       <a href="marketing.html" data-i18n="nav_marketing">Маркетинг</a>
@@ -29,24 +29,24 @@
 
   <main class="admin-main">
     <div class="admin-container">
-      <h1 class="page-title" data-i18n="dash_title">Запитвания</h1>
-      <div id="loading" class="loading-state" aria-live="polite" data-i18n="dash_loading">Зареждане…</div>
-      <div id="enquiries-wrap" style="display:none">
-        <table class="enquiries-table">
+      <h1 class="page-title" data-i18n="customers_title">Клиенти</h1>
+      <input type="text" id="customers-search" class="customers-search" placeholder="Търсене по име, телефон или имейл…" data-i18n-placeholder="customers_search">
+      <div id="loading" class="loading-state" data-i18n="customers_loading">Зареждане…</div>
+      <div id="customers-wrap" style="display:none">
+        <table class="customers-table">
           <thead>
             <tr>
-              <th scope="col" data-i18n="col_name">Име</th>
-              <th scope="col" data-i18n="col_phone">Телефон</th>
-              <th scope="col" data-i18n="col_event">Събитие</th>
-              <th scope="col" data-i18n="col_date">Дата</th>
-              <th scope="col" data-i18n="col_received">Получено</th>
-              <th scope="col" data-i18n="col_edited">Редактирано</th>
-              <th scope="col" data-i18n="col_status">Статус</th>
-              <th scope="col"><span class="sr-only" data-i18n="col_actions">Действия</span></th>
+              <th data-i18n="customers_col_name">Име</th>
+              <th data-i18n="customers_col_contact">Контакт</th>
+              <th data-i18n="customers_col_count">Запитвания</th>
+              <th data-i18n="customers_col_last">Последно запитване</th>
+              <th data-i18n="customers_col_events">Типове събития</th>
+              <th data-i18n="customers_col_lifetime">Прогнозна стойност</th>
             </tr>
           </thead>
-          <tbody id="enquiries-body"></tbody>
+          <tbody id="customers-body"></tbody>
         </table>
+        <div id="customer-detail"></div>
       </div>
     </div>
   </main>
@@ -55,7 +55,6 @@
   <script src="js/supabase-client.js?v=2" defer></script>
   <script src="js/admin-i18n.js?v=3" defer></script>
   <script src="js/auth.js?v=2" defer></script>
-  <script src="js/offer-export.js?v=2" defer></script>
-  <script src="js/dashboard.js?v=5" defer></script>
+  <script src="js/customers.js?v=1" defer></script>
 </body>
 </html>

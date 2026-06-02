@@ -642,3 +642,95 @@ body {
   .enquiries-table td:nth-child(5) { display: none; }
   .login-card { padding: 32px 24px; }
 }
+
+/* ── CRM panel inside enquiry detail row ── */
+.crm-panel {
+  margin-top: 20px; padding: 16px 18px;
+  background: #fafafa; border: 1px solid var(--border); border-radius: 10px;
+}
+.crm-panel__title { font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase; color: #888; margin: 0 0 14px; font-weight: 700; }
+.crm-panel__row { display: flex; flex-wrap: wrap; gap: 18px 24px; align-items: flex-end; margin-bottom: 16px; }
+.crm-field { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; color: #555; }
+.crm-field > span { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: #777; font-weight: 600; }
+.crm-field--check { flex-direction: row; align-items: center; gap: 8px; }
+.crm-field--check > span { letter-spacing: 0; text-transform: none; font-size: 0.85rem; color: #333; font-weight: 500; }
+.crm-stage-select, .crm-followup-input {
+  padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px;
+  background: #fff; color: var(--text); font-size: 0.9rem; min-width: 160px;
+  transition: outline 0.2s, background 0.4s;
+}
+.crm-stage-select:focus, .crm-followup-input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.crm-followup-row { display: flex; align-items: center; gap: 6px; }
+.fu-overdue { color: #c62828; font-style: normal; font-weight: 700; }
+.fu-today   { color: #B9894A; font-style: normal; font-weight: 700; }
+.crm-history-link { margin-left: auto; color: var(--accent); text-decoration: none; font-weight: 600; font-size: 0.88rem; align-self: flex-end; padding-bottom: 8px; }
+.crm-history-link:hover { text-decoration: underline; }
+
+.crm-notes { border-top: 1px dashed var(--border); padding-top: 14px; }
+.crm-notes__list { list-style: none; padding: 0; margin: 0 0 12px; max-height: 280px; overflow-y: auto; }
+.crm-note { padding: 8px 10px; margin-bottom: 6px; background: #fff; border: 1px solid var(--border); border-radius: 6px; position: relative; }
+.crm-note--empty { background: transparent; border: 0; color: #aaa; font-style: italic; padding: 4px 0; }
+.crm-note__meta { display: flex; align-items: center; gap: 8px; font-size: 0.74rem; color: #888; margin-bottom: 4px; }
+.crm-note__time { font-weight: 600; }
+.crm-note__body { font-size: 0.92rem; line-height: 1.5; color: #333; white-space: pre-wrap; }
+.crm-note__del { margin-left: auto; background: none; border: 0; color: #c62828; cursor: pointer; font-size: 1.1rem; line-height: 1; padding: 2px 6px; border-radius: 4px; }
+.crm-note__del:hover { background: rgba(198,40,40,0.1); }
+.crm-notes__form { display: flex; gap: 8px; align-items: flex-start; }
+.crm-note-input {
+  flex: 1; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px;
+  font-size: 0.9rem; font-family: inherit; resize: vertical; min-height: 48px;
+}
+.crm-note-input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* Pipeline badge — one per stage, gradient pill */
+.pipe-badge {
+  display: inline-block; padding: 3px 9px; border-radius: 999px;
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; line-height: 1.4;
+}
+.pipe-new       { background: #eef4fb; color: #2c5b8c; }
+.pipe-contacted { background: #fef5e7; color: #8a5a1a; }
+.pipe-quoted    { background: #fbeed2; color: #7a5a1a; }
+.pipe-confirmed { background: #e3f5e7; color: #1e6a35; }
+.pipe-completed { background: #dceefe; color: #1c4a7e; }
+.pipe-lost      { background: #fbe5e5; color: #8a1a1a; }
+.pipe-archived  { background: #ececec; color: #555; }
+
+.followup-chip {
+  display: inline-block; margin-left: 8px; padding: 2px 8px;
+  border-radius: 999px; font-size: 0.72rem; font-weight: 600;
+  background: #f4f4f4; color: #555;
+}
+.followup-chip.overdue { background: rgba(198,40,40,0.12); color: #c62828; }
+.followup-chip.today   { background: rgba(185,137,74,0.16); color: #B9894A; }
+
+/* ── Customers page ── */
+.customers-search {
+  width: 100%; max-width: 420px; padding: 10px 14px;
+  border: 1px solid var(--border); border-radius: 8px;
+  font-size: 0.95rem; margin-bottom: 22px;
+}
+.customers-search:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.customers-table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.customers-table th, .customers-table td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+.customers-table th { background: #fafafa; font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.06em; color: #777; }
+.customers-table tbody tr:hover { background: #fafafa; cursor: pointer; }
+.customer-detail { padding: 22px; background: #fafafa; border: 1px solid var(--border); border-radius: 10px; margin-top: 18px; }
+.customer-detail h2 { font-size: 1.2rem; margin: 0 0 6px; }
+.customer-detail .sub { color: #777; font-size: 0.9rem; margin-bottom: 18px; }
+.customer-detail .enquiry-row { display: flex; gap: 12px; align-items: baseline; padding: 10px 0; border-top: 1px dashed var(--border); }
+.customer-detail .enquiry-row:first-of-type { border-top: 0; }
+
+/* ── Marketing export ── */
+.marketing-card { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 22px; max-width: 720px; }
+.marketing-card label { display: block; margin-bottom: 14px; font-size: 0.88rem; color: #444; }
+.marketing-card select, .marketing-card input[type=text] {
+  padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px;
+  background: #fff; color: var(--text); font-size: 0.92rem; min-width: 200px;
+  margin-left: 8px;
+}
+.marketing-count { display: inline-block; margin-left: 12px; color: #B9894A; font-weight: 700; }
+
+/* ── Financials placeholder ── */
+.financials-stub { background: #fff; border: 1px dashed var(--border); border-radius: 10px; padding: 32px; text-align: center; color: #777; }
+.financials-stub strong { display: block; font-size: 1.05rem; color: #555; margin-bottom: 8px; }
