@@ -4,11 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title>Финанси — Маргел 360° Админ</title>
+  <title>Финанси · P&L по събитие — Маргел 360° Админ</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/admin.css?v=13">
-  <link rel="stylesheet" href="css/financials.css?v=5">
+  <link rel="stylesheet" href="css/financials.css?v=6">
 </head>
 <body>
   <header class="admin-header">
@@ -30,88 +30,82 @@
 
   <main class="admin-main fin">
     <div class="admin-container">
-      <h1 class="page-title">Финансов отчет</h1>
+      <h1 class="page-title">Финанси · P&amp;L по събитие</h1>
+      <p class="fin-page-sub">Изберете събитие за да видите оферираните приходи (авто-генерирани от запитването), плащанията от клиента и разходите към доставчиците.</p>
 
-      <div class="fin-toolbar">
-        <div class="fin-toolbar__field">
-          <label for="fin-month">Месец</label>
-          <input type="month" id="fin-month">
-        </div>
-        <button class="btn-export" id="btn-export-xlsx" title="Свали .xlsx за този месец">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Свали .xlsx
-        </button>
-        <span class="fin-toolbar__rate"><strong>1 €</strong> = 1.95583 лв · фиксиран курс</span>
+      <div class="event-pnl">
+        <aside class="event-pnl__list">
+          <div class="event-pnl__list-head">
+            <h2>Събития</h2>
+            <span class="count" id="events-list-count">—</span>
+          </div>
+          <input type="search" id="events-search" placeholder="Търсене по клиент…">
+          <div id="events-list" class="event-pnl__events"><div class="empty-state">Зареждане…</div></div>
+        </aside>
+
+        <section class="event-pnl__detail" id="pnl-detail">
+          <div class="empty-state" id="pnl-placeholder">Изберете събитие отляво.</div>
+          <div id="pnl-body" hidden>
+            <div class="event-pnl__hero">
+              <div>
+                <div class="event-pnl__hero-lbl">Събитие</div>
+                <h2 id="pnl-customer">—</h2>
+                <div class="event-pnl__hero-meta"><span id="pnl-date">—</span> · <span id="pnl-event-type">—</span> · <span id="pnl-guests">—</span></div>
+              </div>
+              <div class="event-pnl__hero-margin">
+                <div class="event-pnl__hero-lbl">Марж</div>
+                <div class="event-pnl__hero-val" id="pnl-margin">—</div>
+              </div>
+            </div>
+
+            <div class="event-pnl__cols">
+              <!-- INCOME — auto-filled from the enquiry, plus payments received -->
+              <div class="event-pnl__col event-pnl__col--income">
+                <div class="event-pnl__col-head">
+                  <h3>Приходи · оферта</h3>
+                  <span class="event-pnl__col-total" id="pnl-income-total">€0.00</span>
+                </div>
+                <ul class="event-pnl__lines" id="pnl-income-lines"></ul>
+
+                <div class="event-pnl__subhead">
+                  <h4>Платено от клиента</h4>
+                  <span class="event-pnl__subtotal" id="pnl-paid-total">€0.00</span>
+                </div>
+                <div class="event-pnl__payments" id="pnl-payments"></div>
+                <div class="event-pnl__balance">
+                  <span class="event-pnl__balance-lbl">Остатък за доплащане</span>
+                  <span class="event-pnl__balance-val" id="pnl-balance">€0.00</span>
+                </div>
+              </div>
+
+              <!-- EXPENSES — per-vendor cost (DJ, cleaner, catering, etc.) -->
+              <div class="event-pnl__col event-pnl__col--expense">
+                <div class="event-pnl__col-head">
+                  <h3>Разходи · доставчици</h3>
+                  <span class="event-pnl__col-total" id="pnl-expense-total">€0.00</span>
+                </div>
+                <ul class="event-pnl__lines" id="pnl-expense-lines"></ul>
+                <button type="button" class="btn-add btn-sm" id="btn-add-event-expense">+ Добави разход</button>
+              </div>
+            </div>
+
+            <div class="event-pnl__net">
+              <div>
+                <div class="event-pnl__net-lbl">Нетна печалба</div>
+                <div class="event-pnl__net-val" id="pnl-net-eur">€0.00</div>
+                <div class="event-pnl__net-sub" id="pnl-net-bgn">лв 0.00</div>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
-
-      <!-- Two big nav CTAs to the detail pages -->
-      <div class="fin-nav-grid">
-        <a class="fin-nav-card" id="nav-income" href="financials-income.html">
-          <span class="fin-nav-card__lbl">Приходи</span>
-          <span class="fin-nav-card__title" id="nav-income-total">€0.00</span>
-          <span class="fin-nav-card__sub"><span id="nav-income-count">0</span> събития ·
-            <span id="nav-income-pending">0</span> очаквани от CRM</span>
-          <span class="fin-nav-card__cta">Управлявай приходите</span>
-        </a>
-        <a class="fin-nav-card" id="nav-expenses" href="financials-expenses.html">
-          <span class="fin-nav-card__lbl">Разходи</span>
-          <span class="fin-nav-card__title" id="nav-expenses-total">€0.00</span>
-          <span class="fin-nav-card__sub"><span id="nav-expenses-count">0</span> записа</span>
-          <span class="fin-nav-card__cta">Управлявай разходите</span>
-        </a>
-        <a class="fin-nav-card" id="nav-events" href="financials-events.html">
-          <span class="fin-nav-card__lbl">По събитие</span>
-          <span class="fin-nav-card__title" id="nav-events-margin">—</span>
-          <span class="fin-nav-card__sub">Печалба и марж за всяко събитие</span>
-          <span class="fin-nav-card__cta">Виж P&amp;L по събитие</span>
-        </a>
-      </div>
-
-      <!-- Summary -->
-      <section class="fin-section">
-        <div class="fin-section__head">
-          <h2>Обобщение за месеца</h2>
-        </div>
-        <div class="kpi-grid">
-          <div class="kpi">
-            <div class="kpi__label">Приходи</div>
-            <div class="kpi__value" id="sum-income-eur">€0.00</div>
-            <div class="kpi__sub" id="sum-income-bgn">лв 0.00</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi__label">Разходи</div>
-            <div class="kpi__value" id="sum-expense-eur">€0.00</div>
-            <div class="kpi__sub" id="sum-expense-bgn">лв 0.00</div>
-          </div>
-          <div class="kpi kpi--highlight">
-            <div class="kpi__label">Печалба</div>
-            <div class="kpi__value" id="sum-profit-eur">€0.00</div>
-            <div class="kpi__sub" id="sum-profit-bgn">лв 0.00</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi__label">Облагане заплата</div>
-            <div class="kpi__value" id="sum-taxable-eur">€0.00</div>
-            <div class="kpi__sub" id="sum-taxable-bgn">лв 0.00</div>
-          </div>
-        </div>
-
-        <div class="breakdown">
-          <div class="breakdown__title">Приходи по категория</div>
-          <div class="pill-grid" id="income-cat-breakdown"></div>
-        </div>
-        <div class="breakdown">
-          <div class="breakdown__title">Разходи по категория</div>
-          <div class="pill-grid" id="expense-cat-breakdown"></div>
-        </div>
-      </section>
     </div>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
   <script src="js/supabase-client.js?v=3" defer></script>
   <script src="js/admin-i18n.js?v=8" defer></script>
   <script src="js/auth.js?v=2" defer></script>
-  <script src="js/financials.js?v=16" defer></script>
+  <script src="js/financials.js?v=17" defer></script>
 </body>
 </html>
