@@ -122,15 +122,17 @@
 }
 .numeral::before {
   content: attr(data-num);
-  font-family: var(--font-display);
-  font-style: italic;
-  font-weight: 400;
-  font-variation-settings: "opsz" 14;
-  font-size: 1.1rem;
-  letter-spacing: 0;
+  /* Manrope (body sans) instead of Fraunces italic — reads elegant but
+     normal, especially with Arabic numbers (1. 2. 3.) rather than roman. */
+  font-family: var(--font-body);
+  font-style: normal;
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
   color: var(--gold);
   text-transform: none;
   min-width: 1.75rem;
+  font-variant-numeric: tabular-nums;
 }
 
 /* ── Hairline rules ────────────────────────────────────────── */

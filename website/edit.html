@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Manrope:wght@300..800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/venue.css?v=3">
+  <link rel="stylesheet" href="css/venue.css?v=4">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 </head>
 <body class="venue">
@@ -69,12 +69,12 @@
         <form id="edit-form" class="composition" novalidate>
 
           <section class="composition__section">
-            <h2 class="numeral" data-num="i.">Подробности</h2>
+            <h2 class="numeral" data-num="1.">Подробности</h2>
             <div class="readonly-grid" id="readonly-block"></div>
           </section>
 
           <section class="composition__section">
-            <h2 class="numeral" data-num="ii.">Дата на събитието</h2>
+            <h2 class="numeral" data-num="2.">Дата на събитието</h2>
             <label class="field">
               <span class="label-caps">Изберете нова дата или запазете избраната</span>
               <input type="text" id="field-date" placeholder="дд / мм / гггг" autocomplete="off" required>
@@ -82,7 +82,7 @@
           </section>
 
           <section class="composition__section">
-            <h2 class="numeral" data-num="iii.">Гости и контакт</h2>
+            <h2 class="numeral" data-num="3.">Гости и контакт</h2>
             <div class="field-grid-2">
               <label class="field">
                 <span class="label-caps">Брой гости</span>
@@ -96,12 +96,12 @@
           </section>
 
           <section class="composition__section">
-            <h2 class="numeral" data-num="iv.">Допълнителни услуги</h2>
+            <h2 class="numeral" data-num="4.">Допълнителни услуги</h2>
             <ul class="addon-list" id="addon-grid"></ul>
           </section>
 
           <section class="composition__section">
-            <h2 class="numeral" data-num="v.">Напитки</h2>
+            <h2 class="numeral" data-num="5.">Напитки</h2>
             <div id="drinks-toggle-wrap" class="drinks-toggle-wrap">
               <p class="lead drinks-toggle-prompt">Желаете ли да добавите напитки към резервацията?</p>
               <button type="button" class="btn btn-ghost" id="btn-toggle-drinks">Покажи менюто с напитки</button>
@@ -113,7 +113,7 @@
           </section>
 
           <section class="composition__section">
-            <h2 class="numeral" data-num="vi.">Бележки</h2>
+            <h2 class="numeral" data-num="6.">Бележки</h2>
             <label class="field">
               <span class="label-caps">Специални желания, алергии, декоративни предпочитания</span>
               <textarea id="field-notes" rows="4" placeholder="Напишете ни всичко, което бихте желали да имаме предвид…"></textarea>
@@ -170,6 +170,6 @@
        unchanged and adds ~30KB gzipped — acceptable for this internal-ish
        page. -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/edit.js?v=5"></script>
+  <script src="js/edit.js?v=6"></script>
 </body>
 </html>

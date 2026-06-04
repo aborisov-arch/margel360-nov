@@ -734,3 +734,22 @@ body {
 /* ── Financials placeholder ── */
 .financials-stub { background: #fff; border: 1px dashed var(--border); border-radius: 10px; padding: 32px; text-align: center; color: #777; }
 .financials-stub strong { display: block; font-size: 1.05rem; color: #555; margin-bottom: 8px; }
+
+/* ── Dashboard status tabs ── */
+.status-tabs {
+  display: inline-flex; gap: 4px; padding: 4px;
+  background: #f5f4f1; border: 1px solid var(--border); border-radius: 999px;
+  margin: -6px 0 18px;
+}
+.status-tab {
+  appearance: none; border: 0; background: transparent;
+  padding: 8px 16px; border-radius: 999px;
+  font: 500 0.85rem/1 'Inter', sans-serif; color: #71717a;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+  font-variant-numeric: tabular-nums;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.status-tab:hover { color: var(--text); }
+.status-tab.is-active { background: #fff; color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+.status-tab [data-count] { color: #a3a09a; font-weight: 600; font-size: 0.78rem; }
+.status-tab.is-active [data-count] { color: var(--accent); }

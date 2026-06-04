@@ -1,7 +1,34 @@
 let allEnquiries = [];
 let notesByEnquiry = {}; // enquiry_id -> [{id, body, author_email, created_at}, ...]
+// Tab filter on top of the dashboard. 'unanswered' = inbox view (default,
+// what the team should be acting on next), 'answered' = archive of dealt
+// with rows, 'all' = unfiltered.
+let statusFilter = 'unanswered';
 
 const PIPELINE_STAGES = ['new','contacted','quoted','confirmed','completed','lost','archived'];
+
+function applyStatusFilter(list) {
+  if (statusFilter === 'all') return list;
+  if (statusFilter === 'answered')   return list.filter(e => e.status === 'answered');
+  /* unanswered */                   return list.filter(e => e.status !== 'answered');
+}
+
+function renderStatusTabCounts() {
+  const counts = { all: allEnquiries.length, answered: 0, unanswered: 0 };
+  allEnquiries.forEach(e => {
+    if (e.status === 'answered') counts.answered++;
+    else counts.unanswered++;
+  });
+  const labelKey = { unanswered: 'tab_unanswered', answered: 'tab_answered', all: 'tab_all' };
+  document.querySelectorAll('#status-tabs .status-tab').forEach(btn => {
+    const f = btn.getAttribute('data-filter');
+    const lbl = btn.querySelector('[data-tab-label]');
+    const cnt = btn.querySelector('[data-count]');
+    if (lbl) lbl.textContent = t(labelKey[f]);
+    if (cnt) cnt.textContent = counts[f] ?? 0;
+    btn.classList.toggle('is-active', f === statusFilter);
+  });
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
   const session = await requireAuth();
@@ -31,11 +58,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     (notesByEnquiry[n.enquiry_id] ||= []).push(n);
   });
 
-  renderEnquiries(allEnquiries);
+  renderStatusTabCounts();
+  renderEnquiries(applyStatusFilter(allEnquiries));
 
   // Bind the tbody click handler exactly once. Doing it inside
   // renderEnquiries caused listeners to stack on every language switch.
   bindTableHandlers();
+
+  // Status tabs (Unanswered / Answered / All).
+  document.getElementById('status-tabs')?.addEventListener('click', evt => {
+    const btn = evt.target.closest('[data-filter]');
+    if (!btn) return;
+    statusFilter = btn.getAttribute('data-filter');
+    renderStatusTabCounts();
+    renderEnquiries(applyStatusFilter(allEnquiries));
+  });
 });
 
 // Build a CSS class + readable label for the pipeline stage badge.
@@ -142,7 +179,8 @@ function renderCrmPanel(e) {
 function rerenderPage() {
   // Re-apply static i18n (handled by applyAdminLang already)
   // Re-render dynamic table so translated strings update
-  renderEnquiries(allEnquiries);
+  renderStatusTabCounts();
+  renderEnquiries(applyStatusFilter(allEnquiries));
 }
 
 function renderEnquiries(enquiries) {
@@ -462,6 +500,12 @@ function bindTableHandlers() {
       // Update local cache
       const enquiry = allEnquiries.find(e => String(e.id) === String(id));
       if (enquiry) enquiry.status = newStatus;
+      renderStatusTabCounts();
+      // If the row no longer matches the active filter, drop it from view.
+      const isVisibleAfter = (statusFilter === 'all')
+        || (statusFilter === 'answered'   && newStatus === 'answered')
+        || (statusFilter === 'unanswered' && newStatus !== 'answered');
+      if (!isVisibleAfter) renderEnquiries(applyStatusFilter(allEnquiries));
     }
 
     // Edit payment — switch to edit mode
