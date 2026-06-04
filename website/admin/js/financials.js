@@ -180,11 +180,22 @@ function expenseRowHtml(ex) {
   const opts = EXPENSE_CATS.map(c =>
     `<option value="${c.id}" ${ex.category === c.id ? 'selected' : ''}>${esc(c.label)}</option>`
   ).join('');
+  // Event picker: blank = "Общ разход" (no event link). Populated from
+  // the events array loaded for the current month so attaching is one
+  // click without leaving the expenses page.
+  const evOpts = ['<option value="">— Общ разход —</option>']
+    .concat(events.map(ev => {
+      const lbl = `${ev.customer_name || '—'} · ${ev.event_date || '—'}`;
+      const sel = ex.event_id === ev.id ? ' selected' : '';
+      return `<option value="${esc(ev.id)}"${sel}>${esc(lbl)}</option>`;
+    }))
+    .join('');
   return `
     <tr data-id="${esc(ex.id)}" data-cat="${esc(ex.category || 'other')}">
       <td><input type="date" data-f="expense_date" value="${ex.expense_date || ''}"></td>
       <td><select data-f="category">${opts}</select></td>
       <td><input type="text" data-f="description" value="${esc(ex.description || '')}"></td>
+      <td><select data-f="event_id">${evOpts}</select></td>
       <td class="num"><input type="number" step="0.01" data-f="amount_eur" value="${ex.amount_eur || ''}"></td>
       <td class="num col-bgn">${fmtBgn((Number(ex.amount_eur) || 0) * BGN_RATE)}</td>
       <td><button class="del-btn" data-del-expense="${esc(ex.id)}" title="Изтрий">×</button></td>
@@ -211,7 +222,7 @@ function renderExpenses() {
   if (body) {
     body.innerHTML =
       expenses.length ? expenses.map(expenseRowHtml).join('')
-                      : `<tr><td colspan="6" style="text-align:center;color:#999;padding:18px">Няма записи.</td></tr>`;
+                      : `<tr><td colspan="7" style="text-align:center;color:#999;padding:18px">Няма записи.</td></tr>`;
   }
   recalcTotals();
 }
@@ -601,6 +612,7 @@ function bindInlineEdit() {
     let value = inp.value;
     if (inp.tagName === 'INPUT' && inp.type === 'number') value = value === '' ? 0 : Number(value);
     if (inp.tagName === 'INPUT' && inp.type === 'date')   value = value || null;
+    if (field === 'event_id') value = value || null; // blank select = unattached
     inp.disabled = true;
     const patch = { [field]: value, updated_at: new Date().toISOString() };
     const { error } = await db.from('financial_expenses').update(patch).eq('id', id);
@@ -608,7 +620,8 @@ function bindInlineEdit() {
     if (error) { showError('Грешка при запис', error); inp.style.outline = '2px solid #c62828'; setTimeout(() => inp.style.outline = '', 1500); return; }
     const ex = expenses.find(x => x.id === id);
     if (ex) ex[field] = value;
-    if (field === 'amount_eur') tr.children[4].textContent = fmtBgn((Number(value) || 0) * BGN_RATE);
+    // BGN mirror lives in column index 5 now (Date,Cat,Desc,Event,Amount€,Сума лв,Actions).
+    if (field === 'amount_eur') tr.children[5].textContent = fmtBgn((Number(value) || 0) * BGN_RATE);
     recalcTotals();
   });
 }
