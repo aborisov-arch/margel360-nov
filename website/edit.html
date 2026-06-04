@@ -165,6 +165,11 @@
   <script src="js/drinks-data.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/bg.js"></script>
-  <script src="js/edit.js?v=4"></script>
+  <!-- Supabase JS is only used when this page is opened in admin mode
+       (?admin=1&id=…). Loading it unconditionally keeps the customer flow
+       unchanged and adds ~30KB gzipped — acceptable for this internal-ish
+       page. -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/edit.js?v=5"></script>
 </body>
 </html>

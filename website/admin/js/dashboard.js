@@ -213,6 +213,11 @@ function renderEnquiries(enquiries) {
             <span style="color:#888;font-size:0.9em;margin-left:auto">
               ${t('edit_count_label')}: ${e.edit_count ?? 0}
             </span>
+            <a class="btn btn-sm btn-outline btn-edit-enquiry"
+              href="../edit.html?admin=1&id=${esc(e.id)}"
+              target="_blank" rel="noopener">
+              ${t('btn_edit_enquiry')}
+            </a>
             <button class="btn btn-sm btn-outline btn-export-offer"
               data-id="${esc(e.id)}">
               ${t('btn_export_offer')}

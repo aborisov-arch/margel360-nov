@@ -4,8 +4,15 @@
 
 const SUPABASE_URL = 'https://wlxutsufrobzovdsiecb.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndseHV0c3Vmcm9iem92ZHNpZWNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5MDc3MDQsImV4cCI6MjA5MTQ4MzcwNH0.EY2j3lZRmfGlWcTTNy9CMIHZX1E-2jit11jZwP7UOJo';
-const FN_GET    = `${SUPABASE_URL}/functions/v1/get-enquiry-by-token`;
-const FN_UPDATE = `${SUPABASE_URL}/functions/v1/update-enquiry-by-token`;
+const FN_GET         = `${SUPABASE_URL}/functions/v1/get-enquiry-by-token`;
+const FN_UPDATE      = `${SUPABASE_URL}/functions/v1/update-enquiry-by-token`;
+const FN_ADMIN_UPDATE = `${SUPABASE_URL}/functions/v1/update-enquiry-admin`;
+// When the page is opened from the admin dashboard ("Edit" button) it
+// runs in admin mode: auth is the admin's Supabase session, load is a
+// direct REST select on enquiries by id, save goes through
+// update-enquiry-admin which bypasses the edit-token + locked guards.
+let adminMode = false;
+let adminToken = null;  // Supabase access token of the logged-in admin
 
 // Catalogs loaded via reservation-catalog.js + drinks-data.js (window globals):
 //   addonServices, drinks, drinkCategories
@@ -46,7 +53,14 @@ function esc(s) {
 
 async function main() {
   const params = new URLSearchParams(window.location.search);
+  const id = params.get('id');
+  const isAdmin = params.get('admin') === '1' && id;
   const token = params.get('token');
+
+  if (isAdmin) {
+    await mainAdmin(id);
+    return;
+  }
   if (!token) { show('state-not-found'); return; }
   state.token = token;
 
@@ -70,6 +84,38 @@ async function main() {
     console.error(err);
     show('state-not-found');
   }
+}
+
+// Admin entry: requires a Supabase session (the admin must be logged in
+// at /admin/). Loads the enquiry by id via REST using the admin's JWT
+// (RLS policies on `enquiries` allow authenticated reads), then renders
+// the same edit form. On submit it routes through update-enquiry-admin.
+async function mainAdmin(id) {
+  adminMode = true;
+  if (typeof supabase === 'undefined' || !supabase.createClient) {
+    show('state-not-found'); return;
+  }
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { storageKey: 'sb-wlxutsufrobzovdsiecb-auth-token', persistSession: true },
+  });
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) {
+    // Send them to login and bounce back to this edit URL afterwards.
+    const ret = encodeURIComponent(window.location.pathname + window.location.search);
+    window.location.href = `/admin/login.html?return=${ret}`;
+    return;
+  }
+  adminToken = session.access_token;
+
+  const { data, error } = await sb.from('enquiries').select('*').eq('id', id).maybeSingle();
+  if (error || !data) { console.error(error); show('state-not-found'); return; }
+
+  state.enquiry = data;
+  state.occupiedDates = await loadOccupiedDates();
+  renderForm();
+  // Visual cue so the admin knows they're editing on the customer's behalf.
+  const eyebrow = document.getElementById('form-eyebrow');
+  if (eyebrow) eyebrow.textContent = `Админ редакция · ${data.event_type}`;
 }
 
 async function loadOccupiedDates() {
@@ -426,14 +472,14 @@ async function onSave(evt) {
   });
 
   try {
-    const res = await fetch(FN_UPDATE, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        token: state.token,
-        changes: { preferred_date, guests, phone, notes, addons, drinks: drinksOut },
-      }),
-    });
+    const changes = { preferred_date, guests, phone, notes, addons, drinks: drinksOut };
+    const url = adminMode ? FN_ADMIN_UPDATE : FN_UPDATE;
+    const headers = { 'Content-Type': 'application/json' };
+    if (adminMode) headers['Authorization'] = `Bearer ${adminToken}`;
+    const reqBody = adminMode
+      ? JSON.stringify({ id: state.enquiry.id, changes })
+      : JSON.stringify({ token: state.token, changes });
+    const res = await fetch(url, { method: 'POST', headers, body: reqBody });
     const body = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(body?.detail || body?.error || 'server_error');
 

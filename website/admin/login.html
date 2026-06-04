@@ -37,8 +37,12 @@
   <script src="js/admin-i18n.js"></script>
   <script>
     try {
+      // ?return=<encoded-url> lets other pages (e.g. /edit.html in admin
+      // mode) bounce here when there's no session and come back after login.
+      const returnTo = new URLSearchParams(window.location.search).get('return');
+      const postLogin = returnTo ? decodeURIComponent(returnTo) : 'dashboard.html';
       db.auth.getSession().then(({ data: { session } }) => {
-        if (session) window.location.href = 'dashboard.html';
+        if (session) window.location.href = postLogin;
       });
 
       document.getElementById('login-form').addEventListener('submit', async (e) => {
@@ -59,7 +63,7 @@
           btn.disabled         = false;
           btn.textContent      = t('login_btn');
         } else {
-          window.location.href = 'dashboard.html';
+          window.location.href = postLogin;
         }
       });
     } catch (err) {
