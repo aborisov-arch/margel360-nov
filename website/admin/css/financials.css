@@ -668,3 +668,23 @@
 
 /* Month "All" reset button alignment in the toolbar. */
 .fin-toolbar .btn-sm { align-self: flex-end; margin-bottom: 1px; }
+
+/* Editable income lines — same row layout as the read-only version but
+   with a number input on the right. */
+.event-pnl__line--editable { padding: 6px 10px; align-items: center; }
+.event-pnl__line-input {
+  width: 110px; padding: 6px 8px; text-align: right;
+  border: 1px solid var(--fin-border); border-radius: 6px;
+  background: #fff; font: 600 0.88rem/1 'Inter', sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+.event-pnl__line-input:focus { outline: 2px solid var(--fin-gold); outline-offset: 1px; border-color: var(--fin-gold); }
+
+/* Save / cancel bar — sits below the net profit summary on the detail
+   panel and stays visible while editing. */
+.event-pnl__actions {
+  display: flex; justify-content: flex-end; gap: 8px;
+  margin-top: 16px; padding-top: 16px;
+  border-top: 1px solid var(--fin-border-soft);
+}
+.event-pnl__actions .btn:disabled { opacity: 0.45; cursor: not-allowed; }

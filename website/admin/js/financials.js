@@ -1,24 +1,20 @@
-// Financials — per-event P&L only.
+// Financials — per-event P&L.
 //
-// The standalone "Приходи" and "Разходи" pages were removed in favor of
-// this view: every income figure is auto-derived from the matching
-// enquiry (so the bookkeeper can't fall out of sync with what the
-// customer was quoted), and every expense is attached to a specific
-// event so we can answer questions like "how much did we pay the DJ for
-// the Wedding on the 14th?".
+// Single source of truth: the financial_events + financial_expenses rows
+// that the bookkeeper saves. The enquiry is used only to PRE-FILL the
+// income side on first selection (so the admin doesn't have to retype
+// what the customer was quoted). After that, the summary and every
+// figure on screen reads from the saved P&L rows. The employee owns the
+// numbers.
 //
-// Event source: confirmed/completed enquiries whose preferred_date is
-// blocked on the calendar. A matching financial_events row is created
-// lazily the first time an event is selected — that row stores payment
-// tracking (deposits + balance) and serves as the FK target for
-// financial_expenses.event_id.
+// All edits are local draft until "Запази промените" is pressed. Until
+// then the summary keeps showing the last-saved values.
 //
 // All amounts in EUR. BGN derived via the fixed peg 1.95583.
 
 const BGN_RATE = 1.95583;
 
-// Same EVENT_BASE + guest fee constants used by reservation.js /
-// dashboard.js / enquiry-email.ts. Keep in sync.
+// Same EVENT_BASE + guest fee constants used by reservation.js etc.
 const EVENT_BASE = { evening: 1280, wedding: 1500, corp4: 330, corp8: 440, bday_day: 700, bday_eve: 970 };
 const VENUE_MIN_GUESTS = 40;
 const EXTRA_GUEST_FEE_EUR = 15;
@@ -51,8 +47,9 @@ function parsePreferredDate(s) {
   return m ? `${m[3]}-${m[2]}-${m[1]}` : null;
 }
 
-// Mirrors the public-side total calculation used in reservation.js so
-// imported figures match the customer's offer down to the cent.
+// Used ONLY to prefill a brand-new financial_events row on first
+// selection. After that the row owns its numbers and breakdown is
+// derived from fe.income_*.
 function enquiryBreakdown(e) {
   const base = EVENT_BASE[e.event_id] || 0;
   const guests = Number(e.guests) || 0;
@@ -78,14 +75,19 @@ function enquiryBreakdown(e) {
 
 let allEnquiries = [];
 let occupiedDateSet = new Set();
-let financialEventsById = new Map(); // financial_events.id → row
-let financialEventByEnquiryId = new Map(); // enquiries.id → financial_events row
-let expensesByEvent = new Map();     // financial_events.id → expense rows
-let bookableEvents = [];             // enquiries that count as "events"
+let financialEventsById = new Map();
+let financialEventByEnquiryId = new Map();
+let expensesByEvent = new Map();
+let bookableEvents = [];
 let selectedEnquiryId = null;
 let userEmail = null;
-// Month filter — '' = all months. Format: YYYY-MM.
 let monthFilter = '';
+
+// Draft state for the currently-open event. Cleared on event switch.
+// dirtyFe: { field: value, ... } targeting financial_events row
+// dirtyExpenses: Map<expenseId, { field: value }>
+let dirtyFe = {};
+let dirtyExpenses = new Map();
 
 const MONTH_NAMES_BG = ['януари','февруари','март','април','май','юни','юли','август','септември','октомври','ноември','декември'];
 function monthLabel(ym) {
@@ -100,6 +102,36 @@ function enquiryMonth(e) {
 function filteredEvents() {
   if (!monthFilter) return bookableEvents;
   return bookableEvents.filter(e => enquiryMonth(e) === monthFilter);
+}
+function isDirty() {
+  return Object.keys(dirtyFe).length > 0 || dirtyExpenses.size > 0;
+}
+
+// ────────────────────────────────────────────────────────────────
+// Saved-state accessors — used by the summary + left rail. They
+// intentionally read ONLY from financial_events / financial_expenses
+// rows, never from the enquiry, so the summary reflects what the
+// employee saved.
+// ────────────────────────────────────────────────────────────────
+
+function feIncome(fe) {
+  if (!fe) return { rent: 0, drinks: 0, addons: 0, total: 0 };
+  const rent   = Number(fe.income_rent_eur   || 0);
+  const drinks = Number(fe.income_drinks_eur || 0);
+  const addons = Number(fe.income_addons_eur || 0);
+  return { rent, drinks, addons, total: rent + drinks + addons };
+}
+function fePaid(fe) {
+  if (!fe) return 0;
+  return Number(fe.deposit_cash_eur || 0)
+       + Number(fe.deposit_bank_eur || 0)
+       + Number(fe.balance_cash_eur || 0)
+       + Number(fe.balance_bank_eur || 0);
+}
+function feExpenseTotal(fe) {
+  if (!fe) return 0;
+  const rows = expensesByEvent.get(fe.id) || [];
+  return rows.reduce((s, x) => s + Number(x.amount_eur || 0), 0);
 }
 
 // ────────────────────────────────────────────────────────────────
@@ -139,8 +171,6 @@ async function loadAll() {
     expensesByEvent.get(x.event_id).push(x);
   });
 
-  // The event list = confirmed/completed enquiries with a locked date.
-  // Anything else isn't a real booking — don't surface it in financials.
   bookableEvents = allEnquiries.filter(e => {
     if (!['confirmed', 'completed'].includes(e.pipeline_status)) return false;
     const iso = parsePreferredDate(e.preferred_date);
@@ -152,9 +182,9 @@ async function loadAll() {
   });
 }
 
-// Find or lazily create the financial_events row for an enquiry. We
-// avoid creating rows for every enquiry on boot — only when the
-// bookkeeper actually opens one in this view.
+// Find or create the financial_events row for an enquiry. First-time
+// creation prefills the income breakdown from the enquiry so the admin
+// starts with sane numbers instead of zero.
 async function ensureFinancialEvent(enquiry) {
   let row = financialEventByEnquiryId.get(enquiry.id);
   if (row) return row;
@@ -181,85 +211,31 @@ async function ensureFinancialEvent(enquiry) {
 }
 
 // ────────────────────────────────────────────────────────────────
-// Left rail — list of events
-// ────────────────────────────────────────────────────────────────
-
-function eventIncome(e) {
-  const b = enquiryBreakdown(e);
-  return b.rent + b.drinks + b.addons;
-}
-function eventExpenseTotal(enquiry) {
-  const fe = financialEventByEnquiryId.get(enquiry.id);
-  if (!fe) return 0;
-  const rows = expensesByEvent.get(fe.id) || [];
-  return rows.reduce((s, x) => s + Number(x.amount_eur || 0), 0);
-}
-function eventPaidTotal(enquiry) {
-  const fe = financialEventByEnquiryId.get(enquiry.id);
-  if (!fe) return 0;
-  return Number(fe.deposit_cash_eur || 0)
-       + Number(fe.deposit_bank_eur || 0)
-       + Number(fe.balance_cash_eur || 0)
-       + Number(fe.balance_bank_eur || 0);
-}
-
-function renderEventsList(filter = '') {
-  const wrap = document.getElementById('events-list');
-  const cnt  = document.getElementById('events-list-count');
-  const needle = filter.trim().toLowerCase();
-  const monthScoped = filteredEvents();
-  const matches = needle
-    ? monthScoped.filter(e => (e.full_name || '').toLowerCase().includes(needle))
-    : monthScoped;
-  if (cnt) cnt.textContent = matches.length;
-  if (!matches.length) {
-    wrap.innerHTML = '<div class="empty-state">Няма потвърдени събития със заети дати.</div>';
-    return;
-  }
-  wrap.innerHTML = matches.map(e => {
-    const income  = eventIncome(e);
-    const expense = eventExpenseTotal(e);
-    const net = income - expense;
-    const margin = income > 0 ? Math.round((net / income) * 100) : null;
-    const selected = e.id === selectedEnquiryId ? ' is-selected' : '';
-    const marginClass = margin == null ? '' : (margin >= 0 ? ' is-positive' : ' is-negative');
-    const iso = parsePreferredDate(e.preferred_date);
-    return `
-      <button type="button" class="event-pnl__event${selected}" data-enquiry="${esc(e.id)}">
-        <div class="event-pnl__event-name">${esc(e.full_name || '—')}</div>
-        <div class="event-pnl__event-meta">${fmtDateBg(iso)} · ${fmtEur(income)}</div>
-        <div class="event-pnl__event-margin${marginClass}">${margin == null ? '—' : margin + '%'}</div>
-      </button>
-    `;
-  }).join('');
-}
-
-// ────────────────────────────────────────────────────────────────
-// Monthly summary
+// Monthly summary (reads ONLY from saved fe + expenses)
 // ────────────────────────────────────────────────────────────────
 
 function renderMonthSummary() {
   const scope = filteredEvents();
-  let income = 0, drinks = 0, addons = 0, rent = 0;
-  let paid = 0, expense = 0;
+  let rent = 0, drinks = 0, addons = 0, paid = 0, expense = 0;
   const expByCat = Object.fromEntries(EXPENSE_CATS.map(c => [c.id, 0]));
 
   scope.forEach(e => {
-    const b = enquiryBreakdown(e);
-    rent += b.rent; drinks += b.drinks; addons += b.addons;
-    income += b.rent + b.drinks + b.addons;
-    paid   += eventPaidTotal(e);
     const fe = financialEventByEnquiryId.get(e.id);
-    if (fe) {
-      const rows = expensesByEvent.get(fe.id) || [];
-      rows.forEach(x => {
-        const amt = Number(x.amount_eur || 0);
-        expense += amt;
-        expByCat[x.category || 'other'] = (expByCat[x.category || 'other'] || 0) + amt;
-      });
-    }
+    if (!fe) return; // Events without a saved P&L row contribute nothing.
+    const inc = feIncome(fe);
+    rent   += inc.rent;
+    drinks += inc.drinks;
+    addons += inc.addons;
+    paid   += fePaid(fe);
+    const rows = expensesByEvent.get(fe.id) || [];
+    rows.forEach(x => {
+      const amt = Number(x.amount_eur || 0);
+      expense += amt;
+      expByCat[x.category || 'other'] = (expByCat[x.category || 'other'] || 0) + amt;
+    });
   });
 
+  const income = rent + drinks + addons;
   const profit = income - expense;
   const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
   set('sum-month-label', monthLabel(monthFilter));
@@ -291,7 +267,6 @@ function renderMonthSummary() {
       </div>
     `).join('');
   }
-
   const expenseBreak = document.getElementById('expense-cat-breakdown');
   if (expenseBreak) {
     const html = EXPENSE_CATS.filter(c => expByCat[c.id] > 0).map(c => `
@@ -306,8 +281,74 @@ function renderMonthSummary() {
 }
 
 // ────────────────────────────────────────────────────────────────
+// Left rail
+// ────────────────────────────────────────────────────────────────
+
+function renderEventsList(filter = '') {
+  const wrap = document.getElementById('events-list');
+  const cnt  = document.getElementById('events-list-count');
+  const needle = filter.trim().toLowerCase();
+  const monthScoped = filteredEvents();
+  const matches = needle
+    ? monthScoped.filter(e => (e.full_name || '').toLowerCase().includes(needle))
+    : monthScoped;
+  if (cnt) cnt.textContent = matches.length;
+  if (!matches.length) {
+    wrap.innerHTML = '<div class="empty-state">Няма потвърдени събития със заети дати.</div>';
+    return;
+  }
+  wrap.innerHTML = matches.map(e => {
+    const fe = financialEventByEnquiryId.get(e.id);
+    // Show "—" until the employee has actually opened + saved P&L for the
+    // event. Once fe exists, the rail mirrors saved figures.
+    const inc = fe ? feIncome(fe).total : null;
+    const exp = fe ? feExpenseTotal(fe) : 0;
+    const net = inc != null ? (inc - exp) : null;
+    const margin = (inc != null && inc > 0) ? Math.round((net / inc) * 100) : null;
+    const selected = e.id === selectedEnquiryId ? ' is-selected' : '';
+    const marginClass = margin == null ? '' : (margin >= 0 ? ' is-positive' : ' is-negative');
+    const iso = parsePreferredDate(e.preferred_date);
+    return `
+      <button type="button" class="event-pnl__event${selected}" data-enquiry="${esc(e.id)}">
+        <div class="event-pnl__event-name">${esc(e.full_name || '—')}</div>
+        <div class="event-pnl__event-meta">${fmtDateBg(iso)} · ${inc != null ? fmtEur(inc) : '—'}</div>
+        <div class="event-pnl__event-margin${marginClass}">${margin == null ? '—' : margin + '%'}</div>
+      </button>
+    `;
+  }).join('');
+}
+
+// ────────────────────────────────────────────────────────────────
 // Right detail — P&L
 // ────────────────────────────────────────────────────────────────
+
+// Returns the current (dirty-aware) value of a fe field.
+function feFieldValue(fe, field) {
+  return field in dirtyFe ? dirtyFe[field] : fe?.[field];
+}
+// Returns the current (dirty-aware) value of an expense field.
+function expFieldValue(row, field) {
+  const dirty = dirtyExpenses.get(row.id);
+  return dirty && (field in dirty) ? dirty[field] : row[field];
+}
+
+function liveIncomeTotals(fe) {
+  const rent   = Number(feFieldValue(fe, 'income_rent_eur')   || 0);
+  const drinks = Number(feFieldValue(fe, 'income_drinks_eur') || 0);
+  const addons = Number(feFieldValue(fe, 'income_addons_eur') || 0);
+  return { rent, drinks, addons, total: rent + drinks + addons };
+}
+function livePaid(fe) {
+  return Number(feFieldValue(fe, 'deposit_cash_eur') || 0)
+       + Number(feFieldValue(fe, 'deposit_bank_eur') || 0)
+       + Number(feFieldValue(fe, 'balance_cash_eur') || 0)
+       + Number(feFieldValue(fe, 'balance_bank_eur') || 0);
+}
+function liveExpenseTotal(fe) {
+  if (!fe) return 0;
+  const rows = expensesByEvent.get(fe.id) || [];
+  return rows.reduce((s, r) => s + Number(expFieldValue(r, 'amount_eur') || 0), 0);
+}
 
 function renderDetail() {
   const placeholder = document.getElementById('pnl-placeholder');
@@ -319,89 +360,188 @@ function renderDetail() {
   body.hidden = false;
 
   const fe = financialEventByEnquiryId.get(enquiry.id);
-  const b = enquiryBreakdown(enquiry);
-  const income = b.rent + b.drinks + b.addons;
-  const expense = eventExpenseTotal(enquiry);
-  const paid = eventPaidTotal(enquiry);
-  const balance = income - paid;
-  const net = income - expense;
-  const margin = income > 0 ? Math.round((net / income) * 100) : null;
 
+  // Hero
   document.getElementById('pnl-customer').textContent = enquiry.full_name || '—';
   document.getElementById('pnl-date').textContent     = fmtDateBg(parsePreferredDate(enquiry.preferred_date));
   document.getElementById('pnl-event-type').textContent = enquiry.event_type || '—';
   document.getElementById('pnl-guests').textContent   = (enquiry.guests != null ? enquiry.guests + ' гости' : '—');
-  document.getElementById('pnl-income-total').textContent = fmtEur(income);
+
+  const inc = liveIncomeTotals(fe);
+  const expense = liveExpenseTotal(fe);
+  const paid = livePaid(fe);
+  const balance = inc.total - paid;
+  const net = inc.total - expense;
+  const margin = inc.total > 0 ? Math.round((net / inc.total) * 100) : null;
+
+  document.getElementById('pnl-income-total').textContent  = fmtEur(inc.total);
   document.getElementById('pnl-expense-total').textContent = fmtEur(expense);
-  document.getElementById('pnl-paid-total').textContent = fmtEur(paid);
-  document.getElementById('pnl-balance').textContent = fmtEur(balance);
-  document.getElementById('pnl-net-eur').textContent = fmtEur(net);
-  document.getElementById('pnl-net-bgn').textContent = fmtBgn(net * BGN_RATE);
+  document.getElementById('pnl-paid-total').textContent    = fmtEur(paid);
+  document.getElementById('pnl-balance').textContent       = fmtEur(balance);
+  document.getElementById('pnl-net-eur').textContent       = fmtEur(net);
+  document.getElementById('pnl-net-bgn').textContent       = fmtBgn(net * BGN_RATE);
   const marginEl = document.getElementById('pnl-margin');
   marginEl.textContent = margin == null ? '—' : margin + '%';
   marginEl.className = 'event-pnl__hero-val ' + (margin == null ? '' : (margin >= 0 ? 'is-positive' : 'is-negative'));
 
-  // Income breakdown — derived from enquiry. Read-only.
+  // Income lines — now editable. Prefilled by ensureFinancialEvent from
+  // the enquiry breakdown; admin can refine before saving.
   document.getElementById('pnl-income-lines').innerHTML = [
-    { lbl: 'Оферта (зала + гости)', val: b.rent },
-    { lbl: 'Напитки',                val: b.drinks },
-    { lbl: 'Доп. услуги',            val: b.addons },
-  ].map(r => `
-    <li class="event-pnl__line">
-      <span class="event-pnl__line-lbl">${esc(r.lbl)}</span>
-      <span class="event-pnl__line-val">${fmtEur(r.val)}</span>
-    </li>
-  `).join('');
+    { lbl: 'Оферта (зала + гости)', field: 'income_rent_eur' },
+    { lbl: 'Напитки',                field: 'income_drinks_eur' },
+    { lbl: 'Доп. услуги',            field: 'income_addons_eur' },
+  ].map(r => {
+    const v = feFieldValue(fe, r.field);
+    return `
+      <li class="event-pnl__line event-pnl__line--editable">
+        <span class="event-pnl__line-lbl">${esc(r.lbl)}</span>
+        <input type="number" step="0.01" class="event-pnl__line-input"
+               data-fe-field="${r.field}" value="${v ?? ''}" placeholder="€">
+      </li>
+    `;
+  }).join('');
 
-  // Payments received — editable on the financial_events row. Bookkeeper
-  // records the four buckets as cash comes in.
+  // Payments grid (also dirty-aware)
   if (fe) {
+    const v = f => {
+      const x = feFieldValue(fe, f);
+      return x == null ? '' : x;
+    };
     document.getElementById('pnl-payments').innerHTML = `
       <div class="event-pnl__pay-grid">
-        <label><span>Аванс брой €</span><input type="number" step="0.01" data-fe-field="deposit_cash_eur" value="${fe.deposit_cash_eur || ''}"></label>
-        <label><span>Аванс банка €</span><input type="number" step="0.01" data-fe-field="deposit_bank_eur" value="${fe.deposit_bank_eur || ''}"></label>
-        <label><span>Дата аванс</span><input type="date" data-fe-field="deposit_date" value="${fe.deposit_date || ''}"></label>
-        <label><span>Доплащ. брой €</span><input type="number" step="0.01" data-fe-field="balance_cash_eur" value="${fe.balance_cash_eur || ''}"></label>
-        <label><span>Доплащ. банка €</span><input type="number" step="0.01" data-fe-field="balance_bank_eur" value="${fe.balance_bank_eur || ''}"></label>
-        <label><span>Дата доплащане</span><input type="date" data-fe-field="balance_date" value="${fe.balance_date || ''}"></label>
+        <label><span>Аванс брой €</span><input type="number" step="0.01" data-fe-field="deposit_cash_eur" value="${v('deposit_cash_eur')}"></label>
+        <label><span>Аванс банка €</span><input type="number" step="0.01" data-fe-field="deposit_bank_eur" value="${v('deposit_bank_eur')}"></label>
+        <label><span>Дата аванс</span><input type="date" data-fe-field="deposit_date" value="${v('deposit_date')}"></label>
+        <label><span>Доплащ. брой €</span><input type="number" step="0.01" data-fe-field="balance_cash_eur" value="${v('balance_cash_eur')}"></label>
+        <label><span>Доплащ. банка €</span><input type="number" step="0.01" data-fe-field="balance_bank_eur" value="${v('balance_bank_eur')}"></label>
+        <label><span>Дата доплащане</span><input type="date" data-fe-field="balance_date" value="${v('balance_date')}"></label>
       </div>
     `;
   } else {
     document.getElementById('pnl-payments').innerHTML = '<div class="empty-state">Зареждане…</div>';
   }
 
-  // Expense lines — per-vendor cost
+  // Expense lines — dirty-aware
   const rows = fe ? (expensesByEvent.get(fe.id) || []) : [];
   document.getElementById('pnl-expense-lines').innerHTML = rows.length
     ? rows.map(x => {
+        const cat   = expFieldValue(x, 'category');
+        const desc  = expFieldValue(x, 'description');
+        const amt   = expFieldValue(x, 'amount_eur');
+        const notes = expFieldValue(x, 'notes');
         const opts = EXPENSE_CATS.map(c =>
-          `<option value="${c.id}" ${x.category === c.id ? 'selected' : ''}>${esc(c.label)}</option>`
+          `<option value="${c.id}" ${cat === c.id ? 'selected' : ''}>${esc(c.label)}</option>`
         ).join('');
         return `
           <li class="event-pnl__line event-pnl__line--expense" data-id="${esc(x.id)}">
             <div class="event-pnl__line-row">
               <select data-f="category">${opts}</select>
-              <input type="text" data-f="description" value="${esc(x.description || '')}" placeholder="Описание (напр. DJ за вечерта)">
-              <input type="number" step="0.01" data-f="amount_eur" value="${x.amount_eur || ''}" placeholder="€">
+              <input type="text" data-f="description" value="${esc(desc || '')}" placeholder="Описание (напр. DJ за вечерта)">
+              <input type="number" step="0.01" data-f="amount_eur" value="${amt ?? ''}" placeholder="€">
               <button type="button" class="del-btn" data-del="${esc(x.id)}" title="Изтрий">×</button>
             </div>
-            <textarea data-f="notes" class="event-pnl__line-notes" rows="1" placeholder="Коментар (телефон на доставчика, краен срок, забележки…)">${esc(x.notes || '')}</textarea>
+            <textarea data-f="notes" class="event-pnl__line-notes" rows="1" placeholder="Коментар (телефон на доставчика, краен срок, забележки…)">${esc(notes || '')}</textarea>
           </li>
         `;
       }).join('')
     : '<li class="empty-state">Няма прикрепени разходи.</li>';
+
+  // Save button state
+  const saveBtn = document.getElementById('btn-save-pnl');
+  if (saveBtn) {
+    saveBtn.disabled = !isDirty();
+    saveBtn.textContent = isDirty()
+      ? `Запази промените · ${Object.keys(dirtyFe).length + dirtyExpenses.size} промени`
+      : 'Запази промените';
+  }
 }
 
 // ────────────────────────────────────────────────────────────────
-// Mutations
+// Draft mutators (no DB until Save is pressed)
+// ────────────────────────────────────────────────────────────────
+
+function setFeDirty(field, raw) {
+  let value = raw;
+  if (field.endsWith('_eur')) value = raw === '' ? 0 : Number(raw);
+  if (field.endsWith('_date')) value = raw || null;
+  dirtyFe[field] = value;
+  renderDetail();
+}
+function setExpenseDirty(id, field, raw) {
+  let value = raw;
+  if (field === 'amount_eur') value = raw === '' ? 0 : Number(raw);
+  const current = dirtyExpenses.get(id) || {};
+  current[field] = value;
+  dirtyExpenses.set(id, current);
+  renderDetail();
+}
+
+// ────────────────────────────────────────────────────────────────
+// Save / cancel
+// ────────────────────────────────────────────────────────────────
+
+async function saveDraft() {
+  if (!selectedEnquiryId) return;
+  const enquiry = allEnquiries.find(e => e.id === selectedEnquiryId);
+  if (!enquiry) return;
+  const fe = financialEventByEnquiryId.get(enquiry.id);
+  if (!fe) return;
+
+  const ops = [];
+  if (Object.keys(dirtyFe).length) {
+    const patch = { ...dirtyFe, updated_at: new Date().toISOString() };
+    ops.push(db.from('financial_events').update(patch).eq('id', fe.id).then(({ error }) => {
+      if (error) throw error;
+      Object.assign(fe, dirtyFe);
+    }));
+  }
+  for (const [id, patchFields] of dirtyExpenses) {
+    const patch = { ...patchFields, updated_at: new Date().toISOString() };
+    ops.push(db.from('financial_expenses').update(patch).eq('id', id).then(({ error }) => {
+      if (error) throw error;
+      for (const [, rows] of expensesByEvent) {
+        const r = rows.find(x => x.id === id);
+        if (r) Object.assign(r, patchFields);
+      }
+    }));
+  }
+
+  const btn = document.getElementById('btn-save-pnl');
+  if (btn) { btn.disabled = true; btn.textContent = 'Запазване…'; }
+  try {
+    await Promise.all(ops);
+    dirtyFe = {};
+    dirtyExpenses = new Map();
+    renderEventsList(document.getElementById('events-search').value);
+    renderMonthSummary();
+    renderDetail();
+  } catch (err) {
+    console.error('saveDraft failed', err);
+    alert('Грешка при запис: ' + (err?.message || err));
+    if (btn) { btn.disabled = false; btn.textContent = 'Запази промените'; }
+  }
+}
+
+function cancelDraft() {
+  dirtyFe = {};
+  dirtyExpenses = new Map();
+  renderDetail();
+}
+
+// ────────────────────────────────────────────────────────────────
+// Add / delete expense (immediate, no draft)
 // ────────────────────────────────────────────────────────────────
 
 async function selectEnquiry(enquiryId) {
+  if (isDirty()) {
+    if (!confirm('Имате незапазени промени. Да ги отхвърля ли?')) return;
+  }
+  dirtyFe = {};
+  dirtyExpenses = new Map();
   selectedEnquiryId = enquiryId;
   const enquiry = allEnquiries.find(e => e.id === enquiryId);
   if (enquiry) await ensureFinancialEvent(enquiry);
   renderEventsList(document.getElementById('events-search').value);
-  renderMonthSummary();
   renderDetail();
 }
 
@@ -423,23 +563,6 @@ async function addEventExpense() {
   const arr = expensesByEvent.get(fe.id) || [];
   arr.push(data);
   expensesByEvent.set(fe.id, arr);
-  renderEventsList(document.getElementById('events-search').value);
-  renderMonthSummary();
-  renderDetail();
-}
-
-async function patchExpense(id, field, raw) {
-  let value = raw;
-  if (field === 'amount_eur') value = raw === '' ? 0 : Number(raw);
-  const patch = { [field]: value, updated_at: new Date().toISOString() };
-  const { error } = await db.from('financial_expenses').update(patch).eq('id', id);
-  if (error) { console.error(error); alert('Грешка при запис'); return; }
-  for (const [, rows] of expensesByEvent) {
-    const r = rows.find(x => x.id === id);
-    if (r) { r[field] = value; break; }
-  }
-  renderEventsList(document.getElementById('events-search').value);
-  renderMonthSummary();
   renderDetail();
 }
 
@@ -450,58 +573,50 @@ async function deleteExpense(id) {
   for (const [evId, rows] of expensesByEvent) {
     expensesByEvent.set(evId, rows.filter(x => x.id !== id));
   }
-  renderEventsList(document.getElementById('events-search').value);
-  renderMonthSummary();
-  renderDetail();
-}
-
-async function patchFinancialEvent(field, raw) {
-  if (!selectedEnquiryId) return;
-  const enquiry = allEnquiries.find(e => e.id === selectedEnquiryId);
-  if (!enquiry) return;
-  const fe = financialEventByEnquiryId.get(enquiry.id);
-  if (!fe) return;
-  let value = raw;
-  if (field.endsWith('_eur')) value = raw === '' ? 0 : Number(raw);
-  if (field.endsWith('_date')) value = raw || null;
-  const patch = { [field]: value, updated_at: new Date().toISOString() };
-  const { error } = await db.from('financial_events').update(patch).eq('id', fe.id);
-  if (error) { console.error(error); alert('Грешка при запис'); return; }
-  fe[field] = value;
+  dirtyExpenses.delete(id);
   renderEventsList(document.getElementById('events-search').value);
   renderMonthSummary();
   renderDetail();
 }
 
 // ────────────────────────────────────────────────────────────────
-// Boot
+// Event handlers
 // ────────────────────────────────────────────────────────────────
 
 document.addEventListener('click', evt => {
   const ev = evt.target.closest('[data-enquiry]');
   if (ev) { selectEnquiry(ev.getAttribute('data-enquiry')); return; }
   if (evt.target.closest('#btn-add-event-expense')) { addEventExpense(); return; }
+  if (evt.target.closest('#btn-save-pnl'))          { saveDraft(); return; }
+  if (evt.target.closest('#btn-cancel-pnl'))        { cancelDraft(); return; }
+  if (evt.target.closest('#btn-month-all')) {
+    monthFilter = '';
+    const inp = document.getElementById('fin-month');
+    if (inp) inp.value = '';
+    renderEventsList(document.getElementById('events-search').value);
+    renderMonthSummary();
+    return;
+  }
   const del = evt.target.closest('[data-del]');
   if (del) { deleteExpense(del.getAttribute('data-del')); return; }
 });
 
-document.addEventListener('change', evt => {
-  // Expense inline edit
+// Use 'input' so the user sees the totals update live as they type, but
+// nothing is persisted until Save.
+document.addEventListener('input', evt => {
+  if (evt.target.id === 'events-search') { renderEventsList(evt.target.value); return; }
+
+  // Expense field draft
   const expInp = evt.target.closest('[data-f]');
   if (expInp) {
     const li = expInp.closest('[data-id]');
-    if (li) { patchExpense(li.dataset.id, expInp.dataset.f, expInp.value); return; }
+    if (li) { setExpenseDirty(li.dataset.id, expInp.dataset.f, expInp.value); return; }
   }
-  // Payment fields on the financial_events row
+  // Financial-event field draft
   const feInp = evt.target.closest('[data-fe-field]');
-  if (feInp) { patchFinancialEvent(feInp.dataset.feField, feInp.value); return; }
+  if (feInp) { setFeDirty(feInp.dataset.feField, feInp.value); return; }
 });
 
-document.addEventListener('input', evt => {
-  if (evt.target.id === 'events-search') renderEventsList(evt.target.value);
-});
-
-// Month picker — restricts both the event list and the summary block.
 document.addEventListener('change', evt => {
   if (evt.target.id === 'fin-month') {
     monthFilter = evt.target.value || '';
@@ -509,15 +624,10 @@ document.addEventListener('change', evt => {
     renderMonthSummary();
   }
 });
-document.addEventListener('click', evt => {
-  if (evt.target.closest('#btn-month-all')) {
-    monthFilter = '';
-    const inp = document.getElementById('fin-month');
-    if (inp) inp.value = '';
-    renderEventsList(document.getElementById('events-search').value);
-    renderMonthSummary();
-  }
-});
+
+// ────────────────────────────────────────────────────────────────
+// Boot
+// ────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', async () => {
   const session = await requireAuth();
@@ -525,8 +635,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   userEmail = session.user?.email || null;
 
   await loadAll();
-  // Default to the current calendar month so the summary opens with
-  // something meaningful instead of an aggregated all-time blob.
   const now = new Date();
   monthFilter = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   const monthInp = document.getElementById('fin-month');
