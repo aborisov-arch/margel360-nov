@@ -726,3 +726,16 @@
   border-color: var(--fin-gold) !important;
   background: #fff !important;
 }
+
+/* Remove the up/down spinner arrows on every number input in the finance
+   section. Bookkeeper types amounts, doesn't nudge them one cent at a
+   time, and the arrows just add visual noise. */
+.fin input[type=number] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+.fin input[type=number]::-webkit-outer-spin-button,
+.fin input[type=number]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
