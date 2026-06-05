@@ -528,6 +528,41 @@ function cancelDraft() {
   renderDetail();
 }
 
+// Wipe the whole P&L for the selected event. Deletes the
+// financial_events row and all expenses attached to it. The underlying
+// enquiry is untouched, so the event will reappear in the list with a
+// clean slate next time it's clicked (ensureFinancialEvent will create
+// a fresh row prefilled from the enquiry).
+async function deletePnl() {
+  if (!selectedEnquiryId) return;
+  const enquiry = allEnquiries.find(e => e.id === selectedEnquiryId);
+  if (!enquiry) return;
+  const fe = financialEventByEnquiryId.get(enquiry.id);
+  if (!fe) return;
+  const msg = `Изтриване на P&L за "${enquiry.full_name || '—'}"?\nЗапитването НЕ се изтрива. Прикачените разходи се изтриват също.`;
+  if (!confirm(msg)) return;
+
+  // Delete expenses first to avoid the FK leaving orphans (event_id has
+  // ON DELETE SET NULL, which would otherwise silently un-attach them).
+  const rows = expensesByEvent.get(fe.id) || [];
+  if (rows.length) {
+    const { error: exErr } = await db.from('financial_expenses').delete().eq('event_id', fe.id);
+    if (exErr) { console.error(exErr); alert('Грешка при изтриване на разходите'); return; }
+  }
+  const { error: feErr } = await db.from('financial_events').delete().eq('id', fe.id);
+  if (feErr) { console.error(feErr); alert('Грешка при изтриване на P&L'); return; }
+
+  financialEventsById.delete(fe.id);
+  financialEventByEnquiryId.delete(enquiry.id);
+  expensesByEvent.delete(fe.id);
+  dirtyFe = {};
+  dirtyExpenses = new Map();
+  selectedEnquiryId = null;
+  renderEventsList(document.getElementById('events-search').value);
+  renderMonthSummary();
+  renderDetail();
+}
+
 // ────────────────────────────────────────────────────────────────
 // Add / delete expense (immediate, no draft)
 // ────────────────────────────────────────────────────────────────
@@ -624,6 +659,7 @@ document.addEventListener('click', evt => {
   if (evt.target.closest('#btn-add-event-expense')) { addEventExpense(); return; }
   if (evt.target.closest('#btn-save-pnl'))          { saveDraft(); return; }
   if (evt.target.closest('#btn-cancel-pnl'))        { cancelDraft(); return; }
+  if (evt.target.closest('#btn-delete-pnl'))        { deletePnl(); return; }
 
   // Click anywhere on the summary block to jump to the event list. Lets
   // the bookkeeper drill down from "Печалба €X" → "which events made
