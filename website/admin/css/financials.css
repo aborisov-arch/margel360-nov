@@ -688,3 +688,41 @@
   border-top: 1px solid var(--fin-border-soft);
 }
 .event-pnl__actions .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* Make summary KPIs + pills feel clickable. Clicking jumps to the
+   events list below; pill click also temporarily highlights the events
+   in that category. */
+#month-summary .fin-section__head,
+#month-summary .kpi,
+#expense-cat-breakdown .pill,
+#income-cat-breakdown .pill {
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+#month-summary .kpi:hover,
+#expense-cat-breakdown .pill:hover,
+#income-cat-breakdown .pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  border-color: var(--fin-gold-line);
+}
+#month-summary .fin-section__head:hover h2 { color: var(--fin-gold); }
+#month-summary .fin-section__head h2 { transition: color 0.15s ease; }
+#month-summary .fin-section__head::after {
+  content: '↓ виж събитията';
+  margin-left: auto;
+  font-size: 0.7rem; color: var(--fin-muted-foreground); letter-spacing: 0.06em; text-transform: uppercase;
+}
+
+/* Transient highlight pulse on an event button when reached via a
+   category pill click. */
+@keyframes finPulse {
+  0%   { box-shadow: 0 0 0 3px var(--fin-gold-soft); }
+  60%  { box-shadow: 0 0 0 5px var(--fin-gold-soft); }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+.event-pnl__event.is-highlight {
+  animation: finPulse 2.4s ease-out;
+  border-color: var(--fin-gold) !important;
+  background: #fff !important;
+}

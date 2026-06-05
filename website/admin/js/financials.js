@@ -580,6 +580,41 @@ async function deleteExpense(id) {
 }
 
 // ────────────────────────────────────────────────────────────────
+// Summary → event-list drill-down
+// ────────────────────────────────────────────────────────────────
+
+function scrollEventsIntoView() {
+  const list = document.querySelector('.event-pnl');
+  if (!list) return;
+  list.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Briefly highlight events in the left rail whose linked expenses
+// contain the given category. Useful for "who's eating the catering
+// budget this month?".
+function highlightEventsWithCategory(catId) {
+  const matchingEnquiryIds = new Set();
+  filteredEvents().forEach(e => {
+    const fe = financialEventByEnquiryId.get(e.id);
+    if (!fe) return;
+    const rows = expensesByEvent.get(fe.id) || [];
+    if (rows.some(x => (x.category || 'other') === catId)) {
+      matchingEnquiryIds.add(e.id);
+    }
+  });
+  document.querySelectorAll('[data-enquiry]').forEach(btn => {
+    if (matchingEnquiryIds.has(btn.getAttribute('data-enquiry'))) {
+      btn.classList.add('is-highlight');
+    }
+  });
+  // Auto-fade the highlight so it's clearly transient.
+  setTimeout(() => {
+    document.querySelectorAll('[data-enquiry].is-highlight')
+      .forEach(b => b.classList.remove('is-highlight'));
+  }, 2600);
+}
+
+// ────────────────────────────────────────────────────────────────
 // Event handlers
 // ────────────────────────────────────────────────────────────────
 
@@ -589,6 +624,24 @@ document.addEventListener('click', evt => {
   if (evt.target.closest('#btn-add-event-expense')) { addEventExpense(); return; }
   if (evt.target.closest('#btn-save-pnl'))          { saveDraft(); return; }
   if (evt.target.closest('#btn-cancel-pnl'))        { cancelDraft(); return; }
+
+  // Click anywhere on the summary block to jump to the event list. Lets
+  // the bookkeeper drill down from "Печалба €X" → "which events made
+  // that?" without scrolling manually. Expense category pills also
+  // highlight events that contain that category.
+  const pill = evt.target.closest('#expense-cat-breakdown .pill');
+  const kpi  = evt.target.closest('#month-summary .kpi');
+  const sumHead = evt.target.closest('#month-summary .fin-section__head');
+  if (pill) {
+    highlightEventsWithCategory(pill.getAttribute('data-cat'));
+    scrollEventsIntoView();
+    return;
+  }
+  if (kpi || sumHead) {
+    scrollEventsIntoView();
+    return;
+  }
+
   if (evt.target.closest('#btn-month-all')) {
     monthFilter = '';
     const inp = document.getElementById('fin-month');
