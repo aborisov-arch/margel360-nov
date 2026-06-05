@@ -653,3 +653,18 @@
 }
 .event-pnl__balance-lbl { font-size: 0.82rem; color: var(--fin-muted-foreground); }
 .event-pnl__balance-val { font: 700 1rem/1 'Inter', sans-serif; font-variant-numeric: tabular-nums; color: var(--fin-gold); }
+
+/* Per-expense comment box — sits under the main expense row so the
+   bookkeeper can stash vendor phone numbers, deadlines, notes, etc. */
+.event-pnl__line-notes {
+  display: block; width: 100%; margin: 4px 0 0;
+  padding: 6px 8px;
+  border: 1px solid var(--fin-border); border-radius: 6px;
+  background: #fff; resize: vertical; min-height: 28px;
+  font: 0.82rem/1.4 'Inter', sans-serif; color: var(--fin-text);
+}
+.event-pnl__line-notes::placeholder { color: var(--fin-muted-2); font-style: italic; }
+.event-pnl__line-notes:focus { outline: 2px solid var(--fin-gold); outline-offset: 1px; border-color: var(--fin-gold); }
+
+/* Month "All" reset button alignment in the toolbar. */
+.fin-toolbar .btn-sm { align-self: flex-end; margin-bottom: 1px; }

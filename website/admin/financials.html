@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/admin.css?v=13">
-  <link rel="stylesheet" href="css/financials.css?v=6">
+  <link rel="stylesheet" href="css/financials.css?v=7">
 </head>
 <body>
   <header class="admin-header">
@@ -32,6 +32,56 @@
     <div class="admin-container">
       <h1 class="page-title">Финанси · P&amp;L по събитие</h1>
       <p class="fin-page-sub">Изберете събитие за да видите оферираните приходи (авто-генерирани от запитването), плащанията от клиента и разходите към доставчиците.</p>
+
+      <!-- Month filter — restricts the event list AND the summary block below.
+           "all" shows every booking ever. -->
+      <div class="fin-toolbar">
+        <div class="fin-toolbar__field">
+          <label for="fin-month">Месец</label>
+          <input type="month" id="fin-month">
+        </div>
+        <button type="button" class="btn btn-sm btn-outline" id="btn-month-all">Всички</button>
+        <span class="fin-toolbar__rate"><strong>1 €</strong> = 1.95583 лв · фиксиран курс</span>
+      </div>
+
+      <!-- Monthly summary KPIs — auto-recompute from the events in the
+           current month filter. Same layout as the old financials.html. -->
+      <section class="fin-section" id="month-summary">
+        <div class="fin-section__head">
+          <h2>Обобщение · <span id="sum-month-label">всички месеци</span></h2>
+          <span class="count" id="sum-count">0 събития</span>
+        </div>
+        <div class="kpi-grid">
+          <div class="kpi">
+            <div class="kpi__label">Приходи (оферти)</div>
+            <div class="kpi__value" id="sum-income-eur">€0.00</div>
+            <div class="kpi__sub" id="sum-income-bgn">лв 0.00</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi__label">Платено от клиенти</div>
+            <div class="kpi__value" id="sum-paid-eur">€0.00</div>
+            <div class="kpi__sub" id="sum-paid-bgn">лв 0.00</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi__label">Разходи</div>
+            <div class="kpi__value" id="sum-expense-eur">€0.00</div>
+            <div class="kpi__sub" id="sum-expense-bgn">лв 0.00</div>
+          </div>
+          <div class="kpi kpi--highlight">
+            <div class="kpi__label">Печалба</div>
+            <div class="kpi__value" id="sum-profit-eur">€0.00</div>
+            <div class="kpi__sub" id="sum-profit-bgn">лв 0.00</div>
+          </div>
+        </div>
+        <div class="breakdown">
+          <div class="breakdown__title">Приходи по категория</div>
+          <div class="pill-grid" id="income-cat-breakdown"></div>
+        </div>
+        <div class="breakdown">
+          <div class="breakdown__title">Разходи по категория</div>
+          <div class="pill-grid" id="expense-cat-breakdown"></div>
+        </div>
+      </section>
 
       <div class="event-pnl">
         <aside class="event-pnl__list">
@@ -106,6 +156,6 @@
   <script src="js/supabase-client.js?v=3" defer></script>
   <script src="js/admin-i18n.js?v=8" defer></script>
   <script src="js/auth.js?v=2" defer></script>
-  <script src="js/financials.js?v=17" defer></script>
+  <script src="js/financials.js?v=18" defer></script>
 </body>
 </html>

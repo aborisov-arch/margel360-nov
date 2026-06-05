@@ -84,6 +84,23 @@ let expensesByEvent = new Map();     // financial_events.id → expense rows
 let bookableEvents = [];             // enquiries that count as "events"
 let selectedEnquiryId = null;
 let userEmail = null;
+// Month filter — '' = all months. Format: YYYY-MM.
+let monthFilter = '';
+
+const MONTH_NAMES_BG = ['януари','февруари','март','април','май','юни','юли','август','септември','октомври','ноември','декември'];
+function monthLabel(ym) {
+  if (!ym) return 'всички месеци';
+  const [y, m] = ym.split('-');
+  return `${MONTH_NAMES_BG[Number(m) - 1]} ${y}`;
+}
+function enquiryMonth(e) {
+  const iso = parsePreferredDate(e.preferred_date);
+  return iso ? iso.slice(0, 7) : null;
+}
+function filteredEvents() {
+  if (!monthFilter) return bookableEvents;
+  return bookableEvents.filter(e => enquiryMonth(e) === monthFilter);
+}
 
 // ────────────────────────────────────────────────────────────────
 // Data loading
@@ -190,9 +207,10 @@ function renderEventsList(filter = '') {
   const wrap = document.getElementById('events-list');
   const cnt  = document.getElementById('events-list-count');
   const needle = filter.trim().toLowerCase();
+  const monthScoped = filteredEvents();
   const matches = needle
-    ? bookableEvents.filter(e => (e.full_name || '').toLowerCase().includes(needle))
-    : bookableEvents;
+    ? monthScoped.filter(e => (e.full_name || '').toLowerCase().includes(needle))
+    : monthScoped;
   if (cnt) cnt.textContent = matches.length;
   if (!matches.length) {
     wrap.innerHTML = '<div class="empty-state">Няма потвърдени събития със заети дати.</div>';
@@ -214,6 +232,77 @@ function renderEventsList(filter = '') {
       </button>
     `;
   }).join('');
+}
+
+// ────────────────────────────────────────────────────────────────
+// Monthly summary
+// ────────────────────────────────────────────────────────────────
+
+function renderMonthSummary() {
+  const scope = filteredEvents();
+  let income = 0, drinks = 0, addons = 0, rent = 0;
+  let paid = 0, expense = 0;
+  const expByCat = Object.fromEntries(EXPENSE_CATS.map(c => [c.id, 0]));
+
+  scope.forEach(e => {
+    const b = enquiryBreakdown(e);
+    rent += b.rent; drinks += b.drinks; addons += b.addons;
+    income += b.rent + b.drinks + b.addons;
+    paid   += eventPaidTotal(e);
+    const fe = financialEventByEnquiryId.get(e.id);
+    if (fe) {
+      const rows = expensesByEvent.get(fe.id) || [];
+      rows.forEach(x => {
+        const amt = Number(x.amount_eur || 0);
+        expense += amt;
+        expByCat[x.category || 'other'] = (expByCat[x.category || 'other'] || 0) + amt;
+      });
+    }
+  });
+
+  const profit = income - expense;
+  const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+  set('sum-month-label', monthLabel(monthFilter));
+  set('sum-count',       `${scope.length} ${scope.length === 1 ? 'събитие' : 'събития'}`);
+  set('sum-income-eur',  fmtEur(income));
+  set('sum-income-bgn',  fmtBgn(income * BGN_RATE));
+  set('sum-paid-eur',    fmtEur(paid));
+  set('sum-paid-bgn',    fmtBgn(paid * BGN_RATE));
+  set('sum-expense-eur', fmtEur(expense));
+  set('sum-expense-bgn', fmtBgn(expense * BGN_RATE));
+  set('sum-profit-eur',  fmtEur(profit));
+  set('sum-profit-bgn',  fmtBgn(profit * BGN_RATE));
+  const profitEl = document.getElementById('sum-profit-eur');
+  if (profitEl) profitEl.className = 'kpi__value ' + (profit >= 0 ? 'is-positive' : 'is-negative');
+
+  const incomeCats = { rent, drinks, addons };
+  const INCOME_LABELS = [
+    { id: 'rent',   label: 'Оферта' },
+    { id: 'drinks', label: 'Напитки' },
+    { id: 'addons', label: 'Доп. услуги' },
+  ];
+  const incomeBreak = document.getElementById('income-cat-breakdown');
+  if (incomeBreak) {
+    incomeBreak.innerHTML = INCOME_LABELS.map(c => `
+      <div class="pill" data-cat="${esc(c.id)}">
+        <div class="pill__label">${esc(c.label)}</div>
+        <div class="pill__value">${fmtEur(incomeCats[c.id])}</div>
+        <div class="pill__sub">${fmtBgn(incomeCats[c.id] * BGN_RATE)}${income ? ` <span class="pill__pct">${Math.round(incomeCats[c.id] / income * 100)}%</span>` : ''}</div>
+      </div>
+    `).join('');
+  }
+
+  const expenseBreak = document.getElementById('expense-cat-breakdown');
+  if (expenseBreak) {
+    const html = EXPENSE_CATS.filter(c => expByCat[c.id] > 0).map(c => `
+      <div class="pill" data-cat="${esc(c.id)}">
+        <div class="pill__label">${esc(c.label)}</div>
+        <div class="pill__value">${fmtEur(expByCat[c.id])}</div>
+        <div class="pill__sub">${fmtBgn(expByCat[c.id] * BGN_RATE)}${expense ? ` <span class="pill__pct">${Math.round(expByCat[c.id] / expense * 100)}%</span>` : ''}</div>
+      </div>
+    `).join('');
+    expenseBreak.innerHTML = html || '<div class="empty-state">Няма разходи в този период.</div>';
+  }
 }
 
 // ────────────────────────────────────────────────────────────────
@@ -296,6 +385,7 @@ function renderDetail() {
               <input type="number" step="0.01" data-f="amount_eur" value="${x.amount_eur || ''}" placeholder="€">
               <button type="button" class="del-btn" data-del="${esc(x.id)}" title="Изтрий">×</button>
             </div>
+            <textarea data-f="notes" class="event-pnl__line-notes" rows="1" placeholder="Коментар (телефон на доставчика, краен срок, забележки…)">${esc(x.notes || '')}</textarea>
           </li>
         `;
       }).join('')
@@ -311,6 +401,7 @@ async function selectEnquiry(enquiryId) {
   const enquiry = allEnquiries.find(e => e.id === enquiryId);
   if (enquiry) await ensureFinancialEvent(enquiry);
   renderEventsList(document.getElementById('events-search').value);
+  renderMonthSummary();
   renderDetail();
 }
 
@@ -333,6 +424,7 @@ async function addEventExpense() {
   arr.push(data);
   expensesByEvent.set(fe.id, arr);
   renderEventsList(document.getElementById('events-search').value);
+  renderMonthSummary();
   renderDetail();
 }
 
@@ -347,6 +439,7 @@ async function patchExpense(id, field, raw) {
     if (r) { r[field] = value; break; }
   }
   renderEventsList(document.getElementById('events-search').value);
+  renderMonthSummary();
   renderDetail();
 }
 
@@ -358,6 +451,7 @@ async function deleteExpense(id) {
     expensesByEvent.set(evId, rows.filter(x => x.id !== id));
   }
   renderEventsList(document.getElementById('events-search').value);
+  renderMonthSummary();
   renderDetail();
 }
 
@@ -375,6 +469,7 @@ async function patchFinancialEvent(field, raw) {
   if (error) { console.error(error); alert('Грешка при запис'); return; }
   fe[field] = value;
   renderEventsList(document.getElementById('events-search').value);
+  renderMonthSummary();
   renderDetail();
 }
 
@@ -406,17 +501,44 @@ document.addEventListener('input', evt => {
   if (evt.target.id === 'events-search') renderEventsList(evt.target.value);
 });
 
+// Month picker — restricts both the event list and the summary block.
+document.addEventListener('change', evt => {
+  if (evt.target.id === 'fin-month') {
+    monthFilter = evt.target.value || '';
+    renderEventsList(document.getElementById('events-search').value);
+    renderMonthSummary();
+  }
+});
+document.addEventListener('click', evt => {
+  if (evt.target.closest('#btn-month-all')) {
+    monthFilter = '';
+    const inp = document.getElementById('fin-month');
+    if (inp) inp.value = '';
+    renderEventsList(document.getElementById('events-search').value);
+    renderMonthSummary();
+  }
+});
+
 document.addEventListener('DOMContentLoaded', async () => {
   const session = await requireAuth();
   if (!session) return;
   userEmail = session.user?.email || null;
 
   await loadAll();
+  // Default to the current calendar month so the summary opens with
+  // something meaningful instead of an aggregated all-time blob.
+  const now = new Date();
+  monthFilter = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const monthInp = document.getElementById('fin-month');
+  if (monthInp) monthInp.value = monthFilter;
+
   renderEventsList('');
+  renderMonthSummary();
   renderDetail();
 });
 
 function rerenderPage() {
   renderEventsList(document.getElementById('events-search').value);
+  renderMonthSummary();
   renderDetail();
 }
