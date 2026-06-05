@@ -2,6 +2,7 @@ import type { DiffEntry } from "./diff.ts";
 
 type Enquiry = {
   id: string;
+  enquiry_number?: number | null;
   full_name: string;
   email: string;
   phone: string;
@@ -158,7 +159,10 @@ export function renderCustomerEmail(e: Enquiry, siteUrl: string): { subject: str
   const sectionTitle = (txt: string) =>
     `<p style="margin:0 0 14px;font:600 11px/1.2 ${SANS};letter-spacing:0.18em;color:${GOLD};text-transform:uppercase">${txt}</p>`;
 
-  const subject = `Маргел 360° · ${esc(e.event_type)} · ${fmtDateBg(e.preferred_date)} · €${totals.total.toFixed(2)}`;
+  // Reference number — "#1001" — gives the customer something to quote
+  // when they call or email about this booking.
+  const refNo = e.enquiry_number != null ? `#${e.enquiry_number}` : "";
+  const subject = `Маргел 360° · ${refNo ? refNo + " · " : ""}${esc(e.event_type)} · ${fmtDateBg(e.preferred_date)} · €${totals.total.toFixed(2)}`;
 
   const html = `<!doctype html>
 <html lang="bg"><head>
@@ -203,11 +207,12 @@ export function renderCustomerEmail(e: Enquiry, siteUrl: string): { subject: str
 
       <tr><td class="email-body" style="padding:40px 44px 32px">
 
+        ${refNo ? `<p style="margin:0 0 12px;font:600 11px/1.2 ${SANS};letter-spacing:0.18em;color:${GOLD};text-transform:uppercase">Запитване ${refNo}</p>` : ""}
         <h1 class="display" style="margin:0 0 10px;font:400 38px/1.1 ${SERIF};letter-spacing:-0.02em;color:${INK}">
           Здравейте, <em style="font-style:italic;color:${GOLD}">${esc(firstName)}</em>
         </h1>
         <p style="margin:0 0 32px;font:16px/1.55 ${SANS};color:${SOFT}">
-          Получихме вашето запитване. Ще се свържем с вас до 24 часа за потвърждение.
+          Получихме вашето запитване${refNo ? ` ${refNo}` : ""}. Ще се свържем с вас до 24 часа за потвърждение.
         </p>
 
         <hr style="border:0;border-top:1px solid ${GOLD_LINE};margin:0 0 28px">
@@ -370,7 +375,8 @@ export function renderOwnerEmail(
 ): { subject: string; text: string } {
   const subjectPrefix = reason === "updated" ? "[Редактирана резервация] " : "";
   const totals = computeTotals(e);
-  const subject = `${subjectPrefix}${e.full_name} — ${e.event_type} — ${e.preferred_date} — €${totals.total.toFixed(2)}`;
+  const refNo = e.enquiry_number != null ? `#${e.enquiry_number} ` : "";
+  const subject = `${subjectPrefix}${refNo}${e.full_name} — ${e.event_type} — ${e.preferred_date} — €${totals.total.toFixed(2)}`;
 
   const addonsText = (e.addons ?? []).map(a => `  - ${a.name}: ${fmtEur(a.price, a.id)}`).join("\n");
   const drinksText = (e.drinks ?? []).map(d => {

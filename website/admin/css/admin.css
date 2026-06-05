@@ -753,3 +753,13 @@ body {
 .status-tab.is-active { background: #fff; color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
 .status-tab [data-count] { color: #a3a09a; font-weight: 600; font-size: 0.78rem; }
 .status-tab.is-active [data-count] { color: var(--accent); }
+
+/* Customer-facing enquiry number — small gold tag in front of the name. */
+.enquiry-no {
+  display: inline-block; padding: 1px 6px; margin-right: 6px;
+  background: var(--accent-dim); color: var(--accent);
+  border-radius: 4px;
+  font: 600 0.72rem/1.4 'Inter', sans-serif;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}

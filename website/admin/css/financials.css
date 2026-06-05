@@ -610,7 +610,14 @@
 .event-pnl__line-lbl { color: var(--fin-text); font-size: 0.88rem; }
 .event-pnl__line-val { font-weight: 600; font-variant-numeric: tabular-nums; }
 .event-pnl__line--expense { padding: 6px; }
-.event-pnl__line-row { display: grid; grid-template-columns: 130px 1fr 90px 28px; gap: 6px; align-items: center; width: 100%; }
+/* Horizontal scroll row — category, amount, delete, then a wide comment
+   textarea. Total width exceeds the column on narrow viewports so the
+   bookkeeper can scroll right to reach the comment. */
+.event-pnl__line-row { display: flex; gap: 6px; align-items: center; width: 100%; overflow-x: auto; padding-bottom: 2px; }
+.event-pnl__line-row > select   { flex: 0 0 130px; }
+.event-pnl__line-row > input[type=number] { flex: 0 0 90px; }
+.event-pnl__line-row > .del-btn { flex: 0 0 28px; }
+.event-pnl__line-row > .event-pnl__line-notes { flex: 0 0 320px; margin: 0; }
 .event-pnl__line-row select, .event-pnl__line-row input {
   padding: 6px 8px; border: 1px solid var(--fin-border); border-radius: 6px;
   font: 0.85rem 'Inter', sans-serif; background: #fff; min-width: 0;

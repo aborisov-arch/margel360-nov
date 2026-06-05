@@ -200,7 +200,7 @@ function renderEnquiries(enquiries) {
     const tr = document.createElement('tr');
     if (isAnswered) tr.classList.add('row-answered');
     tr.innerHTML = `
-      <td>${esc(e.full_name)}</td>
+      <td><span class="enquiry-no">#${esc(e.enquiry_number ?? '—')}</span> ${esc(e.full_name)}</td>
       <td>${esc(e.phone)}</td>
       <td>${esc(e.event_type)}</td>
       <td>${esc(e.preferred_date)}</td>

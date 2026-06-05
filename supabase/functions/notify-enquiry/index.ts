@@ -64,7 +64,8 @@ serve(async (req) => {
       `Submitted at: ${new Date(record.created_at).toLocaleString("en-GB")}`,
     ].join("\n");
 
-    const subject = `New Enquiry — ${record.full_name} — ${record.event_type}`;
+    const refNo = record.enquiry_number != null ? `#${record.enquiry_number} ` : "";
+    const subject = `New Enquiry — ${refNo}${record.full_name} — ${record.event_type}`;
 
     const resendRes = await fetch("https://api.resend.com/emails", {
       method: "POST",

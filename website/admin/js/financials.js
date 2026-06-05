@@ -145,7 +145,7 @@ async function loadAll() {
     { data: fev, error: fevErr },
     { data: exp, error: expErr },
   ] = await Promise.all([
-    db.from('enquiries').select('id,full_name,preferred_date,event_type,event_id,pipeline_status,addons,drinks,applied_discount_percent,guests'),
+    db.from('enquiries').select('id,enquiry_number,full_name,preferred_date,event_type,event_id,pipeline_status,addons,drinks,applied_discount_percent,guests'),
     db.from('occupied_dates').select('date'),
     db.from('financial_events').select('*'),
     db.from('financial_expenses').select('*').not('event_id', 'is', null),
@@ -310,7 +310,7 @@ function renderEventsList(filter = '') {
     const iso = parsePreferredDate(e.preferred_date);
     return `
       <button type="button" class="event-pnl__event${selected}" data-enquiry="${esc(e.id)}">
-        <div class="event-pnl__event-name">${esc(e.full_name || '—')}</div>
+        <div class="event-pnl__event-name"><span class="enquiry-no">#${esc(e.enquiry_number ?? '—')}</span> ${esc(e.full_name || '—')}</div>
         <div class="event-pnl__event-meta">${fmtDateBg(iso)} · ${inc != null ? fmtEur(inc) : '—'}</div>
         <div class="event-pnl__event-margin${marginClass}">${margin == null ? '—' : margin + '%'}</div>
       </button>
@@ -362,7 +362,9 @@ function renderDetail() {
   const fe = financialEventByEnquiryId.get(enquiry.id);
 
   // Hero
-  document.getElementById('pnl-customer').textContent = enquiry.full_name || '—';
+  // Hero shows "#1001  Иван Иванов" so the customer-facing reference number is always visible.
+  document.getElementById('pnl-customer').innerHTML =
+    `<span class="enquiry-no">#${esc(enquiry.enquiry_number ?? '—')}</span> ${esc(enquiry.full_name || '—')}`;
   document.getElementById('pnl-date').textContent     = fmtDateBg(parsePreferredDate(enquiry.preferred_date));
   document.getElementById('pnl-event-type').textContent = enquiry.event_type || '—';
   document.getElementById('pnl-guests').textContent   = (enquiry.guests != null ? enquiry.guests + ' гости' : '—');
@@ -421,12 +423,14 @@ function renderDetail() {
     document.getElementById('pnl-payments').innerHTML = '<div class="empty-state">Зареждане…</div>';
   }
 
-  // Expense lines — dirty-aware
+  // Expense lines — dirty-aware. One horizontal scrolling row per
+  // expense: category, amount, delete, comment. The old standalone
+  // 'description' field was removed; the comment textarea covers that
+  // need with more room. Scroll right to reach the comment.
   const rows = fe ? (expensesByEvent.get(fe.id) || []) : [];
   document.getElementById('pnl-expense-lines').innerHTML = rows.length
     ? rows.map(x => {
         const cat   = expFieldValue(x, 'category');
-        const desc  = expFieldValue(x, 'description');
         const amt   = expFieldValue(x, 'amount_eur');
         const notes = expFieldValue(x, 'notes');
         const opts = EXPENSE_CATS.map(c =>
@@ -436,11 +440,10 @@ function renderDetail() {
           <li class="event-pnl__line event-pnl__line--expense" data-id="${esc(x.id)}">
             <div class="event-pnl__line-row">
               <select data-f="category">${opts}</select>
-              <input type="text" data-f="description" value="${esc(desc || '')}" placeholder="Описание (напр. DJ за вечерта)">
               <input type="number" step="0.01" data-f="amount_eur" value="${amt ?? ''}" placeholder="€">
               <button type="button" class="del-btn" data-del="${esc(x.id)}" title="Изтрий">×</button>
+              <textarea data-f="notes" class="event-pnl__line-notes" rows="1" placeholder="Коментар (напр. DJ за вечерта, телефон на доставчика, забележки…)">${esc(notes || '')}</textarea>
             </div>
-            <textarea data-f="notes" class="event-pnl__line-notes" rows="1" placeholder="Коментар (телефон на доставчика, краен срок, забележки…)">${esc(notes || '')}</textarea>
           </li>
         `;
       }).join('')
