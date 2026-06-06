@@ -54,8 +54,12 @@ const MAX_NAME = 200, MAX_NOTES = 2000, MAX_PHONE = 30, MAX_GUESTS = 200, MAX_AD
 const DATE_RE = /^\d{2}\/\d{2}\/\d{4}$/;
 const EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 const EVENT_IDS = ["evening","wedding","corp4","corp8","bday_day","bday_eve"];
-const TIME_OF_DAY = ["day","evening"];
-const PAYMENT_METHODS = ["cash","bank","card"];
+// Values match the reservation form's EVENT_TIME_OF_DAY map ('eve' is
+// the legacy short form; 'evening' kept as a defensive synonym for any
+// future change to the form).
+const TIME_OF_DAY = ["day","eve","evening"];
+// Radio buttons on reservation.html: cash | transfer | card.
+const PAYMENT_METHODS = ["cash","transfer","card","bank"];
 const DISCOUNT_RE = /^MG-[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{4}-[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{4}$/;
 
 // Strip CR/LF + null bytes from any user-supplied string. Defeats email
