@@ -984,6 +984,9 @@ function setupSubmit() {
         return { id, name: drink ? drink.name_en : id, qty, price_eur: drink?.price_eur ?? null };
       });
 
+    // Post to submit-enquiry edge function. Anon role no longer has any
+    // direct table access — the function handles validation, the
+    // insert, and the optional discount-code claim atomically.
     const payload = {
       full_name: booking.name,
       email: booking.email,
@@ -998,22 +1001,25 @@ function setupSubmit() {
       drinks: drinksPayload,
       payment_method: booking.payment,
       notes: booking.notes || null,
+      discount_code: booking.discountCode || null,
     };
 
-    const { data: inserted, error } = await reservationDb.from('enquiries').insert(payload).select('id').single();
-
-    // If a promo code was applied, redeem it now. Best-effort: a failure
-    // here does NOT block the booking — the customer still gets their event.
-    if (!error && inserted && booking.discountCode) {
-      try {
-        await fetch(`${SUPABASE_FN_BASE}/redeem-discount-code`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code: booking.discountCode, enquiry_id: inserted.id }),
-        });
-      } catch (redeemErr) {
-        console.warn('Discount redeem failed:', redeemErr);
+    let inserted = null;
+    let error = null;
+    try {
+      const res = await fetch(`${SUPABASE_FN_BASE}/submit-enquiry`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || !body.ok) {
+        error = body.error || `http_${res.status}`;
+      } else {
+        inserted = { id: body.id, enquiry_number: body.enquiry_number };
       }
+    } catch (e) {
+      error = e?.message || 'network_error';
     }
 
     if (error) {

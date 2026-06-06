@@ -1,7 +1,22 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
+// notify-enquiry is fired by the database webhook on INSERT into
+// enquiries. The webhook is configured in the Supabase dashboard with
+// the X-Internal-Secret header (must match INTERNAL_SHARED_SECRET).
+// Without this gate, anyone could POST a fake record and spam the team
+// inbox with bogus "New enquiry" emails. Refuse if the secret is missing
+// or empty (fail-closed if the env var is ever unset on deploy).
+const INTERNAL_SECRET = Deno.env.get("INTERNAL_SHARED_SECRET") ?? "";
+
 serve(async (req) => {
   try {
+    if (!INTERNAL_SECRET) {
+      console.error("INTERNAL_SHARED_SECRET not configured");
+      return new Response(JSON.stringify({ error: "misconfigured" }), { status: 500 });
+    }
+    if (req.headers.get("x-internal-secret") !== INTERNAL_SECRET) {
+      return new Response(JSON.stringify({ error: "unauthorised" }), { status: 401 });
+    }
     const payload = await req.json();
     const record = payload.record;
 

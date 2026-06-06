@@ -45,43 +45,26 @@ serve(async (req) => {
   let body: InternalBody | WebhookBody;
   try { body = await req.json(); } catch { return json({ error: "bad_json" }, 400); }
 
-  // Resolve enquiry_id + reason + diff from either shape.
-  //
-  // Two authenticated entry points:
-  //   1. DB webhook (Supabase `INSERT on enquiries`): payload is
-  //      { type:"INSERT", table:"enquiries", record:{ id, ... } }.
-  //      We accept it only when shape matches exactly.
-  //   2. Internal call from update-enquiry-by-token: payload is
-  //      { enquiry_id, reason, diff? } and must carry the shared secret
-  //      in the X-Internal-Secret header, so external callers cannot
-  //      spoof fake "updated" emails to the owner.
-  let enquiryId: string;
-  let reason: "created" | "updated";
-  let diff: DiffEntry[] | null = null;
-
-  const isWebhookShape = body
-    && (body as WebhookBody).type === "INSERT"
-    && (body as WebhookBody).table === "enquiries"
-    && isUuid((body as WebhookBody).record?.id);
-
-  if (isWebhookShape) {
-    enquiryId = (body as WebhookBody).record.id;
-    reason = "created";
-  } else if ("enquiry_id" in body) {
-    if (!INTERNAL_SECRET || req.headers.get("x-internal-secret") !== INTERNAL_SECRET) {
-      return json({ error: "unauthorised" }, 401);
-    }
-    const b = body as InternalBody;
-    if (!isUuid(b.enquiry_id)) return json({ error: "bad_enquiry_id" }, 400);
-    if (b.reason !== "created" && b.reason !== "updated") {
-      return json({ error: "bad_reason" }, 400);
-    }
-    enquiryId = b.enquiry_id;
-    reason = b.reason;
-    diff = Array.isArray(b.diff) ? b.diff : null;
-  } else {
-    return json({ error: "bad_payload" }, 400);
+  // Single entry shape now: internal call carrying X-Internal-Secret.
+  // The legacy DB-webhook shape was unauthenticated (anyone could spoof
+  // a fake INSERT to trigger spam customer emails on real bookings).
+  // submit-enquiry / update-enquiry-by-token / update-enquiry-admin all
+  // call this with the shared secret.
+  if (!INTERNAL_SECRET) {
+    console.error("INTERNAL_SHARED_SECRET not configured");
+    return json({ error: "misconfigured" }, 500);
   }
+  if (req.headers.get("x-internal-secret") !== INTERNAL_SECRET) {
+    return json({ error: "unauthorised" }, 401);
+  }
+  const b = body as InternalBody;
+  if (!isUuid(b.enquiry_id)) return json({ error: "bad_enquiry_id" }, 400);
+  if (b.reason !== "created" && b.reason !== "updated") {
+    return json({ error: "bad_reason" }, 400);
+  }
+  const enquiryId = b.enquiry_id;
+  const reason = b.reason;
+  const diff: DiffEntry[] | null = Array.isArray(b.diff) ? b.diff : null;
 
   const { data: enquiry, error } = await sb
     .from("enquiries").select("*").eq("id", enquiryId).maybeSingle();

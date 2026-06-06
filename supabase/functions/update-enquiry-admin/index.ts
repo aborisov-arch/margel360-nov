@@ -14,6 +14,15 @@ const SERVICE_ROLE    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANON_KEY        = Deno.env.get("SUPABASE_ANON_KEY")!;
 const INTERNAL_SECRET = Deno.env.get("INTERNAL_SHARED_SECRET") ?? "";
 
+// Admin allowlist. Kept in sync with public.is_admin() in the DB.
+// If the JWT email isn't in this list we 403, even if the user is
+// authenticated. Without this gate, ANY signed-up Supabase user could
+// rewrite enquiries via this endpoint.
+const ADMIN_EMAILS = new Set([
+  "aborisov@margel.info",
+  "360@margel.info",
+]);
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -106,6 +115,10 @@ serve(async (req) => {
   });
   const { data: { user }, error: userErr } = await sbUser.auth.getUser();
   if (userErr || !user) return json({ error: "unauthorized" }, 401);
+  // Admin allowlist gate. Authenticated ≠ authorized — must be on the
+  // pre-approved email list.
+  const email = (user.email || "").toLowerCase();
+  if (!ADMIN_EMAILS.has(email)) return json({ error: "forbidden" }, 403);
 
   let payload: { id?: string; changes?: Record<string, unknown> };
   try { payload = await req.json(); } catch { return json({ error: "bad_json" }, 400); }

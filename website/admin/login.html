@@ -38,9 +38,20 @@
   <script>
     try {
       // ?return=<encoded-url> lets other pages (e.g. /edit.html in admin
-      // mode) bounce here when there's no session and come back after login.
-      const returnTo = new URLSearchParams(window.location.search).get('return');
-      const postLogin = returnTo ? decodeURIComponent(returnTo) : 'dashboard.html';
+      // mode) bounce here when there's no session and come back after
+      // login. Restricted to SAME-ORIGIN relative paths to prevent open
+      // redirect phishing (decoding once, then asserting it starts with
+      // a single "/" and has no scheme or "//" prefix).
+      function safeReturn(raw) {
+        if (!raw) return 'dashboard.html';
+        let decoded;
+        try { decoded = decodeURIComponent(raw); } catch { return 'dashboard.html'; }
+        // Reject anything that isn't a same-origin absolute path.
+        if (!/^\/[^/\\]/.test(decoded)) return 'dashboard.html';
+        if (/[\r\n]/.test(decoded)) return 'dashboard.html';
+        return decoded;
+      }
+      const postLogin = safeReturn(new URLSearchParams(window.location.search).get('return'));
       db.auth.getSession().then(({ data: { session } }) => {
         if (session) window.location.href = postLogin;
       });

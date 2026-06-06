@@ -19,14 +19,28 @@ serve(async (req) => {
   const rl = rateLimit(`dc-red:${ip}`, 10, 60_000);
   if (!rl.ok) return json({ error: "rate_limited" }, 429);
 
-  let payload: { code?: string; enquiry_id?: string };
+  let payload: { code?: string; enquiry_id?: string; edit_token?: string };
   try { payload = await req.json(); } catch { return json({ error: "bad_json" }, 400); }
 
   const code = typeof payload.code === "string" ? payload.code.trim().toUpperCase() : "";
   const enquiryId = typeof payload.enquiry_id === "string" ? payload.enquiry_id : "";
+  const editToken = typeof payload.edit_token === "string" ? payload.edit_token : "";
 
   if (!CODE_RE.test(code)) return json({ error: "invalid_code" }, 400);
   if (!UUID_RE.test(enquiryId)) return json({ error: "invalid_enquiry_id" }, 400);
+  // edit_token proves the caller owns the enquiry. Without it any
+  // attacker who guesses an enquiry UUID could stamp a redeemed code
+  // onto somebody else's booking (and permanently consume the code).
+  if (!UUID_RE.test(editToken)) return json({ error: "invalid_edit_token" }, 400);
+
+  // Verify ownership before consuming the code.
+  const { data: owned } = await sb
+    .from("enquiries")
+    .select("id")
+    .eq("id", enquiryId)
+    .eq("edit_token", editToken)
+    .maybeSingle();
+  if (!owned) return json({ error: "forbidden" }, 403);
 
   // Atomic claim: only update rows that haven't been redeemed and aren't
   // expired. If no row was updated, the code is unavailable.
