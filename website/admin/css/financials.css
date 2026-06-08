@@ -790,3 +790,83 @@
   background: rgba(20, 20, 20, 0.06) !important;
   color: var(--fin-muted-foreground) !important;
 }
+
+/* Payment grid (Cash / Bank / Card × Deposit / Balance) */
+.event-pnl__pay-pref {
+  font-size: 0.78rem;
+  color: var(--fin-muted-foreground);
+  margin: 0 0 10px;
+}
+.event-pnl__pay-pref strong {
+  color: var(--fin-gold); font-weight: 600;
+}
+.event-pnl__pay-grid--3col {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.event-pnl__pay-head {
+  font: 600 0.7rem/1 'Inter', sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fin-muted-foreground);
+  text-align: center;
+  padding-bottom: 4px;
+}
+.event-pnl__pay-grid--3col input[type=number] {
+  padding: 6px 8px;
+  border: 1px solid var(--fin-border); border-radius: 6px;
+  background: #fff; text-align: right;
+  font-variant-numeric: tabular-nums;
+  font: 0.85rem 'Inter', sans-serif;
+}
+.event-pnl__pay-grid--3col input[type=number]::placeholder {
+  color: var(--fin-muted-2); font-style: italic; text-align: right;
+}
+.event-pnl__pay-dates {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  margin-top: 10px;
+}
+.event-pnl__pay-dates label {
+  display: flex; flex-direction: column; gap: 4px;
+}
+.event-pnl__pay-dates label > span {
+  font-size: 0.72rem; color: var(--fin-muted-foreground);
+}
+.event-pnl__pay-dates input[type=date] {
+  padding: 6px 8px;
+  border: 1px solid var(--fin-border); border-radius: 6px;
+  background: #fff;
+  font: 0.85rem 'Inter', sans-serif;
+}
+
+/* Expandable income lines (addons / drinks detail) */
+.event-pnl__line.is-expandable { cursor: pointer; }
+.event-pnl__line.is-expandable:hover .event-pnl__expand-chevron { color: var(--fin-gold); }
+.event-pnl__expand-chevron {
+  display: inline-block;
+  margin-right: 6px;
+  color: var(--fin-muted-foreground);
+  font-weight: 600;
+  transition: transform 0.15s ease, color 0.15s ease;
+  transform: rotate(0deg);
+}
+.event-pnl__line[data-expand].is-open .event-pnl__expand-chevron {
+  transform: rotate(90deg);
+}
+.event-pnl__sub-items {
+  list-style: none; margin: -2px 0 8px; padding: 0 12px 8px 28px;
+  background: var(--fin-bg-muted-50);
+  border-bottom: 1px dashed var(--fin-border-soft);
+  border-radius: 0 0 6px 6px;
+  font-size: 0.82rem;
+}
+.event-pnl__sub-items li {
+  display: flex; justify-content: space-between; gap: 8px;
+  padding: 4px 0;
+}
+.event-pnl__sub-name { color: var(--fin-text); }
+.event-pnl__sub-val {
+  color: var(--fin-muted-foreground);
+  font-variant-numeric: tabular-nums;
+}

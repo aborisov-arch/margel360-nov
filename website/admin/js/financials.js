@@ -164,8 +164,10 @@ function fePaid(fe) {
   if (!fe) return 0;
   return Number(fe.deposit_cash_eur || 0)
        + Number(fe.deposit_bank_eur || 0)
+       + Number(fe.deposit_card_eur || 0)
        + Number(fe.balance_cash_eur || 0)
-       + Number(fe.balance_bank_eur || 0);
+       + Number(fe.balance_bank_eur || 0)
+       + Number(fe.balance_card_eur || 0);
 }
 function feExpenseTotal(fe) {
   if (!fe) return 0;
@@ -184,7 +186,7 @@ async function loadAll() {
     { data: fev, error: fevErr },
     { data: exp, error: expErr },
   ] = await Promise.all([
-    db.from('enquiries').select('id,enquiry_number,full_name,preferred_date,event_type,event_id,pipeline_status,addons,drinks,applied_discount_percent,guests'),
+    db.from('enquiries').select('id,enquiry_number,full_name,preferred_date,event_type,event_id,pipeline_status,addons,drinks,applied_discount_percent,guests,payment_method'),
     db.from('occupied_dates').select('date'),
     db.from('financial_events').select('*'),
     db.from('financial_expenses').select('*').not('event_id', 'is', null),
@@ -431,8 +433,10 @@ function liveIncomeTotals(fe) {
 function livePaid(fe) {
   return Number(feFieldValue(fe, 'deposit_cash_eur') || 0)
        + Number(feFieldValue(fe, 'deposit_bank_eur') || 0)
+       + Number(feFieldValue(fe, 'deposit_card_eur') || 0)
        + Number(feFieldValue(fe, 'balance_cash_eur') || 0)
-       + Number(feFieldValue(fe, 'balance_bank_eur') || 0);
+       + Number(feFieldValue(fe, 'balance_bank_eur') || 0)
+       + Number(feFieldValue(fe, 'balance_card_eur') || 0);
 }
 function liveExpenseTotal(fe) {
   if (!fe) return 0;
@@ -484,37 +488,79 @@ function renderDetail() {
   marginEl.textContent = margin == null ? '—' : margin + '%';
   marginEl.className = 'event-pnl__hero-val ' + (margin == null ? '' : (margin >= 0 ? 'is-positive' : 'is-negative'));
 
-  // Income lines — now editable. Prefilled by ensureFinancialEvent from
-  // the enquiry breakdown; admin can refine before saving.
-  document.getElementById('pnl-income-lines').innerHTML = [
-    { lbl: 'Оферта (зала + гости)', field: 'income_rent_eur' },
-    { lbl: 'Напитки',                field: 'income_drinks_eur' },
-    { lbl: 'Доп. услуги',            field: 'income_addons_eur' },
+  // Income lines — now editable. Prefilled by ensureFinancialEvent
+  // from the enquiry breakdown; admin can refine before saving. The
+  // "Напитки" and "Доп. услуги" rows expand on click to show the
+  // actual items the customer picked (only when there's an enquiry).
+  const linesHtml = [
+    { lbl: 'Оферта (зала + гости)', field: 'income_rent_eur',   detail: null },
+    { lbl: 'Напитки',                field: 'income_drinks_eur', detail: enquiry?.drinks },
+    { lbl: 'Доп. услуги',            field: 'income_addons_eur', detail: enquiry?.addons },
   ].map(r => {
     const v = feFieldValue(fe, r.field);
+    const items = Array.isArray(r.detail) ? r.detail : [];
+    const expandable = items.length > 0;
+    const expandedAttr = expandable ? ` data-expand="${esc(r.field)}"` : '';
+    const chevron = expandable
+      ? `<span class="event-pnl__expand-chevron" aria-hidden="true">›</span>`
+      : '';
+    const itemsList = expandable ? `
+      <ul class="event-pnl__sub-items" id="sub-${esc(r.field)}" hidden>
+        ${items.map(it => {
+          // Addons store LINE price as 'price'; drinks store unit price as 'price_eur' + qty.
+          const name = it.name || it.id || '—';
+          const qty = it.qty;
+          const unit = it.price_eur != null ? Number(it.price_eur) : null;
+          const linePrice = it.price != null ? Number(it.price)
+                          : (unit != null && qty != null ? unit * qty : null);
+          const qtyLabel = qty != null ? ` × ${qty}` : '';
+          const priceLabel = linePrice != null ? fmtEur(linePrice) : '—';
+          return `<li><span class="event-pnl__sub-name">${esc(name)}${qtyLabel}</span><span class="event-pnl__sub-val">${priceLabel}</span></li>`;
+        }).join('')}
+      </ul>
+    ` : '';
     return `
-      <li class="event-pnl__line event-pnl__line--editable">
-        <span class="event-pnl__line-lbl">${esc(r.lbl)}</span>
+      <li class="event-pnl__line event-pnl__line--editable${expandable ? ' is-expandable' : ''}"${expandedAttr}>
+        <span class="event-pnl__line-lbl">${chevron}${esc(r.lbl)}</span>
         <input type="number" step="0.01" class="event-pnl__line-input"
                data-fe-field="${r.field}" value="${v ?? ''}" placeholder="€">
       </li>
+      ${itemsList}
     `;
   }).join('');
+  document.getElementById('pnl-income-lines').innerHTML = linesHtml;
 
-  // Payments grid (also dirty-aware)
+  // Payments grid (also dirty-aware). Mirrors the 3 methods the
+  // customer can pick on the public form: cash / bank transfer / card.
+  // If we have an enquiry we also show the customer's stated preferred
+  // method as a hint above the inputs so the bookkeeper knows which
+  // bucket to expect.
   if (fe) {
     const v = f => {
       const x = feFieldValue(fe, f);
       return x == null ? '' : x;
     };
+    const METHOD_LABELS_BG = { cash: 'Брой', transfer: 'Банков превод', card: 'Карта' };
+    const prefMethod = enquiry?.payment_method;
+    const prefHint = prefMethod
+      ? `<div class="event-pnl__pay-pref">Клиентът избра: <strong>${esc(METHOD_LABELS_BG[prefMethod] || prefMethod)}</strong></div>`
+      : '';
     document.getElementById('pnl-payments').innerHTML = `
-      <div class="event-pnl__pay-grid">
-        <label><span>Аванс брой €</span><input type="number" step="0.01" data-fe-field="deposit_cash_eur" value="${v('deposit_cash_eur')}"></label>
-        <label><span>Аванс банка €</span><input type="number" step="0.01" data-fe-field="deposit_bank_eur" value="${v('deposit_bank_eur')}"></label>
-        <label><span>Дата аванс</span><input type="date" data-fe-field="deposit_date" value="${v('deposit_date')}"></label>
-        <label><span>Доплащ. брой €</span><input type="number" step="0.01" data-fe-field="balance_cash_eur" value="${v('balance_cash_eur')}"></label>
-        <label><span>Доплащ. банка €</span><input type="number" step="0.01" data-fe-field="balance_bank_eur" value="${v('balance_bank_eur')}"></label>
-        <label><span>Дата доплащане</span><input type="date" data-fe-field="balance_date" value="${v('balance_date')}"></label>
+      ${prefHint}
+      <div class="event-pnl__pay-grid event-pnl__pay-grid--3col">
+        <div class="event-pnl__pay-head">Брой €</div>
+        <div class="event-pnl__pay-head">Банка €</div>
+        <div class="event-pnl__pay-head">Карта €</div>
+        <input type="number" step="0.01" data-fe-field="deposit_cash_eur" value="${v('deposit_cash_eur')}" placeholder="Аванс">
+        <input type="number" step="0.01" data-fe-field="deposit_bank_eur" value="${v('deposit_bank_eur')}" placeholder="Аванс">
+        <input type="number" step="0.01" data-fe-field="deposit_card_eur" value="${v('deposit_card_eur')}" placeholder="Аванс">
+        <input type="number" step="0.01" data-fe-field="balance_cash_eur" value="${v('balance_cash_eur')}" placeholder="Доплащане">
+        <input type="number" step="0.01" data-fe-field="balance_bank_eur" value="${v('balance_bank_eur')}" placeholder="Доплащане">
+        <input type="number" step="0.01" data-fe-field="balance_card_eur" value="${v('balance_card_eur')}" placeholder="Доплащане">
+      </div>
+      <div class="event-pnl__pay-dates">
+        <label><span>Дата на аванса</span><input type="date" data-fe-field="deposit_date" value="${v('deposit_date')}"></label>
+        <label><span>Дата на доплащането</span><input type="date" data-fe-field="balance_date" value="${v('balance_date')}"></label>
       </div>
     `;
   } else {
@@ -858,6 +904,18 @@ document.addEventListener('click', evt => {
   }
   const del = evt.target.closest('[data-del]');
   if (del) { deleteExpense(del.getAttribute('data-del')); return; }
+
+  // Expand/collapse the addon/drinks detail list inside the income side.
+  const expandRow = evt.target.closest('[data-expand]');
+  if (expandRow && !evt.target.closest('input,select,textarea,button')) {
+    const field = expandRow.getAttribute('data-expand');
+    const ul = document.getElementById('sub-' + field);
+    if (ul) {
+      ul.hidden = !ul.hidden;
+      expandRow.classList.toggle('is-open', !ul.hidden);
+    }
+    return;
+  }
 });
 
 // Use 'input' so the user sees the totals update live as they type, but
