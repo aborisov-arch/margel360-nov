@@ -53,7 +53,7 @@ function diffEnquiry(before: Record<string, unknown>, after: Record<string, unkn
 }
 
 const DATE_RE = /^\d{2}\/\d{2}\/\d{4}$/;
-const MAX_NOTES = 2000, MAX_PHONE = 30, MAX_GUESTS = 200, MAX_ADDON_PRICE = 20000, MAX_NAME_LEN = 200;
+const MAX_NOTES = 2000, MAX_PHONE = 30, MAX_GUESTS = 200, MAX_ADDON_PRICE = 50000, MAX_NAME_LEN = 200;
 // Per-category drink quantity caps: non-alcoholic (soft drinks + water,
 // drinks-data.js cat 3 & 4) up to 200; everything alcoholic up to 100.
 // Keep NON_ALCOHOLIC_DRINK_IDS in sync with website/js/drinks-data.js.

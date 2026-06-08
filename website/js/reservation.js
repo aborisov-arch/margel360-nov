@@ -881,8 +881,8 @@ function renderSummary() {
     const rows = [
       { label: (l==='bg'?'Наем на зала':'Venue rental') + ` (${l==='bg'?'до':'up to'} ${VENUE_MIN_GUESTS} ${l==='bg'?'гости':'guests'})`, value: fmtEvent(booking.event) },
       ...(extraGuests > 0 ? [{ label: (l==='bg'?`+${extraGuests} допълнителни гости`:`+${extraGuests} extra guests`) + ` (× €${EXTRA_GUEST_FEE_EUR})`, value: '€' + extraGuestsCost.toFixed(2) }] : []),
-      ...(addonsTotal > 0 ? [{ label: l==='bg'?'Допълнителни услуги':'Add-on services', value: '€' + addonsTotal }] : []),
-      ...(autoClean ? [{ label: (l==='bg' ? `${autoClean.name_bg} (задължително за +${CLEANING_THRESHOLD_GUESTS} гости)` : `${autoClean.name_en} (mandatory for ${CLEANING_THRESHOLD_GUESTS}+ guests)`), value: '€' + autoClean.price, sub: true }] : []),
+      ...(addonsTotal > 0 ? [{ label: l==='bg'?'Допълнителни услуги':'Add-on services', value: '€' + addonsTotal.toFixed(2) }] : []),
+      ...(autoClean ? [{ label: (l==='bg' ? `${autoClean.name_bg} (задължително за +${CLEANING_THRESHOLD_GUESTS} гости)` : `${autoClean.name_en} (mandatory for ${CLEANING_THRESHOLD_GUESTS}+ guests)`), value: '€' + autoClean.price.toFixed(2), sub: true }] : []),
       ...(drinksTotal > 0 ? [{ label: l==='bg'?'Напитки':'Drinks', value: '€' + drinksTotal.toFixed(2) }] : []),
       ...(discountAmount > 0 ? [{ label: (l==='bg'?'Отстъпка':'Discount') + ` (${discountPercent}%)`, value: '−€' + discountAmount.toFixed(2), discount: true }] : []),
       { label: l==='bg'?'Обща сума':'Total', value: '€' + grandTotal.toFixed(2), total: true },

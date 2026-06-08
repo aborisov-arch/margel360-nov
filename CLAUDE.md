@@ -15,7 +15,7 @@ The root [CLAUDE.md](../../CLAUDE.md) applies. Departures:
 - **Supabase backend** — Postgres + Auth + Edge Functions for the enquiry inbox, calendar, and email notifications. Backend code lives in `supabase/`. Edge Functions are deployed via the Supabase CLI, not Netlify.
 - **Resend** for transactional email on new enquiry (admin notification + customer confirmation).
 - **Admin panel** at `website/admin/` — plain HTML/CSS/JS but gated by Supabase Auth on every page load.
-- **Edit-token flow** for customers to amend their own enquiry without an account (token is emailed, expires after 14 days).
+- **Edit-token flow** for customers to amend their own enquiry without an account (token is emailed, valid until 14 days after the event date — see `set_enquiry_token_expiry`).
 
 ## File structure
 
