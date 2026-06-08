@@ -79,7 +79,12 @@ let financialEventsById = new Map();
 let financialEventByEnquiryId = new Map();
 let expensesByEvent = new Map();
 let bookableEvents = [];
+// Selection: at most ONE of these is non-null. selectedEnquiryId opens
+// a P&L derived from an enquiry; selectedManualFeId opens a "manual"
+// event the bookkeeper entered by hand (no enquiry link). Both render
+// through the same detail panel.
 let selectedEnquiryId = null;
+let selectedManualFeId = null;
 let userEmail = null;
 let monthFilter = '';
 
@@ -106,6 +111,40 @@ function filteredEvents() {
 function isDirty() {
   return Object.keys(dirtyFe).length > 0 || dirtyExpenses.size > 0;
 }
+
+// All financial_events that are NOT linked to an enquiry — i.e. ones
+// the bookkeeper created by hand to record events that never went
+// through the public form (back-fills, walk-ins, cash bookings, etc.).
+function manualFeRows() {
+  const out = [];
+  for (const fe of financialEventsById.values()) {
+    if (!fe.enquiry_id) out.push(fe);
+  }
+  return out.sort((a, b) => (b.event_date || '').localeCompare(a.event_date || ''));
+}
+function filteredManualFeRows() {
+  if (!monthFilter) return manualFeRows();
+  return manualFeRows().filter(fe => fe.month === monthFilter);
+}
+
+// Unified "what's open right now" accessor used by everything below.
+// Exactly one of enquiry/fe-only is set; the helper returns a normalised
+// view so render & mutate code doesn't have to branch on selection kind.
+function currentSelection() {
+  if (selectedEnquiryId) {
+    const enquiry = allEnquiries.find(e => e.id === selectedEnquiryId);
+    if (!enquiry) return null;
+    const fe = financialEventByEnquiryId.get(enquiry.id) || null;
+    return { kind: 'enquiry', enquiry, fe };
+  }
+  if (selectedManualFeId) {
+    const fe = financialEventsById.get(selectedManualFeId);
+    if (!fe) return null;
+    return { kind: 'manual', enquiry: null, fe };
+  }
+  return null;
+}
+function clearSelection() { selectedEnquiryId = null; selectedManualFeId = null; }
 
 // ────────────────────────────────────────────────────────────────
 // Saved-state accessors — used by the summary + left rail. They
@@ -215,13 +254,18 @@ async function ensureFinancialEvent(enquiry) {
 // ────────────────────────────────────────────────────────────────
 
 function renderMonthSummary() {
-  const scope = filteredEvents();
+  // Iterate EVERY financial_event in the month filter — enquiry-linked
+  // AND manual. This is the right scope because the summary should
+  // reflect "money I actually saw this month", regardless of whether
+  // each event came from the public form or a hand entry.
+  const scopeFes = [];
+  for (const fe of financialEventsById.values()) {
+    if (!monthFilter || fe.month === monthFilter) scopeFes.push(fe);
+  }
   let rent = 0, drinks = 0, addons = 0, paid = 0, expense = 0;
   const expByCat = Object.fromEntries(EXPENSE_CATS.map(c => [c.id, 0]));
 
-  scope.forEach(e => {
-    const fe = financialEventByEnquiryId.get(e.id);
-    if (!fe) return; // Events without a saved P&L row contribute nothing.
+  scopeFes.forEach(fe => {
     const inc = feIncome(fe);
     rent   += inc.rent;
     drinks += inc.drinks;
@@ -239,7 +283,7 @@ function renderMonthSummary() {
   const profit = income - expense;
   const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
   set('sum-month-label', monthLabel(monthFilter));
-  set('sum-count',       `${scope.length} ${scope.length === 1 ? 'събитие' : 'събития'}`);
+  set('sum-count',       `${scopeFes.length} ${scopeFes.length === 1 ? 'събитие' : 'събития'}`);
   set('sum-income-eur',  fmtEur(income));
   set('sum-income-bgn',  fmtBgn(income * BGN_RATE));
   set('sum-paid-eur',    fmtEur(paid));
@@ -288,19 +332,23 @@ function renderEventsList(filter = '') {
   const wrap = document.getElementById('events-list');
   const cnt  = document.getElementById('events-list-count');
   const needle = filter.trim().toLowerCase();
-  const monthScoped = filteredEvents();
-  const matches = needle
-    ? monthScoped.filter(e => (e.full_name || '').toLowerCase().includes(needle))
-    : monthScoped;
-  if (cnt) cnt.textContent = matches.length;
-  if (!matches.length) {
-    wrap.innerHTML = '<div class="empty-state">Няма потвърдени събития със заети дати.</div>';
-    return;
-  }
-  wrap.innerHTML = matches.map(e => {
+
+  // Section 1 — enquiry-linked events (from public form).
+  const monthScopedEnq = filteredEvents();
+  const enqMatches = needle
+    ? monthScopedEnq.filter(e => (e.full_name || '').toLowerCase().includes(needle))
+    : monthScopedEnq;
+
+  // Section 2 — manual events (bookkeeper-entered, no enquiry).
+  const monthScopedManual = filteredManualFeRows();
+  const manualMatches = needle
+    ? monthScopedManual.filter(fe => (fe.customer_name || '').toLowerCase().includes(needle))
+    : monthScopedManual;
+
+  if (cnt) cnt.textContent = enqMatches.length + manualMatches.length;
+
+  const renderEnq = e => {
     const fe = financialEventByEnquiryId.get(e.id);
-    // Show "—" until the employee has actually opened + saved P&L for the
-    // event. Once fe exists, the rail mirrors saved figures.
     const inc = fe ? feIncome(fe).total : null;
     const exp = fe ? feExpenseTotal(fe) : 0;
     const net = inc != null ? (inc - exp) : null;
@@ -315,7 +363,49 @@ function renderEventsList(filter = '') {
         <div class="event-pnl__event-margin${marginClass}">${margin == null ? '—' : margin + '%'}</div>
       </button>
     `;
-  }).join('');
+  };
+
+  const renderManual = fe => {
+    const inc = feIncome(fe).total;
+    const exp = feExpenseTotal(fe);
+    const net = inc - exp;
+    const margin = inc > 0 ? Math.round((net / inc) * 100) : null;
+    const selected = fe.id === selectedManualFeId ? ' is-selected' : '';
+    const marginClass = margin == null ? '' : (margin >= 0 ? ' is-positive' : ' is-negative');
+    return `
+      <button type="button" class="event-pnl__event${selected}" data-manual-fe="${esc(fe.id)}">
+        <div class="event-pnl__event-name"><span class="enquiry-no enquiry-no--manual">M</span> ${esc(fe.customer_name || '—')}</div>
+        <div class="event-pnl__event-meta">${fmtDateBg(fe.event_date)} · ${fmtEur(inc)}</div>
+        <div class="event-pnl__event-margin${marginClass}">${margin == null ? '—' : margin + '%'}</div>
+      </button>
+    `;
+  };
+
+  const sectionLabel = (txt, count) =>
+    `<div class="event-pnl__section-label">${esc(txt)} <span class="event-pnl__section-count">${count}</span></div>`;
+
+  let html = '';
+
+  if (enqMatches.length) {
+    html += sectionLabel('От запитвания', enqMatches.length);
+    html += enqMatches.map(renderEnq).join('');
+  }
+  // Manual events section — always show the header so the "+ Add manual"
+  // button has a home, even when the list is empty.
+  html += sectionLabel('Ръчни събития', manualMatches.length);
+  if (manualMatches.length) {
+    html += manualMatches.map(renderManual).join('');
+  } else {
+    html += '<div class="event-pnl__empty-tip">Натиснете „+ Добави ръчно събитие" за да внесете събитие, което не е минало през формата.</div>';
+  }
+  html += `<button type="button" class="event-pnl__add-manual" id="btn-add-manual-event">+ Добави ръчно събитие</button>`;
+
+  if (!enqMatches.length && !manualMatches.length) {
+    // No enquiries OR manual — still want the add button visible above.
+    // Already added; nothing else to do.
+  }
+
+  wrap.innerHTML = html;
 }
 
 // ────────────────────────────────────────────────────────────────
@@ -353,21 +443,29 @@ function liveExpenseTotal(fe) {
 function renderDetail() {
   const placeholder = document.getElementById('pnl-placeholder');
   const body = document.getElementById('pnl-body');
-  if (!selectedEnquiryId) { placeholder.hidden = false; body.hidden = true; return; }
-  const enquiry = allEnquiries.find(e => e.id === selectedEnquiryId);
-  if (!enquiry) { placeholder.hidden = false; body.hidden = true; return; }
+  const sel = currentSelection();
+  if (!sel) { placeholder.hidden = false; body.hidden = true; return; }
   placeholder.hidden = true;
   body.hidden = false;
 
-  const fe = financialEventByEnquiryId.get(enquiry.id);
+  const { kind, enquiry, fe } = sel;
 
-  // Hero
-  // Hero shows "#1001  Иван Иванов" so the customer-facing reference number is always visible.
-  document.getElementById('pnl-customer').innerHTML =
-    `<span class="enquiry-no">#${esc(enquiry.enquiry_number ?? '—')}</span> ${esc(enquiry.full_name || '—')}`;
-  document.getElementById('pnl-date').textContent     = fmtDateBg(parsePreferredDate(enquiry.preferred_date));
-  document.getElementById('pnl-event-type').textContent = enquiry.event_type || '—';
-  document.getElementById('pnl-guests').textContent   = (enquiry.guests != null ? enquiry.guests + ' гости' : '—');
+  // Hero — enquiry path shows "#1001 Name + event type + guests".
+  // Manual path shows "M Name + raw date" and an explicit "Ръчно" badge.
+  if (kind === 'enquiry' && enquiry) {
+    document.getElementById('pnl-customer').innerHTML =
+      `<span class="enquiry-no">#${esc(enquiry.enquiry_number ?? '—')}</span> ${esc(enquiry.full_name || '—')}`;
+    document.getElementById('pnl-date').textContent     = fmtDateBg(parsePreferredDate(enquiry.preferred_date));
+    document.getElementById('pnl-event-type').textContent = enquiry.event_type || '—';
+    document.getElementById('pnl-guests').textContent   = (enquiry.guests != null ? enquiry.guests + ' гости' : '—');
+  } else {
+    // Manual event — name + date are stored on the fe row itself.
+    document.getElementById('pnl-customer').innerHTML =
+      `<span class="enquiry-no enquiry-no--manual">M</span> ${esc(fe.customer_name || '—')}`;
+    document.getElementById('pnl-date').textContent     = fmtDateBg(fe.event_date);
+    document.getElementById('pnl-event-type').textContent = fe.event_type || 'Ръчно събитие';
+    document.getElementById('pnl-guests').textContent   = '—';
+  }
 
   const inc = liveIncomeTotals(fe);
   const expense = liveExpenseTotal(fe);
@@ -484,11 +582,9 @@ function setExpenseDirty(id, field, raw) {
 // ────────────────────────────────────────────────────────────────
 
 async function saveDraft() {
-  if (!selectedEnquiryId) return;
-  const enquiry = allEnquiries.find(e => e.id === selectedEnquiryId);
-  if (!enquiry) return;
-  const fe = financialEventByEnquiryId.get(enquiry.id);
-  if (!fe) return;
+  const sel = currentSelection();
+  if (!sel || !sel.fe) return;
+  const fe = sel.fe;
 
   const ops = [];
   if (Object.keys(dirtyFe).length) {
@@ -537,12 +633,13 @@ function cancelDraft() {
 // clean slate next time it's clicked (ensureFinancialEvent will create
 // a fresh row prefilled from the enquiry).
 async function deletePnl() {
-  if (!selectedEnquiryId) return;
-  const enquiry = allEnquiries.find(e => e.id === selectedEnquiryId);
-  if (!enquiry) return;
-  const fe = financialEventByEnquiryId.get(enquiry.id);
-  if (!fe) return;
-  const msg = `Изтриване на P&L за "${enquiry.full_name || '—'}"?\nЗапитването НЕ се изтрива. Прикачените разходи се изтриват също.`;
+  const sel = currentSelection();
+  if (!sel || !sel.fe) return;
+  const { kind, enquiry, fe } = sel;
+  const label = enquiry ? (enquiry.full_name || '—') : (fe.customer_name || '—');
+  const msg = kind === 'enquiry'
+    ? `Изтриване на P&L за "${label}"?\nЗапитването НЕ се изтрива. Прикачените разходи се изтриват също.`
+    : `Изтриване на ръчното събитие "${label}"?\nСамото събитие и всички прикачени разходи се изтриват.`;
   if (!confirm(msg)) return;
 
   // Delete expenses first to avoid the FK leaving orphans (event_id has
@@ -556,11 +653,11 @@ async function deletePnl() {
   if (feErr) { console.error(feErr); alert('Грешка при изтриване на P&L'); return; }
 
   financialEventsById.delete(fe.id);
-  financialEventByEnquiryId.delete(enquiry.id);
+  if (enquiry) financialEventByEnquiryId.delete(enquiry.id);
   expensesByEvent.delete(fe.id);
   dirtyFe = {};
   dirtyExpenses = new Map();
-  selectedEnquiryId = null;
+  clearSelection();
   renderEventsList(document.getElementById('events-search').value);
   renderMonthSummary();
   renderDetail();
@@ -577,16 +674,83 @@ async function selectEnquiry(enquiryId) {
   dirtyFe = {};
   dirtyExpenses = new Map();
   selectedEnquiryId = enquiryId;
+  selectedManualFeId = null;
   const enquiry = allEnquiries.find(e => e.id === enquiryId);
   if (enquiry) await ensureFinancialEvent(enquiry);
   renderEventsList(document.getElementById('events-search').value);
   renderDetail();
 }
 
+// Open a manual (no-enquiry) financial_event. Used when the bookkeeper
+// clicks one in the "Ръчни събития" section of the left rail.
+async function selectManual(feId) {
+  if (isDirty()) {
+    if (!confirm('Имате незапазени промени. Да ги отхвърля ли?')) return;
+  }
+  dirtyFe = {};
+  dirtyExpenses = new Map();
+  selectedEnquiryId = null;
+  selectedManualFeId = feId;
+  renderEventsList(document.getElementById('events-search').value);
+  renderDetail();
+}
+
+// Create a manual financial_events row from prompts. We don't bother
+// with a custom modal — the inputs are: customer name, date, optional
+// event type. Income fields stay at 0 so the bookkeeper fills them in
+// via the normal P&L editor.
+async function addManualEvent() {
+  if (isDirty()) {
+    if (!confirm('Имате незапазени промени. Да ги отхвърля ли?')) return;
+  }
+  const name = (prompt('Име на клиент:') || '').trim();
+  if (!name) return;
+  const defaultDate = monthFilter
+    ? `${monthFilter}-${String(Math.min(new Date().getDate(), 28)).padStart(2,'0')}`
+    : new Date().toISOString().slice(0, 10);
+  const date = (prompt('Дата на събитието (YYYY-MM-DD):', defaultDate) || '').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { alert('Невалидна дата (нужен формат YYYY-MM-DD)'); return; }
+  const eventType = (prompt('Тип събитие (по избор):', '') || '').trim() || null;
+  const month = date.slice(0, 7);
+
+  const row = {
+    month,
+    event_date: date,
+    customer_name: name,
+    event_type: eventType,
+    offer_total_eur: 0,
+    income_rent_eur: 0,
+    income_drinks_eur: 0,
+    income_addons_eur: 0,
+    enquiry_id: null,
+    confirmed_by: userEmail,
+    confirmed_at: new Date().toISOString(),
+  };
+  const { data, error } = await db.from('financial_events').insert(row).select().single();
+  if (error) { console.error('addManualEvent failed', error); alert('Грешка при добавяне: ' + (error.message || '')); return; }
+  financialEventsById.set(data.id, data);
+  selectedEnquiryId = null;
+  selectedManualFeId = data.id;
+  dirtyFe = {};
+  dirtyExpenses = new Map();
+  // If the new event lands in a different month than the current filter,
+  // jump the filter to its month so the user sees what they just created.
+  if (data.month && data.month !== monthFilter) {
+    monthFilter = data.month;
+    const inp = document.getElementById('fin-month');
+    if (inp) inp.value = data.month;
+  }
+  renderEventsList(document.getElementById('events-search').value);
+  renderMonthSummary();
+  renderDetail();
+}
+
 async function addEventExpense() {
-  if (!selectedEnquiryId) return;
-  const enquiry = allEnquiries.find(e => e.id === selectedEnquiryId);
-  const fe = await ensureFinancialEvent(enquiry);
+  const sel = currentSelection();
+  if (!sel) return;
+  // Enquiry selection might not have its fe created yet — lazily create.
+  let fe = sel.fe;
+  if (!fe && sel.enquiry) fe = await ensureFinancialEvent(sel.enquiry);
   if (!fe) return;
   const row = {
     month: fe.month,
@@ -659,6 +823,9 @@ function highlightEventsWithCategory(catId) {
 document.addEventListener('click', evt => {
   const ev = evt.target.closest('[data-enquiry]');
   if (ev) { selectEnquiry(ev.getAttribute('data-enquiry')); return; }
+  const manual = evt.target.closest('[data-manual-fe]');
+  if (manual) { selectManual(manual.getAttribute('data-manual-fe')); return; }
+  if (evt.target.closest('#btn-add-manual-event')) { addManualEvent(); return; }
   if (evt.target.closest('#btn-add-event-expense')) { addEventExpense(); return; }
   if (evt.target.closest('#btn-save-pnl'))          { saveDraft(); return; }
   if (evt.target.closest('#btn-cancel-pnl'))        { cancelDraft(); return; }

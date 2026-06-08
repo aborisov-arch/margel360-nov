@@ -746,3 +746,47 @@
   -webkit-appearance: none;
   margin: 0;
 }
+
+/* Left-rail section labels (От запитвания / Ръчни събития) + add btn */
+.event-pnl__section-label {
+  display: flex; align-items: baseline; gap: 6px;
+  margin: 12px 0 6px;
+  font: 600 0.7rem/1 'Inter', sans-serif;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--fin-muted-foreground);
+}
+.event-pnl__section-label:first-child { margin-top: 0; }
+.event-pnl__section-count {
+  font-size: 0.7rem; color: var(--fin-muted-2);
+  font-variant-numeric: tabular-nums; font-weight: 500;
+}
+.event-pnl__empty-tip {
+  padding: 8px 10px; margin: 4px 0;
+  font: italic 0.8rem/1.4 'Inter', sans-serif;
+  color: var(--fin-muted-foreground);
+  background: var(--fin-bg-muted-50);
+  border: 1px dashed var(--fin-border-soft);
+  border-radius: 6px;
+}
+.event-pnl__add-manual {
+  display: block; width: 100%;
+  margin-top: 6px; padding: 10px 12px;
+  background: var(--fin-bg-muted-50);
+  border: 1px dashed var(--fin-border);
+  border-radius: 8px;
+  color: var(--fin-text);
+  font: 500 0.85rem/1 'Inter', sans-serif;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.event-pnl__add-manual:hover {
+  border-color: var(--fin-gold);
+  background: #fff;
+  color: var(--fin-gold);
+}
+
+/* "M" badge for manual events (vs the gold #1001 enquiry badge) */
+.enquiry-no--manual {
+  background: rgba(20, 20, 20, 0.06) !important;
+  color: var(--fin-muted-foreground) !important;
+}
