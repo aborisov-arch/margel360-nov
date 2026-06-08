@@ -1055,9 +1055,25 @@ function setupSubmit() {
       btn.disabled = false;
       btn.textContent = origText;
       const lang = getLang();
-      alert(lang === 'bg'
-        ? 'Нещо се обърка. Моля обадете ни се директно на 0888 100 042.'
-        : 'Something went wrong. Please call us directly on 0888 100 042.');
+      // Surface known errors so the user knows what to fix instead of
+      // being told to phone us. "rate_limited" is the most common during
+      // testing — separate message.
+      let msg;
+      if (String(error).includes('rate_limited') || String(error).includes('429')) {
+        msg = lang === 'bg'
+          ? 'Прекалено много опити за кратко време. Моля изчакайте 10 минути и опитайте отново.'
+          : 'Too many attempts in a short time. Please wait 10 minutes and try again.';
+      } else if (String(error).includes('invalid_field')) {
+        msg = lang === 'bg'
+          ? 'Моля проверете формата — едно от полетата има невалидна стойност.'
+          : 'Please check the form — one of the fields has an invalid value.';
+      } else {
+        msg = (lang === 'bg'
+          ? 'Нещо се обърка. Моля обадете ни се директно на 0888 100 042.'
+          : 'Something went wrong. Please call us directly on 0888 100 042.')
+          + `\n(${error})`;
+      }
+      alert(msg);
       return;
     }
 

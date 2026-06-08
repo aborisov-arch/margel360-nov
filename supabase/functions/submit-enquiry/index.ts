@@ -136,9 +136,10 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeadersFor(req) });
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405, req);
 
-  // 5 submissions per IP per 10 minutes — generous for legit usage,
-  // blocks scripted floods on a warm isolate.
-  if (!rateLimit(`submit-enquiry:${getIp(req)}`, 5, 10 * 60_000)) {
+  // 20 submissions per IP per 10 minutes — comfortably above legit retry
+  // patterns (typo fixes, browser refresh, drink qty edits) while still
+  // blocking scripted floods on a warm isolate.
+  if (!rateLimit(`submit-enquiry:${getIp(req)}`, 20, 10 * 60_000)) {
     return json({ error: "rate_limited" }, 429, req);
   }
 
