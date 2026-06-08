@@ -544,7 +544,9 @@ function renderDrinks() {
 
     const qtyWrap = document.createElement('div'); qtyWrap.className = 'drink-qty';
     const minus = document.createElement('button'); minus.type = 'button'; minus.className = 'qty-btn'; minus.textContent = '−'; minus.setAttribute('aria-label', 'Decrease');
-    const num = document.createElement('input'); num.type = 'number'; num.className = 'qty-num qty-num--input'; num.min = '0'; num.step = '1'; num.inputMode = 'numeric'; num.value = qty;
+    // Non-alcoholic drinks (soft drinks + water, cat 3 & 4) cap at 200; everything alcoholic caps at 100.
+    const maxQty = drink.cat >= 3 ? 200 : 100;
+    const num = document.createElement('input'); num.type = 'number'; num.className = 'qty-num qty-num--input'; num.min = '0'; num.max = String(maxQty); num.step = '1'; num.inputMode = 'numeric'; num.value = qty;
     const plus = document.createElement('button'); plus.type = 'button'; plus.className = 'qty-btn'; plus.textContent = '+'; plus.setAttribute('aria-label', 'Increase');
 
     qtyWrap.appendChild(minus); qtyWrap.appendChild(num); qtyWrap.appendChild(plus);
@@ -552,7 +554,7 @@ function renderDrinks() {
     item.appendChild(img); item.appendChild(body); grid.appendChild(item);
 
     const setQty = (next) => {
-      const n = Math.max(0, Math.floor(Number(next) || 0));
+      const n = Math.max(0, Math.min(maxQty, Math.floor(Number(next) || 0)));
       booking.drinkQtys[drink.id] = n;
       if (num.value !== String(n)) num.value = n;
       item.classList.toggle('has-qty', n > 0);

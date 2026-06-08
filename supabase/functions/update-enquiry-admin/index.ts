@@ -53,7 +53,15 @@ function diffEnquiry(before: Record<string, unknown>, after: Record<string, unkn
 }
 
 const DATE_RE = /^\d{2}\/\d{2}\/\d{4}$/;
-const MAX_NOTES = 2000, MAX_PHONE = 30, MAX_GUESTS = 200, MAX_ADDON_PRICE = 20000, MAX_DRINK_QTY = 1000, MAX_NAME_LEN = 200;
+const MAX_NOTES = 2000, MAX_PHONE = 30, MAX_GUESTS = 200, MAX_ADDON_PRICE = 20000, MAX_NAME_LEN = 200;
+// Per-category drink quantity caps: non-alcoholic (soft drinks + water,
+// drinks-data.js cat 3 & 4) up to 200; everything alcoholic up to 100.
+// Keep NON_ALCOHOLIC_DRINK_IDS in sync with website/js/drinks-data.js.
+const NON_ALCOHOLIC_DRINK_IDS = new Set([
+  "granini_a", "granini_o", "tonic_mango", "tonic_cherry", "sanben_tea_lem5", "sanben_tea_lem3", "sanben_tea_peach", "cola", "cola0", "fanta", "redbull",
+  "devin", "benedo_st", "benedo_spa", "perrier_st", "perrier_spa", "panna25", "panna75", "pelegrino75", "pelegrino",
+]);
+function maxDrinkQty(id: string): number { return NON_ALCOHOLIC_DRINK_IDS.has(id) ? 200 : 100; }
 type VR = { ok: true; value: unknown } | { ok: false; error: string };
 function validateField(field: string, raw: unknown): VR {
   switch (field) {
@@ -94,7 +102,7 @@ function validateField(field: string, raw: unknown): VR {
         const o = d as Record<string, unknown>;
         if (typeof o.id !== "string" || o.id.length === 0 || o.id.length > 50) return { ok: false, error: "drink.id" };
         if (typeof o.name !== "string" || o.name.length > MAX_NAME_LEN) return { ok: false, error: "drink.name" };
-        if (!Number.isInteger(o.qty) || (o.qty as number) < 0 || (o.qty as number) > MAX_DRINK_QTY) return { ok: false, error: "drink.qty" };
+        if (!Number.isInteger(o.qty) || (o.qty as number) < 0 || (o.qty as number) > maxDrinkQty(o.id as string)) return { ok: false, error: "drink.qty" };
         if (o.price_eur !== null && o.price_eur !== undefined) {
           if (typeof o.price_eur !== "number" || !Number.isFinite(o.price_eur) || o.price_eur < 0) return { ok: false, error: "drink.price_eur" };
         }

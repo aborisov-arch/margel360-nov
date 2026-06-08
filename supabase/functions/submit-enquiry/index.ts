@@ -51,7 +51,15 @@ function getIp(req: Request): string {
 }
 
 // ── Validation ───────────────────────────────────────────────────────
-const MAX_NAME = 200, MAX_NOTES = 2000, MAX_PHONE = 30, MAX_GUESTS = 300, MAX_ADDON_PRICE = 50000, MAX_DRINK_QTY = 5000;
+const MAX_NAME = 200, MAX_NOTES = 2000, MAX_PHONE = 30, MAX_GUESTS = 200, MAX_ADDON_PRICE = 50000;
+// Per-category drink quantity caps: non-alcoholic (soft drinks + water,
+// drinks-data.js cat 3 & 4) up to 200; everything alcoholic up to 100.
+// Keep NON_ALCOHOLIC_DRINK_IDS in sync with website/js/drinks-data.js.
+const NON_ALCOHOLIC_DRINK_IDS = new Set([
+  "granini_a","granini_o","tonic_mango","tonic_cherry","sanben_tea_lem5","sanben_tea_lem3","sanben_tea_peach","cola","cola0","fanta","redbull",
+  "devin","benedo_st","benedo_spa","perrier_st","perrier_spa","panna25","panna75","pelegrino75","pelegrino",
+]);
+function maxDrinkQty(id: string): number { return NON_ALCOHOLIC_DRINK_IDS.has(id) ? 200 : 100; }
 const DATE_RE = /^\d{2}\/\d{2}\/\d{4}$/;
 const EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 const EVENT_IDS = ["evening","wedding","corp4","corp8","bday_day","bday_eve"];
@@ -108,7 +116,7 @@ function validateDrinks(raw: unknown): { id: string; name: string; qty: number; 
     const name = safeStr(d.name, MAX_NAME);
     if (!id || !name) return null;
     const qty = Number(d.qty);
-    if (!Number.isInteger(qty) || qty < 0 || qty > MAX_DRINK_QTY) return null;
+    if (!Number.isInteger(qty) || qty < 0 || qty > maxDrinkQty(id)) return null;
     let price_eur: number | null = null;
     if (d.price_eur != null) {
       const p = Number(d.price_eur);
@@ -175,6 +183,23 @@ serve(async (req) => {
     if (dc && DISCOUNT_RE.test(dc)) discount_code = dc;
     // Silently ignore malformed discount codes (don't 400 — the rest
     // of the booking is still valid).
+  }
+
+  // Idempotency guard: if the same email + event + date was submitted within
+  // the last 5 minutes, return that enquiry instead of inserting a duplicate.
+  // Stops the "client saw an error but the row was actually created, so the
+  // user retried" double-booking + double-email case (e.g. #1027/#1028).
+  {
+    const since = new Date(Date.now() - 5 * 60_000).toISOString();
+    const { data: dup } = await sb
+      .from("enquiries")
+      .select("id, edit_token, enquiry_number")
+      .eq("email", email_raw).eq("event_id", event_id).eq("preferred_date", preferred_date)
+      .gte("created_at", since)
+      .order("created_at", { ascending: false }).limit(1).maybeSingle();
+    if (dup) {
+      return json({ ok: true, id: dup.id, enquiry_number: dup.enquiry_number, edit_token: dup.edit_token, discount_percent: null, deduped: true });
+    }
   }
 
   const row = {
