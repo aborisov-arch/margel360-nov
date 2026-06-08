@@ -1,0 +1,13 @@
+-- Drop the legacy AFTER INSERT webhook trigger on enquiries.
+--
+-- `on_enquiry_insert` POSTed to the send-enquiry-summary edge function via
+-- supabase_functions.http_request() with only a Content-Type header (no
+-- x-internal-secret), so send-enquiry-summary rejected it with 401 on every
+-- insert — visible as a steady stream of 401s in the edge-function logs.
+--
+-- The customer confirmation + owner notification are already sent directly by
+-- submit-enquiry / update-enquiry-by-token / update-enquiry-admin using the
+-- internal shared secret, so this trigger was a dead, failing duplicate. It
+-- was also a latent double-send risk: if its auth were ever "fixed", every
+-- booking would fire two summary emails.
+drop trigger if exists on_enquiry_insert on public.enquiries;
