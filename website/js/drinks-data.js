@@ -44,8 +44,6 @@ const drinks = [
   { id:'jw_gold',        cat:2, name_bg:'Johnnie Walker Gold Reserve',           name_en:'Johnnie Walker Gold Reserve',        price_eur:53.17,  img:'assets/images/drinks/johnnie-walker-gold.png' },
   { id:'jw_black',       cat:2, name_bg:'Johnnie Walker Black Label',            name_en:'Johnnie Walker Black Label',         price_eur:29.65,  img:'assets/images/drinks/johnnie-walker-black.png' },
   { id:'grey_goose',     cat:2, name_bg:'Grey Goose Vodka',                      name_en:'Grey Goose Vodka',                   price_eur:47.04,  img:'assets/images/drinks/grey-goose.png' },
-  { id:'goose_cherry',   cat:2, name_bg:'Grey Goose Cherry 1л',                  name_en:'Grey Goose Cherry 1L',               price_eur:48.57,  img:'assets/images/drinks/grey-goose-cherry.png' },
-  { id:'goose_watermelon',cat:2,name_bg:'Grey Goose Диня и Босилек 1л',          name_en:'Grey Goose Watermelon & Basil 1L',   price_eur:56.24,  img:'assets/images/drinks/grey-goose-watermelon.png' },
   { id:'reyka',          cat:2, name_bg:'Reyka Vodka 0.70л',                     name_en:'Reyka Vodka 0.70L',                  price_eur:24.03,  img:'assets/images/drinks/reyka.png' },
   { id:'russian_std',    cat:2, name_bg:'Руски Стандарт Водка',                  name_en:'Russian Standard Vodka',             price_eur:12.78,  img:'assets/images/drinks/russian-standard.png' },
   // Soft Drinks (juices, tonics, colas, energy)
