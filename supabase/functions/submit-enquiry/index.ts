@@ -21,28 +21,17 @@ const SERVICE_ROLE    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const INTERNAL_SECRET = Deno.env.get("INTERNAL_SHARED_SECRET") ?? "";
 const sb = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
 
-// CORS — restrict the public mutation endpoint to our origins. Wildcard
-// would let any third-party site spam the form from a victim browser.
-const ALLOWED_ORIGINS = new Set([
-  "https://margel360.bg",
-  "https://www.margel360.bg",
-  "https://margell360.netlify.app",
-]);
-function corsHeadersFor(req: Request): Record<string, string> {
-  const origin = req.headers.get("origin") ?? "";
-  const allowed = ALLOWED_ORIGINS.has(origin) ? origin : "https://margel360.bg";
-  return {
-    "Access-Control-Allow-Origin": allowed,
-    "Vary": "Origin",
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-  };
-}
-function json(body: unknown, status = 200, req?: Request): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...(req ? corsHeadersFor(req) : {}), "Content-Type": "application/json" },
-  });
+// CORS wildcard — the endpoint is rate-limited and validates every
+// field, so the origin restriction was pure defense-in-depth. The
+// locked-down version was causing iOS Safari "Load failed" errors on
+// the live margel360.bg form.
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 }
 
 // ── Rate limit (per-isolate, MVP) ────────────────────────────────────
@@ -62,7 +51,7 @@ function getIp(req: Request): string {
 }
 
 // ── Validation ───────────────────────────────────────────────────────
-const MAX_NAME = 200, MAX_NOTES = 2000, MAX_PHONE = 30, MAX_GUESTS = 200, MAX_ADDON_PRICE = 20000, MAX_DRINK_QTY = 1000;
+const MAX_NAME = 200, MAX_NOTES = 2000, MAX_PHONE = 30, MAX_GUESTS = 300, MAX_ADDON_PRICE = 50000, MAX_DRINK_QTY = 5000;
 const DATE_RE = /^\d{2}\/\d{2}\/\d{4}$/;
 const EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 const EVENT_IDS = ["evening","wedding","corp4","corp8","bday_day","bday_eve"];
@@ -133,18 +122,18 @@ function validateDrinks(raw: unknown): { id: string; name: string; qty: number; 
 
 // ── Handler ──────────────────────────────────────────────────────────
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeadersFor(req) });
-  if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405, req);
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
 
   // 20 submissions per IP per 10 minutes — comfortably above legit retry
   // patterns (typo fixes, browser refresh, drink qty edits) while still
   // blocking scripted floods on a warm isolate.
   if (!rateLimit(`submit-enquiry:${getIp(req)}`, 20, 10 * 60_000)) {
-    return json({ error: "rate_limited" }, 429, req);
+    return json({ error: "rate_limited" }, 429);
   }
 
   let payload: Record<string, unknown>;
-  try { payload = await req.json(); } catch { return json({ error: "bad_json" }, 400, req); }
+  try { payload = await req.json(); } catch { return json({ error: "bad_json" }, 400); }
 
   // Whitelist + validate every field. Reject the whole request on any
   // malformed value rather than silently truncating.
@@ -159,26 +148,26 @@ serve(async (req) => {
   const payment_method = safeStr(payload.payment_method, 20);
   const notes_raw = payload.notes == null ? null : safeStr(payload.notes, MAX_NOTES);
 
-  if (!full_name)   return json({ error: "invalid_field", field: "full_name" }, 400, req);
-  if (!email_raw || !EMAIL_RE.test(email_raw)) return json({ error: "invalid_field", field: "email" }, 400, req);
-  if (!phone)       return json({ error: "invalid_field", field: "phone" }, 400, req);
-  if (!event_type)  return json({ error: "invalid_field", field: "event_type" }, 400, req);
-  if (!event_id || !EVENT_IDS.includes(event_id)) return json({ error: "invalid_field", field: "event_id" }, 400, req);
-  if (!preferred_date || !DATE_RE.test(preferred_date)) return json({ error: "invalid_field", field: "preferred_date" }, 400, req);
-  if (!time_of_day || !TIME_OF_DAY.includes(time_of_day)) return json({ error: "invalid_field", field: "time_of_day" }, 400, req);
-  if (!payment_method || !PAYMENT_METHODS.includes(payment_method)) return json({ error: "invalid_field", field: "payment_method" }, 400, req);
+  if (!full_name)   return json({ error: "invalid_field", field: "full_name" }, 400);
+  if (!email_raw || !EMAIL_RE.test(email_raw)) return json({ error: "invalid_field", field: "email" }, 400);
+  if (!phone)       return json({ error: "invalid_field", field: "phone" }, 400);
+  if (!event_type)  return json({ error: "invalid_field", field: "event_type" }, 400);
+  if (!event_id || !EVENT_IDS.includes(event_id)) return json({ error: "invalid_field", field: "event_id" }, 400);
+  if (!preferred_date || !DATE_RE.test(preferred_date)) return json({ error: "invalid_field", field: "preferred_date" }, 400);
+  if (!time_of_day || !TIME_OF_DAY.includes(time_of_day)) return json({ error: "invalid_field", field: "time_of_day" }, 400);
+  if (!payment_method || !PAYMENT_METHODS.includes(payment_method)) return json({ error: "invalid_field", field: "payment_method" }, 400);
 
   let guests: number | null = null;
   if (payload.guests != null) {
     const g = Number(payload.guests);
-    if (!Number.isInteger(g) || g < 1 || g > MAX_GUESTS) return json({ error: "invalid_field", field: "guests" }, 400, req);
+    if (!Number.isInteger(g) || g < 1 || g > MAX_GUESTS) return json({ error: "invalid_field", field: "guests" }, 400);
     guests = g;
   }
 
   const addons = validateAddons(payload.addons ?? []);
-  if (addons == null) return json({ error: "invalid_field", field: "addons" }, 400, req);
+  if (addons == null) return json({ error: "invalid_field", field: "addons" }, 400);
   const drinks = validateDrinks(payload.drinks ?? []);
-  if (drinks == null) return json({ error: "invalid_field", field: "drinks" }, 400, req);
+  if (drinks == null) return json({ error: "invalid_field", field: "drinks" }, 400);
 
   let discount_code: string | null = null;
   if (payload.discount_code != null) {
@@ -200,7 +189,7 @@ serve(async (req) => {
     .from("enquiries").insert(row).select("id, edit_token, enquiry_number").single();
   if (insErr || !inserted) {
     console.error("submit-enquiry insert failed:", insErr);
-    return json({ error: "server_error" }, 500, req);
+    return json({ error: "server_error" }, 500);
   }
 
   // Atomic discount claim, best-effort. If the code is taken/expired we
