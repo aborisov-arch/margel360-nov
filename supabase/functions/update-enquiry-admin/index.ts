@@ -24,6 +24,7 @@ const ADMIN_EMAILS = new Set([
   "borisov@margel.info",
   "office@margel.info",
   "vitosha@margel.info",
+  "dimov@margel.info",
 ]);
 
 const corsHeaders = {
