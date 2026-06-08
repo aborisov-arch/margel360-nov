@@ -21,6 +21,9 @@ const INTERNAL_SECRET = Deno.env.get("INTERNAL_SHARED_SECRET") ?? "";
 const ADMIN_EMAILS = new Set([
   "aborisov@margel.info",
   "360@margel.info",
+  "borisov@margel.info",
+  "office@margel.info",
+  "vitosha@margel.info",
 ]);
 
 const corsHeaders = {
