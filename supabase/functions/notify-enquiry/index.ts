@@ -54,11 +54,14 @@ serve(async (req) => {
       ? "Daytime (until 17:30)"
       : "Evening (after 19:00)";
 
+    const refNo = record.enquiry_number != null ? `#${record.enquiry_number} ` : "";
+
     const body = [
       "New enquiry received at Margel 360°",
       "",
       "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
       "",
+      ...(refNo ? [`Ref:            ${refNo.trim()}`] : []),
       `Name:           ${record.full_name}`,
       `Email:          ${record.email}`,
       `Phone:          ${record.phone}`,
@@ -79,7 +82,6 @@ serve(async (req) => {
       `Submitted at: ${new Date(record.created_at).toLocaleString("en-GB")}`,
     ].join("\n");
 
-    const refNo = record.enquiry_number != null ? `#${record.enquiry_number} ` : "";
     const subject = `New Enquiry — ${refNo}${record.full_name} — ${record.event_type}`;
 
     const resendRes = await fetch("https://api.resend.com/emails", {
@@ -89,7 +91,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "enquiries@margel360.bg",
+        from: "Margel360 <enquiries@margel360.bg>",
         to: Deno.env.get("TEAM_EMAIL"),
         subject,
         text: body,

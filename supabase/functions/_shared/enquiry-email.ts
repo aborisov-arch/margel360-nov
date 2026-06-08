@@ -185,7 +185,7 @@ export function renderCustomerEmail(e: Enquiry, siteUrl: string): { subject: str
 <body style="margin:0;padding:0;background:${CREAM};font-family:${SANS};color:${INK};-webkit-font-smoothing:antialiased">
 
 <div style="display:none;font-size:1px;color:${CREAM};line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden">
-  Запитване за ${esc(e.event_type)} на ${fmtDateBg(e.preferred_date)} · общо €${totals.total.toFixed(2)}.
+  ${refNo ? `Запитване ${refNo} · ` : ""}Запитване за ${esc(e.event_type)} на ${fmtDateBg(e.preferred_date)} · общо €${totals.total.toFixed(2)}.
 </div>
 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="email-wrap" style="background:${CREAM};padding:32px 0">

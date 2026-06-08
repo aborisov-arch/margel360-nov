@@ -9,7 +9,9 @@ import { json, preflight } from "../_shared/cors.ts";
 const SUPABASE_URL  = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const RESEND_KEY    = Deno.env.get("RESEND_API_KEY")!;
-const FROM_EMAIL    = Deno.env.get("EVENT_HALL_FROM_EMAIL") ?? "enquiries@margel360.bg";
+const FROM_ADDR     = Deno.env.get("EVENT_HALL_FROM_EMAIL") ?? "enquiries@margel360.bg";
+// Inbox sender name shows "Margel360" unless the env var carries its own form.
+const FROM_EMAIL    = FROM_ADDR.includes("<") ? FROM_ADDR : `Margel360 <${FROM_ADDR}>`;
 const SITE_URL      = (Deno.env.get("PUBLIC_SITE_URL") ?? "https://margel360.bg").replace(/\/$/, "");
 // Shared secret required from the pg_cron caller. Without this anyone could
 // trigger the function and drain Resend quota / front-run feedback emails.

@@ -105,7 +105,8 @@ async function issueDiscountCode(enquiryId: string): Promise<string> {
 
 async function sendDiscountEmail(to: string, fullName: string, code: string): Promise<boolean> {
   const RESEND_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
-  const FROM = Deno.env.get("EVENT_HALL_FROM_EMAIL") ?? "enquiries@margel360.bg";
+  const FROM_ADDR = Deno.env.get("EVENT_HALL_FROM_EMAIL") ?? "enquiries@margel360.bg";
+  const FROM = FROM_ADDR.includes("<") ? FROM_ADDR : `Margel360 <${FROM_ADDR}>`;
   if (!RESEND_KEY || !to) return false;
 
   const first = (fullName || "").split(" ")[0] || fullName || "";

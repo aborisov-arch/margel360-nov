@@ -8,7 +8,10 @@ import { isUuid } from "../_shared/validate.ts";
 const SUPABASE_URL    = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const RESEND_KEY      = Deno.env.get("RESEND_API_KEY")!;
-const FROM_EMAIL      = Deno.env.get("EVENT_HALL_FROM_EMAIL") ?? "enquiries@margel360.bg";
+const FROM_ADDR       = Deno.env.get("EVENT_HALL_FROM_EMAIL") ?? "enquiries@margel360.bg";
+// Inbox sender name. Always carry the "Margel360" display name unless the env
+// var already provides its own "Name <addr>" form.
+const FROM_EMAIL      = FROM_ADDR.includes("<") ? FROM_ADDR : `Margel360 <${FROM_ADDR}>`;
 const OWNER_EMAILS    = (Deno.env.get("OWNER_EMAILS") ?? "").split(",").map(s => s.trim()).filter(Boolean);
 const SITE_URL        = Deno.env.get("PUBLIC_SITE_URL") ?? "https://margel360.bg";
 const INTERNAL_SECRET = Deno.env.get("INTERNAL_SHARED_SECRET") ?? "";
