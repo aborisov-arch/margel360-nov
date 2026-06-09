@@ -495,17 +495,18 @@ function renderDetail() {
   const linesHtml = [
     { lbl: 'Оферта (зала + гости)', field: 'income_rent_eur',   detail: null },
     { lbl: 'Напитки',                field: 'income_drinks_eur', detail: enquiry?.drinks },
-    { lbl: 'Доп. услуги',            field: 'income_addons_eur', detail: enquiry?.addons },
+    { lbl: 'Доп. услуги',            field: 'income_addons_eur', detail: enquiry?.addons, open: true },
   ].map(r => {
     const v = feFieldValue(fe, r.field);
     const items = Array.isArray(r.detail) ? r.detail : [];
     const expandable = items.length > 0;
+    const open = expandable && r.open === true; // add-ons breakdown shown by default
     const expandedAttr = expandable ? ` data-expand="${esc(r.field)}"` : '';
     const chevron = expandable
       ? `<span class="event-pnl__expand-chevron" aria-hidden="true">›</span>`
       : '';
     const itemsList = expandable ? `
-      <ul class="event-pnl__sub-items" id="sub-${esc(r.field)}" hidden>
+      <ul class="event-pnl__sub-items" id="sub-${esc(r.field)}"${open ? '' : ' hidden'}>
         ${items.map(it => {
           // Addons store LINE price as 'price'; drinks store unit price as 'price_eur' + qty.
           const name = it.name || it.id || '—';
@@ -520,7 +521,7 @@ function renderDetail() {
       </ul>
     ` : '';
     return `
-      <li class="event-pnl__line event-pnl__line--editable${expandable ? ' is-expandable' : ''}"${expandedAttr}>
+      <li class="event-pnl__line event-pnl__line--editable${expandable ? ' is-expandable' : ''}${open ? ' is-open' : ''}"${expandedAttr}>
         <span class="event-pnl__line-lbl">${chevron}${esc(r.lbl)}</span>
         <input type="number" step="0.01" class="event-pnl__line-input"
                data-fe-field="${r.field}" value="${v ?? ''}" placeholder="€">
