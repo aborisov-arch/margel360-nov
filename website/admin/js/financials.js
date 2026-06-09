@@ -232,6 +232,11 @@ async function ensureFinancialEvent(enquiry) {
   const b = enquiryBreakdown(enquiry);
   const iso = parsePreferredDate(enquiry.preferred_date);
   const month = iso ? iso.slice(0, 7) : null;
+  // Paid-by-customer prefill: the Bank/Cash/Card amounts marked on the enquiry
+  // (Enquiries section). They go into the deposit buckets — the enquiry has no
+  // deposit/balance split, and the bookkeeper can reclassify before saving.
+  const pt = enquiry.payment_tracking || {};
+  const ptAmt = (k) => { const n = parseFloat(pt[k]); return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : 0; };
   const insertRow = {
     month,
     event_date: iso,
@@ -240,6 +245,9 @@ async function ensureFinancialEvent(enquiry) {
     income_rent_eur:   b.rent,
     income_drinks_eur: b.drinks,
     income_addons_eur: b.addons,
+    deposit_cash_eur: ptAmt('cash'),
+    deposit_bank_eur: ptAmt('bank'),
+    deposit_card_eur: ptAmt('card'),
     enquiry_id: enquiry.id,
     confirmed_by: userEmail,
     confirmed_at: new Date().toISOString(),
@@ -546,8 +554,17 @@ function renderDetail() {
     const prefHint = prefMethod
       ? `<div class="event-pnl__pay-pref">Клиентът избра: <strong>${esc(METHOD_LABELS_BG[prefMethod] || prefMethod)}</strong></div>`
       : '';
+    // What was marked paid on the enquiry (Bank/Cash/Card). The deposit fields
+    // are prefilled from this on first creation; this line lets the bookkeeper
+    // reconcile if it was marked after the P&L was opened.
+    const pt = enquiry?.payment_tracking || {};
+    const ptAmt = (k) => { const n = parseFloat(pt[k]); return Number.isFinite(n) && n > 0 ? n : 0; };
+    const markedHint = (enquiry && (ptAmt('cash') + ptAmt('bank') + ptAmt('card')) > 0)
+      ? `<div class="event-pnl__pay-pref">Отбелязано в запитването: <strong>Брой ${fmtEur(ptAmt('cash'))} · Банка ${fmtEur(ptAmt('bank'))} · Карта ${fmtEur(ptAmt('card'))}</strong></div>`
+      : '';
     document.getElementById('pnl-payments').innerHTML = `
       ${prefHint}
+      ${markedHint}
       <div class="event-pnl__pay-grid event-pnl__pay-grid--3col">
         <div class="event-pnl__pay-head">Брой €</div>
         <div class="event-pnl__pay-head">Банка €</div>
