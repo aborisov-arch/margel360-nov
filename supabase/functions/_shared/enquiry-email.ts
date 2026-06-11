@@ -16,6 +16,7 @@ type Enquiry = {
   drinks: Array<{ id: string; name: string; qty: number; price_eur?: number | null }> | null;
   payment_method: string;
   notes: string | null;
+  applied_discount_percent?: number | null;
   edit_token: string;
   token_expires_at: string | null;
 };
@@ -46,7 +47,8 @@ const EXTRA_GUEST_FEE_EUR = 15;
 function computeTotals(e: Enquiry): {
   venue: number;
   extraGuests: number; extraGuestsCost: number;
-  addons: number; drinks: number; total: number;
+  addons: number; drinks: number;
+  discountPercent: number; discount: number; total: number;
 } {
   const venue = venueBasePrice(e.event_id);
   const guests = Number(e.guests) || 0;
@@ -58,9 +60,13 @@ function computeTotals(e: Enquiry): {
   const drinks = (e.drinks ?? []).reduce(
     (sum, d) => sum + (Number(d?.price_eur) || 0) * (Number(d?.qty) || 0), 0,
   );
+  // Discount applies to the venue base only — same scope as the public
+  // wizard's price summary.
+  const discountPercent = Number(e.applied_discount_percent) || 0;
+  const discount = discountPercent > 0 ? Math.round(venue * discountPercent) / 100 : 0;
   return {
-    venue, extraGuests, extraGuestsCost, addons, drinks,
-    total: venue + extraGuestsCost + addons + drinks,
+    venue, extraGuests, extraGuestsCost, addons, drinks, discountPercent, discount,
+    total: venue + extraGuestsCost + addons + drinks - discount,
   };
 }
 
@@ -150,6 +156,7 @@ export function renderCustomerEmail(e: Enquiry, siteUrl: string): { subject: str
     ${totals.extraGuests > 0 ? `<tr><td style="${totalLabel}">+${totals.extraGuests} допълнителни гости <span style="color:${MUTED};font-size:12px">(× €${EXTRA_GUEST_FEE_EUR})</span></td><td style="${totalValue}">€${totals.extraGuestsCost.toFixed(2)}</td></tr>` : ""}
     ${totals.addons ? `<tr><td style="${totalLabel}">Допълнителни услуги</td><td style="${totalValue}">€${totals.addons.toFixed(2)}</td></tr>` : ""}
     ${totals.drinks ? `<tr><td style="${totalLabel}">Напитки</td><td style="${totalValue}">€${totals.drinks.toFixed(2)}</td></tr>` : ""}
+    ${totals.discount > 0 ? `<tr><td style="${totalLabel}">Отстъпка (${totals.discountPercent}%)</td><td style="padding:8px 0;font:italic 14px/1.4 ${SERIF};color:#2F8F4F;text-align:right;white-space:nowrap">−€${totals.discount.toFixed(2)}</td></tr>` : ""}
     <tr>
       <td style="padding:14px 0 0;border-top:2px solid ${INK};font:700 12px/1.4 ${SANS};letter-spacing:0.16em;color:${INK};text-transform:uppercase">Обща сума</td>
       <td style="padding:14px 0 0;border-top:2px solid ${INK};font:22px/1.2 ${SERIF};color:${GOLD};text-align:right;white-space:nowrap">€${totals.total.toFixed(2)}</td>
@@ -396,6 +403,7 @@ export function renderOwnerEmail(
     ...(totals.extraGuests > 0 ? [`  +${totals.extraGuests} extra guests × €${EXTRA_GUEST_FEE_EUR}:           €${totals.extraGuestsCost.toFixed(2)}`] : []),
     `  Add-ons:                          €${totals.addons.toFixed(2)}`,
     `  Drinks:                           €${totals.drinks.toFixed(2)}`,
+    ...(totals.discount > 0 ? [`  Discount (${totals.discountPercent}%):                 −€${totals.discount.toFixed(2)}`] : []),
     `  ──────────────────────────`,
     `  GRAND TOTAL:                      €${totals.total.toFixed(2)}`,
     "",

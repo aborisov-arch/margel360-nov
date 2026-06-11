@@ -781,9 +781,13 @@ function computeTotals(e) {
   const drinks = (e.drinks || []).reduce(
     (sum, d) => sum + (Number(d?.price_eur) || 0) * (Number(d?.qty) || 0), 0,
   );
+  // Discount applies to the venue base only — same scope as the public
+  // wizard's summary and the financials prefill.
+  const discountPercent = Number(e.applied_discount_percent || 0);
+  const discount = discountPercent > 0 ? venue * discountPercent / 100 : 0;
   return {
-    venue, extraGuests, extraGuestsCost, addons, drinks,
-    total: venue + extraGuestsCost + addons + drinks,
+    venue, extraGuests, extraGuestsCost, addons, drinks, discountPercent, discount,
+    total: venue + extraGuestsCost + addons + drinks - discount,
   };
 }
 
@@ -801,6 +805,11 @@ function renderTotals(e) {
       ${totals.extraGuests > 0 ? row(`+${totals.extraGuests} допълнителни гости <span style="color:#888;font-size:0.78rem">(× €${EXTRA_GUEST_FEE_EUR})</span>`, totals.extraGuestsCost) : ''}
       ${totals.addons ? row(t('total_addons'), totals.addons) : ''}
       ${totals.drinks ? row(t('total_drinks'), totals.drinks) : ''}
+      ${totals.discount > 0 ? `
+      <div class="total-row" style="color:#2F8F4F">
+        <span>${t('total_discount')} (${totals.discountPercent}%)</span>
+        <strong>−€${totals.discount.toFixed(2)}</strong>
+      </div>` : ''}
       <div class="total-row total-grand">
         <span>${t('total_grand')}</span>
         <strong>€${totals.total.toFixed(2)}</strong>

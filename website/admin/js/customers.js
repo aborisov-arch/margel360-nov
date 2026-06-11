@@ -29,12 +29,16 @@ function customerKey(e) {
 // Mirrors the homepage prices; fine for ranking/marketing, not invoicing.
 const EVENT_BASE = { evening: 1280, wedding: 1500, corp4: 330, corp8: 440, bday_day: 700, bday_eve: 970 };
 function estimateTotal(e) {
-  let total = EVENT_BASE[e.event_id] || 0;
-  if (Array.isArray(e.addons)) total += e.addons.reduce((s, a) => s + (Number(a.price) || 0) * (Number(a.qty) || 1), 0);
-  if (Array.isArray(e.drinks)) total += e.drinks.reduce((s, d) => s + (Number(d.price) || 0) * (Number(d.qty) || 0), 0);
+  // Mirrors the reservation wizard / email math: addons store the LINE price
+  // (qty already folded in), drinks store unit price_eur × qty, venue covers
+  // 40 guests (+€15 each above), discount applies to the venue base only.
+  const base = EVENT_BASE[e.event_id] || 0;
+  const extraGuests = Math.max(0, (Number(e.guests) || 0) - 40);
+  const addons = Array.isArray(e.addons) ? e.addons.reduce((s, a) => s + (Number(a.price) || 0), 0) : 0;
+  const drinks = Array.isArray(e.drinks) ? e.drinks.reduce((s, d) => s + (Number(d.price_eur) || 0) * (Number(d.qty) || 0), 0) : 0;
   const pct = Number(e.applied_discount_percent || 0);
-  if (pct > 0) total = Math.round(total * (1 - pct / 100));
-  return total;
+  const discount = pct > 0 ? base * pct / 100 : 0;
+  return Math.round(base - discount + extraGuests * 15 + addons + drinks);
 }
 
 function groupEnquiries(enquiries) {
