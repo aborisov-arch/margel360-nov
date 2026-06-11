@@ -24,12 +24,12 @@ function addonLinePrice(svc, qty) {
   return qty * svc.price;
 }
 
-// Mandatory hall cleaning when the booking exceeds 40 guests. Returns
+// Mandatory hall cleaning when the booking exceeds 25 guests. Returns
 // the cleaning addon (or null if the catalog entry is missing) ONLY
 // when the threshold is hit AND the user hasn't already selected it
 // on the addons page. Used by both the summary and the submit payload
 // so the customer sees + gets billed for it automatically.
-const CLEANING_THRESHOLD_GUESTS = 40;
+const CLEANING_THRESHOLD_GUESTS = 25;
 function autoCleaningAddon() {
   const guests = Number(booking.guests) || 0;
   if (guests <= CLEANING_THRESHOLD_GUESTS) return null;
