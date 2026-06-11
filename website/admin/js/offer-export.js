@@ -171,19 +171,25 @@ async function exportOfferXLSX(enquiry) {
   const guests = Number(enquiry.guests) || 0;
   ws.getCell('AA16').value = Math.max(0, guests - 40);
 
-  // ── Addons → quantity cells. Furniture extras get charged only for
-  // the count over the venue's free baseline (e.g. first 40 bar stools
-  // included). Non-furniture services get qty=1 (yes/no checkbox in the
-  // booking form). Anything not in the template falls into "Други услуги".
+  // ── Addons → quantity cells. Quantities come from the ORDERED amount on
+  // the enquiry (a.qty; legacy checkbox rows carry no qty → 1). Furniture
+  // extras bill only the pieces above the venue's free baseline (their
+  // stored qty is the total count). Anything not in the template falls
+  // into "Други услуги" as a EUR sum of line prices.
   const addons = Array.isArray(enquiry.addons) ? enquiry.addons : [];
   let otherTotal = 0;
   const unmapped = [];
   for (const a of addons) {
+    // The template has a dedicated always-on cleaning row (AA85 below), so a
+    // cleaning addon on the enquiry (auto-added for 40+ guests) must not also
+    // land in "Други услуги" — that double-charged the cleaning fee.
+    if (a.id === 'cleaning') continue;
     const cell = ADDON_TO_CELL[a.id];
     if (cell) {
+      const ordered = Number(a.qty) > 0 ? Number(a.qty) : 1;
       const free = FURNITURE_FREE_UNTIL[a.id];
-      const qty  = free != null ? Math.max(0, guests - free) : 1;
-      ws.getCell(cell).value = qty;
+      const qty  = free != null ? Math.max(0, ordered - free) : ordered;
+      if (qty > 0) ws.getCell(cell).value = qty;
     } else {
       // Old enquiries (pre-2026-05-04) stored addon.price in BGN; new ones
       // in EUR. Detect and convert before summing into the offer's EUR total.
