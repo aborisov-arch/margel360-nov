@@ -17,18 +17,26 @@ let adminToken = null;  // Supabase access token of the logged-in admin
 // Catalogs loaded via reservation-catalog.js + drinks-data.js (window globals):
 //   addonServices, drinks, drinkCategories
 
-// addonQtys: id -> integer count. Used only for furniture addons that carry a
-// freeUntil baseline; non-furniture addons keep the checkbox UI and store qty:1
-// when selected.
+// addonQtys: id -> integer count. Furniture addons (freeUntil) and inventory
+// qty addons (heater etc.) get a stepper; everything else keeps the checkbox
+// UI and stores qty:1 when selected.
 const state = { token: null, enquiry: null, occupiedDates: [], activeDrinkCat: 0, drinkQtys: {}, addonQtys: {} };
 
+// Keep in sync with reservation.js: physical inventory caps for the
+// stepper addons (2 gas patio heaters, 1 gas heating table, 10 glow tables).
+const ADDON_MAX_QTY = { heater: 2, heater_tbl: 1, glow_table: 10 };
+function isQtyAddon(svc) { return svc.freeUntil != null || ADDON_MAX_QTY[svc.id] != null; }
+function addonMaxQty(svc) { return ADDON_MAX_QTY[svc.id] ?? 999; }
+// Same line-price model as the wizard: furniture bills only above the included
+// baseline; everything else is qty × unit price (checkbox items have qty 1).
 function addonLinePrice(svc, qty) {
-  if (svc.freeUntil != null) {
-    const billable = Math.max(0, qty - svc.freeUntil);
-    return billable * svc.price;
-  }
-  return qty > 0 ? svc.price : 0;
+  if (!qty || qty < 1) return 0;
+  if (svc.freeUntil != null) return Math.max(0, qty - svc.freeUntil) * svc.price;
+  return qty * svc.price;
 }
+
+// Mandatory hall cleaning above this guest count — same rule as the wizard.
+const CLEANING_THRESHOLD_GUESTS = 40;
 
 const $ = id => document.getElementById(id);
 
@@ -235,21 +243,22 @@ function renderAddons() {
   const grid = $('addon-grid');
   grid.innerHTML = '';
 
-  // Seed state.addonQtys from saved enquiry once. Furniture rows persist qty
-  // explicitly; older non-furniture rows are treated as qty=1 when present.
+  // Seed state.addonQtys from saved enquiry once. Stepper rows persist qty
+  // explicitly; older checkbox rows are treated as qty=1 when present. Clamp
+  // to the current inventory cap in case an older booking exceeds it.
   if (Object.keys(state.addonQtys).length === 0) {
     (state.enquiry.addons ?? []).forEach(a => {
       const q = Number.isFinite(Number(a.qty)) && Number(a.qty) > 0 ? Number(a.qty) : 1;
-      state.addonQtys[a.id] = q;
+      const svc = addonServices.find(s => s.id === a.id);
+      state.addonQtys[a.id] = svc ? Math.min(q, addonMaxQty(svc)) : q;
     });
   }
 
   addonServices.forEach(svc => {
     const li = document.createElement('li');
     const qty = state.addonQtys[svc.id] || 0;
-    const isFurniture = svc.freeUntil != null;
 
-    if (isFurniture) {
+    if (isQtyAddon(svc)) {
       // Quantity card — typeable input similar to the drinks tiles.
       li.className = 'addon-card addon-card--qty' + (qty > 0 ? ' is-selected' : '');
 
@@ -266,7 +275,7 @@ function renderAddons() {
       info.innerHTML = `
         <span class="addon-card__name">${esc(svc.name_bg)}</span>
         <span class="addon-card__price">€${Math.round(svc.price)} / бр.</span>
-        <span class="addon-card__hint">Първите ${svc.freeUntil} са включени</span>
+        ${svc.freeUntil != null ? `<span class="addon-card__hint">Първите ${svc.freeUntil} са включени</span>` : ''}
       `;
 
       const qtyWrap = document.createElement('span');
@@ -274,7 +283,7 @@ function renderAddons() {
       const minus = document.createElement('button');
       minus.type = 'button'; minus.textContent = '−'; minus.setAttribute('aria-label', 'Намали');
       const num = document.createElement('input');
-      num.type = 'number'; num.min = '0'; num.max = '999'; num.step = '1';
+      num.type = 'number'; num.min = '0'; num.max = String(addonMaxQty(svc)); num.step = '1';
       num.inputMode = 'numeric'; num.value = qty;
       num.setAttribute('aria-label', 'Количество');
       const plus = document.createElement('button');
@@ -285,7 +294,7 @@ function renderAddons() {
       grid.appendChild(li);
 
       const setQty = (next) => {
-        const n = Math.max(0, Math.min(999, Math.floor(Number(next) || 0)));
+        const n = Math.max(0, Math.min(addonMaxQty(svc), Math.floor(Number(next) || 0)));
         state.addonQtys[svc.id] = n;
         num.value = n;
         li.classList.toggle('is-selected', n > 0);
@@ -396,6 +405,9 @@ function renderDrinkTiles() {
     price.className = 'drink-tile__price';
     price.textContent = drink.price_eur != null ? `€${Math.round(drink.price_eur)}` : 'По запитване';
 
+    // Same per-category caps as the wizard and the server: non-alcoholic
+    // (soft drinks + water, cat 3 & 4) up to 200, alcoholic up to 100.
+    const maxQty = drink.cat >= 3 ? 200 : 100;
     const qtyWrap = document.createElement('span');
     qtyWrap.className = 'drink-qty';
     const minus = document.createElement('button');
@@ -403,7 +415,7 @@ function renderDrinkTiles() {
     const num = document.createElement('input');
     num.type = 'number';
     num.min = '0';
-    num.max = '999';
+    num.max = String(maxQty);
     num.step = '1';
     num.inputMode = 'numeric';
     num.value = qty;
@@ -417,7 +429,7 @@ function renderDrinkTiles() {
     grid.appendChild(li);
 
     function setQty(next) {
-      const n = Math.max(0, Math.min(999, Math.floor(Number(next) || 0)));
+      const n = Math.max(0, Math.min(maxQty, Math.floor(Number(next) || 0)));
       state.drinkQtys[drink.id] = n;
       num.value = n;
       li.classList.toggle('has-qty', n > 0);
@@ -453,15 +465,33 @@ async function onSave(evt) {
     return;
   }
 
+  // Same bounds the server enforces (1..200) — fail here with a clear
+  // message instead of a generic save error.
+  if (!Number.isInteger(guests) || guests < 1 || guests > 200) {
+    errEl.textContent = 'Моля, въведете брой гости между 1 и 200.';
+    errEl.classList.remove('hidden');
+    btn.disabled = false;
+    btn.textContent = 'Запазете промените';
+    return;
+  }
+
   const addons = [];
   addonServices.forEach(svc => {
     const qty = state.addonQtys[svc.id] || 0;
     if (qty <= 0) return;
     const linePrice = addonLinePrice(svc, qty);
     const entry = { id: svc.id, name: svc.name_bg, price: linePrice };
-    if (svc.freeUntil != null) entry.qty = qty;
+    if (isQtyAddon(svc)) entry.qty = qty;
     addons.push(entry);
   });
+
+  // Mandatory hall cleaning above 40 guests — same rule the wizard applies
+  // at booking time; without this, raising the guest count via the edit
+  // link would silently drop the obligatory fee.
+  if (guests > CLEANING_THRESHOLD_GUESTS && !addons.some(a => a.id === 'cleaning')) {
+    const cleaningSvc = addonServices.find(s => s.id === 'cleaning');
+    if (cleaningSvc) addons.push({ id: cleaningSvc.id, name: cleaningSvc.name_bg, price: cleaningSvc.price });
+  }
 
   const drinksOut = [];
   const drinkPool = typeof drinks !== 'undefined' ? drinks : [];
