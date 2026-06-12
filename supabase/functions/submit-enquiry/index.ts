@@ -19,6 +19,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 const SUPABASE_URL    = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const INTERNAL_SECRET = Deno.env.get("INTERNAL_SHARED_SECRET") ?? "";
+// Cloudflare Turnstile secret. When set, every submit must carry a valid
+// turnstile_token; when unset the check is skipped (so a missing secret
+// degrades to "no captcha" instead of blocking all bookings).
+const TURNSTILE_SECRET = Deno.env.get("TURNSTILE_SECRET_KEY") ?? "";
 const sb = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
 
 // CORS wildcard — the endpoint is rate-limited and validates every
@@ -34,20 +38,45 @@ function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 }
 
-// ── Rate limit (per-isolate, MVP) ────────────────────────────────────
-type Bucket = { count: number; resetAt: number };
-const buckets = new Map<string, Bucket>();
-function rateLimit(key: string, limit: number, windowMs: number) {
-  const now = Date.now();
-  const b = buckets.get(key);
-  if (!b || b.resetAt <= now) { buckets.set(key, { count: 1, resetAt: now + windowMs }); return true; }
-  b.count += 1;
-  return b.count <= limit;
+// ── Rate limit (DB-backed, holds across isolates) ────────────────────
+// public.rate_limit_hit upserts an atomic counter per key with a rolling
+// window. Fails open on DB error so an outage can't block bookings.
+async function rateLimitHit(key: string, limit: number, windowSeconds: number): Promise<boolean> {
+  const { data, error } = await sb.rpc("rate_limit_hit", {
+    p_key: key, p_limit: limit, p_window_seconds: windowSeconds,
+  });
+  if (error) { console.error("rate_limit_hit failed:", error); return true; }
+  return data === true;
 }
 function getIp(req: Request): string {
   return req.headers.get("x-forwarded-for")?.split(",")[0].trim()
       ?? req.headers.get("cf-connecting-ip")
       ?? "unknown";
+}
+
+// ── Turnstile ────────────────────────────────────────────────────────
+// Verifies the widget token with Cloudflare. Invalid/missing token →
+// false. Infrastructure errors (siteverify unreachable) fail open: a
+// Cloudflare outage shouldn't take down the booking form, and a spammer
+// can't trigger that path.
+async function turnstileOk(token: unknown, ip: string): Promise<boolean> {
+  if (typeof token !== "string" || !token) return false;
+  try {
+    const r = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ secret: TURNSTILE_SECRET, response: token, remoteip: ip }),
+    });
+    const body = await r.json().catch(() => ({}));
+    if (body.success !== true) {
+      console.warn("turnstile rejected:", body["error-codes"]);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error("turnstile verify unreachable:", e);
+    return true;
+  }
 }
 
 // ── Validation ───────────────────────────────────────────────────────
@@ -135,13 +164,18 @@ serve(async (req) => {
 
   // 20 submissions per IP per 10 minutes — comfortably above legit retry
   // patterns (typo fixes, browser refresh, drink qty edits) while still
-  // blocking scripted floods on a warm isolate.
-  if (!rateLimit(`submit-enquiry:${getIp(req)}`, 20, 10 * 60_000)) {
+  // blocking scripted floods.
+  const ip = getIp(req);
+  if (!await rateLimitHit(`submit-enquiry:ip:${ip}`, 20, 600)) {
     return json({ error: "rate_limited" }, 429);
   }
 
   let payload: Record<string, unknown>;
   try { payload = await req.json(); } catch { return json({ error: "bad_json" }, 400); }
+
+  if (TURNSTILE_SECRET && !await turnstileOk(payload.turnstile_token, ip)) {
+    return json({ error: "turnstile_failed" }, 403);
+  }
 
   // Whitelist + validate every field. Reject the whole request on any
   // malformed value rather than silently truncating.
@@ -185,6 +219,13 @@ serve(async (req) => {
     if (dc && DISCOUNT_RE.test(dc)) discount_code = dc;
     // Silently ignore malformed discount codes (don't 400 — the rest
     // of the booking is still valid).
+  }
+
+  // Per-email cap: 10 bookings per address per 24h. The email lands in the
+  // confirmation recipient field, so this bounds how much mail a single
+  // address can be made to receive even with valid-looking submissions.
+  if (!await rateLimitHit(`submit-enquiry:email:${email_raw.toLowerCase()}`, 10, 86400)) {
+    return json({ error: "rate_limited" }, 429);
   }
 
   // Idempotency guard: if the same email + event + date was submitted within

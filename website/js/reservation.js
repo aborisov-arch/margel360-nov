@@ -1034,6 +1034,10 @@ function setupSubmit() {
       payment_method: booking.payment,
       notes: booking.notes || null,
       discount_code: booking.discountCode || null,
+      turnstile_token: (() => {
+        try { return (typeof turnstile !== 'undefined' && turnstile.getResponse()) || null; }
+        catch { return null; }
+      })(),
     };
 
     let inserted = null;
@@ -1067,6 +1071,11 @@ function setupSubmit() {
         msg = lang === 'bg'
           ? 'Прекалено много опити за кратко време. Моля изчакайте 10 минути и опитайте отново.'
           : 'Too many attempts in a short time. Please wait 10 minutes and try again.';
+      } else if (String(error).includes('turnstile_failed')) {
+        msg = lang === 'bg'
+          ? 'Моля изчакайте проверката за сигурност под резюмето да завърши и опитайте отново.'
+          : 'Please wait for the security check below the summary to finish, then try again.';
+        try { if (typeof turnstile !== 'undefined') turnstile.reset(); } catch { /* widget not rendered */ }
       } else if (String(error).includes('invalid_field')) {
         msg = lang === 'bg'
           ? 'Моля проверете формата — едно от полетата има невалидна стойност.'
