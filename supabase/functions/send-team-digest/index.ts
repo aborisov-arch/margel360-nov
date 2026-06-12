@@ -6,11 +6,13 @@ import { json, preflight } from "../_shared/cors.ts";
 // the team ONE digest with the things that need a human today:
 //   1. Follow-ups due/overdue  (activates next_followup_at — previously a
 //      column nothing ever read)
-//   2. Stale leads             (new > 2d, contacted/quoted > 5d, untouched)
-//   3. Unanswered new enquiries (pipeline_status = 'new')
-//   4. Upcoming events         (confirmed/completed in the next 7 days)
-//   5. Outstanding deposits    (upcoming confirmed events with no deposit
+//   2. Offers awaiting answer  (offer_sent_at ≥ 3d ago, still 'quoted')
+//   3. Stale leads             (new > 2d, contacted/quoted > 5d, untouched)
+//   4. Unanswered new enquiries (pipeline_status = 'new')
+//   5. Upcoming events         (confirmed/completed in the next 7 days)
+//   6. Outstanding deposits    (upcoming confirmed events with no deposit
 //      recorded in financial_events)
+// An enquiry appears in at most one of sections 1–4.
 //
 // A digest is a daily snapshot, so there is no per-row "sent" flag; if every
 // section is empty we send nothing.
@@ -32,6 +34,8 @@ const CRON_SECRET  = Deno.env.get("TEAM_DIGEST_CRON_SECRET") ?? "";
 // Staleness thresholds (days since created_at, untouched in pipeline).
 const STALE_NEW_DAYS = 2;
 const STALE_WORKING_DAYS = 5;
+// Nudge when an offer went out this long ago and the lead is still 'quoted'.
+const OFFER_NUDGE_DAYS = 3;
 // Look-ahead window for upcoming events / outstanding deposits.
 const UPCOMING_DAYS = 7;
 const DEPOSIT_WINDOW_DAYS = 14;
@@ -92,6 +96,7 @@ type Enquiry = {
   next_followup_at: string | null;
   created_at: string;
   edit_token: string | null;
+  offer_sent_at: string | null;
 };
 
 type Row = { e: Enquiry; meta?: string };
@@ -164,7 +169,7 @@ serve(async (req) => {
   // enquiries a week, so 1000 is comfortably the whole live pipeline.
   const { data, error } = await sb
     .from("enquiries")
-    .select("id, enquiry_number, full_name, email, phone, event_type, preferred_date, pipeline_status, next_followup_at, created_at, edit_token")
+    .select("id, enquiry_number, full_name, email, phone, event_type, preferred_date, pipeline_status, next_followup_at, created_at, edit_token, offer_sent_at")
     .neq("pipeline_status", "archived")
     .order("created_at", { ascending: false })
     .limit(1000);
@@ -188,9 +193,25 @@ serve(async (req) => {
       return { e, meta: overdue > 0 ? `просрочен с ${overdue} дн.` : "днес" };
     });
 
-  // 2. Stale leads — untouched too long for their stage.
+  // 2. Offers awaiting an answer — offer emailed OFFER_NUDGE_DAYS+ ago and
+  // the lead is still sitting in 'quoted'. More specific than "stale", so
+  // these are computed first and excluded from the stale list below.
+  const offerNudge: Row[] = all
+    .filter(e => {
+      if ((e.pipeline_status ?? "") !== "quoted" || !e.offer_sent_at) return false;
+      return (nowMs - Date.parse(e.offer_sent_at)) / 86_400_000 >= OFFER_NUDGE_DAYS;
+    })
+    .sort((a, b) => Date.parse(a.offer_sent_at!) - Date.parse(b.offer_sent_at!))
+    .map(e => {
+      const days = Math.floor((nowMs - Date.parse(e.offer_sent_at!)) / 86_400_000);
+      return { e, meta: `оферта преди ${days} дн., без отговор` };
+    });
+  const nudgedIds = new Set(offerNudge.map(r => r.e.id));
+
+  // 3. Stale leads — untouched too long for their stage.
   const stale: Row[] = all
     .filter(e => {
+      if (nudgedIds.has(e.id)) return false;
       const ageDays = (nowMs - Date.parse(e.created_at)) / 86_400_000;
       const ps = e.pipeline_status ?? "";
       if (ps === "new") return ageDays > STALE_NEW_DAYS;
@@ -202,9 +223,9 @@ serve(async (req) => {
       return { e, meta: `${PIPELINE_BG[e.pipeline_status ?? ""] ?? e.pipeline_status} · ${ageDays} дн.` };
     });
 
-  // 3. Unanswered new enquiries — minus the ones already listed as stale or
-  // due for follow-up, so one enquiry never inflates two sections.
-  const listedIds = new Set([...stale, ...followups].map(r => r.e.id));
+  // 4. Unanswered new enquiries — minus the ones already listed in another
+  // section, so one enquiry never inflates the digest twice.
+  const listedIds = new Set([...stale, ...followups, ...offerNudge].map(r => r.e.id));
   const unanswered: Row[] = all
     .filter(e => (e.pipeline_status ?? "") === "new" && !listedIds.has(e.id))
     .map(e => ({ e }));
@@ -261,13 +282,14 @@ serve(async (req) => {
 
   const sections = [
     renderSection("Последващи контакти", followups),
+    renderSection("Оферти без отговор", offerNudge),
     renderSection("Залежали запитвания", stale),
     renderSection("Нови без отговор", unanswered),
     renderSection("Предстоящи събития", upcoming),
     renderSection("Неполучени депозити", outstanding),
   ];
 
-  const totalRows = followups.length + stale.length + unanswered.length + upcoming.length + outstanding.length;
+  const totalRows = followups.length + offerNudge.length + stale.length + unanswered.length + upcoming.length + outstanding.length;
   if (totalRows === 0) {
     return json({ scanned: all.length, rows: 0, sent: 0, note: "nothing to report" });
   }
@@ -312,8 +334,8 @@ serve(async (req) => {
     scanned: all.length,
     rows: totalRows,
     sections: {
-      followups: followups.length, stale: stale.length, unanswered: unanswered.length,
-      upcoming: upcoming.length, outstanding: outstanding.length,
+      followups: followups.length, offerNudge: offerNudge.length, stale: stale.length,
+      unanswered: unanswered.length, upcoming: upcoming.length, outstanding: outstanding.length,
     },
     sent: uniqueRecipients.length,
   });
