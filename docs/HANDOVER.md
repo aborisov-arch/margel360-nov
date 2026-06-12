@@ -23,6 +23,7 @@ Admin allowlist (Supabase Auth logins + `is_admin()` + `update-enquiry-admin`): 
 - `RESEND_API_KEY` — rotate in the Resend dashboard.
 - `INTERNAL_SHARED_SECRET` — shared header (`X-Internal-Secret`) between submit-enquiry/update-* and the email functions. If lost, generate any new random string and set it — nothing else stores it.
 - `FEEDBACK_CRON_SECRET` — required header (`x-cron-secret`) for send-feedback-request. **Also stored in the Supabase Vault as `feedback_cron_secret`** (the cron jobs read it from there). If you rotate it, update BOTH the function secret and the Vault entry.
+- `TEAM_DIGEST_CRON_SECRET` — required header (`x-cron-secret`) for send-team-digest (the daily team digest). **Also stored in the Supabase Vault as `team_digest_cron_secret`** (the cron jobs read it from there). Same rotate-both rule as the feedback secret. The digest is sent to `OWNER_EMAILS` (falling back to `TEAM_EMAIL`).
 - `OWNER_EMAILS` (comma-separated owner notification list), `TEAM_EMAIL` (notify-enquiry recipient), `EVENT_HALL_FROM_EMAIL` (optional from-address override), `PUBLIC_SITE_URL`.
 - `SUPABASE_URL` / `SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY` / `SUPABASE_DB_URL` etc. are auto-provided by the platform.
 
@@ -34,7 +35,11 @@ Two seasonal jobs POST to `send-feedback-request` (day-after-event feedback emai
 - `send-feedback-request-summer` — `0 9 * 4-10 *` (09:00 UTC, Apr–Oct)
 - `send-feedback-request-winter` — `0 10 * 1-3,11-12 *` (10:00 UTC, Nov–Mar)
 
-Inspect with `select jobname, schedule from cron.job;`. These live only in the database — if the project is ever recreated, re-create them (and the Vault secret) by hand.
+Two more seasonal jobs POST to `send-team-digest` (daily morning team digest), reading `team_digest_cron_secret` from the Vault:
+- `send-team-digest-summer` — `0 6 * 4-10 *` (06:00 UTC = 09:00 Sofia, Apr–Oct)
+- `send-team-digest-winter` — `0 7 * 1-3,11-12 *` (07:00 UTC = 09:00 Sofia, Nov–Mar)
+
+Inspect with `select jobname, schedule from cron.job;`. These live only in the database — if the project is ever recreated, re-create them (and the Vault secrets) by hand.
 
 ## 4. New computer — setup checklist
 
@@ -56,6 +61,9 @@ Inspect with `select jobname, schedule from cron.job;`. These live only in the d
 | send-enquiry-summary (v19) | no | owner plain-text + customer branded HTML (requires X-Internal-Secret) |
 | notify-enquiry (v10) | no | plain-text team email (requires X-Internal-Secret) |
 | send-feedback-request (v6) | no | cron-driven feedback emails (requires x-cron-secret) |
+| send-team-digest (v1) | no | cron-driven daily team digest to OWNER_EMAILS/TEAM_EMAIL (requires x-cron-secret = TEAM_DIGEST_CRON_SECRET) |
+| send-event-reminders (v1) | no | cron-driven customer reminders: day-before + deposit-due (reuses x-cron-secret = TEAM_DIGEST_CRON_SECRET; POST {"dry_run":true} to preview) |
+| send-offer (v1) | **yes** | admin one-click offer: emails the customer a branded cover note + the client-built offer .xlsx, stamps offer_sent_at. Own email-allowlist check on top of JWT |
 | submit-feedback (v8) | no | stores feedback, mints 3% MG- discount code, emails it |
 | get-feedback-by-token (v4) | no | feedback page load |
 | validate-discount-code (v4) / redeem-discount-code (v4) | no | promo code check/claim |

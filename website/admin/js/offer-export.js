@@ -121,7 +121,10 @@ function offerNumberFromId(id) {
   return parseInt(s.slice(-6), 16) % 1000000;
 }
 
-async function exportOfferXLSX(enquiry) {
+// Build the populated workbook as a Blob + filename, without downloading.
+// Shared by exportOfferXLSX (download) and the "Send offer" action (attach to
+// email). Returns { blob, filename, unmapped }.
+async function buildOfferXLSXBlob(enquiry) {
   const ExcelJS = await loadExcelJS();
 
   // Fetch the template
@@ -219,15 +222,20 @@ async function exportOfferXLSX(enquiry) {
   // drinks separately (paid 100% in advance per template note). Do NOT set
   // AA82; setting it to 1 would charge €1 on the alcohol line.
 
-  // ── Trigger download
   const out = await wb.xlsx.writeBuffer();
   const blob = new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  const url = URL.createObjectURL(blob);
   // Allow Cyrillic + Latin letters, digits, dots and hyphens — \w would strip
   // Bulgarian names (Иван Петров → empty) and the file would be named "offer".
   const safeName = (enquiry.full_name || 'offer').replace(/[^\p{L}\p{N}\s.-]/gu, '').trim().replace(/\s+/g, '_') || 'offer';
   const filename = `Оферта_${safeName}_${formatDDMMYY(new Date())}.xlsx`;
 
+  return { blob, filename, unmapped };
+}
+
+// Download path: build the workbook then trigger a browser download.
+async function exportOfferXLSX(enquiry) {
+  const { blob, filename, unmapped } = await buildOfferXLSXBlob(enquiry);
+  const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
   a.download = filename;
@@ -235,9 +243,9 @@ async function exportOfferXLSX(enquiry) {
   a.click();
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 1000);
-
   return { unmapped };
 }
 
 // Expose for dashboard.js
 window.exportOfferXLSX = exportOfferXLSX;
+window.buildOfferXLSXBlob = buildOfferXLSXBlob;

@@ -260,6 +260,11 @@ function renderEnquiries(enquiries) {
               data-id="${esc(e.id)}">
               ${t('btn_export_offer')}
             </button>
+            <button class="btn btn-sm btn-outline btn-send-offer"
+              data-id="${esc(e.id)}"
+              data-email="${esc(e.email)}">
+              ${t('btn_send_offer')}
+            </button>
             <button class="btn btn-sm btn-danger btn-delete-enquiry"
               data-id="${esc(e.id)}"
               data-name="${esc(e.full_name)}">
@@ -620,6 +625,49 @@ function bindTableHandlers() {
       } finally {
         exportBtn.disabled = false;
         exportBtn.textContent = origText;
+      }
+      return;
+    }
+
+    // Send offer — build the same .xlsx in the browser, then hand it to the
+    // send-offer edge function (admin JWT carried by db.functions.invoke) which
+    // emails the customer a branded cover note with the spreadsheet attached.
+    const sendBtn = evt.target.closest('.btn-send-offer');
+    if (sendBtn) {
+      const id = sendBtn.getAttribute('data-id');
+      const toEmail = sendBtn.getAttribute('data-email') || '';
+      const enquiry = allEnquiries.find(x => String(x.id) === String(id));
+      if (!enquiry) return;
+      if (!toEmail) { alert(t('send_offer_no_email')); return; }
+      if (!window.confirm(t('send_offer_confirm').replace('{email}', toEmail))) return;
+
+      const origText = sendBtn.textContent;
+      sendBtn.disabled = true;
+      sendBtn.textContent = t('send_offer_working');
+      try {
+        const { blob, filename, unmapped } = await window.buildOfferXLSXBlob(enquiry);
+        if (unmapped?.length) {
+          alert(t('export_unmapped').replace('{list}', unmapped.join(', ')));
+        }
+        // Blob → base64 (strip the "data:...;base64," prefix).
+        const b64 = await new Promise((resolve, reject) => {
+          const fr = new FileReader();
+          fr.onload = () => resolve(String(fr.result).split(',')[1] || '');
+          fr.onerror = () => reject(fr.error);
+          fr.readAsDataURL(blob);
+        });
+        const { data, error } = await db.functions.invoke('send-offer', {
+          body: { id, xlsx_base64: b64, filename },
+        });
+        if (error || !data?.ok) throw (error || new Error('send-offer failed'));
+        enquiry.offer_sent_at = data.offer_sent_at;
+        alert(t('send_offer_ok').replace('{email}', data.sent_to || toEmail));
+      } catch (err) {
+        console.error('Send offer failed:', err);
+        alert(t('send_offer_failed'));
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.textContent = origText;
       }
       return;
     }
