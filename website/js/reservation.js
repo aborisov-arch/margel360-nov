@@ -863,7 +863,7 @@ function renderSummary() {
       const svc = addonServices.find(s => s.id === id);
       if (svc) addonsTotal += addonLinePrice(svc, q);
     }
-    // Auto-include mandatory cleaning when guests > 40, on top of the
+    // Auto-include mandatory cleaning above CLEANING_THRESHOLD_GUESTS, on top of the
     // selected addons. Adds to total + shown as a separate summary line.
     const autoClean = autoCleaningAddon();
     if (autoClean) addonsTotal += autoClean.price;
@@ -878,20 +878,23 @@ function renderSummary() {
     const discountAmount = discountPercent > 0 ? venuePrice * (discountPercent / 100) : 0;
     const grandTotal = venuePrice + extraGuestsCost + addonsTotal + drinksTotal - discountAmount;
     const rows = [
-      { label: (l==='bg'?'Наем на зала':'Venue rental') + ` (${l==='bg'?'до':'up to'} ${VENUE_MIN_GUESTS} ${l==='bg'?'гости':'guests'})`, value: fmtEvent(booking.event) },
+      { label: (l==='bg'?'Наем на зала':'Venue rental') + ` (${l==='bg'?'до':'up to'} ${VENUE_MIN_GUESTS} ${l==='bg'?'гости':'guests'})`, value: '€' + venuePrice.toFixed(2) },
       ...(extraGuests > 0 ? [{ label: (l==='bg'?`+${extraGuests} допълнителни гости`:`+${extraGuests} extra guests`) + ` (× €${EXTRA_GUEST_FEE_EUR})`, value: '€' + extraGuestsCost.toFixed(2) }] : []),
       ...(addonsTotal > 0 ? [{ label: l==='bg'?'Допълнителни услуги':'Add-on services', value: '€' + addonsTotal.toFixed(2) }] : []),
-      ...(autoClean ? [{ label: (l==='bg' ? `${autoClean.name_bg} (задължително за +${CLEANING_THRESHOLD_GUESTS} гости)` : `${autoClean.name_en} (mandatory for ${CLEANING_THRESHOLD_GUESTS}+ guests)`), value: '€' + autoClean.price.toFixed(2), sub: true }] : []),
+      ...(autoClean ? [{ label: (l==='bg' ? `${autoClean.name_bg} (задължително над ${CLEANING_THRESHOLD_GUESTS} гости)` : `${autoClean.name_en} (mandatory above ${CLEANING_THRESHOLD_GUESTS} guests)`), value: '€' + autoClean.price.toFixed(2), sub: true }] : []),
       ...(drinksTotal > 0 ? [{ label: l==='bg'?'Напитки':'Drinks', value: '€' + drinksTotal.toFixed(2) }] : []),
       ...(discountAmount > 0 ? [{ label: (l==='bg'?'Отстъпка':'Discount') + ` (${discountPercent}%)`, value: '−€' + discountAmount.toFixed(2), discount: true }] : []),
       { label: l==='bg'?'Обща сума':'Total', value: '€' + grandTotal.toFixed(2), total: true },
     ];
     rows.forEach(row => {
       const div = document.createElement('div'); div.className = 'price-summary-row';
-      const lbl = document.createElement('span'); lbl.className = 'ps-label'; lbl.textContent = row.label;
+      const lbl = document.createElement('span'); lbl.className = 'ps-label'; lbl.textContent = (row.sub ? '↳ ' : '') + row.label;
       const val = document.createElement('span'); val.className = 'ps-value'; val.textContent = row.value;
       if (row.total) { div.style.fontWeight = '700'; div.style.fontSize = '1rem'; }
       if (row.discount) { div.style.color = '#2F8F4F'; }
+      // Sub-rows detail a line already counted above (auto-cleaning inside
+      // the add-ons total) — mute them so they don't read as a second charge.
+      if (row.sub) { div.style.fontSize = '0.85em'; div.style.color = '#7A7568'; div.style.paddingLeft = '14px'; }
       div.appendChild(lbl); div.appendChild(val); priceSummary.appendChild(div);
     });
   }
@@ -994,7 +997,7 @@ function setupSubmit() {
         if (svc && isQtyAddon(svc)) entry.qty = qty;
         return entry;
       });
-    // Auto-attach mandatory cleaning for >40 guests, matching what the
+    // Auto-attach mandatory cleaning above CLEANING_THRESHOLD_GUESTS, matching what the
     // customer saw on the summary screen.
     const autoCleanForPayload = autoCleaningAddon();
     if (autoCleanForPayload) {
