@@ -162,6 +162,14 @@ async function exportOfferXLSX(enquiry) {
     ws.getCell('AA11').value = enquiry.event_type || '';
   }
 
+  // ── Promo discount → the template's native "TO%" cell on the venue row.
+  // AG15 = (Q15 - Q15*AC15%) * AA15, row 87 is the labeled "отстъпка" line
+  // (AG87 shows the discount amount) and the offer total AF90 = AG86 - AG87,
+  // so deposit/balance recompute automatically. Cleared first so a leftover
+  // percent from a previous export can't discount the next customer.
+  const discountPct = Number(enquiry.applied_discount_percent) || 0;
+  ws.getCell('AC15').value = discountPct > 0 ? discountPct : null;
+
   // ── Client info
   ws.getCell('E11').value = enquiry.full_name || '';
   ws.getCell('E12').value = enquiry.phone || '';
