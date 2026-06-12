@@ -336,23 +336,37 @@ function bindTableHandlers() {
     const enquiry = allEnquiries.find(x => String(x.id) === String(id));
     if (!enquiry || !Array.isArray(enquiry.drinks) || !enquiry.drinks[idx]) return;
 
-    const next = Math.max(0, Math.min(999, Math.floor(Number(inp.value) || 0)));
+    // Clamp to the same per-category caps the server enforces on customer
+    // edits (100 alcoholic / 200 non-alcoholic) — a 999 value written here
+    // via direct REST made the customer's own edit page unsavable.
+    const prev = Number(enquiry.drinks[idx].qty) || 0;
+    const next = Math.max(0, Math.min(maxDrinkQty(enquiry.drinks[idx].id), Math.floor(Number(inp.value) || 0)));
     inp.value = next;
-    enquiry.drinks[idx].qty = next;
+
+    // Copy-on-write: only commit to the cache after the DB accepts it, and
+    // restore the previous value on failure so a re-render can't show an
+    // unsaved quantity as persisted.
+    const updatedDrinks = enquiry.drinks.map((d, i) => (i === idx ? { ...d, qty: next } : d));
 
     inp.disabled = true;
     const { error } = await db
       .from('enquiries')
-      .update({ drinks: enquiry.drinks })
+      .update({ drinks: updatedDrinks })
       .eq('id', id);
     inp.disabled = false;
 
     if (error) {
       console.error('Drink qty save failed:', error);
+      inp.value = prev;
       inp.style.outline = '2px solid #c62828';
       setTimeout(() => { inp.style.outline = ''; }, 1500);
       return;
     }
+    enquiry.drinks = updatedDrinks;
+    // Refresh the totals block in the same detail row so the grand total
+    // agrees with the just-edited line.
+    const totalsEl = inp.closest('tr.detail-row')?.querySelector('.detail-totals');
+    if (totalsEl) totalsEl.outerHTML = renderTotals(enquiry);
     inp.style.background = 'rgba(39,174,96,0.16)';
     setTimeout(() => { inp.style.background = ''; }, 800);
   });
@@ -621,10 +635,20 @@ function bindTableHandlers() {
 
       delBtn.disabled = true;
 
-      // Try to clean up the occupied_dates row first (best-effort; ignore if missing).
+      // Free the calendar date ONLY if this enquiry is the one occupying it:
+      // it must be confirmed/completed (the auto-block trigger only marks
+      // dates on that transition) and no other confirmed/completed enquiry may
+      // share the date. Without the guard, deleting a spam duplicate whose
+      // requested date collided with another customer's confirmed booking
+      // (or a manually blocked date) silently reopened it for double booking.
       const enquiry = allEnquiries.find(x => String(x.id) === String(id));
       const dd = enquiry?.preferred_date;
-      if (dd && /^\d{2}\/\d{2}\/\d{4}$/.test(dd)) {
+      const ownsDate = ['confirmed', 'completed'].includes(enquiry?.pipeline_status);
+      const dateSharedByOther = allEnquiries.some(x =>
+        String(x.id) !== String(id) &&
+        x.preferred_date === dd &&
+        ['confirmed', 'completed'].includes(x.pipeline_status));
+      if (ownsDate && !dateSharedByOther && dd && /^\d{2}\/\d{2}\/\d{4}$/.test(dd)) {
         const [d, m, y] = dd.split('/');
         const iso = `${y}-${m}-${d}`;
         await db.from('occupied_dates').delete().eq('date', iso);
@@ -699,10 +723,18 @@ function bindTableHandlers() {
             syncWarning = 'calendar sync failed';
           }
         } else {
-          const { error: delErr } = await db.from('occupied_dates').delete().eq('date', iso);
-          if (delErr) {
-            console.warn('Could not unmark date:', delErr);
-            syncWarning = 'calendar sync failed';
+          // Same ownership guard as the delete handler: keep the date blocked
+          // if another confirmed/completed enquiry shares it.
+          const dateSharedByOther = allEnquiries.some(x =>
+            String(x.id) !== String(id) &&
+            x.preferred_date === dd &&
+            ['confirmed', 'completed'].includes(x.pipeline_status));
+          if (!dateSharedByOther) {
+            const { error: delErr } = await db.from('occupied_dates').delete().eq('date', iso);
+            if (delErr) {
+              console.warn('Could not unmark date:', delErr);
+              syncWarning = 'calendar sync failed';
+            }
           }
         }
       }
@@ -751,6 +783,17 @@ function bindTableHandlers() {
     }
   });
 }
+
+// Per-category drink quantity caps: non-alcoholic (soft drinks + water,
+// drinks-data.js cat 3 & 4) up to 200; everything alcoholic up to 100.
+// Keep NON_ALCOHOLIC_DRINK_IDS in sync with website/js/drinks-data.js and
+// the server-side validators (submit-enquiry, _shared/validate.ts,
+// update-enquiry-admin).
+const NON_ALCOHOLIC_DRINK_IDS = new Set([
+  'granini_a', 'granini_o', 'tonic_mango', 'tonic_cherry', 'sanben_tea_lem5', 'sanben_tea_lem3', 'sanben_tea_peach', 'cola', 'cola0', 'fanta', 'redbull',
+  'devin', 'benedo_st', 'benedo_spa', 'perrier_st', 'perrier_spa', 'panna25', 'panna75', 'pelegrino75', 'pelegrino',
+]);
+function maxDrinkQty(id) { return NON_ALCOHOLIC_DRINK_IDS.has(id) ? 200 : 100; }
 
 // Venue base prices (EUR) keyed by event_id, mirroring the public reservation
 // catalog and the send-enquiry-summary edge function. Update all three places

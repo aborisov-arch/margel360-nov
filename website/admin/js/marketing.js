@@ -70,7 +70,12 @@ function applyFilters() {
 }
 
 function csvEscape(v) {
-  const s = String(v ?? '');
+  let s = String(v ?? '');
+  // Formula-injection guard: names/emails/phones come from the public form,
+  // so a value like =HYPERLINK(...) would execute as a formula when the
+  // admin opens the CSV in Excel/LibreOffice. A leading apostrophe forces
+  // the cell to be treated as text (quoting alone does not prevent this).
+  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
   if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
   return s;
 }

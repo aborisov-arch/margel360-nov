@@ -154,6 +154,10 @@ async function toggleDate(dateStr, btn) {
       );
     }
   }
+
+  // Keep the "bookings this month" side panel in sync — it reads from
+  // occupiedDates, which we just changed (or reverted on failure).
+  renderSidePanel();
 }
 
 // Side-panel rendering — only the currently displayed month. For every

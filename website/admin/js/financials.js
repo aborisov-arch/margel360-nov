@@ -112,13 +112,17 @@ function isDirty() {
   return Object.keys(dirtyFe).length > 0 || dirtyExpenses.size > 0;
 }
 
-// All financial_events that are NOT linked to an enquiry — i.e. ones
-// the bookkeeper created by hand to record events that never went
-// through the public form (back-fills, walk-ins, cash bookings, etc.).
+// All financial_events that are NOT reachable through the enquiry list:
+// hand-entered rows (no enquiry link — back-fills, walk-ins, cash bookings)
+// PLUS rows whose enquiry has since left confirmed/completed (e.g. the
+// admin unlocked it on the dashboard). Without the second group those
+// orphaned rows kept inflating the month KPIs while being impossible to
+// open, edit, or delete from the UI.
 function manualFeRows() {
+  const bookableIds = new Set(bookableEvents.map(e => e.id));
   const out = [];
   for (const fe of financialEventsById.values()) {
-    if (!fe.enquiry_id) out.push(fe);
+    if (!fe.enquiry_id || !bookableIds.has(fe.enquiry_id)) out.push(fe);
   }
   return out.sort((a, b) => (b.event_date || '').localeCompare(a.event_date || ''));
 }
