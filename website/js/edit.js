@@ -169,6 +169,7 @@ function renderForm() {
 
   initDatePicker();
   renderAddons();
+  seedDrinkQtys();
   setupDrinksToggle();
 
   $('edit-form').addEventListener('submit', onSave);
@@ -341,10 +342,21 @@ function renderAddons() {
   });
 }
 
+// Seed the drink quantities from the saved enquiry at FORM LOAD, not when
+// the drinks panel is first opened. onSave always sends `drinks` built from
+// state.drinkQtys — seeding lazily meant a save without opening the panel
+// sent an empty array and silently wiped the customer's whole drinks order.
+function seedDrinkQtys() {
+  if (Object.keys(state.drinkQtys).length > 0) return;
+  const pool = typeof drinks !== 'undefined' ? drinks : [];
+  (state.enquiry.drinks ?? []).forEach(d => {
+    const cat = pool.find(x => x.id === d.id)?.cat;
+    const max = cat >= 3 ? 200 : 100; // same caps as the steppers + server
+    state.drinkQtys[d.id] = Math.min(Number(d.qty) || 0, max);
+  });
+}
+
 function renderDrinks() {
-  if (Object.keys(state.drinkQtys).length === 0) {
-    (state.enquiry.drinks ?? []).forEach(d => { state.drinkQtys[d.id] = d.qty; });
-  }
   renderDrinkTabs();
   renderDrinkTiles();
 }
@@ -403,7 +415,7 @@ function renderDrinkTiles() {
 
     const price = document.createElement('span');
     price.className = 'drink-tile__price';
-    price.textContent = drink.price_eur != null ? `€${Math.round(drink.price_eur)}` : 'По запитване';
+    price.textContent = drink.price_eur != null ? `€${drink.price_eur.toFixed(2)}` : 'По запитване';
 
     // Same per-category caps as the wizard and the server: non-alcoholic
     // (soft drinks + water, cat 3 & 4) up to 200, alcoholic up to 100.
@@ -480,7 +492,10 @@ async function onSave(evt) {
     const qty = state.addonQtys[svc.id] || 0;
     if (qty <= 0) return;
     const linePrice = addonLinePrice(svc, qty);
-    const entry = { id: svc.id, name: svc.name_bg, price: linePrice };
+    // name_en matches what the reservation wizard stores — using name_bg here
+    // made every save rename untouched items, firing a spurious "changed"
+    // diff email and burning an edit_count increment toward the lock cap.
+    const entry = { id: svc.id, name: svc.name_en, price: linePrice };
     if (isQtyAddon(svc)) entry.qty = qty;
     addons.push(entry);
   });
@@ -490,15 +505,24 @@ async function onSave(evt) {
   // via the edit link would silently drop the obligatory fee.
   if (guests > CLEANING_THRESHOLD_GUESTS && !addons.some(a => a.id === 'cleaning')) {
     const cleaningSvc = addonServices.find(s => s.id === 'cleaning');
-    if (cleaningSvc) addons.push({ id: cleaningSvc.id, name: cleaningSvc.name_bg, price: cleaningSvc.price });
+    if (cleaningSvc) addons.push({ id: cleaningSvc.id, name: cleaningSvc.name_en, price: cleaningSvc.price });
   }
 
   const drinksOut = [];
   const drinkPool = typeof drinks !== 'undefined' ? drinks : [];
+  const savedDrinks = Array.isArray(state.enquiry.drinks) ? state.enquiry.drinks : [];
   Object.entries(state.drinkQtys).forEach(([id, qty]) => {
     if (!qty || qty <= 0) return;
     const d = drinkPool.find(x => x.id === id);
-    if (d) drinksOut.push({ id: d.id, name: d.name_bg || d.name_en, qty, price_eur: d.price_eur ?? null });
+    if (d) {
+      // name_en matches the wizard's stored shape (see addons note above).
+      drinksOut.push({ id: d.id, name: d.name_en || d.name_bg, qty, price_eur: d.price_eur ?? null });
+    } else {
+      // Drink no longer in the catalog — keep the saved row instead of
+      // silently dropping the customer's item.
+      const orig = savedDrinks.find(x => x.id === id);
+      if (orig) drinksOut.push({ ...orig, qty });
+    }
   });
 
   try {
