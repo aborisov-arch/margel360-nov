@@ -227,7 +227,7 @@ function buildDocDefinition(enquiry) {
             { text: `Гости: ${b.guests || '—'}`, color: MUTED, fontSize: 9 },
           ] },
         ],
-        margin: [0, 0, 0, 22],
+        margin: [0, 0, 0, 16],
       },
 
       // ── Line items
@@ -237,7 +237,7 @@ function buildDocDefinition(enquiry) {
           hLineWidth: (i, node) => (i === 0 || i === 1 || i === node.table.body.length) ? 0.8 : 0.4,
           hLineColor: (i, node) => (i === 1 || i === node.table.body.length) ? GOLD : RULE,
           vLineWidth: () => 0,
-          paddingTop: () => 6, paddingBottom: () => 6, paddingLeft: () => 2, paddingRight: () => 2,
+          paddingTop: () => 5, paddingBottom: () => 5, paddingLeft: () => 2, paddingRight: () => 2,
         },
       },
 
@@ -261,8 +261,8 @@ function buildDocDefinition(enquiry) {
       },
 
       // ── Payment terms
-      { margin: [0, 22, 0, 0], ...goldRule(507) },
-      { text: 'УСЛОВИЯ ЗА ПЛАЩАНЕ', style: 'label', margin: [0, 16, 0, 8] },
+      { margin: [0, 18, 0, 0], ...goldRule(507) },
+      { text: 'УСЛОВИЯ ЗА ПЛАЩАНЕ', style: 'label', margin: [0, 14, 0, 8] },
       {
         columns: [
           { width: '*', stack: [
@@ -279,16 +279,12 @@ function buildDocDefinition(enquiry) {
           ] },
         ],
       },
-      { text: 'Залата се счита за запазена след потвърждение по имейл и платен депозит. Напитките се заплащат 100% предварително. Всички цени са в EUR.',
-        color: MUTED, fontSize: 8, italics: true, margin: [0, 14, 0, 0] },
-
-      // ── Bank details for the deposit transfer (kept on one page)
+      // ── Bank details for the deposit transfer (grouped with the terms above)
       {
         unbreakable: true,
-        margin: [0, 22, 0, 0],
+        margin: [0, 16, 0, 0],
         stack: [
-          goldRule(507),
-          { text: 'ЗА ПРЕВОД НА ДЕПОЗИТА', style: 'label', margin: [0, 16, 0, 8] },
+          { text: 'ЗА ПРЕВОД НА ДЕПОЗИТА', style: 'label', margin: [0, 0, 0, 8] },
           {
             layout: 'noBorders',
             table: {
@@ -304,6 +300,8 @@ function buildDocDefinition(enquiry) {
           },
         ],
       },
+      { text: 'Залата се счита за запазена след потвърждение по имейл и платен депозит. Напитките се заплащат 100% предварително. Всички цени са в EUR.',
+        color: MUTED, fontSize: 8, italics: true, margin: [0, 14, 0, 0] },
 
       // ── Useful links + social, side by side (kept on one page)
       {
