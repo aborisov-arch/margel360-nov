@@ -1090,6 +1090,35 @@ function setupSubmit() {
       return;
     }
 
+    // Google Ads conversion — fires only after the server confirmed the
+    // insert. transaction_id = enquiry number so a refresh/retry can never
+    // double-count; value = the quoted booking total in EUR (same math as
+    // renderSummary: venue + extra guests + addons incl. auto-cleaning +
+    // drinks − venue-only discount).
+    try {
+      if (typeof gtag === 'function') {
+        let addonsTotal = 0;
+        for (const [id, q] of Object.entries(booking.addons)) {
+          const svc = addonServices.find(s => s.id === id);
+          if (svc) addonsTotal += addonLinePrice(svc, q);
+        }
+        const autoClean = autoCleaningAddon();
+        if (autoClean) addonsTotal += autoClean.price;
+        let drinksTotal = 0;
+        drinks.forEach(d => { if (d.price_eur) drinksTotal += (booking.drinkQtys[d.id] || 0) * d.price_eur; });
+        const venuePrice = booking.event?.price_eur || 0;
+        const extraGuestsCost = Math.max(0, (Number(booking.guests) || 0) - 40) * 15;
+        const discount = (booking.discountPercent || 0) > 0 ? venuePrice * booking.discountPercent / 100 : 0;
+        const total = venuePrice + extraGuestsCost + addonsTotal + drinksTotal - discount;
+        gtag('event', 'conversion', {
+          send_to: 'AW-17875820737/wvhpCO2LmegbEMHB7ctC',
+          value: Math.round(total * 100) / 100,
+          currency: 'EUR',
+          transaction_id: String(inserted.enquiry_number ?? inserted.id ?? ''),
+        });
+      }
+    } catch (e) { console.warn('gtag conversion failed:', e); }
+
     // Success — show confirmation
     document.getElementById('step-5')?.classList.remove('active');
     document.querySelector('.wizard-progress').style.display = 'none';
