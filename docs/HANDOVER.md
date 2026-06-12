@@ -39,6 +39,10 @@ Two more seasonal jobs POST to `send-team-digest` (daily morning team digest), r
 - `send-team-digest-summer` — `0 6 * 4-10 *` (06:00 UTC = 09:00 Sofia, Apr–Oct)
 - `send-team-digest-winter` — `0 7 * 1-3,11-12 *` (07:00 UTC = 09:00 Sofia, Nov–Mar)
 
+Two more seasonal jobs POST to `send-event-reminders` (day-before + deposit-due customer emails), reusing `team_digest_cron_secret`:
+- `send-event-reminders-summer` — `0 7 * 4-10 *` (07:00 UTC = 10:00 Sofia, Apr–Oct)
+- `send-event-reminders-winter` — `0 8 * 1-3,11-12 *` (08:00 UTC = 10:00 Sofia, Nov–Mar)
+
 Inspect with `select jobname, schedule from cron.job;`. These live only in the database — if the project is ever recreated, re-create them (and the Vault secrets) by hand.
 
 ## 4. New computer — setup checklist
