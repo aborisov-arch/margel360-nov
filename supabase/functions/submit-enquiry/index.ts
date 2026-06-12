@@ -146,7 +146,9 @@ serve(async (req) => {
   // Whitelist + validate every field. Reject the whole request on any
   // malformed value rather than silently truncating.
   const full_name = safeStr(payload.full_name, MAX_NAME);
-  const email_raw = safeStr(payload.email, MAX_NAME);
+  // 254 = RFC max email length; the client validator allows up to 254 too
+  // (MAX_NAME=200 here used to reject valid long addresses the form accepted).
+  const email_raw = safeStr(payload.email, 254);
   const phone     = safeStr(payload.phone, MAX_PHONE);
   const event_type   = safeStr(payload.event_type, MAX_NAME);
   const event_id     = safeStr(payload.event_id, 50);

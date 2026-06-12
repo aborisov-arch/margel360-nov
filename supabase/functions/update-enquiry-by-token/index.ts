@@ -119,7 +119,13 @@ serve(async (req) => {
     await logAccess(updated.id, tokenHash, ip, ua, "locked", true);
   }
 
-  // Scrub token + admin-only payment_tracking before returning.
-  const { edit_token: _t, status: _s, payment_tracking: _pt, ...publicFields } = updated;
+  // Scrub token + internal fields before returning — same set as
+  // get-enquiry-by-token (feedback token, CRM pipeline/follow-up state).
+  const {
+    edit_token: _t, status: _s, payment_tracking: _pt,
+    feedback_token: _ft, feedback_sent_at: _fs,
+    pipeline_status: _ps, next_followup_at: _nf, edited_by_admin: _ea,
+    ...publicFields
+  } = updated;
   return json({ enquiry: publicFields, diff, locked: willLock });
 });

@@ -63,8 +63,15 @@ serve(async (req) => {
   }
 
   // Strip internal fields before returning. payment_tracking holds admin-only
-  // bookkeeping notes (bank/cash/card) that the customer must not see.
-  const { edit_token: _t, status: _s, payment_tracking: _pt, ...publicFields } = data;
+  // bookkeeping notes; feedback_token would let the link holder submit
+  // feedback / mint a discount code early; pipeline/follow-up/edited-by are
+  // internal CRM state.
+  const {
+    edit_token: _t, status: _s, payment_tracking: _pt,
+    feedback_token: _ft, feedback_sent_at: _fs,
+    pipeline_status: _ps, next_followup_at: _nf, edited_by_admin: _ea,
+    ...publicFields
+  } = data;
 
   await logAccess(data.id, tokenHash, ip, ua, "view", true);
   return json({ enquiry: publicFields });

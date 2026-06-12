@@ -109,7 +109,11 @@ async function sendDiscountEmail(to: string, fullName: string, code: string): Pr
   const FROM = FROM_ADDR.includes("<") ? FROM_ADDR : `Margel360 <${FROM_ADDR}>`;
   if (!RESEND_KEY || !to) return false;
 
-  const first = (fullName || "").split(" ")[0] || fullName || "";
+  // full_name originates from the public reservation form — escape before
+  // interpolating into the email HTML.
+  const esc = (s: string) => String(s ?? "")
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  const first = esc((fullName || "").split(" ")[0] || fullName || "");
   const SERIF = "Fraunces,Georgia,'Times New Roman',serif";
   const SANS  = "Manrope,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
   const subject = `Вашата 3% отстъпка · код ${code}`;
