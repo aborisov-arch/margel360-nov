@@ -41,6 +41,28 @@ function pdfAddonPriceEur(id, price) {
 const INK = '#1A1815', GOLD = '#B9894A', MUTED = '#7A7568';
 const CREAM = '#F6F1E8', RULE = '#E3D6C0', PAPER = '#FDFBF7';
 
+// Static offer info carried over from the offer-evening.xlsx template:
+// bank/IBAN for the deposit transfer, useful links and social handles.
+const BANK = {
+  holder: 'МАРГЕЛ-7 ЕООД',
+  bank: 'УниКредит Булбанк',
+  iban: 'BG70 UNCR 7000 1525 1685 13',
+  bic: 'UNCRBGSF',
+};
+// Cyrillic paths are percent-encoded so the PDF hyperlinks resolve correctly.
+const USEFUL_LINKS = [
+  { label: 'Услуги и цени', url: 'https://margel360.bg/%d1%83%d1%81%d0%bb%d1%83%d0%b3%d0%b8/' },
+  { label: 'Алкохолно меню — изберете предварително', url: 'https://margel360.bg/%d0%b0%d0%bb%d0%ba%d0%be%d1%85%d0%be%d0%bb/' },
+  { label: "Кетъринг партньор · L'Instant", url: 'https://www.linstant.bg' },
+  { label: 'Кетъринг партньор · VIP Catering', url: 'https://vipcatering.bg' },
+];
+const FB_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#1A1815" d="M22 12a10 10 0 1 0-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.78-3.89 1.09 0 2.23.2 2.23.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99A10 10 0 0 0 22 12Z"/></svg>';
+const IG_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="#1A1815" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/></g><circle cx="17.2" cy="6.8" r="1.3" fill="#1A1815"/></svg>';
+const SOCIAL = [
+  { svg: FB_SVG, label: 'facebook.com/margel360', url: 'https://www.facebook.com/margel360/' },
+  { svg: IG_SVG, label: 'instagram.com/margel360', url: 'https://www.instagram.com/margel360/' },
+];
+
 const eur = (n) => '€' + (Math.round((Number(n) || 0) * 100) / 100).toFixed(2);
 const fmtDateBg = (s) => String(s ?? '').replaceAll('/', '.');
 
@@ -259,12 +281,64 @@ function buildDocDefinition(enquiry) {
       },
       { text: 'Залата се счита за запазена след потвърждение по имейл и платен депозит. Напитките се заплащат 100% предварително. Всички цени са в EUR.',
         color: MUTED, fontSize: 8, italics: true, margin: [0, 14, 0, 0] },
+
+      // ── Bank details for the deposit transfer (kept on one page)
+      {
+        unbreakable: true,
+        margin: [0, 22, 0, 0],
+        stack: [
+          goldRule(507),
+          { text: 'ЗА ПРЕВОД НА ДЕПОЗИТА', style: 'label', margin: [0, 16, 0, 8] },
+          {
+            layout: 'noBorders',
+            table: {
+              widths: [78, '*'],
+              body: [
+                [{ text: 'Получател', style: 'kv' }, { text: BANK.holder, bold: true }],
+                [{ text: 'Банка', style: 'kv' }, { text: BANK.bank }],
+                [{ text: 'IBAN', style: 'kv' }, { text: BANK.iban, bold: true, color: GOLD }],
+                [{ text: 'BIC', style: 'kv' }, { text: BANK.bic }],
+                [{ text: 'Основание', style: 'kv' }, { text: `Оферта № ${offerNo}` }],
+              ],
+            },
+          },
+        ],
+      },
+
+      // ── Useful links + social, side by side (kept on one page)
+      {
+        unbreakable: true,
+        margin: [0, 22, 0, 0],
+        columns: [
+          {
+            width: '*',
+            stack: [
+              { text: 'ПОЛЕЗНИ ВРЪЗКИ', style: 'label', margin: [0, 0, 0, 8] },
+              ...USEFUL_LINKS.map(l => ({ text: l.label, link: l.url, color: INK, decoration: 'underline', decorationColor: GOLD, fontSize: 9, margin: [0, 0, 0, 5] })),
+            ],
+          },
+          {
+            width: 200,
+            stack: [
+              { text: 'ПОСЛЕДВАЙ НИ', style: 'label', margin: [0, 0, 0, 8] },
+              ...SOCIAL.map(s => ({
+                columns: [
+                  { width: 16, svg: s.svg, fit: [13, 13] },
+                  { width: '*', text: s.label, link: s.url, color: INK, fontSize: 9, margin: [4, 1, 0, 0] },
+                ],
+                margin: [0, 0, 0, 6],
+              })),
+            ],
+          },
+        ],
+      },
     ],
     styles: {
       th: { bold: true, fontSize: 8, color: MUTED, characterSpacing: 1 },
       td: { fontSize: 9.5, color: INK },
       tdGold: { fontSize: 9.5, color: GOLD },
       label: { bold: true, fontSize: 8, color: GOLD, characterSpacing: 1.5 },
+      kv: { fontSize: 9, color: MUTED },
     },
     footer: (currentPage) => ({
       margin: [44, 12, 44, 0],
