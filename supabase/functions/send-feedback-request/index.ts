@@ -2,9 +2,13 @@ import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import { json, preflight } from "../_shared/cors.ts";
 
-// Cron-triggered: finds enquiries whose preferred_date was yesterday in
-// Europe/Sofia time and have not yet received a feedback email, then sends
-// one and marks feedback_sent_at so we never re-send.
+// Cron-triggered, two passes:
+//  1. First ask  — enquiries whose preferred_date was yesterday (Sofia time)
+//     and not yet emailed; send + stamp feedback_sent_at.
+//  2. Re-ask     — enquiries emailed RESEND_AFTER_DAYS+ days ago that still
+//     have no event_feedback row; send ONE reminder + stamp
+//     feedback_resent_at. The resend window is bounded so old enquiries
+//     don't suddenly get nudged when this feature ships.
 
 const SUPABASE_URL  = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -16,6 +20,11 @@ const SITE_URL      = (Deno.env.get("PUBLIC_SITE_URL") ?? "https://margel360.bg"
 // Shared secret required from the pg_cron caller. Without this anyone could
 // trigger the function and drain Resend quota / front-run feedback emails.
 const CRON_SECRET   = Deno.env.get("FEEDBACK_CRON_SECRET") ?? "";
+
+// Re-ask once if no feedback arrived within this many days of the first
+// email; ignore anything older than the upper bound (feature-launch guard).
+const RESEND_AFTER_DAYS = 3;
+const RESEND_MAX_AGE_DAYS = 10;
 
 const sb = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
 
@@ -67,12 +76,14 @@ async function sendResend(to: string, subject: string, html: string) {
   }
 }
 
-function renderFeedbackEmail(e: { full_name: string; event_type: string; preferred_date: string; feedback_token: string }) {
+function renderFeedbackEmail(e: { full_name: string; event_type: string; preferred_date: string; feedback_token: string }, isReminder = false) {
   const first = (e.full_name || "").split(" ")[0] || e.full_name || "";
   const url = `${SITE_URL}/feedback.html?token=${e.feedback_token}`;
   const SERIF = "Fraunces,Georgia,'Times New Roman',serif";
   const SANS  = "Manrope,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
-  const subject = `Как премина събитието ви в Маргел 360°? · ${fmtDateBg(e.preferred_date)}`;
+  const subject = isReminder
+    ? `Напомняне: вашите 3% отстъпка ви очакват · Маргел 360°`
+    : `Как премина събитието ви в Маргел 360°? · ${fmtDateBg(e.preferred_date)}`;
   const html = `<!doctype html><html lang="bg"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(subject)}</title>
 <style>@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..600;1,9..144,400..600&family=Manrope:wght@300;400;500;600;700&display=swap');</style>
 </head><body style="margin:0;padding:0;background:#F6F1E8;font-family:${SANS};color:#1A1815">
@@ -152,5 +163,48 @@ serve(async (req) => {
     }
   }
 
-  return json({ scanned: data?.length ?? 0, eligible: toSend.length, sent });
+  // ── Pass 2: one-time re-ask. First email went out 3–10 days ago, nothing
+  // submitted yet, not yet re-asked.
+  const resendCutoff = new Date(Date.now() - RESEND_AFTER_DAYS * 86_400_000).toISOString();
+  const resendFloor  = new Date(Date.now() - RESEND_MAX_AGE_DAYS * 86_400_000).toISOString();
+  const { data: resendData, error: resendErr } = await sb
+    .from("enquiries")
+    .select("id, full_name, email, event_type, preferred_date, feedback_token")
+    .not("feedback_sent_at", "is", null)
+    .lt("feedback_sent_at", resendCutoff)
+    .gt("feedback_sent_at", resendFloor)
+    .is("feedback_resent_at", null)
+    .limit(100);
+
+  let resent = 0;
+  if (resendErr) {
+    console.error("resend query failed:", resendErr);
+  } else if (resendData?.length) {
+    // Drop anyone who already submitted feedback.
+    const ids = resendData.map(e => e.id);
+    const { data: fb, error: fbErr } = await sb
+      .from("event_feedback").select("enquiry_id").in("enquiry_id", ids);
+    if (fbErr) {
+      console.error("event_feedback lookup failed (skipping re-ask):", fbErr);
+    } else {
+      const submitted = new Set((fb ?? []).map(f => f.enquiry_id));
+      for (const e of resendData.filter(e => !submitted.has(e.id) && !!e.email)) {
+        // Stamp first so a failed stamp can't cause repeat nudges; roll back
+        // on send failure so a Resend outage retries tomorrow.
+        const { error: stampErr } = await sb.from("enquiries")
+          .update({ feedback_resent_at: new Date().toISOString() }).eq("id", e.id);
+        if (stampErr) { console.error(`resend stamp failed for ${e.id}:`, stampErr); continue; }
+        try {
+          const { subject, html } = renderFeedbackEmail(e, true);
+          await sendResend(e.email!, subject, html);
+          resent++;
+        } catch (err) {
+          console.error(`re-ask send failed for ${e.id}, rolling back stamp:`, err);
+          await sb.from("enquiries").update({ feedback_resent_at: null }).eq("id", e.id);
+        }
+      }
+    }
+  }
+
+  return json({ scanned: data?.length ?? 0, eligible: toSend.length, sent, resent });
 });

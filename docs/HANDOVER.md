@@ -43,6 +43,12 @@ Two more seasonal jobs POST to `send-event-reminders` (day-before + deposit-due 
 - `send-event-reminders-summer` — `0 7 * 4-10 *` (07:00 UTC = 10:00 Sofia, Apr–Oct)
 - `send-event-reminders-winter` — `0 8 * 1-3,11-12 *` (08:00 UTC = 10:00 Sofia, Nov–Mar)
 
+Two non-seasonal jobs:
+- `archive-stale-enquiries` — `0 5 * * 1` (Mondays): pure-SQL `public.archive_stale_enquiries()` — moves `lost` >90 days old and `completed` >90 days past event date to `archived`.
+- `send-marketing-export-monthly` — `0 6 1 * *` (1st of month): POSTs to `send-marketing-export` (reuses `team_digest_cron_secret`) — emails owners a CSV of marketing-consenting customers; skips silently when there are none.
+
+Note: the feedback cron's function also does a **one-time re-ask** — if the first feedback email is 3–10 days old, nothing was submitted, and `feedback_resent_at` is null, it sends one reminder and stamps the flag.
+
 Inspect with `select jobname, schedule from cron.job;`. These live only in the database — if the project is ever recreated, re-create them (and the Vault secrets) by hand.
 
 ## 4. New computer — setup checklist
@@ -67,7 +73,8 @@ Inspect with `select jobname, schedule from cron.job;`. These live only in the d
 | send-feedback-request (v6) | no | cron-driven feedback emails (requires x-cron-secret) |
 | send-team-digest (v1) | no | cron-driven daily team digest to OWNER_EMAILS/TEAM_EMAIL (requires x-cron-secret = TEAM_DIGEST_CRON_SECRET) |
 | send-event-reminders (v1) | no | cron-driven customer reminders: day-before + deposit-due (reuses x-cron-secret = TEAM_DIGEST_CRON_SECRET; POST {"dry_run":true} to preview) |
-| send-offer (v1) | **yes** | admin one-click offer: emails the customer a branded cover note + the client-built offer .xlsx, stamps offer_sent_at. Own email-allowlist check on top of JWT |
+| send-offer (v1) | **yes** | admin one-click offer: emails the customer a branded cover note + the client-built offer PDF, stamps offer_sent_at. Own email-allowlist check on top of JWT |
+| send-marketing-export (v1) | no | monthly cron: CSV of marketing-consenting customers emailed to owners (x-cron-secret = TEAM_DIGEST_CRON_SECRET; skips when empty) |
 | submit-feedback (v8) | no | stores feedback, mints 3% MG- discount code, emails it |
 | get-feedback-by-token (v4) | no | feedback page load |
 | validate-discount-code (v4) / redeem-discount-code (v4) | no | promo code check/claim |
