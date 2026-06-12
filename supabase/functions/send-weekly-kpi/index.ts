@@ -3,14 +3,16 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import { json, preflight } from "../_shared/cors.ts";
 
 // Cron-triggered Monday mornings: one KPI email to the owners covering the
-// past 7 days. Pipeline transitions are NOT timestamped in the DB, so this
-// reports only what is reliably dated:
+// past 7 days:
 //   - new enquiries (created_at), split by event type
+//   - won / lost (enquiry_status_log transitions to confirmed / lost)
 //   - offers sent (offer_sent_at)
 //   - events held (confirmed/completed with preferred_date in the window)
 //   - feedback received (event_feedback.submitted_at) + average ratings
 //   - live pipeline snapshot (current stage counts)
 //   - events confirmed for the next 14 days
+// Won/lost only counts transitions AFTER the status-log shipped
+// (migration 20260613120000) — earlier history was never timestamped.
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -56,7 +58,7 @@ serve(async (req) => {
   const windowStart = new Date(Date.now() - WINDOW_DAYS * 86_400_000);
   const windowStartIso = windowStart.toISOString();
 
-  const [{ data: enq, error: enqErr }, { data: fb, error: fbErr }] = await Promise.all([
+  const [{ data: enq, error: enqErr }, { data: fb, error: fbErr }, { data: transitions, error: trErr }] = await Promise.all([
     sb.from("enquiries")
       .select("id, event_type, preferred_date, pipeline_status, created_at, offer_sent_at")
       .neq("pipeline_status", "archived")
@@ -64,9 +66,23 @@ serve(async (req) => {
     sb.from("event_feedback")
       .select("experience_rating, service_rating, venue_rating, rebook_rating, submitted_at")
       .gte("submitted_at", windowStartIso),
+    sb.from("enquiry_status_log")
+      .select("enquiry_id, to_status")
+      .in("to_status", ["confirmed", "lost"])
+      .gte("changed_at", windowStartIso),
   ]);
   if (enqErr) { console.error("enquiries query failed:", enqErr); return json({ error: "query_failed" }, 500); }
   if (fbErr) console.error("feedback query failed (section skipped):", fbErr);
+  if (trErr) console.error("status_log query failed (won/lost shows 0):", trErr);
+
+  // Won / lost this week — distinct enquiries that ENTERED the stage during
+  // the window (an enquiry bounced confirmed→lost in the same week counts in
+  // both, which is the honest reading).
+  const wonIds = new Set<string>(), lostIds = new Set<string>();
+  for (const t of transitions ?? []) {
+    if (t.to_status === "confirmed") wonIds.add(t.enquiry_id);
+    else if (t.to_status === "lost") lostIds.add(t.enquiry_id);
+  }
 
   const all = enq ?? [];
   const nowMs = Date.now();
@@ -144,12 +160,18 @@ serve(async (req) => {
     <div style="margin-top:4px;font:13px/1.5 ${SANS};color:#7A7568">последните ${WINDOW_DAYS} дни · ${esc(dateBg)}</div>
   </td></tr>
   <tr><td style="padding:24px 44px 8px">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-      ${kpiCell("Нови запитвания", String(fresh.length))}
-      ${kpiCell("Изпратени оферти", String(offersSent))}
-      ${kpiCell("Проведени събития", String(held))}
-      ${kpiCell(`Предстоящи ${LOOKAHEAD_DAYS} дни`, String(upcoming))}
-    </tr></table>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        ${kpiCell("Нови запитвания", String(fresh.length))}
+        ${kpiCell("Спечелени", String(wonIds.size))}
+        ${kpiCell("Загубени", String(lostIds.size))}
+      </tr>
+      <tr>
+        ${kpiCell("Изпратени оферти", String(offersSent))}
+        ${kpiCell("Проведени събития", String(held))}
+        ${kpiCell(`Предстоящи ${LOOKAHEAD_DAYS} дни`, String(upcoming))}
+      </tr>
+    </table>
   </td></tr>
   <tr><td style="padding:16px 44px 4px">
     <h2 style="margin:0 0 6px;font:500 13px/1.2 ${SANS};letter-spacing:0.14em;text-transform:uppercase;color:#B9894A">Нови по тип събитие</h2>
@@ -170,7 +192,8 @@ serve(async (req) => {
 </table></td></tr></table></body></html>`;
 
   const text = `Маргел 360° · седмичен отчет (${WINDOW_DAYS} дни)\n`
-    + `Нови запитвания: ${fresh.length}\nИзпратени оферти: ${offersSent}\nПроведени събития: ${held}\nПредстоящи ${LOOKAHEAD_DAYS} дни: ${upcoming}\n`
+    + `Нови запитвания: ${fresh.length}\nСпечелени: ${wonIds.size}\nЗагубени: ${lostIds.size}\n`
+    + `Изпратени оферти: ${offersSent}\nПроведени събития: ${held}\nПредстоящи ${LOOKAHEAD_DAYS} дни: ${upcoming}\n`
     + `Анкети: ${fbRows.length}\n`;
 
   const r = await fetch("https://api.resend.com/emails", {
@@ -181,7 +204,8 @@ serve(async (req) => {
   if (!r.ok) { console.error("resend failed:", await r.text()); return json({ error: "send_failed" }, 502); }
 
   return json({
-    newEnquiries: fresh.length, offersSent, eventsHeld: held, upcoming,
+    newEnquiries: fresh.length, won: wonIds.size, lost: lostIds.size,
+    offersSent, eventsHeld: held, upcoming,
     feedback: fbRows.length, sent: unique.length,
   });
 });

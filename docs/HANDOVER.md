@@ -85,9 +85,9 @@ Deploy command and the verify_jwt rule: see CLAUDE.md → Deploying.
 
 ## 6. Database snapshot
 
-- Tables: `enquiries` (+ `enquiry_number_seq` starting 1001), `enquiry_notes`, `enquiry_edit_log`, `event_feedback`, `discount_codes`, `financial_events`, `financial_expenses`, `occupied_dates`, `rate_limits`.
+- Tables: `enquiries` (+ `enquiry_number_seq` starting 1001), `enquiry_notes`, `enquiry_edit_log`, `enquiry_status_log` (pipeline transition history — feeds the weekly KPI won/lost), `event_feedback`, `discount_codes`, `financial_events`, `financial_expenses`, `occupied_dates`, `rate_limits`.
 - RLS: everything admin-facing behind `is_admin()`; anon may only SELECT `occupied_dates`; `rate_limits` service-role only.
-- Triggers on `enquiries`: `enquiries_auto_block_date_trigger` (confirmed/completed → block date), `trg_set_enquiry_token_expiry` (token = created + 14 days).
+- Triggers on `enquiries`: `enquiries_auto_block_date_trigger` (confirmed/completed → block date), `trg_set_enquiry_token_expiry` (token = created + 14 days), `enquiries_log_status_change_trigger` (every pipeline_status change → row in `enquiry_status_log`; SECURITY DEFINER so admin dashboard updates can write it).
 - Migrations in `supabase/migrations/` are canonical **as of `20260609120000`** (earlier live-only hardening was back-synced then). New schema changes: apply live AND commit the file.
 
 ## 7. Where to look when something breaks
