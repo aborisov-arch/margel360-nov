@@ -17,6 +17,9 @@ const RESEND_KEY   = Deno.env.get("RESEND_API_KEY")!;
 const FROM_ADDR    = Deno.env.get("EVENT_HALL_FROM_EMAIL") ?? "enquiries@margel360.bg";
 const FROM_EMAIL   = FROM_ADDR.includes("<") ? FROM_ADDR : `Margel360 <${FROM_ADDR}>`;
 const SITE_URL     = (Deno.env.get("PUBLIC_SITE_URL") ?? "https://margel360.bg").replace(/\/$/, "");
+// INTENTIONALLY shared with send-team-digest: one secret guards both internal
+// cron functions (Vault entry `team_digest_cron_secret`). If you rotate it,
+// both functions and the Vault entry must move together.
 const CRON_SECRET  = Deno.env.get("TEAM_DIGEST_CRON_SECRET") ?? "";
 
 // Deposit reminder window: only chase events this many days out (and at least
@@ -211,27 +214,38 @@ serve(async (req) => {
     });
   }
 
+  // Stamp BEFORE sending. If the send then fails the flag is already set, so
+  // the customer misses one reminder — strictly better than the reverse order,
+  // where a failed stamp after a successful send emails the customer twice on
+  // consecutive mornings. The stamp is rolled back on send failure (best
+  // effort) so a transient Resend outage still gets retried tomorrow.
   let sentDayBefore = 0;
   for (const e of dayBefore) {
+    const { error: stampErr } = await sb.from("enquiries")
+      .update({ reminder_sent_at: new Date().toISOString() }).eq("id", e.id);
+    if (stampErr) { console.error(`day-before stamp failed for ${e.id}:`, stampErr); continue; }
     try {
       const { subject, html } = renderDayBefore(e);
       await sendResend(e.email!, subject, html);
-      await sb.from("enquiries").update({ reminder_sent_at: new Date().toISOString() }).eq("id", e.id);
       sentDayBefore++;
     } catch (err) {
-      console.error(`day-before failed for ${e.id}:`, err);
+      console.error(`day-before send failed for ${e.id}, rolling back stamp:`, err);
+      await sb.from("enquiries").update({ reminder_sent_at: null }).eq("id", e.id);
     }
   }
 
   let sentDeposit = 0;
   for (const e of depositDue) {
+    const { error: stampErr } = await sb.from("enquiries")
+      .update({ deposit_reminder_sent_at: new Date().toISOString() }).eq("id", e.id);
+    if (stampErr) { console.error(`deposit-due stamp failed for ${e.id}:`, stampErr); continue; }
     try {
       const { subject, html } = renderDepositDue(e);
       await sendResend(e.email!, subject, html);
-      await sb.from("enquiries").update({ deposit_reminder_sent_at: new Date().toISOString() }).eq("id", e.id);
       sentDeposit++;
     } catch (err) {
-      console.error(`deposit-due failed for ${e.id}:`, err);
+      console.error(`deposit-due send failed for ${e.id}, rolling back stamp:`, err);
+      await sb.from("enquiries").update({ deposit_reminder_sent_at: null }).eq("id", e.id);
     }
   }
 

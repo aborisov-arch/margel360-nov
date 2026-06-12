@@ -83,13 +83,16 @@ const ADDON_QTY_CELLS = [
   'AA80', 'AA82',                       // other services / alcohol
 ];
 
-// Lazy-load ExcelJS once.
+// Lazy-load ExcelJS once. SRI hash pins the exact published bytes so a CDN
+// compromise can't execute in the admin session.
 let _excelJsPromise = null;
 function loadExcelJS() {
   if (_excelJsPromise) return _excelJsPromise;
   _excelJsPromise = new Promise((resolve, reject) => {
     const s = document.createElement('script');
     s.src = 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
+    s.integrity = 'sha384-Pqp51FUN2/qzfxZxBCtF0stpc9ONI6MYZpVqmo8m20SoaQCzf+arZvACkLkirlPz';
+    s.crossOrigin = 'anonymous';
     s.onload = () => resolve(window.ExcelJS);
     s.onerror = () => reject(new Error('Failed to load ExcelJS'));
     document.head.appendChild(s);
@@ -145,7 +148,9 @@ async function buildOfferXLSXBlob(enquiry) {
   }
 
   // ── Header: offer number + date
-  ws.getCell('T6').value = offerNumberFromId(enquiry.id);
+  // Prefer the sequential enquiry_number so XLSX and PDF carry the same
+  // offer number; uuid-derived fallback only for legacy rows without one.
+  ws.getCell('T6').value = enquiry.enquiry_number || offerNumberFromId(enquiry.id);
   ws.getCell('X6').value = formatDDMMYY(new Date());
 
   // ── Event details

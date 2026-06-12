@@ -1,3 +1,8 @@
+/* Fraunces display serif for headings — carries the public site's
+   serif+sans brand pairing into the admin. Loaded here (not per-page HTML)
+   so every admin page gets it through the shared stylesheet. */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..600;1,9..144,400..600&display=swap');
+
 /* Screen reader only — visually hidden but accessible */
 .sr-only {
   position: absolute;
@@ -25,6 +30,7 @@
   --accent-dim:   rgba(201,168,76,0.12);
   --radius:       8px;
   --font:         'Inter', Arial, sans-serif;
+  --font-serif:   'Fraunces', Georgia, 'Times New Roman', serif;
   --shadow:       0 2px 12px rgba(0,0,0,0.07);
 }
 
@@ -101,9 +107,10 @@ body {
 }
 
 .admin-logo {
-  font-size: 1rem;
-  font-weight: 800;
-  letter-spacing: 0.05em;
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   text-decoration: none;
   color: var(--text);
@@ -159,8 +166,9 @@ body {
 .admin-container { max-width: 1100px; margin: 0 auto; }
 
 .page-title {
-  font-size: 1.75rem;
-  font-weight: 700;
+  font-family: var(--font-serif);
+  font-size: 1.9rem;
+  font-weight: 500;
   margin-bottom: 8px;
   color: var(--text);
 }
@@ -762,4 +770,50 @@ body {
   font: 600 0.72rem/1.4 'Inter', sans-serif;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
+}
+
+/* ── Toasts — non-blocking feedback replacing native alert() ── */
+.toast-stack {
+  position: fixed; bottom: 24px; right: 24px; z-index: 1000;
+  display: flex; flex-direction: column; gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  display: flex; align-items: center; gap: 10px;
+  min-width: 260px; max-width: 380px;
+  padding: 12px 16px;
+  background: var(--text); color: #f6f1e8;
+  border-radius: var(--radius);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.18);
+  font-size: 0.88rem; line-height: 1.45;
+  opacity: 0; transform: translateY(8px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.toast.is-in { opacity: 1; transform: translateY(0); }
+.toast::before {
+  content: ''; flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--accent);
+}
+.toast--success::before { background: #2eaa6e; }
+.toast--error::before   { background: #e05252; }
+
+/* ── Offer-sent badge — shown once offer_sent_at is stamped ── */
+.status-badge.offer-sent {
+  background: rgba(46,170,110,0.12);
+  color: #1e7a4f;
+}
+
+/* ── Unified keyboard focus ring (keyboard-only via :focus-visible) ── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+:focus:not(:focus-visible) { outline: none; }
+
+/* ── Mobile: let the enquiries table scroll instead of crushing columns ── */
+#enquiries-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+@media (max-width: 640px) {
+  .enquiries-table { min-width: 560px; }
 }

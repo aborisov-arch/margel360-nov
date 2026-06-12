@@ -212,6 +212,7 @@ function renderEnquiries(enquiries) {
         </span>
         <span class="${pipelineBadge(e.pipeline_status).cls}" style="margin-left:6px">${pipelineBadge(e.pipeline_status).label}</span>
         ${e.edit_locked ? `<span class="status-badge locked" style="margin-left:6px">${t('edit_locked_badge')}</span>` : ''}
+        ${e.offer_sent_at ? `<span class="status-badge offer-sent" style="margin-left:6px" title="${esc(fmtDate(e.offer_sent_at))}">${t('offer_sent_badge')}</span>` : ''}
         ${e.next_followup_at ? `<span class="followup-chip ${followupClass(e.next_followup_at)}" title="${t('crm_followup')}">⏰ ${esc(dateInputValue(e.next_followup_at))}</span>` : ''}
       </td>
       <td><button class="btn-expand" aria-expanded="false" data-id="${esc(e.id)}">${t('btn_view')}</button></td>
@@ -263,7 +264,7 @@ function renderEnquiries(enquiries) {
             <button class="btn btn-sm btn-outline btn-send-offer"
               data-id="${esc(e.id)}"
               data-email="${esc(e.email)}">
-              ${t('btn_send_offer')}
+              ${e.offer_sent_at ? t('btn_send_offer_again') : t('btn_send_offer')}
             </button>
             <button class="btn btn-sm btn-danger btn-delete-enquiry"
               data-id="${esc(e.id)}"
@@ -617,11 +618,11 @@ function bindTableHandlers() {
       try {
         const result = await window.exportOfferXLSX(enquiry);
         if (result?.unmapped?.length) {
-          alert(t('export_unmapped').replace('{list}', result.unmapped.join(', ')));
+          showToast(t('export_unmapped').replace('{list}', result.unmapped.join(', ')));
         }
       } catch (err) {
         console.error('Offer export failed:', err);
-        alert(t('export_failed'));
+        showToast(t('export_failed'), 'error');
       } finally {
         exportBtn.disabled = false;
         exportBtn.textContent = origText;
@@ -638,10 +639,9 @@ function bindTableHandlers() {
       const toEmail = sendBtn.getAttribute('data-email') || '';
       const enquiry = allEnquiries.find(x => String(x.id) === String(id));
       if (!enquiry) return;
-      if (!toEmail) { alert(t('send_offer_no_email')); return; }
+      if (!toEmail) { showToast(t('send_offer_no_email'), 'error'); return; }
       if (!window.confirm(t('send_offer_confirm').replace('{email}', toEmail))) return;
 
-      const origText = sendBtn.textContent;
       sendBtn.disabled = true;
       sendBtn.textContent = t('send_offer_working');
       try {
@@ -654,17 +654,29 @@ function bindTableHandlers() {
           fr.readAsDataURL(blob);
         });
         const { data, error } = await db.functions.invoke('send-offer', {
-          body: { id, xlsx_base64: b64, filename },
+          body: { id, attachment_base64: b64, filename },
         });
         if (error || !data?.ok) throw (error || new Error('send-offer failed'));
         enquiry.offer_sent_at = data.offer_sent_at;
-        alert(t('send_offer_ok').replace('{email}', data.sent_to || toEmail));
+        showToast(t('send_offer_ok').replace('{email}', data.sent_to || toEmail), 'success');
+        // Live UI update: add the offer-sent badge to the summary row (if not
+        // already there) and relabel the button — no re-render needed.
+        const summaryRow = sendBtn.closest('tr.detail-row')?.previousElementSibling;
+        const statusCell = summaryRow?.querySelector('.status-badge')?.parentElement;
+        if (statusCell && !statusCell.querySelector('.offer-sent')) {
+          const badge = document.createElement('span');
+          badge.className = 'status-badge offer-sent';
+          badge.style.marginLeft = '6px';
+          badge.textContent = t('offer_sent_badge');
+          statusCell.appendChild(badge);
+        }
+        sendBtn.textContent = t('btn_send_offer_again');
       } catch (err) {
         console.error('Send offer failed:', err);
-        alert(t('send_offer_failed'));
+        showToast(t('send_offer_failed'), 'error');
+        sendBtn.textContent = enquiry.offer_sent_at ? t('btn_send_offer_again') : t('btn_send_offer');
       } finally {
         sendBtn.disabled = false;
-        sendBtn.textContent = origText;
       }
       return;
     }
@@ -704,7 +716,7 @@ function bindTableHandlers() {
 
       if (error) {
         console.error('Delete failed:', error);
-        alert(t('delete_failed'));
+        showToast(t('delete_failed'), 'error');
         return;
       }
 
@@ -822,7 +834,7 @@ function bindTableHandlers() {
       if (stageSel) stageSel.value = newLocked ? 'confirmed' : 'new';
 
       if (syncWarning) {
-        alert(`${t('edit_lock_btn')}: ${syncWarning}`);
+        showToast(`${t('edit_lock_btn')}: ${syncWarning}`, 'error');
       }
       return;
     }

@@ -76,23 +76,37 @@ function fmtDateObjBg(date) {
   const mm = String(date.getMonth() + 1).padStart(2, '0');
   return `${dd}.${mm}.${date.getFullYear()}`;
 }
-function pdfOfferNumber(id) {
+// Offer number: prefer the sequential customer-facing enquiry_number (dense,
+// collision-free). Fall back to a uuid-derived number only for legacy rows
+// without one — note the hex-tail scheme can collide across a multi-year log.
+function pdfOfferNumber(enquiry) {
+  if (enquiry && enquiry.enquiry_number) return enquiry.enquiry_number;
+  const id = enquiry && enquiry.id;
   if (!id) return Date.now().toString().slice(-6);
   const s = String(id).replace(/-/g, '');
   return parseInt(s.slice(-6), 16) % 1000000;
 }
 
 // Lazy-load pdfmake + its default (Roboto, Cyrillic-capable) vfs once.
+// SRI hashes pin the exact published bytes — a CDN compromise of these
+// packages can't execute in the admin session (which carries a Supabase JWT).
 let _pdfMakePromise = null;
 function loadPdfMake() {
   if (_pdfMakePromise) return _pdfMakePromise;
-  const inject = (src) => new Promise((res, rej) => {
+  const inject = (src, integrity) => new Promise((res, rej) => {
     const s = document.createElement('script');
-    s.src = src; s.onload = res; s.onerror = () => rej(new Error('load failed: ' + src));
+    s.src = src; s.integrity = integrity; s.crossOrigin = 'anonymous';
+    s.onload = res; s.onerror = () => rej(new Error('load failed: ' + src));
     document.head.appendChild(s);
   });
-  _pdfMakePromise = inject('https://cdn.jsdelivr.net/npm/pdfmake@0.2.12/build/pdfmake.min.js')
-    .then(() => inject('https://cdn.jsdelivr.net/npm/pdfmake@0.2.12/build/vfs_fonts.js'))
+  _pdfMakePromise = inject(
+    'https://cdn.jsdelivr.net/npm/pdfmake@0.2.12/build/pdfmake.min.js',
+    'sha384-UbICcZf4B6+FB/cmTNLOqZzUc40rHayX14EhEDfAnFhmte7yAAA7s081OeuC8VVT',
+  )
+    .then(() => inject(
+      'https://cdn.jsdelivr.net/npm/pdfmake@0.2.12/build/vfs_fonts.js',
+      'sha384-zmD5tDN2awbMigS/yVcxHObSsdXXKh/27Y/bSII38WfNl+D7O/aVCIteAXsLY3p3',
+    ))
     .then(() => window.pdfMake);
   return _pdfMakePromise;
 }
@@ -134,7 +148,7 @@ function computeOfferBreakdown(enquiry) {
 
 function buildDocDefinition(enquiry) {
   const b = computeOfferBreakdown(enquiry);
-  const offerNo = pdfOfferNumber(enquiry.id);
+  const offerNo = pdfOfferNumber(enquiry);
   const issued = new Date();
   const validUntil = new Date(issued.getTime());
   validUntil.setDate(validUntil.getDate() + PDF_OFFER_VALID_DAYS);

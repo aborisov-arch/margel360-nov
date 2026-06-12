@@ -35,7 +35,7 @@ function json(body: unknown, status = 200): Response {
 }
 
 // Cap the attachment so a malformed/oversized payload can't blow up Resend.
-const MAX_XLSX_B64_LEN = 6_000_000; // ~4.5 MB decoded
+const MAX_ATTACH_B64_LEN = 6_000_000; // ~4.5 MB decoded
 
 const sbAdmin = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
 
@@ -54,15 +54,17 @@ serve(async (req) => {
   const email = (user.email || "").toLowerCase();
   if (!ADMIN_EMAILS.has(email)) return json({ error: "forbidden" }, 403);
 
-  let payload: { id?: string; xlsx_base64?: string; filename?: string };
+  let payload: { id?: string; attachment_base64?: string; xlsx_base64?: string; filename?: string };
   try { payload = await req.json(); } catch { return json({ error: "bad_json" }, 400); }
   const id = payload.id;
-  const xlsxB64 = payload.xlsx_base64 ?? "";
+  // `attachment_base64` is canonical (the dashboard sends a PDF); the old
+  // `xlsx_base64` name is accepted for cached pre-rename dashboard JS.
+  const attachB64 = payload.attachment_base64 ?? payload.xlsx_base64 ?? "";
   if (!id || typeof id !== "string") return json({ error: "missing_id" }, 400);
-  if (!xlsxB64 || typeof xlsxB64 !== "string") return json({ error: "missing_attachment" }, 400);
-  if (xlsxB64.length > MAX_XLSX_B64_LEN) return json({ error: "attachment_too_large" }, 413);
+  if (!attachB64 || typeof attachB64 !== "string") return json({ error: "missing_attachment" }, 400);
+  if (attachB64.length > MAX_ATTACH_B64_LEN) return json({ error: "attachment_too_large" }, 413);
   // Reject anything that isn't plain base64 (data: prefix, whitespace, etc.).
-  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(xlsxB64)) return json({ error: "bad_attachment" }, 400);
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(attachB64)) return json({ error: "bad_attachment" }, 400);
 
   const { data: enq, error: loadErr } = await sbAdmin
     .from("enquiries")
@@ -87,7 +89,7 @@ serve(async (req) => {
       to: enq.email,
       subject,
       html,
-      attachments: [{ filename: safeName, content: xlsxB64 }],
+      attachments: [{ filename: safeName, content: attachB64 }],
     }),
   });
   if (!r.ok) {

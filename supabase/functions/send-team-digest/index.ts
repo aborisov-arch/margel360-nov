@@ -202,9 +202,11 @@ serve(async (req) => {
       return { e, meta: `${PIPELINE_BG[e.pipeline_status ?? ""] ?? e.pipeline_status} · ${ageDays} дн.` };
     });
 
-  // 3. Unanswered new enquiries.
+  // 3. Unanswered new enquiries — minus the ones already listed as stale or
+  // due for follow-up, so one enquiry never inflates two sections.
+  const listedIds = new Set([...stale, ...followups].map(r => r.e.id));
   const unanswered: Row[] = all
-    .filter(e => (e.pipeline_status ?? "") === "new")
+    .filter(e => (e.pipeline_status ?? "") === "new" && !listedIds.has(e.id))
     .map(e => ({ e }));
 
   // 4. Upcoming events (confirmed/completed within the window).
