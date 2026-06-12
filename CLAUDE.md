@@ -41,13 +41,14 @@ These constants are duplicated across layers. **When one changes, update every f
 
 | Rule | Value | Files |
 |---|---|---|
-| Venue base prices | evening 1280, corp4 330, corp8 440, bday_day 700, bday_eve 970, wedding 1500 | reservation-catalog.js, enquiry-email.ts, dashboard.js, financials.js, customers.js, marketing.js, offer-export.js (EVENT_CONFIG) |
-| Venue covers / extra guest | 40 guests, +€15 each above | reservation.js, enquiry-email.ts, dashboard.js, financials.js, customers.js, marketing.js |
+| Venue base prices | evening 1280, corp4 330, corp8 440, bday_day 700, bday_eve 970, wedding 1500 | reservation-catalog.js, enquiry-email.ts, dashboard.js, financials.js, customers.js, marketing.js, offer-export.js (EVENT_CONFIG), offer-pdf.js (PDF_EVENT_CONFIG) |
+| Venue covers / extra guest | 40 guests, +€15 each above | reservation.js, enquiry-email.ts, dashboard.js, financials.js, customers.js, marketing.js, offer-pdf.js |
 | Mandatory cleaning | €70 auto-added when guests > **25** | reservation.js, edit.js (CLEANING_THRESHOLD_GUESTS) |
 | Guests cap | 1..200 | reservation.js, edit.js+edit.html, submit-enquiry, _shared/validate.ts, update-enquiry-admin |
 | Drink qty caps | non-alcoholic (cat 3–4) ≤ 200, alcoholic ≤ 100 | reservation.js, edit.js (by `cat`), dashboard.js + submit-enquiry + _shared/validate.ts + update-enquiry-admin (NON_ALCOHOLIC_DRINK_IDS sets — keep identical to drinks-data.js cat 3/4 ids) |
 | Addon inventory caps | heater 2, heater_tbl 1, glow_table 10 | reservation.js, edit.js (ADDON_MAX_QTY) |
-| Discount scope | promo % applies to the **venue base only** | reservation.js renderSummary, enquiry-email.ts, dashboard.js, financials.js, customers.js, marketing.js, offer-export.js (AC15) |
+| Discount scope | promo % applies to the **venue base only** | reservation.js renderSummary, enquiry-email.ts, dashboard.js, financials.js, customers.js, marketing.js, offer-export.js (AC15), offer-pdf.js |
+| Offer deposit / validity | deposit **50%** of total, offer valid **2 days** | offer-evening.xlsx template (AF90*0.5 + "валидна 2 дни" note), offer-pdf.js (PDF_DEPOSIT_RATE, PDF_OFFER_VALID_DAYS) |
 
 **Payload shapes (do not break):** addons store the **LINE price** in `price` (qty folded in, furniture `freeUntil` applied) with `qty` present for stepper items; drinks store unit `price_eur` + `qty`. Item `name` is always **name_en** (both wizard and edit page) — storing BG names causes spurious diff emails and burns the customer's edit quota.
 

@@ -73,9 +73,9 @@ serve(async (req) => {
   if (!enq) return json({ error: "not_found" }, 404);
   if (!enq.email) return json({ error: "no_customer_email" }, 422);
 
-  const safeName = (payload.filename && /^[\p{L}\p{N}_.\- ]+\.xlsx$/u.test(payload.filename))
+  const safeName = (payload.filename && /^[\p{L}\p{N}_.\- ]+\.(pdf|xlsx)$/u.test(payload.filename))
     ? payload.filename
-    : "Оферта.xlsx";
+    : "Оферта.pdf";
 
   const { subject, html } = renderOfferEmail(enq, SITE_URL);
 

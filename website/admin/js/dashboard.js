@@ -645,10 +645,7 @@ function bindTableHandlers() {
       sendBtn.disabled = true;
       sendBtn.textContent = t('send_offer_working');
       try {
-        const { blob, filename, unmapped } = await window.buildOfferXLSXBlob(enquiry);
-        if (unmapped?.length) {
-          alert(t('export_unmapped').replace('{list}', unmapped.join(', ')));
-        }
+        const { blob, filename } = await window.buildOfferPDFBlob(enquiry);
         // Blob → base64 (strip the "data:...;base64," prefix).
         const b64 = await new Promise((resolve, reject) => {
           const fr = new FileReader();

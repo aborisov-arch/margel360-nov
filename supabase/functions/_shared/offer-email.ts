@@ -55,7 +55,7 @@ export function renderOfferEmail(e: OfferEnquiry, siteUrl: string): { subject: s
         </p>
         ${facts ? `<p style="margin:0 0 20px;padding:14px 18px;border-left:3px solid #B9894A;background:#F6F1E8;font:14px/1.6 ${SANS};color:#1A1815">${facts}</p>` : ""}
         <p style="margin:0 0 20px;font:14px/1.6 ${SANS};color:#2A2620">
-          Офертата е във прикачения файл (.xlsx). За въпроси или потвърждение просто отговорете на този имейл или ни пишете на <a href="mailto:360@margel.info" style="color:#B9894A">360@margel.info</a>.
+          Офертата е в прикачения файл (.pdf). За въпроси или потвърждение просто отговорете на този имейл или ни пишете на <a href="mailto:360@margel.info" style="color:#B9894A">360@margel.info</a>.
         </p>
         ${editLine}
       </td></tr>
