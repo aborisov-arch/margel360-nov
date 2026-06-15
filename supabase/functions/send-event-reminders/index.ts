@@ -27,6 +27,13 @@ const CRON_SECRET  = Deno.env.get("TEAM_DIGEST_CRON_SECRET") ?? "";
 const DEPOSIT_DUE_MIN_DAYS = 2;
 const DEPOSIT_DUE_MAX_DAYS = 14;
 
+// Offer-conversion loop. OFFER_VALID_DAYS mirrors offer-pdf.js
+// PDF_OFFER_VALID_DAYS (sync map). Nudge once ~24h after the offer while it's
+// still valid; auto-flip to 'lost' once validity + grace has lapsed.
+const OFFER_VALID_DAYS = 2;
+const OFFER_NUDGE_AFTER_HRS = 24;
+const OFFER_GRACE_DAYS = 1;
+
 const sb = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
 
 function esc(s: unknown): string {
@@ -233,6 +240,34 @@ serve(async (req) => {
     }
   }
 
+  // Offer-conversion loop: quoted enquiries that received an offer get one
+  // "still valid" nudge ~24h in, then auto-flip to 'lost' once the validity
+  // window (+ grace) lapses.
+  const offerNudge: { id: string; full_name: string; email: string; preferred_date: string; edit_token: string | null; tokenValid: boolean }[] = [];
+  const offerExpire: { id: string; full_name: string; preferred_date: string }[] = [];
+  {
+    const { data: quoted, error: qErr } = await sb.from("enquiries")
+      .select("id, full_name, email, preferred_date, offer_sent_at, offer_followup_sent_at, offer_expiry_handled_at, edit_token, token_expires_at")
+      .eq("pipeline_status", "quoted")
+      .not("offer_sent_at", "is", null)
+      .limit(200);
+    if (qErr) {
+      console.error("offer-loop query failed (skipping):", qErr);
+    } else {
+      for (const e of quoted ?? []) {
+        const ageHrs = (Date.now() - Date.parse(e.offer_sent_at)) / 3_600_000;
+        const ageDays = ageHrs / 24;
+        if (!e.offer_followup_sent_at && ageHrs >= OFFER_NUDGE_AFTER_HRS && ageDays < OFFER_VALID_DAYS && e.email) {
+          const tokenValid = !!e.token_expires_at && Date.parse(e.token_expires_at) > Date.now();
+          offerNudge.push({ id: e.id, full_name: e.full_name ?? "", email: e.email, preferred_date: e.preferred_date ?? "", edit_token: e.edit_token, tokenValid });
+        }
+        if (!e.offer_expiry_handled_at && ageDays >= OFFER_VALID_DAYS + OFFER_GRACE_DAYS) {
+          offerExpire.push({ id: e.id, full_name: e.full_name ?? "", preferred_date: e.preferred_date ?? "" });
+        }
+      }
+    }
+  }
+
   if (dryRun) {
     return json({
       dry_run: true,
@@ -240,6 +275,8 @@ serve(async (req) => {
       day_before: dayBefore.map(e => ({ id: e.id, name: e.full_name, date: e.preferred_date, email: e.email })),
       deposit_due: depositDue.map(e => ({ id: e.id, name: e.full_name, date: e.preferred_date, email: e.email })),
       expiring_codes: expiringCodes.map(c => ({ code: c.code, email: c.email, expires_at: c.expires_at })),
+      offer_nudge: offerNudge.map(o => ({ id: o.id, name: o.full_name, date: o.preferred_date })),
+      offer_expire: offerExpire.map(o => ({ id: o.id, name: o.full_name, date: o.preferred_date })),
     });
   }
 
@@ -293,13 +330,68 @@ serve(async (req) => {
     }
   }
 
+  // Offer-still-valid nudge (stamp-first, roll back on send failure).
+  let sentOfferNudge = 0;
+  for (const o of offerNudge) {
+    const { error: stampErr } = await sb.from("enquiries")
+      .update({ offer_followup_sent_at: new Date().toISOString() }).eq("id", o.id);
+    if (stampErr) { console.error(`offer-nudge stamp failed for ${o.id}:`, stampErr); continue; }
+    try {
+      const { subject, html } = renderOfferReminder(o);
+      await sendResend(o.email, subject, html);
+      sentOfferNudge++;
+    } catch (err) {
+      console.error(`offer-nudge send failed for ${o.id}, rolling back stamp:`, err);
+      await sb.from("enquiries").update({ offer_followup_sent_at: null }).eq("id", o.id);
+    }
+  }
+
+  // Offer-expired → flip to 'lost' (guarded so a concurrent confirm wins) +
+  // system note. No occupied_dates touched: 'quoted' never blocked a date.
+  let flippedLost = 0;
+  for (const o of offerExpire) {
+    const { data: upd, error: upErr } = await sb.from("enquiries")
+      .update({ pipeline_status: "lost", offer_expiry_handled_at: new Date().toISOString() })
+      .eq("id", o.id).eq("pipeline_status", "quoted").select("id").maybeSingle();
+    if (upErr) { console.error(`offer-expire flip failed for ${o.id}:`, upErr); continue; }
+    if (!upd) continue; // no longer quoted — someone confirmed/changed it
+    flippedLost++;
+    const { error: noteErr } = await sb.from("enquiry_notes").insert({
+      enquiry_id: o.id,
+      body: "Автоматично маркирано като „загубено“ — офертата изтече без отговор от клиента.",
+      author_email: "system",
+    });
+    if (noteErr) console.error(`offer-expire note failed for ${o.id}:`, noteErr);
+  }
+
   return json({
     scanned: all.length,
     day_before: { eligible: dayBefore.length, sent: sentDayBefore },
     deposit_due: { eligible: depositDue.length, sent: sentDeposit },
     code_nudge: { eligible: expiringCodes.length, sent: sentCodes },
+    offer_nudge: { eligible: offerNudge.length, sent: sentOfferNudge },
+    offer_expire: { eligible: offerExpire.length, flipped: flippedLost },
   });
 });
+
+function renderOfferReminder(o: { full_name: string; preferred_date: string; edit_token: string | null; tokenValid: boolean }): { subject: string; html: string } {
+  const first = (o.full_name || "").split(" ")[0] || o.full_name || "";
+  const dateBg = fmtDateBg(o.preferred_date);
+  const subject = `Офертата ви все още е валидна · Маргел 360°`;
+  const cta = o.tokenValid && o.edit_token
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 22px"><tr><td>
+        <a href="${SITE_URL}/edit.html?token=${esc(o.edit_token)}" style="display:inline-block;padding:14px 28px;background:#1A1815;color:#F6F1E8;font:600 12px/1 ${SANS};letter-spacing:0.14em;text-transform:uppercase;text-decoration:none">Прегледай резервацията</a>
+      </td></tr></table>`
+    : "";
+  const body = `
+    <h1 style="margin:0 0 12px;font:400 34px/1.12 ${SERIF};color:#1A1815">Още <em style="font-style:italic;color:#B9894A">пазим</em> датата ви</h1>
+    <p style="margin:0 0 20px;font:16px/1.55 ${SANS};color:#2A2620">
+      Здравейте, ${esc(first)}. Изпратихме ви оферта за събитието${dateBg ? ` на ${dateBg}` : ""} и тя е все още валидна. Ако желаете да потвърдите датата, остава само да се обадите или да отговорите на този имейл.
+    </p>
+    ${cta}
+    <p style="margin:0;font:13px/1.6 ${SANS};color:#7A7568">Имате въпроси? Пишете ни на <a href="mailto:360@margel.info" style="color:#B9894A">360@margel.info</a>. Ако вече не планирате събитието, просто игнорирайте това съобщение.</p>`;
+  return { subject, html: shell(subject, body) };
+}
 
 function renderCodeExpiry(c: { code: string; expires_at: string; full_name: string }): { subject: string; html: string } {
   const first = (c.full_name || "").split(" ")[0] || c.full_name || "";

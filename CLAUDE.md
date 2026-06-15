@@ -48,7 +48,7 @@ These constants are duplicated across layers. **When one changes, update every f
 | Drink qty caps | non-alcoholic (cat 3–4) ≤ 200, alcoholic ≤ 100 | reservation.js, edit.js (by `cat`), dashboard.js + submit-enquiry + _shared/validate.ts + update-enquiry-admin (NON_ALCOHOLIC_DRINK_IDS sets — keep identical to drinks-data.js cat 3/4 ids) |
 | Addon inventory caps | heater 2, heater_tbl 1, glow_table 10 | reservation.js, edit.js (ADDON_MAX_QTY) |
 | Discount scope | promo % applies to the **venue base only** | reservation.js renderSummary, enquiry-email.ts, dashboard.js, financials.js, customers.js, marketing.js, offer-export.js (AC15), offer-pdf.js |
-| Offer deposit / validity | deposit **50%** of total, offer valid **2 days** | offer-evening.xlsx template (AF90*0.5 + "валидна 2 дни" note), offer-pdf.js (PDF_DEPOSIT_RATE, PDF_OFFER_VALID_DAYS) |
+| Offer deposit / validity | deposit **50%** of total, offer valid **2 days** | offer-evening.xlsx template (AF90*0.5 + "валидна 2 дни" note), offer-pdf.js (PDF_DEPOSIT_RATE, PDF_OFFER_VALID_DAYS), send-event-reminders.ts (OFFER_VALID_DAYS — offer-expiry loop) |
 
 **Payload shapes (do not break):** addons store the **LINE price** in `price` (qty folded in, furniture `freeUntil` applied) with `qty` present for stepper items; drinks store unit `price_eur` + `qty`. Item `name` is always **name_en** (both wizard and edit page) — storing BG names causes spurious diff emails and burns the customer's edit quota.
 
