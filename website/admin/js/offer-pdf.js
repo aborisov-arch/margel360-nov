@@ -274,31 +274,33 @@ function buildDocDefinition(enquiry) {
         ],
       },
 
-      // ── Payment terms
-      { margin: [0, 18, 0, 0], ...goldRule(507) },
-      { text: 'УСЛОВИЯ ЗА ПЛАЩАНЕ', style: 'label', margin: [0, 14, 0, 8] },
-      {
-        columns: [
-          { width: '*', stack: [
-            { text: `Депозит (${Math.round(PDF_DEPOSIT_RATE * 100)}%)`, color: MUTED, fontSize: 9 },
-            { text: eur(b.deposit), bold: true, fontSize: 12, margin: [0, 2, 0, 0] },
-          ] },
-          { width: '*', stack: [
-            { text: 'Остатък', color: MUTED, fontSize: 9 },
-            { text: eur(b.balance), bold: true, fontSize: 12, margin: [0, 2, 0, 0] },
-          ] },
-          { width: '*', stack: [
-            { text: 'Валидност', color: MUTED, fontSize: 9 },
-            { text: `${PDF_OFFER_VALID_DAYS} дни`, bold: true, fontSize: 12, margin: [0, 2, 0, 0] },
-          ] },
-        ],
-      },
-      // ── Bank details for the deposit transfer (grouped with the terms above)
+      // ── Payment terms + bank details + note — ONE unbreakable unit so the
+      // deposit amount, the IBAN and the terms note are never split across a
+      // page break or orphaned onto the next page. If the whole block can't
+      // fit after the line items it moves to the next page together.
       {
         unbreakable: true,
-        margin: [0, 16, 0, 0],
+        margin: [0, 18, 0, 0],
         stack: [
-          { text: 'ЗА ПРЕВОД НА ДЕПОЗИТА', style: 'label', margin: [0, 0, 0, 8] },
+          goldRule(507),
+          { text: 'УСЛОВИЯ ЗА ПЛАЩАНЕ', style: 'label', margin: [0, 14, 0, 8] },
+          {
+            columns: [
+              { width: '*', stack: [
+                { text: `Депозит (${Math.round(PDF_DEPOSIT_RATE * 100)}%)`, color: MUTED, fontSize: 9 },
+                { text: eur(b.deposit), bold: true, fontSize: 12, margin: [0, 2, 0, 0] },
+              ] },
+              { width: '*', stack: [
+                { text: 'Остатък', color: MUTED, fontSize: 9 },
+                { text: eur(b.balance), bold: true, fontSize: 12, margin: [0, 2, 0, 0] },
+              ] },
+              { width: '*', stack: [
+                { text: 'Валидност', color: MUTED, fontSize: 9 },
+                { text: `${PDF_OFFER_VALID_DAYS} дни`, bold: true, fontSize: 12, margin: [0, 2, 0, 0] },
+              ] },
+            ],
+          },
+          { text: 'ЗА ПРЕВОД НА ДЕПОЗИТА', style: 'label', margin: [0, 16, 0, 8] },
           {
             layout: 'noBorders',
             table: {
@@ -312,10 +314,10 @@ function buildDocDefinition(enquiry) {
               ],
             },
           },
+          { text: 'Залата се счита за запазена след потвърждение по имейл и платен депозит. Напитките се заплащат 100% предварително. Всички цени са в EUR.',
+            color: MUTED, fontSize: 8, italics: true, margin: [0, 14, 0, 0] },
         ],
       },
-      { text: 'Залата се счита за запазена след потвърждение по имейл и платен депозит. Напитките се заплащат 100% предварително. Всички цени са в EUR.',
-        color: MUTED, fontSize: 8, italics: true, margin: [0, 14, 0, 0] },
 
       // ── Useful links + social, side by side (kept on one page)
       {
