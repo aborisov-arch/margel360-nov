@@ -23,7 +23,8 @@ Admin allowlist (Supabase Auth logins + `is_admin()` + `update-enquiry-admin`): 
 - `RESEND_API_KEY` — rotate in the Resend dashboard.
 - `INTERNAL_SHARED_SECRET` — shared header (`X-Internal-Secret`) between submit-enquiry/update-* and the email functions. If lost, generate any new random string and set it — nothing else stores it.
 - `FEEDBACK_CRON_SECRET` — required header (`x-cron-secret`) for send-feedback-request. **Also stored in the Supabase Vault as `feedback_cron_secret`** (the cron jobs read it from there). If you rotate it, update BOTH the function secret and the Vault entry.
-- `TEAM_DIGEST_CRON_SECRET` — required header (`x-cron-secret`) for send-team-digest (the daily team digest). **Also stored in the Supabase Vault as `team_digest_cron_secret`** (the cron jobs read it from there). Same rotate-both rule as the feedback secret. The digest is sent to `OWNER_EMAILS` (falling back to `TEAM_EMAIL`).
+- `TEAM_DIGEST_CRON_SECRET` — required header (`x-cron-secret`) for send-team-digest (the daily team digest). **Also stored in the Supabase Vault as `team_digest_cron_secret`** (the cron jobs read it from there). Same rotate-both rule as the feedback secret. The digest is sent to `OWNER_EMAILS` (falling back to `TEAM_EMAIL`). This one secret also guards send-event-reminders, send-marketing-export, send-weekly-kpi.
+- `GOOGLE_REVIEW_URL` — **optional.** The venue's Google review link. When set, submit-feedback emails delighted customers (ratings total ≥14/16) a one-tap review invite. If unset, that branch no-ops; the low-rating internal alert works regardless. Set with `supabase secrets set GOOGLE_REVIEW_URL='https://g.page/r/...'`.
 - `OWNER_EMAILS` (comma-separated owner notification list), `TEAM_EMAIL` (notify-enquiry recipient), `EVENT_HALL_FROM_EMAIL` (optional from-address override), `PUBLIC_SITE_URL`.
 - `SUPABASE_URL` / `SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY` / `SUPABASE_DB_URL` etc. are auto-provided by the platform.
 

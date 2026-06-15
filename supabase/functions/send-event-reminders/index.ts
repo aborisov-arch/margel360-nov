@@ -205,12 +205,41 @@ serve(async (req) => {
     }
   }
 
+  // Expiring discount-code nudge — unredeemed codes lapsing within 7 days,
+  // not yet nudged. Recovers value the venue already minted from feedback.
+  let expiringCodes: { code: string; expires_at: string; email: string; full_name: string }[] = [];
+  {
+    const in7 = new Date(Date.now() + 7 * 86_400_000).toISOString();
+    const { data: codes, error: cErr } = await sb
+      .from("discount_codes")
+      .select("code, expires_at, issued_for_enquiry_id")
+      .is("redeemed_at", null)
+      .is("nudge_sent_at", null)
+      .gt("expires_at", new Date().toISOString())
+      .lt("expires_at", in7)
+      .limit(100);
+    if (cErr) {
+      console.error("expiring-codes query failed (skipping):", cErr);
+    } else if (codes?.length) {
+      const ids = codes.map(c => c.issued_for_enquiry_id).filter(Boolean);
+      const { data: ens } = ids.length
+        ? await sb.from("enquiries").select("id, full_name, email").in("id", ids)
+        : { data: [] };
+      const byId = new Map((ens ?? []).map(e => [e.id, e]));
+      expiringCodes = codes.map(c => {
+        const en = c.issued_for_enquiry_id ? byId.get(c.issued_for_enquiry_id) : null;
+        return { code: c.code, expires_at: c.expires_at, email: en?.email ?? "", full_name: en?.full_name ?? "" };
+      }).filter(c => c.email);
+    }
+  }
+
   if (dryRun) {
     return json({
       dry_run: true,
       scanned: all.length,
       day_before: dayBefore.map(e => ({ id: e.id, name: e.full_name, date: e.preferred_date, email: e.email })),
       deposit_due: depositDue.map(e => ({ id: e.id, name: e.full_name, date: e.preferred_date, email: e.email })),
+      expiring_codes: expiringCodes.map(c => ({ code: c.code, email: c.email, expires_at: c.expires_at })),
     });
   }
 
@@ -249,9 +278,42 @@ serve(async (req) => {
     }
   }
 
+  let sentCodes = 0;
+  for (const c of expiringCodes) {
+    const { error: stampErr } = await sb.from("discount_codes")
+      .update({ nudge_sent_at: new Date().toISOString() }).eq("code", c.code);
+    if (stampErr) { console.error(`code-nudge stamp failed for ${c.code}:`, stampErr); continue; }
+    try {
+      const { subject, html } = renderCodeExpiry(c);
+      await sendResend(c.email, subject, html);
+      sentCodes++;
+    } catch (err) {
+      console.error(`code-nudge send failed for ${c.code}, rolling back stamp:`, err);
+      await sb.from("discount_codes").update({ nudge_sent_at: null }).eq("code", c.code);
+    }
+  }
+
   return json({
     scanned: all.length,
     day_before: { eligible: dayBefore.length, sent: sentDayBefore },
     deposit_due: { eligible: depositDue.length, sent: sentDeposit },
+    code_nudge: { eligible: expiringCodes.length, sent: sentCodes },
   });
 });
+
+function renderCodeExpiry(c: { code: string; expires_at: string; full_name: string }): { subject: string; html: string } {
+  const first = (c.full_name || "").split(" ")[0] || c.full_name || "";
+  const exp = new Date(c.expires_at).toLocaleDateString("bg-BG", { day: "2-digit", month: "long", year: "numeric", timeZone: "Europe/Sofia" });
+  const subject = `Отстъпката ви изтича скоро · Маргел 360°`;
+  const body = `
+    <h1 style="margin:0 0 12px;font:400 34px/1.12 ${SERIF};color:#1A1815">Не <em style="font-style:italic;color:#B9894A">пропускайте</em></h1>
+    <p style="margin:0 0 20px;font:16px/1.55 ${SANS};color:#2A2620">
+      Здравейте, ${esc(first)}. Вашата отстъпка от Маргел 360° е още активна, но изтича на <strong>${esc(exp)}</strong>.
+    </p>
+    <div style="margin:0 0 24px;padding:18px;border:2px dashed #B9894A;background:#F6F1E8;text-align:center">
+      <p style="margin:0 0 6px;font:600 11px/1.2 ${SANS};letter-spacing:0.18em;color:#7A7568;text-transform:uppercase">Вашият код</p>
+      <p style="margin:0;font:600 24px/1.1 ${SERIF};letter-spacing:0.06em;color:#1A1815">${esc(c.code)}</p>
+    </div>
+    <p style="margin:0;font:13px/1.6 ${SANS};color:#7A7568">Въведете кода при резервация на сайта ни или ни пишете на <a href="mailto:360@margel.info" style="color:#B9894A">360@margel.info</a>.</p>`;
+  return { subject, html: shell(subject, body) };
+}

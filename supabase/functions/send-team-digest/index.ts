@@ -280,6 +280,66 @@ serve(async (req) => {
     }
   }
 
+  // 6. Overdue balances — events 7+ days past with a total recorded but no
+  // balance entered (cash balances that never got logged leak money).
+  let overdueBalance: Row[] = [];
+  {
+    const cutoff = new Date(Date.now() - 7 * 86_400_000).toISOString().slice(0, 10);
+    const { data: fin, error: finErr } = await sb
+      .from("financial_events")
+      .select("enquiry_id, customer_name, event_date, offer_total_eur, deposit_cash_eur, deposit_bank_eur, balance_cash_eur, balance_bank_eur")
+      .lt("event_date", cutoff)
+      .gte("event_date", new Date(Date.now() - 120 * 86_400_000).toISOString().slice(0, 10))
+      .order("event_date", { ascending: true })
+      .limit(100);
+    if (finErr) {
+      console.error("overdue-balance query failed (section skipped):", finErr);
+    } else {
+      const byId = new Map(all.map(e => [e.id, e]));
+      overdueBalance = (fin ?? []).filter(f => {
+        const total = Number(f.offer_total_eur) || 0;
+        const balance = (Number(f.balance_cash_eur) || 0) + (Number(f.balance_bank_eur) || 0);
+        return total > 0 && balance <= 0;
+      }).map(f => {
+        const en = f.enquiry_id ? byId.get(f.enquiry_id) : null;
+        const total = Number(f.offer_total_eur) || 0;
+        const deposit = (Number(f.deposit_cash_eur) || 0) + (Number(f.deposit_bank_eur) || 0);
+        const owed = Math.max(0, total - deposit);
+        const e = en ?? ({
+          id: f.enquiry_id ?? "", enquiry_number: null, full_name: f.customer_name ?? "—",
+          email: null, phone: null, event_type: null, preferred_date: null, pipeline_status: null,
+          next_followup_at: null, created_at: "", edit_token: null, offer_sent_at: null,
+        } as Enquiry);
+        return { e, meta: owed > 0 ? `остатък ~€${owed.toFixed(0)}` : "няма записан остатък" };
+      });
+    }
+  }
+
+  // 7. Recent notes — leads with a note in the last 24h not already surfaced
+  // above, so actively-worked enquiries stay visible after clearing thresholds.
+  const allListed = new Set([...followups, ...offerNudge, ...stale, ...unanswered, ...upcoming, ...outstanding].map(r => r.e.id));
+  const recentNotes: Row[] = [];
+  {
+    const since = new Date(Date.now() - 24 * 3600_000).toISOString();
+    const { data: notes, error: nErr } = await sb
+      .from("enquiry_notes").select("enquiry_id, body, created_at")
+      .gte("created_at", since).order("created_at", { ascending: false }).limit(40);
+    if (nErr) {
+      console.error("recent-notes query failed (section skipped):", nErr);
+    } else {
+      const byId = new Map(all.map(e => [e.id, e]));
+      const seen = new Set<string>();
+      for (const n of notes ?? []) {
+        if (!n.enquiry_id || allListed.has(n.enquiry_id) || seen.has(n.enquiry_id)) continue;
+        const e = byId.get(n.enquiry_id);
+        if (!e) continue;
+        seen.add(n.enquiry_id);
+        recentNotes.push({ e, meta: String(n.body ?? "").replace(/\s+/g, " ").slice(0, 60) });
+        if (recentNotes.length >= 10) break;
+      }
+    }
+  }
+
   const sections = [
     renderSection("Последващи контакти", followups),
     renderSection("Оферти без отговор", offerNudge),
@@ -287,9 +347,12 @@ serve(async (req) => {
     renderSection("Нови без отговор", unanswered),
     renderSection("Предстоящи събития", upcoming),
     renderSection("Неполучени депозити", outstanding),
+    renderSection("Неполучен остатък", overdueBalance),
+    renderSection("Скорошни бележки", recentNotes),
   ];
 
-  const totalRows = followups.length + offerNudge.length + stale.length + unanswered.length + upcoming.length + outstanding.length;
+  const totalRows = followups.length + offerNudge.length + stale.length + unanswered.length
+    + upcoming.length + outstanding.length + overdueBalance.length + recentNotes.length;
   if (totalRows === 0) {
     return json({ scanned: all.length, rows: 0, sent: 0, note: "nothing to report" });
   }
@@ -336,6 +399,7 @@ serve(async (req) => {
     sections: {
       followups: followups.length, offerNudge: offerNudge.length, stale: stale.length,
       unanswered: unanswered.length, upcoming: upcoming.length, outstanding: outstanding.length,
+      overdueBalance: overdueBalance.length, recentNotes: recentNotes.length,
     },
     sent: uniqueRecipients.length,
   });

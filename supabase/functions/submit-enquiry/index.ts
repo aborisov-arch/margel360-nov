@@ -260,6 +260,37 @@ serve(async (req) => {
     return json({ error: "server_error" }, 500);
   }
 
+  // Possible-duplicate advisory: if this customer (same email or same digits
+  // of phone) already has a live (non-lost/archived) enquiry from the last
+  // 90 days, drop a system note on the CRM thread so staff don't work the
+  // same lead twice or mis-price. Best-effort, never blocks the booking.
+  try {
+    const since90 = new Date(Date.now() - 90 * 86_400_000).toISOString();
+    const phoneDigits = (phone ?? "").replace(/\D/g, "");
+    let dupQ = sb.from("enquiries")
+      .select("enquiry_number, email, phone")
+      .neq("id", inserted.id)
+      .not("pipeline_status", "in", "(lost,archived)")
+      .gte("created_at", since90);
+    dupQ = phoneDigits
+      ? dupQ.or(`email.eq.${email_raw},phone.eq.${phone}`)
+      : dupQ.eq("email", email_raw);
+    const { data: priors } = await dupQ.order("created_at", { ascending: false }).limit(3);
+    const others = (priors ?? []).filter(p =>
+      (p.email && p.email.toLowerCase() === email_raw.toLowerCase()) ||
+      (phoneDigits && (p.phone ?? "").replace(/\D/g, "") === phoneDigits));
+    if (others.length) {
+      const refs = others.map(p => `#${p.enquiry_number}`).join(", ");
+      await sb.from("enquiry_notes").insert({
+        enquiry_id: inserted.id,
+        body: `⚠️ Възможен дубликат — този клиент има и: ${refs} (последните 90 дни).`,
+        author_email: "system",
+      });
+    }
+  } catch (e) {
+    console.error("duplicate-check note failed (non-fatal):", e);
+  }
+
   // Atomic discount claim, best-effort. If the code is taken/expired we
   // still keep the booking — the customer just doesn't get the discount.
   let discount_percent: number | null = null;

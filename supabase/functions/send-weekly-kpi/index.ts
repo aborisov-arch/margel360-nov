@@ -44,6 +44,13 @@ const PIPELINE_BG: Record<string, string> = {
   new: "Нови", contacted: "Свързани", quoted: "Оферирани",
   confirmed: "Потвърдени", completed: "Приключени", lost: "Загубени", archived: "Архив",
 };
+const DIM_BG: Record<string, string> = {
+  experience_rating: "Преживяване", service_rating: "Обслужване",
+  venue_rating: "Зала", rebook_rating: "Повторно",
+};
+const SOURCE_BG: Record<string, string> = {
+  friends: "Приятели", social: "Социални мрежи", google: "Google", other: "Друго",
+};
 
 serve(async (req) => {
   const pre = preflight(req); if (pre) return pre;
@@ -57,31 +64,39 @@ serve(async (req) => {
 
   const windowStart = new Date(Date.now() - WINDOW_DAYS * 86_400_000);
   const windowStartIso = windowStart.toISOString();
+  // NPS baseline: the 28 days BEFORE this week's window.
+  const baselineStartIso = new Date(windowStart.getTime() - 28 * 86_400_000).toISOString();
 
-  const [{ data: enq, error: enqErr }, { data: fb, error: fbErr }, { data: transitions, error: trErr }] = await Promise.all([
+  const FB_COLS = "experience_rating, service_rating, venue_rating, rebook_rating";
+  const [{ data: enq, error: enqErr }, { data: fb, error: fbErr }, { data: transitions, error: trErr }, { data: fbPrior }] = await Promise.all([
     sb.from("enquiries")
-      .select("id, event_type, preferred_date, pipeline_status, created_at, offer_sent_at")
+      .select("id, full_name, event_type, preferred_date, pipeline_status, created_at, offer_sent_at")
       .neq("pipeline_status", "archived")
       .limit(2000),
     sb.from("event_feedback")
-      .select("experience_rating, service_rating, venue_rating, rebook_rating, submitted_at")
+      .select(`${FB_COLS}, experience_comment, service_comment, source, enquiry_id, submitted_at`)
       .gte("submitted_at", windowStartIso),
     sb.from("enquiry_status_log")
-      .select("enquiry_id, to_status")
-      .in("to_status", ["confirmed", "lost"])
+      .select("enquiry_id, from_status, to_status")
       .gte("changed_at", windowStartIso),
+    sb.from("event_feedback")
+      .select(FB_COLS)
+      .gte("submitted_at", baselineStartIso).lt("submitted_at", windowStartIso),
   ]);
   if (enqErr) { console.error("enquiries query failed:", enqErr); return json({ error: "query_failed" }, 500); }
   if (fbErr) console.error("feedback query failed (section skipped):", fbErr);
-  if (trErr) console.error("status_log query failed (won/lost shows 0):", trErr);
+  if (trErr) console.error("status_log query failed (funnel shows 0):", trErr);
 
   // Won / lost this week — distinct enquiries that ENTERED the stage during
-  // the window (an enquiry bounced confirmed→lost in the same week counts in
-  // both, which is the honest reading).
+  // the window (a confirmed→lost bounce counts in both, the honest reading).
   const wonIds = new Set<string>(), lostIds = new Set<string>();
+  // Funnel transition counts (distinct enquiries entering each stage).
+  const fNew2Contacted = new Set<string>(), fToQuoted = new Set<string>();
   for (const t of transitions ?? []) {
     if (t.to_status === "confirmed") wonIds.add(t.enquiry_id);
     else if (t.to_status === "lost") lostIds.add(t.enquiry_id);
+    if (t.to_status === "contacted") fNew2Contacted.add(t.enquiry_id);
+    if (t.to_status === "quoted") fToQuoted.add(t.enquiry_id);
   }
 
   const all = enq ?? [];
@@ -122,10 +137,46 @@ serve(async (req) => {
 
   // Feedback averages.
   const fbRows = fb ?? [];
-  const avg = (k: "experience_rating" | "service_rating" | "venue_rating" | "rebook_rating") => {
-    const vals = fbRows.map(r => Number(r[k])).filter(v => v > 0);
-    return vals.length ? (vals.reduce((s, v) => s + v, 0) / vals.length).toFixed(1) : null;
+  const avgOf = (rows: Record<string, unknown>[], k: string): number | null => {
+    const vals = rows.map(r => Number(r[k])).filter(v => v > 0);
+    return vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : null;
   };
+  const avg = (k: string) => { const v = avgOf(fbRows, k); return v == null ? null : v.toFixed(1); };
+
+  // Funnel rates (this week's transitions).
+  const winDenom = wonIds.size + lostIds.size;
+  const winRate = winDenom ? Math.round((wonIds.size / winDenom) * 100) : null;
+
+  // NPS-style trend: this week vs the prior-28d baseline; alert on a >0.5 drop
+  // with a minimum sample so a single grumpy guest can't trip it.
+  const fbPriorRows = fbPrior ?? [];
+  const npsAlerts: string[] = [];
+  if (fbRows.length >= 3) {
+    for (const k of Object.keys(DIM_BG)) {
+      const now = avgOf(fbRows, k), base = avgOf(fbPriorRows, k);
+      if (now != null && base != null && base - now > 0.5) {
+        npsAlerts.push(`${DIM_BG[k]} ↓ ${base.toFixed(1)}→${now.toFixed(1)}`);
+      }
+    }
+  }
+
+  // Testimonials: top-rated (experience+service both 4/4) with a comment.
+  const nameById = new Map((all as { id: string; full_name?: string; event_type?: string }[]).map(e => [e.id, e]));
+  const testimonials = fbRows
+    .filter(r => Number(r.experience_rating) === 4 && Number(r.service_rating) === 4 && (r.experience_comment || r.service_comment))
+    .slice(0, 5)
+    .map(r => {
+      const en = nameById.get(r.enquiry_id);
+      return {
+        name: (en?.full_name || "").split(" ")[0] || "Гост",
+        type: en?.event_type || "",
+        quote: String(r.experience_comment || r.service_comment || ""),
+      };
+    });
+
+  // Referral source breakdown.
+  const sourceCounts = new Map<string, number>();
+  for (const r of fbRows) { const s = (r.source as string) || "other"; sourceCounts.set(s, (sourceCounts.get(s) ?? 0) + 1); }
 
   const SERIF = "Fraunces,Georgia,'Times New Roman',serif";
   const SANS  = "Manrope,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
@@ -148,6 +199,25 @@ serve(async (req) => {
   const fbBlock = fbRows.length
     ? `<p style="margin:0 0 6px;font:13px/1.5 ${SANS};color:#2A2620"><strong>${fbRows.length}</strong> анкети тази седмица — Преживяване ${avg("experience_rating") ?? "—"} · Обслужване ${avg("service_rating") ?? "—"} · Зала ${avg("venue_rating") ?? "—"} · Повторно ${avg("rebook_rating") ?? "—"} (от 4)</p>`
     : `<p style="margin:0;font:13px/1.5 ${SANS};color:#7A7568">Няма получени анкети тази седмица.</p>`;
+  const npsBlock = npsAlerts.length
+    ? `<p style="margin:6px 0 0;padding:8px 12px;background:#fdeaea;border-left:3px solid #e05252;font:12px/1.5 ${SANS};color:#a12828">⚠️ Спад спрямо предходните 28 дни: ${npsAlerts.map(esc).join(" · ")}</p>` : "";
+  const sourceBlock = (sourceCounts.size && fbRows.length >= 5)
+    ? `<p style="margin:8px 0 0;font:12px/1.5 ${SANS};color:#7A7568">Източници: ${[...sourceCounts.entries()].sort((a, b) => b[1] - a[1]).map(([s, n]) => `${esc(SOURCE_BG[s] ?? s)} ${n}`).join(" · ")}</p>` : "";
+
+  // Conversion-funnel section (this week's transitions).
+  const funnelRows = [
+    ["Нови → Свързани", fNew2Contacted.size],
+    ["→ Оферирани", fToQuoted.size],
+    ["Спечелени", wonIds.size],
+    ["Загубени", lostIds.size],
+  ].map(([l, n]) => `<tr><td style="padding:5px 0;font:13px/1.4 ${SANS};color:#2A2620">${l}</td><td style="padding:5px 0;font:600 13px/1.4 ${SANS};color:#1A1815;text-align:right">${n}</td></tr>`).join("");
+  const funnelBlock = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${funnelRows}</table>`
+    + (winRate != null ? `<p style="margin:6px 0 0;font:12px/1.5 ${SANS};color:#7A7568">Процент спечелени (оферирани→потвърдени): <strong style="color:#B9894A">${winRate}%</strong> · ${wonIds.size}/${winDenom}</p>` : "");
+
+  // Testimonial harvest (pending review before publishing).
+  const testimonialBlock = testimonials.length
+    ? testimonials.map(t => `<div style="margin:0 0 10px;padding:10px 14px;border-left:3px solid #B9894A;background:#F6F1E8"><p style="margin:0 0 4px;font:italic 14px/1.5 ${SERIF};color:#1A1815">„${esc(t.quote)}“</p><p style="margin:0;font:11px/1.4 ${SANS};color:#7A7568">${esc(t.name)}${t.type ? ` · ${esc(t.type)}` : ""}</p></div>`).join("")
+    : "";
 
   const html = `<!doctype html><html lang="bg"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(subject)}</title>
 <style>@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..600&family=Manrope:wght@300;400;500;600;700&display=swap');</style>
@@ -174,6 +244,10 @@ serve(async (req) => {
     </table>
   </td></tr>
   <tr><td style="padding:16px 44px 4px">
+    <h2 style="margin:0 0 6px;font:500 13px/1.2 ${SANS};letter-spacing:0.14em;text-transform:uppercase;color:#B9894A">Фуния на конверсия</h2>
+    ${funnelBlock}
+  </td></tr>
+  <tr><td style="padding:16px 44px 4px">
     <h2 style="margin:0 0 6px;font:500 13px/1.2 ${SANS};letter-spacing:0.14em;text-transform:uppercase;color:#B9894A">Нови по тип събитие</h2>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${typeRows || `<tr><td style="font:13px/1.5 ${SANS};color:#7A7568">Няма нови запитвания.</td></tr>`}</table>
   </td></tr>
@@ -181,10 +255,14 @@ serve(async (req) => {
     <h2 style="margin:0 0 6px;font:500 13px/1.2 ${SANS};letter-spacing:0.14em;text-transform:uppercase;color:#B9894A">Активен пайплайн</h2>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${snapRows}</table>
   </td></tr>
-  <tr><td style="padding:16px 44px 28px">
+  <tr><td style="padding:16px 44px ${testimonialBlock ? "8px" : "28px"}">
     <h2 style="margin:0 0 6px;font:500 13px/1.2 ${SANS};letter-spacing:0.14em;text-transform:uppercase;color:#B9894A">Обратна връзка</h2>
-    ${fbBlock}
+    ${fbBlock}${npsBlock}${sourceBlock}
   </td></tr>
+  ${testimonialBlock ? `<tr><td style="padding:8px 44px 28px">
+    <h2 style="margin:0 0 10px;font:500 13px/1.2 ${SANS};letter-spacing:0.14em;text-transform:uppercase;color:#B9894A">Отзиви за публикуване</h2>
+    ${testimonialBlock}
+  </td></tr>` : ""}
   <tr><td style="padding:24px 44px;background:#1A1815;color:#C9A86A;font:11px/1.6 ${SANS}">
     <a href="https://margel360.bg/admin/dashboard.html" style="color:#F6F1E8;text-decoration:none;font-weight:600">Отвори таблото →</a><br>
     Автоматичен отчет · изпраща се всеки понеделник.
