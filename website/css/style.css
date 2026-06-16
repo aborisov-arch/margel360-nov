@@ -754,3 +754,61 @@ p { color: var(--text-muted); }
   .hamburger { width: 44px; height: 44px; align-items: center; justify-content: center; }
   .lang-toggle { min-height: 44px; padding: 0 12px; }
 }
+
+/* ── Drinks menu page (menu.html) — editorial price list ── */
+.menu-sections { max-width: 760px; margin: 0 auto; }
+.menu-category { margin-bottom: 48px; }
+.menu-category:last-child { margin-bottom: 0; }
+.menu-category-title {
+  font-size: clamp(1.3rem, 3vw, 1.85rem);
+  font-weight: 700;
+  color: var(--text);
+  padding-bottom: 10px;
+  margin-bottom: 16px;
+  border-bottom: 2px solid var(--accent);
+  letter-spacing: 0.01em;
+}
+.menu-list { list-style: none; padding: 0; margin: 0; }
+.menu-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(232,228,221,0.5);
+}
+.menu-row:last-child { border-bottom: 0; }
+.menu-row-name { color: var(--text); font-weight: 500; font-size: 0.98rem; }
+.menu-row-dots {
+  flex: 1 1 auto;
+  min-width: 18px;
+  align-self: center;
+  border-bottom: 1px dotted #cfc8bb;
+}
+.menu-row-price {
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.menu-note {
+  max-width: 760px;
+  margin: 28px auto 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-style: italic;
+  text-align: center;
+  line-height: 1.6;
+}
+.menu-offer {
+  max-width: 760px;
+  margin: 56px auto 0;
+  text-align: center;
+  padding: 40px 28px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+.menu-offer h2 { font-size: clamp(1.4rem, 3vw, 2rem); margin-bottom: 8px; color: var(--text); }
+.menu-offer p { color: var(--text-muted); margin-bottom: 22px; }
+.menu-offer-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }

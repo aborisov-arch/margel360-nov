@@ -1,7 +1,7 @@
 const translations = {
   bg: {
     nav_home: 'Тип събитие', nav_gallery: 'Галерия', nav_faq: 'FAQ',
-    nav_services: 'Услуги', nav_contact: 'Контакти', nav_reserve: 'Запитване',
+    nav_services: 'Услуги', nav_drinks: 'Меню', nav_contact: 'Контакти', nav_reserve: 'Запитване',
     res_title: 'Направете запитване',
     res_sub: 'Изберете вашето събитие и резервирайте датата',
     step1_label: 'Събитие',
@@ -51,7 +51,7 @@ const translations = {
   },
   en: {
     nav_home: 'Event Types', nav_gallery: 'Gallery', nav_faq: 'FAQ',
-    nav_services: 'Services', nav_contact: 'Contacts', nav_reserve: 'Enquiry',
+    nav_services: 'Services', nav_drinks: 'Menu', nav_contact: 'Contacts', nav_reserve: 'Enquiry',
     res_title: 'Make an Enquiry',
     res_sub: 'Choose your event type and book your date',
     step1_label: 'Event',

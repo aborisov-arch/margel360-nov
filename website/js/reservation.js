@@ -24,15 +24,11 @@ function addonLinePrice(svc, qty) {
   return qty * svc.price;
 }
 
-// Mandatory hall cleaning when the booking exceeds 25 guests. Returns
-// the cleaning addon (or null if the catalog entry is missing) ONLY
-// when the threshold is hit AND the user hasn't already selected it
-// on the addons page. Used by both the summary and the submit payload
-// so the customer sees + gets billed for it automatically.
-const CLEANING_THRESHOLD_GUESTS = 25;
+// Mandatory hall cleaning — auto-added on EVERY event regardless of guest
+// count. Returns the cleaning addon (or null if the catalog entry is missing,
+// or the user already selected it on the addons page). Used by both the
+// summary and the submit payload so the customer sees + gets billed for it.
 function autoCleaningAddon() {
-  const guests = Number(booking.guests) || 0;
-  if (guests <= CLEANING_THRESHOLD_GUESTS) return null;
   if ((booking.addons['cleaning'] || 0) > 0) return null;
   return addonServices.find(s => s.id === 'cleaning') || null;
 }
@@ -863,8 +859,8 @@ function renderSummary() {
       const svc = addonServices.find(s => s.id === id);
       if (svc) addonsTotal += addonLinePrice(svc, q);
     }
-    // Auto-include mandatory cleaning above CLEANING_THRESHOLD_GUESTS, on top of the
-    // selected addons. Adds to total + shown as a separate summary line.
+    // Auto-include mandatory cleaning on every event, on top of the selected
+    // addons. Adds to total + shown as a separate summary line.
     const autoClean = autoCleaningAddon();
     if (autoClean) addonsTotal += autoClean.price;
     let drinksTotal = 0; drinks.forEach(d => { if (d.price_eur) drinksTotal += (booking.drinkQtys[d.id]||0)*d.price_eur; });
@@ -881,7 +877,7 @@ function renderSummary() {
       { label: (l==='bg'?'Наем на зала':'Venue rental') + ` (${l==='bg'?'до':'up to'} ${VENUE_MIN_GUESTS} ${l==='bg'?'гости':'guests'})`, value: '€' + venuePrice.toFixed(2) },
       ...(extraGuests > 0 ? [{ label: (l==='bg'?`+${extraGuests} допълнителни гости`:`+${extraGuests} extra guests`) + ` (× €${EXTRA_GUEST_FEE_EUR})`, value: '€' + extraGuestsCost.toFixed(2) }] : []),
       ...(addonsTotal > 0 ? [{ label: l==='bg'?'Допълнителни услуги':'Add-on services', value: '€' + addonsTotal.toFixed(2) }] : []),
-      ...(autoClean ? [{ label: (l==='bg' ? `${autoClean.name_bg} (задължително над ${CLEANING_THRESHOLD_GUESTS} гости)` : `${autoClean.name_en} (mandatory above ${CLEANING_THRESHOLD_GUESTS} guests)`), value: '€' + autoClean.price.toFixed(2), sub: true }] : []),
+      ...(autoClean ? [{ label: (l==='bg' ? `${autoClean.name_bg} (задължително)` : `${autoClean.name_en} (mandatory)`), value: '€' + autoClean.price.toFixed(2), sub: true }] : []),
       ...(drinksTotal > 0 ? [{ label: l==='bg'?'Напитки':'Drinks', value: '€' + drinksTotal.toFixed(2) }] : []),
       ...(discountAmount > 0 ? [{ label: (l==='bg'?'Отстъпка':'Discount') + ` (${discountPercent}%)`, value: '−€' + discountAmount.toFixed(2), discount: true }] : []),
       { label: l==='bg'?'Обща сума':'Total', value: '€' + grandTotal.toFixed(2), total: true },
@@ -997,7 +993,7 @@ function setupSubmit() {
         if (svc && isQtyAddon(svc)) entry.qty = qty;
         return entry;
       });
-    // Auto-attach mandatory cleaning above CLEANING_THRESHOLD_GUESTS, matching what the
+    // Auto-attach mandatory cleaning (every event), matching what the
     // customer saw on the summary screen.
     const autoCleanForPayload = autoCleaningAddon();
     if (autoCleanForPayload) {

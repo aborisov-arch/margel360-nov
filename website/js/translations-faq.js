@@ -1,7 +1,7 @@
 const translations = {
   bg: {
     nav_home: 'Тип събитие', nav_gallery: 'Галерия', nav_faq: 'FAQ',
-    nav_services: 'Услуги', nav_contact: 'Контакти', nav_reserve: 'Запитване',
+    nav_services: 'Услуги', nav_drinks: 'Меню', nav_contact: 'Контакти', nav_reserve: 'Запитване',
     faq_title: 'Често задавани въпроси',
     faq_sub: 'Отговори на най-честите въпроси',
     footer_desc: 'Маргел 360° е професионална зала за събития в София — сватби, рождени дни, корпоративни срещи, тематични партита и конференции. До 140 гости, панорамна тераса 360 м² с изглед към Витоша, професионално 360° озвучаване, професионално осветление и 70+ безплатни паркоместа.',
@@ -11,7 +11,7 @@ const translations = {
   },
   en: {
     nav_home: 'Event Types', nav_gallery: 'Gallery', nav_faq: 'FAQ',
-    nav_services: 'Services', nav_contact: 'Contacts', nav_reserve: 'Enquiry',
+    nav_services: 'Services', nav_drinks: 'Menu', nav_contact: 'Contacts', nav_reserve: 'Enquiry',
     faq_title: 'Frequently Asked Questions',
     faq_sub: 'Answers to the most common questions',
     footer_desc: 'Margel 360° is a professional event venue in Sofia — weddings, birthdays, corporate meetings, themed parties and conferences. Up to 140 guests, 360 m² panoramic terrace with a view of Vitosha, professional 360° sound, professional lighting and 70+ free parking spaces.',

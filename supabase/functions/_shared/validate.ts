@@ -12,7 +12,7 @@ const MAX_ADDON_PRICE = 50000;
 // Keep NON_ALCOHOLIC_DRINK_IDS in sync with website/js/drinks-data.js.
 const NON_ALCOHOLIC_DRINK_IDS = new Set([
   "granini_a", "granini_o", "tonic_mango", "tonic_cherry", "sanben_tea_lem5", "sanben_tea_lem3", "sanben_tea_peach", "cola", "cola0", "fanta", "redbull",
-  "devin", "benedo_st", "benedo_spa", "perrier_st", "perrier_spa", "panna25", "panna75", "pelegrino75", "pelegrino",
+  "benedo_st", "benedo_spa", "perrier_st", "perrier_spa", "panna25", "panna75", "pelegrino75", "pelegrino",
 ]);
 function maxDrinkQty(id: string): number { return NON_ALCOHOLIC_DRINK_IDS.has(id) ? 200 : 100; }
 const MAX_NAME_LEN = 200;

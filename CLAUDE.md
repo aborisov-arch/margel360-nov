@@ -43,7 +43,7 @@ These constants are duplicated across layers. **When one changes, update every f
 |---|---|---|
 | Venue base prices | evening 1280, corp4 330, corp8 440, bday_day 700, bday_eve 970, wedding 1500 | reservation-catalog.js, enquiry-email.ts, dashboard.js, financials.js, customers.js, marketing.js, offer-export.js (EVENT_CONFIG), offer-pdf.js (PDF_EVENT_CONFIG) |
 | Venue covers / extra guest | 40 guests, +€15 each above | reservation.js, enquiry-email.ts, dashboard.js, financials.js, customers.js, marketing.js, offer-pdf.js |
-| Mandatory cleaning | €70 auto-added when guests > **25** | reservation.js, edit.js (CLEANING_THRESHOLD_GUESTS) |
+| Mandatory cleaning | €70 auto-added on **every event** (no guest threshold) | reservation.js + edit.js (`autoCleaningAddon` / always-add), offer-export.js (always-on AA85), offer-pdf.js (renders the cleaning addon) |
 | Guests cap | 1..200 | reservation.js, edit.js+edit.html, submit-enquiry, _shared/validate.ts, update-enquiry-admin |
 | Drink qty caps | non-alcoholic (cat 3–4) ≤ 200, alcoholic ≤ 100 | reservation.js, edit.js (by `cat`), dashboard.js + submit-enquiry + _shared/validate.ts + update-enquiry-admin (NON_ALCOHOLIC_DRINK_IDS sets — keep identical to drinks-data.js cat 3/4 ids) |
 | Addon inventory caps | heater 2, heater_tbl 1, glow_table 10 | reservation.js, edit.js (ADDON_MAX_QTY) |

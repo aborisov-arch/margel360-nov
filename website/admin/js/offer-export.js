@@ -197,7 +197,7 @@ async function buildOfferXLSXBlob(enquiry) {
   const unmapped = [];
   for (const a of addons) {
     // The template has a dedicated always-on cleaning row (AA85 below), so a
-    // cleaning addon on the enquiry (auto-added for 40+ guests) must not also
+    // cleaning addon on the enquiry (auto-added on every event) must not also
     // land in "Други услуги" — that double-charged the cleaning fee.
     if (a.id === 'cleaning') continue;
     const cell = ADDON_TO_CELL[a.id];

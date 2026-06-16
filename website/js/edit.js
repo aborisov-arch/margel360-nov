@@ -35,8 +35,7 @@ function addonLinePrice(svc, qty) {
   return qty * svc.price;
 }
 
-// Mandatory hall cleaning above this guest count — same rule as the wizard.
-const CLEANING_THRESHOLD_GUESTS = 25;
+// Mandatory hall cleaning — added on every event, same rule as the wizard.
 
 const $ = id => document.getElementById(id);
 
@@ -500,10 +499,9 @@ async function onSave(evt) {
     addons.push(entry);
   });
 
-  // Mandatory hall cleaning above CLEANING_THRESHOLD_GUESTS — same rule the
-  // wizard applies at booking time; without this, raising the guest count
-  // via the edit link would silently drop the obligatory fee.
-  if (guests > CLEANING_THRESHOLD_GUESTS && !addons.some(a => a.id === 'cleaning')) {
+  // Mandatory hall cleaning — added on every event, same rule the wizard
+  // applies at booking time; ensures an edit never drops the obligatory fee.
+  if (!addons.some(a => a.id === 'cleaning')) {
     const cleaningSvc = addonServices.find(s => s.id === 'cleaning');
     if (cleaningSvc) addons.push({ id: cleaningSvc.id, name: cleaningSvc.name_en, price: cleaningSvc.price });
   }
