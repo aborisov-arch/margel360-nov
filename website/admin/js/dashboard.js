@@ -8,18 +8,26 @@ let statusFilter = 'unanswered';
 const PIPELINE_STAGES = ['new','contacted','quoted','confirmed','completed','lost','archived'];
 
 function applyStatusFilter(list) {
-  if (statusFilter === 'all') return list;
-  if (statusFilter === 'answered')   return list.filter(e => e.status === 'answered');
-  /* unanswered */                   return list.filter(e => e.status !== 'answered');
+  // Archived enquiries live only in their own tab; the working tabs
+  // (unanswered/answered/all) show active pipeline rows only.
+  if (statusFilter === 'archived') return list.filter(e => e.pipeline_status === 'archived');
+  const active = list.filter(e => e.pipeline_status !== 'archived');
+  if (statusFilter === 'all') return active;
+  if (statusFilter === 'answered')   return active.filter(e => e.status === 'answered');
+  /* unanswered */                   return active.filter(e => e.status !== 'answered');
 }
 
 function renderStatusTabCounts() {
-  const counts = { all: allEnquiries.length, answered: 0, unanswered: 0 };
-  allEnquiries.forEach(e => {
+  const active = allEnquiries.filter(e => e.pipeline_status !== 'archived');
+  const counts = {
+    all: active.length, answered: 0, unanswered: 0,
+    archived: allEnquiries.length - active.length,
+  };
+  active.forEach(e => {
     if (e.status === 'answered') counts.answered++;
     else counts.unanswered++;
   });
-  const labelKey = { unanswered: 'tab_unanswered', answered: 'tab_answered', all: 'tab_all' };
+  const labelKey = { unanswered: 'tab_unanswered', answered: 'tab_answered', all: 'tab_all', archived: 'tab_archived' };
   document.querySelectorAll('#status-tabs .status-tab').forEach(btn => {
     const f = btn.getAttribute('data-filter');
     const lbl = btn.querySelector('[data-tab-label]');
