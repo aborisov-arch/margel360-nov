@@ -21,10 +21,12 @@ const EXTRA_GUEST_FEE_EUR = 15;
 
 const EXPENSE_CATS = [
   { id: 'staff',       label: 'Заплати / хонорари' },
+  { id: 'employees',   label: 'Служители' },
   { id: 'catering',    label: 'Кетъринг' },
   { id: 'drinks',      label: 'Напитки / алкохол' },
   { id: 'decoration',  label: 'Декорация' },
   { id: 'music',       label: 'DJ / музика' },
+  { id: 'dj',          label: 'DJ' },
   { id: 'maintenance', label: 'Поддръжка' },
   { id: 'utilities',   label: 'Сметки / комунални' },
   { id: 'marketing',   label: 'Маркетинг / реклама' },
@@ -158,12 +160,14 @@ function clearSelection() { selectedEnquiryId = null; selectedManualFeId = null;
 // ────────────────────────────────────────────────────────────────
 
 function feIncome(fe) {
-  if (!fe) return { rent: 0, drinks: 0, addons: 0, overtime: 0, total: 0 };
+  if (!fe) return { rent: 0, drinks: 0, addons: 0, overtime: 0, dj: 0, employees: 0, total: 0 };
   const rent   = Number(fe.income_rent_eur   || 0);
   const drinks = Number(fe.income_drinks_eur || 0);
   const addons = Number(fe.income_addons_eur || 0);
   const overtime = Number(fe.income_overtime_eur || 0);
-  return { rent, drinks, addons, overtime, total: rent + drinks + addons + overtime };
+  const dj = Number(fe.income_dj_eur || 0);
+  const employees = Number(fe.income_employees_eur || 0);
+  return { rent, drinks, addons, overtime, dj, employees, total: rent + drinks + addons + overtime + dj + employees };
 }
 function fePaid(fe) {
   if (!fe) return 0;
@@ -277,7 +281,7 @@ function renderMonthSummary() {
   for (const fe of financialEventsById.values()) {
     if (!monthFilter || fe.month === monthFilter) scopeFes.push(fe);
   }
-  let rent = 0, drinks = 0, addons = 0, overtime = 0, paid = 0, expense = 0;
+  let rent = 0, drinks = 0, addons = 0, overtime = 0, dj = 0, employees = 0, paid = 0, expense = 0;
   const expByCat = Object.fromEntries(EXPENSE_CATS.map(c => [c.id, 0]));
 
   scopeFes.forEach(fe => {
@@ -286,6 +290,8 @@ function renderMonthSummary() {
     drinks += inc.drinks;
     addons += inc.addons;
     overtime += inc.overtime;
+    dj += inc.dj;
+    employees += inc.employees;
     paid   += fePaid(fe);
     const rows = expensesByEvent.get(fe.id) || [];
     rows.forEach(x => {
@@ -295,7 +301,7 @@ function renderMonthSummary() {
     });
   });
 
-  const income = rent + drinks + addons + overtime;
+  const income = rent + drinks + addons + overtime + dj + employees;
   const profit = income - expense;
   const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
   set('sum-month-label', monthLabel(monthFilter));
@@ -311,16 +317,18 @@ function renderMonthSummary() {
   const profitEl = document.getElementById('sum-profit-eur');
   if (profitEl) profitEl.className = 'kpi__value ' + (profit >= 0 ? 'is-positive' : 'is-negative');
 
-  const incomeCats = { rent, drinks, addons, overtime };
+  const incomeCats = { rent, drinks, addons, overtime, dj, employees };
   const INCOME_LABELS = [
     { id: 'rent',   label: 'Оферта' },
     { id: 'drinks', label: 'Напитки' },
     { id: 'addons', label: 'Доп. услуги' },
+    { id: 'dj',     label: 'DJ' },
+    { id: 'employees', label: 'Служители' },
     { id: 'overtime', label: 'Извънреден час' },
   ];
   const incomeBreak = document.getElementById('income-cat-breakdown');
   if (incomeBreak) {
-    incomeBreak.innerHTML = INCOME_LABELS.map(c => `
+    incomeBreak.innerHTML = INCOME_LABELS.filter(c => incomeCats[c.id] > 0).map(c => `
       <div class="pill" data-cat="${esc(c.id)}">
         <div class="pill__label">${esc(c.label)}</div>
         <div class="pill__value">${fmtEur(incomeCats[c.id])}</div>
@@ -444,7 +452,9 @@ function liveIncomeTotals(fe) {
   const drinks = Number(feFieldValue(fe, 'income_drinks_eur') || 0);
   const addons = Number(feFieldValue(fe, 'income_addons_eur') || 0);
   const overtime = Number(feFieldValue(fe, 'income_overtime_eur') || 0);
-  return { rent, drinks, addons, overtime, total: rent + drinks + addons + overtime };
+  const dj = Number(feFieldValue(fe, 'income_dj_eur') || 0);
+  const employees = Number(feFieldValue(fe, 'income_employees_eur') || 0);
+  return { rent, drinks, addons, overtime, dj, employees, total: rent + drinks + addons + overtime + dj + employees };
 }
 function livePaid(fe) {
   return Number(feFieldValue(fe, 'deposit_cash_eur') || 0)
@@ -512,6 +522,8 @@ function renderDetail() {
     { lbl: 'Оферта (зала + гости)', field: 'income_rent_eur',   detail: null },
     { lbl: 'Напитки',                field: 'income_drinks_eur', detail: enquiry?.drinks },
     { lbl: 'Доп. услуги',            field: 'income_addons_eur', detail: enquiry?.addons, open: true },
+    { lbl: 'DJ',                     field: 'income_dj_eur',     detail: null },
+    { lbl: 'Служители',              field: 'income_employees_eur', detail: null },
     { lbl: 'Извънреден час (овъртайм)', field: 'income_overtime_eur', detail: null },
   ].map(r => {
     const v = feFieldValue(fe, r.field);
