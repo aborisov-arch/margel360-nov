@@ -7,6 +7,12 @@ async function requireAuth() {
     window.location.href = 'login.html';
     return null;
   }
+  // Reveal owner-only UI (e.g. the Activity-log nav link) for the two owners.
+  // Non-fatal: a failure just leaves owner-only elements hidden.
+  try {
+    const { data: isOwner } = await db.rpc('is_owner');
+    if (isOwner) document.querySelectorAll('.owner-only').forEach(el => { el.hidden = false; });
+  } catch (_) { /* ignore */ }
   return session;
 }
 
