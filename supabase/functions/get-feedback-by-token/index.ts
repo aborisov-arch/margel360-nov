@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import { json, preflight } from "../_shared/cors.ts";
-import { getIp, rateLimit } from "../_shared/rate-limit.ts";
+import { getIp, rateLimitHit } from "../_shared/rate-limit.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -13,8 +13,7 @@ serve(async (req) => {
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
 
   const ip = getIp(req);
-  const rl = rateLimit(`fb-get:${ip}`, 10, 60_000);
-  if (!rl.ok) return json({ error: "rate_limited" }, 429);
+  if (!await rateLimitHit(sb, `fb-get:ip:${ip}`, 10, 60)) return json({ error: "rate_limited" }, 429);
 
   let token: string | undefined;
   try { ({ token } = await req.json()); } catch { return json({ error: "bad_json" }, 400); }

@@ -23,6 +23,13 @@ const INTERNAL_SECRET = Deno.env.get("INTERNAL_SHARED_SECRET") ?? "";
 // turnstile_token; when unset the check is skipped (so a missing secret
 // degrades to "no captcha" instead of blocking all bookings).
 const TURNSTILE_SECRET = Deno.env.get("TURNSTILE_SECRET_KEY") ?? "";
+// Make the degraded state observable: if the secret is missing (rotation
+// mistake / mis-deploy) the captcha check is skipped and only rate limiting
+// protects the form. Warn loudly on cold start rather than throwing (which
+// would block deploys before the secret is set).
+if (!TURNSTILE_SECRET) {
+  console.warn("[submit-enquiry] TURNSTILE_SECRET_KEY is unset — Turnstile verification is DISABLED; only rate limiting protects this endpoint.");
+}
 const sb = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
 
 // CORS wildcard — the endpoint is rate-limited and validates every
@@ -56,9 +63,11 @@ function getIp(req: Request): string {
 
 // ── Turnstile ────────────────────────────────────────────────────────
 // Verifies the widget token with Cloudflare. Invalid/missing token →
-// false. Infrastructure errors (siteverify unreachable) fail open: a
-// Cloudflare outage shouldn't take down the booking form, and a spammer
-// can't trigger that path.
+// false. Infrastructure errors (siteverify unreachable, timeout, non-JSON
+// response) FAIL CLOSED: when a captcha secret is configured an
+// unverifiable token is treated as a failed challenge rather than waved
+// through. A 10s timeout bounds a hung siteverify so the booking request
+// returns a clean 403 instead of stalling until the platform kills it.
 async function turnstileOk(token: unknown, ip: string): Promise<boolean> {
   if (typeof token !== "string" || !token) return false;
   try {
@@ -66,6 +75,7 @@ async function turnstileOk(token: unknown, ip: string): Promise<boolean> {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ secret: TURNSTILE_SECRET, response: token, remoteip: ip }),
+      signal: AbortSignal.timeout(10_000),
     });
     const body = await r.json().catch(() => ({}));
     if (body.success !== true) {
@@ -74,8 +84,8 @@ async function turnstileOk(token: unknown, ip: string): Promise<boolean> {
     }
     return true;
   } catch (e) {
-    console.error("turnstile verify unreachable:", e);
-    return true;
+    console.error("turnstile verify failed (failing closed):", e);
+    return false;
   }
 }
 

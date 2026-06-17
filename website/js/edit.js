@@ -112,6 +112,16 @@ async function mainAdmin(id) {
     window.location.href = `/admin/login.html?return=${ret}`;
     return;
   }
+  // Require the full second factor (AAL2) — same gate as the rest of the
+  // admin panel (requireAuth). RLS is_admin() only checks the email claim,
+  // not the assurance level, so without this a password-only (AAL1) session
+  // could read enquiry PII here. Bounce to login to finish the TOTP step.
+  const { data: aal } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (!aal || aal.currentLevel !== 'aal2') {
+    const ret = encodeURIComponent(window.location.pathname + window.location.search);
+    window.location.href = `/admin/login.html?return=${ret}`;
+    return;
+  }
   adminToken = session.access_token;
 
   const { data, error } = await sb.from('enquiries').select('*').eq('id', id).maybeSingle();
