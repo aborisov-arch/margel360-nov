@@ -202,7 +202,10 @@ function fePaid(fe) {
        + Number(fe.deposit_card_eur || 0)
        + Number(fe.balance_cash_eur || 0)
        + Number(fe.balance_bank_eur || 0)
-       + Number(fe.balance_card_eur || 0);
+       + Number(fe.balance_card_eur || 0)
+       + Number(fe.payment3_cash_eur || 0)
+       + Number(fe.payment3_bank_eur || 0)
+       + Number(fe.payment3_card_eur || 0);
 }
 function feExpenseTotal(fe) {
   if (!fe) return 0;
@@ -520,7 +523,10 @@ function livePaid(fe) {
        + Number(feFieldValue(fe, 'deposit_card_eur') || 0)
        + Number(feFieldValue(fe, 'balance_cash_eur') || 0)
        + Number(feFieldValue(fe, 'balance_bank_eur') || 0)
-       + Number(feFieldValue(fe, 'balance_card_eur') || 0);
+       + Number(feFieldValue(fe, 'balance_card_eur') || 0)
+       + Number(feFieldValue(fe, 'payment3_cash_eur') || 0)
+       + Number(feFieldValue(fe, 'payment3_bank_eur') || 0)
+       + Number(feFieldValue(fe, 'payment3_card_eur') || 0);
 }
 function liveExpenseTotal(fe) {
   if (!fe) return 0;
@@ -565,9 +571,10 @@ function renderDetail() {
     { lbl: 'Напитки',                field: 'income_drinks_eur', detail: enquiry?.drinks },
     { lbl: 'DJ',                     field: 'income_dj_eur',     detail: null },
     { lbl: 'Служители',              field: 'income_employees_eur', detail: null },
-    { lbl: 'Извънреден час (овъртайм)', field: 'income_overtime_eur', detail: null },
+    { lbl: 'Извънреден час (овъртайм)', field: 'income_overtime_eur', detail: null, hoursField: 'income_overtime_hours' },
   ].map(r => {
     const v = feFieldValue(fe, r.field);
+    const hv = r.hoursField ? feFieldValue(fe, r.hoursField) : null;
     const items = Array.isArray(r.detail) ? r.detail : [];
     const expandable = items.length > 0;
     const open = expandable && r.open === true; // add-ons breakdown shown by default
@@ -593,6 +600,9 @@ function renderDetail() {
     return `
       <li class="event-pnl__line event-pnl__line--editable${expandable ? ' is-expandable' : ''}${open ? ' is-open' : ''}"${expandedAttr}>
         <span class="event-pnl__line-lbl">${chevron}${esc(r.lbl)}</span>
+        ${r.hoursField ? `<input type="number" step="0.5" min="0" class="event-pnl__line-input event-pnl__line-hours"
+               data-fe-field="${esc(r.hoursField)}" value="${hv ?? ''}" placeholder="часа"
+               aria-label="Часове извънреден труд" title="Брой часове извънреден труд">` : ''}
         <input type="number" step="0.01" class="event-pnl__line-input"
                data-fe-field="${r.field}" value="${v ?? ''}" placeholder="€">
       </li>
@@ -676,10 +686,14 @@ function renderDetail() {
         <input type="number" step="0.01" data-fe-field="balance_cash_eur" value="${v('balance_cash_eur')}" placeholder="Доплащане">
         <input type="number" step="0.01" data-fe-field="balance_bank_eur" value="${v('balance_bank_eur')}" placeholder="Доплащане">
         <input type="number" step="0.01" data-fe-field="balance_card_eur" value="${v('balance_card_eur')}" placeholder="Доплащане">
+        <input type="number" step="0.01" data-fe-field="payment3_cash_eur" value="${v('payment3_cash_eur')}" placeholder="3-то плащане">
+        <input type="number" step="0.01" data-fe-field="payment3_bank_eur" value="${v('payment3_bank_eur')}" placeholder="3-то плащане">
+        <input type="number" step="0.01" data-fe-field="payment3_card_eur" value="${v('payment3_card_eur')}" placeholder="3-то плащане">
       </div>
       <div class="event-pnl__pay-dates">
         <label><span>Дата на аванса</span><input type="date" data-fe-field="deposit_date" value="${v('deposit_date')}"></label>
         <label><span>Дата на доплащането</span><input type="date" data-fe-field="balance_date" value="${v('balance_date')}"></label>
+        <label><span>Дата на 3-то плащане</span><input type="date" data-fe-field="payment3_date" value="${v('payment3_date')}"></label>
       </div>
     `;
   } else {
@@ -762,6 +776,7 @@ function updateDetailTotals() {
 function setFeDirty(field, raw) {
   let value = raw;
   if (field.endsWith('_eur')) value = raw === '' ? 0 : Number(raw);
+  if (field.endsWith('_hours')) value = raw === '' ? null : Number(raw);
   if (field.endsWith('_date')) value = raw || null;
   dirtyFe[field] = value;
   // Live-typing path: only refresh derived totals. Rebuilding the inputs
