@@ -2,6 +2,26 @@
   base = "website"
   publish = "."
 
+# Admin entry points. /admin/ has no index page, and /admin/security.html
+# was removed with the 2FA rollback — send both (and the no-slash form) to
+# the login, which routes on to the dashboard when a session exists.
+# force = false so real admin files (login.html, dashboard.html, …) are
+# still served normally; only missing paths fall through to these.
+[[redirects]]
+  from = "/admin"
+  to = "/admin/login.html"
+  status = 301
+
+[[redirects]]
+  from = "/admin/"
+  to = "/admin/login.html"
+  status = 301
+
+[[redirects]]
+  from = "/admin/security.html"
+  to = "/admin/login.html"
+  status = 301
+
 # Security headers applied to every response. CSP allows the inline
 # scripts the site currently uses + the third-party origins it talks to
 # (Supabase, Resend not from browser, Google Fonts, jsDelivr CDN for
