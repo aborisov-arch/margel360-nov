@@ -686,11 +686,16 @@
   font-variant-numeric: tabular-nums;
 }
 .event-pnl__line-input:focus { outline: 2px solid var(--fin-gold); outline-offset: 1px; border-color: var(--fin-gold); }
-/* Overtime: a narrow "hours" box sitting just left of the € amount on the
-   same row. Letting the label grow keeps both inputs grouped at the right
-   instead of being scattered by the row's space-between. */
-.event-pnl__line--editable .event-pnl__line-lbl { flex: 1 1 auto; }
-.event-pnl__line-hours { width: 64px; }
+/* Overtime: a "hours × €/час = €" calc at the right of the row. The label
+   grows so the calc groups at the right; the line wraps the calc to its own
+   row on narrow widths so it never overflows the income column. */
+.event-pnl__line--editable .event-pnl__line-lbl { flex: 1 1 auto; min-width: 0; }
+.event-pnl__line--overtime { flex-wrap: wrap; gap: 6px 8px; }
+.event-pnl__ot-calc { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 0 1 auto; flex-wrap: wrap; }
+.event-pnl__line-hours { width: 56px; }
+.event-pnl__line-rate { width: 70px; }
+.event-pnl__ot-op { color: var(--fin-muted-foreground); font-size: 0.85rem; }
+.event-pnl__ot-result-input { width: 92px; }
 
 /* Save / cancel bar — sits below the net profit summary on the detail
    panel and stays visible while editing. */

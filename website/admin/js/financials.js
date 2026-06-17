@@ -373,7 +373,7 @@ function renderMonthSummary() {
     { id: 'drinks', label: 'Напитки' },
     { id: 'addons', label: 'Доп. услуги' },
     { id: 'dj',     label: 'DJ' },
-    { id: 'employees', label: 'Служители' },
+    { id: 'employees', label: 'Почистване' },
     { id: 'overtime', label: 'Извънреден час' },
   ];
   const incomeBreak = document.getElementById('income-cat-breakdown');
@@ -512,6 +512,9 @@ function liveIncomeTotals(fe) {
   const rent   = Number(feFieldValue(fe, 'income_rent_eur')   || 0);
   const drinks = Number(feFieldValue(fe, 'income_drinks_eur') || 0);
   const addons = liveAddonsTotal(fe);
+  // Overtime € is the source of truth (editable). hours × rate just auto-fills
+  // it (see setFeDirty), so reading the field here covers both flat and
+  // computed entry without a fallback that could clobber a manual value.
   const overtime = Number(feFieldValue(fe, 'income_overtime_eur') || 0);
   const dj = Number(feFieldValue(fe, 'income_dj_eur') || 0);
   const employees = Number(feFieldValue(fe, 'income_employees_eur') || 0);
@@ -570,11 +573,12 @@ function renderDetail() {
     { lbl: 'Оферта (зала + гости)', field: 'income_rent_eur',   detail: null },
     { lbl: 'Напитки',                field: 'income_drinks_eur', detail: enquiry?.drinks },
     { lbl: 'DJ',                     field: 'income_dj_eur',     detail: null },
-    { lbl: 'Служители',              field: 'income_employees_eur', detail: null },
-    { lbl: 'Извънреден час (овъртайм)', field: 'income_overtime_eur', detail: null, hoursField: 'income_overtime_hours' },
+    { lbl: 'Почистване',              field: 'income_employees_eur', detail: null },
+    { lbl: 'Извънреден час (овъртайм)', field: 'income_overtime_eur', detail: null, hoursField: 'income_overtime_hours', rateField: 'income_overtime_rate_eur', computed: true },
   ].map(r => {
     const v = feFieldValue(fe, r.field);
     const hv = r.hoursField ? feFieldValue(fe, r.hoursField) : null;
+    const rv = r.rateField ? feFieldValue(fe, r.rateField) : null;
     const items = Array.isArray(r.detail) ? r.detail : [];
     const expandable = items.length > 0;
     const open = expandable && r.open === true; // add-ons breakdown shown by default
@@ -597,12 +601,29 @@ function renderDetail() {
         }).join('')}
       </ul>
     ` : '';
+    // Overtime line: hours × €/hour. Entering BOTH auto-fills the € amount
+    // (income_overtime_eur) via setFeDirty. The € stays an EDITABLE input, so
+    // a flat overtime can be typed directly and legacy values stay editable.
+    if (r.computed) {
+      return `
+        <li class="event-pnl__line event-pnl__line--editable event-pnl__line--overtime">
+          <span class="event-pnl__line-lbl">${esc(r.lbl)}</span>
+          <span class="event-pnl__ot-calc">
+            <input type="number" step="0.5" min="0" class="event-pnl__line-input event-pnl__line-hours"
+                   data-fe-field="${esc(r.hoursField)}" value="${hv ? hv : ''}" placeholder="часа" aria-label="Часове извънреден труд">
+            <span class="event-pnl__ot-op" aria-hidden="true">×</span>
+            <input type="number" step="0.01" min="0" class="event-pnl__line-input event-pnl__line-rate"
+                   data-fe-field="${esc(r.rateField)}" value="${rv ? rv : ''}" placeholder="€/час" aria-label="Ставка на час">
+            <span class="event-pnl__ot-op" aria-hidden="true">=</span>
+            <input type="number" step="0.01" id="pnl-overtime-eur-input" class="event-pnl__line-input event-pnl__ot-result-input"
+                   data-fe-field="${r.field}" value="${v ?? ''}" placeholder="€" aria-label="Сума извънреден час">
+          </span>
+        </li>
+      `;
+    }
     return `
       <li class="event-pnl__line event-pnl__line--editable${expandable ? ' is-expandable' : ''}${open ? ' is-open' : ''}"${expandedAttr}>
         <span class="event-pnl__line-lbl">${chevron}${esc(r.lbl)}</span>
-        ${r.hoursField ? `<input type="number" step="0.5" min="0" class="event-pnl__line-input event-pnl__line-hours"
-               data-fe-field="${esc(r.hoursField)}" value="${hv ?? ''}" placeholder="часа"
-               aria-label="Часове извънреден труд" title="Брой часове извънреден труд">` : ''}
         <input type="number" step="0.01" class="event-pnl__line-input"
                data-fe-field="${r.field}" value="${v ?? ''}" placeholder="€">
       </li>
@@ -779,6 +800,21 @@ function setFeDirty(field, raw) {
   if (field.endsWith('_hours')) value = raw === '' ? null : Number(raw);
   if (field.endsWith('_date')) value = raw || null;
   dirtyFe[field] = value;
+  // Overtime: when BOTH hours and rate are set, auto-fill the € amount
+  // (hours × rate) into income_overtime_eur and reflect it in the € input.
+  // When they're not both set we leave the € untouched, so a flat amount
+  // typed directly (or a legacy value) is never clobbered.
+  if (field === 'income_overtime_hours' || field === 'income_overtime_rate_eur') {
+    const fe = currentSelection()?.fe;
+    const hours = Number(feFieldValue(fe, 'income_overtime_hours') || 0);
+    const rate  = Number(feFieldValue(fe, 'income_overtime_rate_eur') || 0);
+    if (hours > 0 && rate > 0) {
+      const computed = Math.round(hours * rate * 100) / 100;
+      dirtyFe.income_overtime_eur = computed;
+      const eurInput = document.getElementById('pnl-overtime-eur-input');
+      if (eurInput) eurInput.value = computed;
+    }
+  }
   // Live-typing path: only refresh derived totals. Rebuilding the inputs
   // here (renderDetail) would destroy the field being typed into and drop
   // focus after every keystroke.
