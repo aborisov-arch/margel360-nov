@@ -19,6 +19,12 @@ const EVENT_BASE = { evening: 1280, wedding: 1500, corp4: 330, corp8: 440, bday_
 const VENUE_MIN_GUESTS = 40;
 const EXTRA_GUEST_FEE_EUR = 15;
 
+// Live drinks catalog (drinks-data.js is loaded before this script). Used to
+// price P&L drink lines by id so website price changes flow straight through.
+const drinkCatalogById = (typeof drinks !== 'undefined' && Array.isArray(drinks))
+  ? new Map(drinks.map(d => [d.id, d]))
+  : new Map();
+
 // Income additional-service buckets (the 7 grouped categories the
 // bookkeeper picks per service line). Kept in sync with the CHECK
 // constraint on financial_income_items.category.
@@ -185,10 +191,21 @@ function savedAddonsTotal(feId) {
   return rows.reduce((s, x) => s + Number(x.amount_eur || 0), 0);
 }
 
+// Saved-state drinks total (summary + left rail). Uses the adjusted P&L list
+// once it exists; otherwise live-prices the booking's order so the summary
+// matches the open panel (and reflects catalog price changes), falling back
+// to the cached prefill only when there's no linked enquiry.
+function savedDrinksTotal(fe) {
+  if (fe.pnl_drinks != null) return drinksTotalOf(fe.pnl_drinks);
+  const enquiry = fe.enquiry_id ? allEnquiries.find(e => e.id === fe.enquiry_id) : null;
+  if (enquiry) return drinksTotalOf(seedDrinksFromOrder(enquiry));
+  return Number(fe.income_drinks_eur || 0);
+}
+
 function feIncome(fe) {
   if (!fe) return { rent: 0, drinks: 0, addons: 0, overtime: 0, dj: 0, employees: 0, total: 0 };
   const rent   = Number(fe.income_rent_eur   || 0);
-  const drinks = Number(fe.income_drinks_eur || 0);
+  const drinks = savedDrinksTotal(fe);
   const addons = savedAddonsTotal(fe.id);
   const overtime = Number(fe.income_overtime_eur || 0);
   const dj = Number(fe.income_dj_eur || 0);
@@ -510,7 +527,8 @@ function liveAddonsTotal(fe) {
 
 function liveIncomeTotals(fe) {
   const rent   = Number(feFieldValue(fe, 'income_rent_eur')   || 0);
-  const drinks = Number(feFieldValue(fe, 'income_drinks_eur') || 0);
+  // Drinks come from the editable, live-priced P&L drink list (dirty-aware).
+  const drinks = drinksTotalOf(getWorkingDrinks());
   const addons = liveAddonsTotal(fe);
   // Overtime € is the source of truth (editable). hours × rate just auto-fills
   // it (see setFeDirty), so reading the field here covers both flat and
@@ -535,6 +553,185 @@ function liveExpenseTotal(fe) {
   if (!fe) return 0;
   const rows = expensesByEvent.get(fe.id) || [];
   return rows.reduce((s, r) => s + Number(expFieldValue(r, 'amount_eur') || 0), 0);
+}
+
+// ────────────────────────────────────────────────────────────────
+// P&L drinks — editable, live-priced list. The P&L keeps its own adjusted
+// copy (financial_events.pnl_drinks); the booking's drinks are never
+// mutated. All edits are draft (staged in dirtyFe.pnl_drinks +
+// dirtyFe.income_drinks_eur) until Save, like the rest of the panel.
+// ────────────────────────────────────────────────────────────────
+
+function seedDrinksFromOrder(enquiry) {
+  const arr = Array.isArray(enquiry?.drinks) ? enquiry.drinks : [];
+  return arr.map(d => {
+    const c = d.id ? drinkCatalogById.get(d.id) : null;
+    return {
+      id: d.id || null,
+      name: c ? c.name_bg : (d.name || ''),   // prefer the BG catalog name
+      qty: Number(d.qty) || 0,
+      unit_price_eur: d.price_eur != null ? Number(d.price_eur) : null,
+      manual: false,
+    };
+  });
+}
+// Dirty-aware working list for the open event.
+function getWorkingDrinks() {
+  if ('pnl_drinks' in dirtyFe) return dirtyFe.pnl_drinks || [];
+  const sel = currentSelection();
+  if (sel?.fe && sel.fe.pnl_drinks != null) return sel.fe.pnl_drinks;
+  return seedDrinksFromOrder(sel?.enquiry);
+}
+// Promote the working list into a mutable draft staged on dirtyFe.
+function ensureDrinksDraft() {
+  if (!('pnl_drinks' in dirtyFe)) {
+    dirtyFe.pnl_drinks = getWorkingDrinks().map(l => ({ ...l }));
+  }
+  return dirtyFe.pnl_drinks;
+}
+function drinkUnitPrice(line) {
+  if (line.manual) return Number(line.unit_price_eur) || 0;
+  const c = drinkCatalogById.get(line.id);
+  if (c) return Number(c.price_eur) || 0;
+  return Number(line.unit_price_eur) || 0;
+}
+function drinkLineTotal(line) { return drinkUnitPrice(line) * (Number(line.qty) || 0); }
+function drinksTotalOf(arr) {
+  if (!Array.isArray(arr)) return 0;
+  return Math.round(arr.reduce((s, l) => s + drinkLineTotal(l), 0) * 100) / 100;
+}
+
+// Stage the draft array + recomputed cached total into dirtyFe.
+function stageDrinks(arr) {
+  dirtyFe.pnl_drinks = arr;
+  dirtyFe.income_drinks_eur = drinksTotalOf(arr);
+}
+// Live refresh of line €/unit/subtotal/income WITHOUT rebuilding inputs (focus-safe).
+function refreshDrinkTotals() {
+  const arr = getWorkingDrinks();
+  arr.forEach((l, i) => {
+    const el = document.getElementById('pnl-drink-eur-' + i);
+    if (el) el.textContent = fmtEur(drinkLineTotal(l));
+    const unit = document.getElementById('pnl-drink-unit-' + i);
+    if (unit) unit.textContent = fmtEur(drinkUnitPrice(l));
+  });
+  const tot = document.getElementById('pnl-drinks-total');
+  if (tot) tot.textContent = fmtEur(drinksTotalOf(arr));
+  updateDetailTotals();
+}
+
+function setDrinkQty(index, raw) {
+  const arr = ensureDrinksDraft();
+  if (!arr[index]) return;
+  arr[index].qty = raw === '' ? 0 : Number(raw);
+  stageDrinks(arr);
+  refreshDrinkTotals();
+}
+function setDrinkSelect(index, drinkId) {
+  const arr = ensureDrinksDraft();
+  if (!arr[index]) return;
+  const c = drinkCatalogById.get(drinkId);
+  arr[index].id = drinkId;
+  arr[index].manual = false;
+  if (c) { arr[index].name = c.name_bg; arr[index].unit_price_eur = Number(c.price_eur); }
+  stageDrinks(arr);
+  renderDrinks();
+  updateDetailTotals();
+}
+function setManualDrinkField(index, field, raw) {
+  const arr = ensureDrinksDraft();
+  if (!arr[index]) return;
+  if (field === 'name') arr[index].name = raw;
+  if (field === 'unit_price_eur') arr[index].unit_price_eur = raw === '' ? 0 : Number(raw);
+  stageDrinks(arr);
+  refreshDrinkTotals();
+}
+function addCatalogDrink() {
+  if (!currentSelection()) return;
+  const arr = ensureDrinksDraft();
+  const first = (typeof drinks !== 'undefined' && Array.isArray(drinks) && drinks[0]) ? drinks[0] : null;
+  arr.push(first
+    ? { id: first.id, name: first.name_bg, qty: 1, unit_price_eur: Number(first.price_eur), manual: false }
+    : { id: null, name: '', qty: 1, unit_price_eur: 0, manual: true });
+  stageDrinks(arr);
+  renderDrinks();
+  updateDetailTotals();
+}
+function addManualDrink() {
+  if (!currentSelection()) return;
+  const arr = ensureDrinksDraft();
+  arr.push({ id: null, name: '', qty: 1, unit_price_eur: 0, manual: true });
+  stageDrinks(arr);
+  renderDrinks();
+  updateDetailTotals();
+}
+function deleteDrink(index) {
+  const arr = ensureDrinksDraft();
+  if (index < 0 || index >= arr.length) return;
+  arr.splice(index, 1);
+  stageDrinks(arr);
+  renderDrinks();
+  updateDetailTotals();
+}
+
+// Catalog <option> list grouped by category, preselecting `selId`.
+function drinkCatalogOptions(selId) {
+  if (typeof drinks === 'undefined' || !Array.isArray(drinks)) return '';
+  const groups = (typeof drinkCategories !== 'undefined' && drinkCategories?.bg) ? drinkCategories.bg : [];
+  return groups.map((g, ci) => {
+    const opts = drinks.filter(d => d.cat === ci).map(d =>
+      `<option value="${esc(d.id)}"${d.id === selId ? ' selected' : ''}>${esc(d.name_bg)} — ${fmtEur(d.price_eur)}</option>`
+    ).join('');
+    return opts ? `<optgroup label="${esc(g)}">${opts}</optgroup>` : '';
+  }).join('');
+}
+
+function renderDrinks() {
+  const wrap = document.getElementById('pnl-drinks-lines');
+  if (!wrap) return;
+  const arr = getWorkingDrinks();
+  const tot = document.getElementById('pnl-drinks-total');
+  if (tot) tot.textContent = fmtEur(drinksTotalOf(arr));
+  if (!arr.length) {
+    wrap.innerHTML = '<li class="empty-state">Няма напитки. Добавете от каталога или ръчно.</li>';
+    return;
+  }
+  wrap.innerHTML = arr.map((l, i) => {
+    const lineEur = fmtEur(drinkLineTotal(l));
+    // Keep the <select>, the priced unit, and the stored id in agreement even
+    // for a drink that has since left the catalog — otherwise the browser
+    // silently auto-selects the first option while pricing the stored fallback.
+    const inCatalog = !l.manual && l.id && drinkCatalogById.has(l.id);
+    const selectOptions = inCatalog
+      ? drinkCatalogOptions(l.id)
+      : `<option value="${esc(l.id || '')}" selected>${esc(l.name || '—')} — ${fmtEur(drinkUnitPrice(l))} (извън каталога)</option>` + drinkCatalogOptions(null);
+    if (l.manual) {
+      return `
+        <li class="event-pnl__line event-pnl__line--drink" data-drink-index="${i}">
+          <div class="event-pnl__drink-row">
+            <input type="text" class="event-pnl__drink-name" data-drink-f="name" value="${esc(l.name || '')}" placeholder="Напитка (ръчно)">
+            <input type="number" step="0.01" min="0" class="event-pnl__drink-price" data-drink-f="unit_price_eur" value="${l.unit_price_eur ?? ''}" placeholder="€/бр" title="Цена за брой">
+            <span class="event-pnl__drink-op" aria-hidden="true">×</span>
+            <input type="number" step="1" min="0" class="event-pnl__drink-qty" data-drink-f="qty" value="${l.qty ?? ''}" placeholder="бр" aria-label="Брой">
+            <span class="event-pnl__drink-op" aria-hidden="true">=</span>
+            <span class="event-pnl__drink-eur" id="pnl-drink-eur-${i}">${lineEur}</span>
+            <button type="button" class="del-btn" data-del-drink="${i}" title="Изтрий">×</button>
+          </div>
+        </li>`;
+    }
+    return `
+      <li class="event-pnl__line event-pnl__line--drink" data-drink-index="${i}">
+        <div class="event-pnl__drink-row">
+          <select class="event-pnl__drink-select" data-drink-f="select" aria-label="Напитка">${selectOptions}</select>
+          <span class="event-pnl__drink-unit" id="pnl-drink-unit-${i}">${fmtEur(drinkUnitPrice(l))}</span>
+          <span class="event-pnl__drink-op" aria-hidden="true">×</span>
+          <input type="number" step="1" min="0" class="event-pnl__drink-qty" data-drink-f="qty" value="${l.qty ?? ''}" placeholder="бр" aria-label="Брой">
+          <span class="event-pnl__drink-op" aria-hidden="true">=</span>
+          <span class="event-pnl__drink-eur" id="pnl-drink-eur-${i}">${lineEur}</span>
+          <button type="button" class="del-btn" data-del-drink="${i}" title="Изтрий">×</button>
+        </div>
+      </li>`;
+  }).join('');
 }
 
 function renderDetail() {
@@ -565,13 +762,11 @@ function renderDetail() {
   }
 
   // Fixed income lines — editable. Prefilled by ensureFinancialEvent from
-  // the enquiry breakdown; admin can refine before saving. The "Напитки"
-  // row expands on click to show the actual drinks the customer picked
-  // (only when there's an enquiry). Additional services are itemized
-  // separately below, in #pnl-income-lines-services.
+  // the enquiry breakdown; admin can refine before saving. Drinks are an
+  // itemized list below (#pnl-drinks-lines); additional services are itemized
+  // in #pnl-income-lines-services.
   const linesHtml = [
     { lbl: 'Оферта (зала + гости)', field: 'income_rent_eur',   detail: null },
-    { lbl: 'Напитки',                field: 'income_drinks_eur', detail: enquiry?.drinks },
     { lbl: 'DJ',                     field: 'income_dj_eur',     detail: null },
     { lbl: 'Почистване',              field: 'income_employees_eur', detail: null },
     { lbl: 'Извънреден час (овъртайм)', field: 'income_overtime_eur', detail: null, hoursField: 'income_overtime_hours', rateField: 'income_overtime_rate_eur', computed: true },
@@ -631,6 +826,9 @@ function renderDetail() {
     `;
   }).join('');
   document.getElementById('pnl-income-lines').innerHTML = linesHtml;
+
+  // Drinks — editable, live-priced list (seeded from the booking).
+  renderDrinks();
 
   // Additional services — itemized, categorized income lines. Mirrors the
   // expense-line UI (category + amount + note + delete). Above the editable
@@ -769,6 +967,7 @@ function updateDetailTotals() {
 
   const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
   set('pnl-income-total',  fmtEur(inc.total));
+  set('pnl-drinks-total',  fmtEur(drinksTotalOf(getWorkingDrinks())));
   set('pnl-services-total', fmtEur(liveAddonsTotal(fe)));
   set('pnl-expense-total', fmtEur(expense));
   set('pnl-paid-total',    fmtEur(paid));
@@ -1171,6 +1370,8 @@ document.addEventListener('click', evt => {
   if (evt.target.closest('#btn-add-manual-event')) { addManualEvent(); return; }
   if (evt.target.closest('#btn-add-event-expense')) { addEventExpense(); return; }
   if (evt.target.closest('#btn-add-income-service')) { addIncomeService(); return; }
+  if (evt.target.closest('#btn-add-drink'))          { addCatalogDrink(); return; }
+  if (evt.target.closest('#btn-add-drink-manual'))   { addManualDrink(); return; }
   if (evt.target.closest('#btn-save-pnl'))          { saveDraft(); return; }
   if (evt.target.closest('#btn-cancel-pnl'))        { cancelDraft(); return; }
   if (evt.target.closest('#btn-delete-pnl'))        { deletePnl(); return; }
@@ -1202,6 +1403,8 @@ document.addEventListener('click', evt => {
   }
   const delInc = evt.target.closest('[data-del-income]');
   if (delInc) { deleteIncomeItem(delInc.getAttribute('data-del-income')); return; }
+  const delDrink = evt.target.closest('[data-del-drink]');
+  if (delDrink) { deleteDrink(Number(delDrink.getAttribute('data-del-drink'))); return; }
   const del = evt.target.closest('[data-del]');
   if (del) { deleteExpense(del.getAttribute('data-del')); return; }
 
@@ -1223,6 +1426,19 @@ document.addEventListener('click', evt => {
 document.addEventListener('input', evt => {
   if (evt.target.id === 'events-search') { renderEventsList(evt.target.value); return; }
 
+  // Drink line field draft (qty / manual name / manual price). The catalog
+  // <select> also carries data-drink-f but is handled in 'change'.
+  const drinkInp = evt.target.closest('[data-drink-f]');
+  if (drinkInp) {
+    const li = drinkInp.closest('[data-drink-index]');
+    if (li) {
+      const idx = Number(li.dataset.drinkIndex);
+      const f = drinkInp.dataset.drinkF;
+      if (f === 'qty') setDrinkQty(idx, drinkInp.value);
+      else if (f === 'name' || f === 'unit_price_eur') setManualDrinkField(idx, f, drinkInp.value);
+      return;
+    }
+  }
   // Income service field draft
   const incInp = evt.target.closest('[data-fi]');
   if (incInp) {
@@ -1241,6 +1457,12 @@ document.addEventListener('input', evt => {
 });
 
 document.addEventListener('change', evt => {
+  // Drink catalog picker — swap the drink (and its live price) on the line.
+  const drinkSel = evt.target.closest('[data-drink-f="select"]');
+  if (drinkSel) {
+    const li = drinkSel.closest('[data-drink-index]');
+    if (li) { setDrinkSelect(Number(li.dataset.drinkIndex), drinkSel.value); return; }
+  }
   if (evt.target.id === 'fin-month') {
     monthFilter = evt.target.value || '';
     renderEventsList(document.getElementById('events-search').value);

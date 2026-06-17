@@ -697,6 +697,21 @@
 .event-pnl__ot-op { color: var(--fin-muted-foreground); font-size: 0.85rem; }
 .event-pnl__ot-result-input { width: 92px; }
 
+/* Drinks — editable, live-priced lines: [drink/name · price] × [qty] = € · ×.
+   Wraps on narrow widths so it never overflows the income column. */
+.event-pnl__drinks-add { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 2px; }
+.event-pnl__line--drink { padding: 6px 10px; }
+.event-pnl__drink-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.event-pnl__drink-select { flex: 1 1 150px; min-width: 0; padding: 5px 6px; border: 1px solid var(--fin-border); border-radius: 6px; background: #fff; font: 0.82rem 'Inter', sans-serif; }
+.event-pnl__drink-name { flex: 1 1 130px; min-width: 0; padding: 5px 8px; border: 1px solid var(--fin-border); border-radius: 6px; background: #fff; font: 0.85rem 'Inter', sans-serif; }
+.event-pnl__drink-price { width: 74px; padding: 5px 6px; text-align: right; border: 1px solid var(--fin-border); border-radius: 6px; background: #fff; font: 0.85rem 'Inter', sans-serif; font-variant-numeric: tabular-nums; }
+.event-pnl__drink-qty { width: 52px; padding: 5px 6px; text-align: right; border: 1px solid var(--fin-border); border-radius: 6px; background: #fff; font: 600 0.85rem 'Inter', sans-serif; font-variant-numeric: tabular-nums; }
+.event-pnl__drink-unit { min-width: 54px; text-align: right; color: var(--fin-muted-foreground); font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+.event-pnl__drink-op { color: var(--fin-muted-foreground); font-size: 0.8rem; }
+.event-pnl__drink-eur { min-width: 62px; text-align: right; font: 700 0.88rem 'Inter', sans-serif; font-variant-numeric: tabular-nums; color: var(--fin-text); }
+.event-pnl__drink-select:focus, .event-pnl__drink-name:focus,
+.event-pnl__drink-price:focus, .event-pnl__drink-qty:focus { outline: 2px solid var(--fin-gold); outline-offset: 1px; border-color: var(--fin-gold); }
+
 /* Save / cancel bar — sits below the net profit summary on the detail
    panel and stays visible while editing. */
 .event-pnl__actions {
