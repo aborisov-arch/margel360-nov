@@ -348,17 +348,33 @@ function renderMonthSummary() {
   for (const fe of financialEventsById.values()) {
     if (!monthFilter || fe.month === monthFilter) scopeFes.push(fe);
   }
+  // Revenue recognition: an event's income only lands in the realized
+  // income/profit KPIs the day AFTER the event happens (Sofia date).
+  // Events that haven't passed yet are summed into a separate "upcoming
+  // (projected)" figure instead, so the headline numbers reflect money
+  // from events that have actually taken place. Per-event P&L stays fully
+  // editable beforehand (semi-automatic). Paid + expenses are NOT
+  // date-gated — they reflect cash actually moved / costs actually entered.
+  const todayISO = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Sofia' });
+  const hasHappened = fe => !fe.event_date || fe.event_date < todayISO;
+
   let rent = 0, drinks = 0, addons = 0, overtime = 0, dj = 0, employees = 0, paid = 0, expense = 0;
+  let upcomingIncome = 0, upcomingCount = 0;
   const expByCat = Object.fromEntries(EXPENSE_CATS.map(c => [c.id, 0]));
 
   scopeFes.forEach(fe => {
     const inc = feIncome(fe);
-    rent   += inc.rent;
-    drinks += inc.drinks;
-    addons += inc.addons;
-    overtime += inc.overtime;
-    dj += inc.dj;
-    employees += inc.employees;
+    if (hasHappened(fe)) {
+      rent   += inc.rent;
+      drinks += inc.drinks;
+      addons += inc.addons;
+      overtime += inc.overtime;
+      dj += inc.dj;
+      employees += inc.employees;
+    } else {
+      upcomingIncome += inc.total;
+      upcomingCount += 1;
+    }
     paid   += fePaid(fe);
     const rows = expensesByEvent.get(fe.id) || [];
     rows.forEach(x => {
@@ -370,11 +386,14 @@ function renderMonthSummary() {
 
   const income = rent + drinks + addons + overtime + dj + employees;
   const profit = income - expense;
+  const realizedCount = scopeFes.length - upcomingCount;
   const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
   set('sum-month-label', monthLabel(monthFilter));
-  set('sum-count',       `${scopeFes.length} ${scopeFes.length === 1 ? 'събитие' : 'събития'}`);
+  set('sum-count',       `${realizedCount} ${realizedCount === 1 ? 'проведено' : 'проведени'}${upcomingCount ? ` · ${upcomingCount} предстоящи` : ''}`);
   set('sum-income-eur',  fmtEur(income));
   set('sum-income-bgn',  fmtBgn(income * BGN_RATE));
+  set('sum-upcoming-eur', fmtEur(upcomingIncome));
+  set('sum-upcoming-bgn', fmtBgn(upcomingIncome * BGN_RATE));
   set('sum-paid-eur',    fmtEur(paid));
   set('sum-paid-bgn',    fmtBgn(paid * BGN_RATE));
   set('sum-expense-eur', fmtEur(expense));
