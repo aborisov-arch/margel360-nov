@@ -353,8 +353,9 @@ function renderMonthSummary() {
   // Events that haven't passed yet are summed into a separate "upcoming
   // (projected)" figure instead, so the headline numbers reflect money
   // from events that have actually taken place. Per-event P&L stays fully
-  // editable beforehand (semi-automatic). Paid + expenses are NOT
-  // date-gated — they reflect cash actually moved / costs actually entered.
+  // editable beforehand (semi-automatic). Expenses are gated the same way,
+  // so profit is a true realized P&L (income − expense, both past-only).
+  // Only "paid" (cash actually received) is NOT date-gated.
   const todayISO = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Sofia' });
   const hasHappened = fe => !fe.event_date || fe.event_date < todayISO;
 
@@ -371,17 +372,19 @@ function renderMonthSummary() {
       overtime += inc.overtime;
       dj += inc.dj;
       employees += inc.employees;
+      // Expenses count only once the event has happened too, so profit is
+      // a realized figure (realized income − realized expense).
+      const rows = expensesByEvent.get(fe.id) || [];
+      rows.forEach(x => {
+        const amt = Number(x.amount_eur || 0);
+        expense += amt;
+        expByCat[x.category || 'other'] = (expByCat[x.category || 'other'] || 0) + amt;
+      });
     } else {
       upcomingIncome += inc.total;
       upcomingCount += 1;
     }
     paid   += fePaid(fe);
-    const rows = expensesByEvent.get(fe.id) || [];
-    rows.forEach(x => {
-      const amt = Number(x.amount_eur || 0);
-      expense += amt;
-      expByCat[x.category || 'other'] = (expByCat[x.category || 'other'] || 0) + amt;
-    });
   });
 
   const income = rent + drinks + addons + overtime + dj + employees;
