@@ -1029,6 +1029,7 @@ function setupSubmit() {
       drinks: drinksPayload,
       payment_method: booking.payment,
       notes: booking.notes || null,
+      marketing_consent: !!document.getElementById('res-marketing-consent')?.checked,
       discount_code: booking.discountCode || null,
       turnstile_token: (() => {
         try { return (typeof turnstile !== 'undefined' && turnstile.getResponse()) || null; }

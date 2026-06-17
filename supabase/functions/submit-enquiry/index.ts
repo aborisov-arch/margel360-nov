@@ -201,6 +201,9 @@ serve(async (req) => {
   const arrival_time = payload.arrival_time == null ? null : safeStr(payload.arrival_time, 20);
   const payment_method = safeStr(payload.payment_method, 20);
   const notes_raw = payload.notes == null ? null : safeStr(payload.notes, MAX_NOTES);
+  // Optional marketing opt-in from the booking form. Only an explicit `true`
+  // counts as consent (column defaults to false); anything else → false.
+  const marketing_consent = payload.marketing_consent === true;
 
   if (!full_name)   return json({ error: "invalid_field", field: "full_name" }, 400);
   if (!email_raw || !EMAIL_RE.test(email_raw)) return json({ error: "invalid_field", field: "email" }, 400);
@@ -261,6 +264,7 @@ serve(async (req) => {
     preferred_date, time_of_day, arrival_time,
     guests, addons, drinks,
     payment_method, notes: notes_raw,
+    marketing_consent,
   };
 
   const { data: inserted, error: insErr } = await sb
