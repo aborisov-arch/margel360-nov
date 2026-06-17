@@ -27,7 +27,7 @@ const drinks = [
   { id:'minuty',         cat:1, name_bg:'M Minuty Rosé Côtes de Provence',       name_en:'M Minuty Rosé Côtes de Provence',    price_eur:22.50,  img:'assets/images/drinks/minuty-rose.png' },
   { id:'miraval_r',      cat:1, name_bg:'Château Miraval Rosé 0.75л',            name_en:'Château Miraval Rosé 0.75L',         price_eur:34.77,  img:'assets/images/drinks/miraval-rose.png' },
   { id:'le_rose',        cat:1, name_bg:'Le Rosé Katarzyna 0.75л',               name_en:'Le Rosé Katarzyna 0.75L',            price_eur:13.29,  img:'assets/images/drinks/le-rose.png' },
-  { id:'le_rose_375',    cat:1, name_bg:'Le Rosé Katarzyna Estate 0.375л',       name_en:'Le Rosé Katarzyna Estate 0.375L',    price_eur:5.16,   img:'assets/images/drinks/le-rose-375.png' },
+  { id:'le_rose_375',    cat:1, name_bg:'Le Rosé Katarzyna Estate 0.75л',        name_en:'Le Rosé Katarzyna Estate 0.75L',     price_eur:13.29,  img:'assets/images/drinks/le-rose-375.png' },
   // Spirits & Whisky (incl. beer + vodka + tequila + liqueurs)
   { id:'heineken',       cat:2, name_bg:'Heineken 0.33л',                        name_en:'Heineken 0.33L',                     price_eur:1.18,   img:'assets/images/drinks/heineken.png' },
   { id:'corona',         cat:2, name_bg:'Corona Extra 0.335л',                   name_en:'Corona Extra 0.335L',                price_eur:1.69,   img:'assets/images/drinks/corona-extra.png' },
