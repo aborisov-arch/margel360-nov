@@ -19,18 +19,34 @@ const EVENT_BASE = { evening: 1280, wedding: 1500, corp4: 330, corp8: 440, bday_
 const VENUE_MIN_GUESTS = 40;
 const EXTRA_GUEST_FEE_EUR = 15;
 
+// Income additional-service buckets (the 7 grouped categories the
+// bookkeeper picks per service line). Kept in sync with the CHECK
+// constraint on financial_income_items.category.
+const INCOME_SERVICE_CATS = [
+  { id: 'photo_video',   label: 'Фото / Видео' },
+  { id: 'decoration',    label: 'Декорация' },
+  { id: 'pyro_lighting', label: 'Пиро / Светлини' },
+  { id: 'music_dj',      label: 'Музика / DJ' },
+  { id: 'furniture',     label: 'Обзавеждане' },
+  { id: 'staff_service', label: 'Персонал / Обслужване' },
+  { id: 'other',         label: 'Други' },
+];
+
+// Expense categories — the 7 income buckets plus running-cost essentials.
+// Kept in sync with the CHECK constraint on financial_expenses.category.
 const EXPENSE_CATS = [
-  { id: 'staff',       label: 'Заплати / хонорари' },
-  { id: 'employees',   label: 'Служители' },
-  { id: 'catering',    label: 'Кетъринг' },
-  { id: 'drinks',      label: 'Напитки / алкохол' },
-  { id: 'decoration',  label: 'Декорация' },
-  { id: 'music',       label: 'DJ / музика' },
-  { id: 'dj',          label: 'DJ' },
-  { id: 'maintenance', label: 'Поддръжка' },
-  { id: 'utilities',   label: 'Сметки / комунални' },
-  { id: 'marketing',   label: 'Маркетинг / реклама' },
-  { id: 'other',       label: 'Други' },
+  { id: 'photo_video',   label: 'Фото / Видео' },
+  { id: 'decoration',    label: 'Декорация' },
+  { id: 'pyro_lighting', label: 'Пиро / Светлини' },
+  { id: 'music_dj',      label: 'Музика / DJ' },
+  { id: 'furniture',     label: 'Обзавеждане' },
+  { id: 'staff_service', label: 'Персонал / Заплати' },
+  { id: 'catering',      label: 'Кетъринг' },
+  { id: 'drinks',        label: 'Напитки / алкохол' },
+  { id: 'utilities',     label: 'Сметки / комунални' },
+  { id: 'maintenance',   label: 'Поддръжка' },
+  { id: 'marketing',     label: 'Маркетинг / реклама' },
+  { id: 'other',         label: 'Други' },
 ];
 
 const fmtEur = n => '€' + (Number(n) || 0).toFixed(2);
@@ -80,6 +96,7 @@ let occupiedDateSet = new Set();
 let financialEventsById = new Map();
 let financialEventByEnquiryId = new Map();
 let expensesByEvent = new Map();
+let incomeItemsByEvent = new Map();
 let bookableEvents = [];
 // Selection: at most ONE of these is non-null. selectedEnquiryId opens
 // a P&L derived from an enquiry; selectedManualFeId opens a "manual"
@@ -95,6 +112,7 @@ let monthFilter = '';
 // dirtyExpenses: Map<expenseId, { field: value }>
 let dirtyFe = {};
 let dirtyExpenses = new Map();
+let dirtyIncomeItems = new Map();
 
 const MONTH_NAMES_BG = ['януари','февруари','март','април','май','юни','юли','август','септември','октомври','ноември','декември'];
 function monthLabel(ym) {
@@ -111,7 +129,7 @@ function filteredEvents() {
   return bookableEvents.filter(e => enquiryMonth(e) === monthFilter);
 }
 function isDirty() {
-  return Object.keys(dirtyFe).length > 0 || dirtyExpenses.size > 0;
+  return Object.keys(dirtyFe).length > 0 || dirtyExpenses.size > 0 || dirtyIncomeItems.size > 0;
 }
 
 // All financial_events that are NOT reachable through the enquiry list:
@@ -159,11 +177,19 @@ function clearSelection() { selectedEnquiryId = null; selectedManualFeId = null;
 // employee saved.
 // ────────────────────────────────────────────────────────────────
 
+// Saved add-on income = sum of the event's itemized service lines. This
+// replaces the old single income_addons_eur read; that column is now just
+// a cached mirror kept in sync on save (see syncAddonsColumn).
+function savedAddonsTotal(feId) {
+  const rows = incomeItemsByEvent.get(feId) || [];
+  return rows.reduce((s, x) => s + Number(x.amount_eur || 0), 0);
+}
+
 function feIncome(fe) {
   if (!fe) return { rent: 0, drinks: 0, addons: 0, overtime: 0, dj: 0, employees: 0, total: 0 };
   const rent   = Number(fe.income_rent_eur   || 0);
   const drinks = Number(fe.income_drinks_eur || 0);
-  const addons = Number(fe.income_addons_eur || 0);
+  const addons = savedAddonsTotal(fe.id);
   const overtime = Number(fe.income_overtime_eur || 0);
   const dj = Number(fe.income_dj_eur || 0);
   const employees = Number(fe.income_employees_eur || 0);
@@ -194,16 +220,19 @@ async function loadAll() {
     { data: occ, error: occErr },
     { data: fev, error: fevErr },
     { data: exp, error: expErr },
+    { data: inc, error: incErr },
   ] = await Promise.all([
     db.from('enquiries').select('id,enquiry_number,full_name,preferred_date,event_type,event_id,pipeline_status,addons,drinks,applied_discount_percent,guests,payment_method,payment_tracking'),
     db.from('occupied_dates').select('date'),
     db.from('financial_events').select('*'),
     db.from('financial_expenses').select('*').not('event_id', 'is', null),
+    db.from('financial_income_items').select('*').not('event_id', 'is', null),
   ]);
   if (enqErr) console.error(enqErr);
   if (occErr) console.error(occErr);
   if (fevErr) console.error(fevErr);
   if (expErr) console.error(expErr);
+  if (incErr) console.error(incErr);
 
   allEnquiries = enq || [];
   occupiedDateSet = new Set((occ || []).map(r => r.date));
@@ -219,6 +248,12 @@ async function loadAll() {
   (exp || []).forEach(x => {
     if (!expensesByEvent.has(x.event_id)) expensesByEvent.set(x.event_id, []);
     expensesByEvent.get(x.event_id).push(x);
+  });
+
+  incomeItemsByEvent = new Map();
+  (inc || []).forEach(x => {
+    if (!incomeItemsByEvent.has(x.event_id)) incomeItemsByEvent.set(x.event_id, []);
+    incomeItemsByEvent.get(x.event_id).push(x);
   });
 
   bookableEvents = allEnquiries.filter(e => {
@@ -265,6 +300,18 @@ async function ensureFinancialEvent(enquiry) {
   if (error) { console.error('ensureFinancialEvent insert failed', error); return null; }
   financialEventsById.set(data.id, data);
   financialEventByEnquiryId.set(enquiry.id, data);
+
+  // Seed one "Други" service line from the enquiry's add-on total so the
+  // prefilled add-on income is visible (income now derives from items).
+  // The bookkeeper can then split/recategorize it.
+  if (b.addons > 0) {
+    const { data: item, error: itemErr } = await db.from('financial_income_items').insert({
+      event_id: data.id, month, category: 'other', amount_eur: b.addons,
+      notes: 'Пренесено от офертата',
+    }).select().single();
+    if (itemErr) console.error('seed income item failed', itemErr);
+    else incomeItemsByEvent.set(data.id, [item]);
+  }
   return data;
 }
 
@@ -446,11 +493,22 @@ function expFieldValue(row, field) {
   const dirty = dirtyExpenses.get(row.id);
   return dirty && (field in dirty) ? dirty[field] : row[field];
 }
+// Returns the current (dirty-aware) value of an income-service field.
+function incItemFieldValue(row, field) {
+  const dirty = dirtyIncomeItems.get(row.id);
+  return dirty && (field in dirty) ? dirty[field] : row[field];
+}
+// Live (dirty-aware) sum of the open event's itemized service income.
+function liveAddonsTotal(fe) {
+  if (!fe) return 0;
+  const rows = incomeItemsByEvent.get(fe.id) || [];
+  return rows.reduce((s, r) => s + Number(incItemFieldValue(r, 'amount_eur') || 0), 0);
+}
 
 function liveIncomeTotals(fe) {
   const rent   = Number(feFieldValue(fe, 'income_rent_eur')   || 0);
   const drinks = Number(feFieldValue(fe, 'income_drinks_eur') || 0);
-  const addons = Number(feFieldValue(fe, 'income_addons_eur') || 0);
+  const addons = liveAddonsTotal(fe);
   const overtime = Number(feFieldValue(fe, 'income_overtime_eur') || 0);
   const dj = Number(feFieldValue(fe, 'income_dj_eur') || 0);
   const employees = Number(feFieldValue(fe, 'income_employees_eur') || 0);
@@ -497,31 +555,14 @@ function renderDetail() {
     document.getElementById('pnl-guests').textContent   = '—';
   }
 
-  const inc = liveIncomeTotals(fe);
-  const expense = liveExpenseTotal(fe);
-  const paid = livePaid(fe);
-  const balance = inc.total - paid;
-  const net = inc.total - expense;
-  const margin = inc.total > 0 ? Math.round((net / inc.total) * 100) : null;
-
-  document.getElementById('pnl-income-total').textContent  = fmtEur(inc.total);
-  document.getElementById('pnl-expense-total').textContent = fmtEur(expense);
-  document.getElementById('pnl-paid-total').textContent    = fmtEur(paid);
-  document.getElementById('pnl-balance').textContent       = fmtEur(balance);
-  document.getElementById('pnl-net-eur').textContent       = fmtEur(net);
-  document.getElementById('pnl-net-bgn').textContent       = fmtBgn(net * BGN_RATE);
-  const marginEl = document.getElementById('pnl-margin');
-  marginEl.textContent = margin == null ? '—' : margin + '%';
-  marginEl.className = 'event-pnl__hero-val ' + (margin == null ? '' : (margin >= 0 ? 'is-positive' : 'is-negative'));
-
-  // Income lines — now editable. Prefilled by ensureFinancialEvent
-  // from the enquiry breakdown; admin can refine before saving. The
-  // "Напитки" and "Доп. услуги" rows expand on click to show the
-  // actual items the customer picked (only when there's an enquiry).
+  // Fixed income lines — editable. Prefilled by ensureFinancialEvent from
+  // the enquiry breakdown; admin can refine before saving. The "Напитки"
+  // row expands on click to show the actual drinks the customer picked
+  // (only when there's an enquiry). Additional services are itemized
+  // separately below, in #pnl-income-lines-services.
   const linesHtml = [
     { lbl: 'Оферта (зала + гости)', field: 'income_rent_eur',   detail: null },
     { lbl: 'Напитки',                field: 'income_drinks_eur', detail: enquiry?.drinks },
-    { lbl: 'Доп. услуги',            field: 'income_addons_eur', detail: enquiry?.addons, open: true },
     { lbl: 'DJ',                     field: 'income_dj_eur',     detail: null },
     { lbl: 'Служители',              field: 'income_employees_eur', detail: null },
     { lbl: 'Извънреден час (овъртайм)', field: 'income_overtime_eur', detail: null },
@@ -559,6 +600,45 @@ function renderDetail() {
     `;
   }).join('');
   document.getElementById('pnl-income-lines').innerHTML = linesHtml;
+
+  // Additional services — itemized, categorized income lines. Mirrors the
+  // expense-line UI (category + amount + note + delete). Above the editable
+  // lines we show, read-only, what the customer originally added on the
+  // booking form so the bookkeeper knows what to itemize.
+  const incRows = fe ? (incomeItemsByEvent.get(fe.id) || []) : [];
+  const pickedAddons = Array.isArray(enquiry?.addons) ? enquiry.addons : [];
+  const pickedHint = pickedAddons.length ? `
+    <li class="event-pnl__svc-ref">
+      <div class="event-pnl__svc-ref-lbl">Клиентът добави към офертата:</div>
+      <ul class="event-pnl__sub-items">
+        ${pickedAddons.map(a => {
+          const name = a.name || a.id || '—';
+          const price = a.price != null ? fmtEur(Number(a.price)) : '—';
+          return `<li><span class="event-pnl__sub-name">${esc(name)}</span><span class="event-pnl__sub-val">${price}</span></li>`;
+        }).join('')}
+      </ul>
+    </li>` : '';
+  const incItemsHtml = incRows.length
+    ? incRows.map(x => {
+        const cat   = incItemFieldValue(x, 'category');
+        const amt   = incItemFieldValue(x, 'amount_eur');
+        const notes = incItemFieldValue(x, 'notes');
+        const opts = INCOME_SERVICE_CATS.map(c =>
+          `<option value="${c.id}" ${cat === c.id ? 'selected' : ''}>${esc(c.label)}</option>`
+        ).join('');
+        return `
+          <li class="event-pnl__line event-pnl__line--expense" data-income-id="${esc(x.id)}">
+            <div class="event-pnl__line-row">
+              <select data-fi="category">${opts}</select>
+              <input type="number" step="0.01" data-fi="amount_eur" value="${amt ?? ''}" placeholder="€">
+              <button type="button" class="del-btn" data-del-income="${esc(x.id)}" title="Изтрий">×</button>
+              <textarea data-fi="notes" class="event-pnl__line-notes" rows="1" placeholder="Коментар (напр. кой достави услугата)">${esc(notes || '')}</textarea>
+            </div>
+          </li>`;
+      }).join('')
+    : '<li class="empty-state">Няма добавени услуги.</li>';
+  const svcWrap = document.getElementById('pnl-income-lines-services');
+  if (svcWrap) svcWrap.innerHTML = pickedHint + incItemsHtml;
 
   // Payments grid (also dirty-aware). Mirrors the 3 methods the
   // customer can pick on the public form: cash / bank transfer / card.
@@ -632,12 +712,45 @@ function renderDetail() {
       }).join('')
     : '<li class="empty-state">Няма прикрепени разходи.</li>';
 
-  // Save button state
+  // Hero totals + Save-button state. Computed in one place so the
+  // live-typing path can refresh them WITHOUT rebuilding the inputs.
+  updateDetailTotals();
+}
+
+// Refresh only the DERIVED figures (hero totals + Save button) for the
+// open event. Reads dirty-aware values, touches no <input>, so it is
+// safe to call on every keystroke — this is what stops the focus loss.
+function updateDetailTotals() {
+  const sel = currentSelection();
+  if (!sel) return;
+  const fe = sel.fe;
+
+  const inc = liveIncomeTotals(fe);
+  const expense = liveExpenseTotal(fe);
+  const paid = livePaid(fe);
+  const balance = inc.total - paid;
+  const net = inc.total - expense;
+  const margin = inc.total > 0 ? Math.round((net / inc.total) * 100) : null;
+
+  const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+  set('pnl-income-total',  fmtEur(inc.total));
+  set('pnl-services-total', fmtEur(liveAddonsTotal(fe)));
+  set('pnl-expense-total', fmtEur(expense));
+  set('pnl-paid-total',    fmtEur(paid));
+  set('pnl-balance',       fmtEur(balance));
+  set('pnl-net-eur',       fmtEur(net));
+  set('pnl-net-bgn',       fmtBgn(net * BGN_RATE));
+  const marginEl = document.getElementById('pnl-margin');
+  if (marginEl) {
+    marginEl.textContent = margin == null ? '—' : margin + '%';
+    marginEl.className = 'event-pnl__hero-val ' + (margin == null ? '' : (margin >= 0 ? 'is-positive' : 'is-negative'));
+  }
+
   const saveBtn = document.getElementById('btn-save-pnl');
   if (saveBtn) {
     saveBtn.disabled = !isDirty();
     saveBtn.textContent = isDirty()
-      ? `Запази промените · ${Object.keys(dirtyFe).length + dirtyExpenses.size} промени`
+      ? `Запази промените · ${Object.keys(dirtyFe).length + dirtyExpenses.size + dirtyIncomeItems.size} промени`
       : 'Запази промените';
   }
 }
@@ -651,7 +764,10 @@ function setFeDirty(field, raw) {
   if (field.endsWith('_eur')) value = raw === '' ? 0 : Number(raw);
   if (field.endsWith('_date')) value = raw || null;
   dirtyFe[field] = value;
-  renderDetail();
+  // Live-typing path: only refresh derived totals. Rebuilding the inputs
+  // here (renderDetail) would destroy the field being typed into and drop
+  // focus after every keystroke.
+  updateDetailTotals();
 }
 function setExpenseDirty(id, field, raw) {
   let value = raw;
@@ -659,7 +775,17 @@ function setExpenseDirty(id, field, raw) {
   const current = dirtyExpenses.get(id) || {};
   current[field] = value;
   dirtyExpenses.set(id, current);
-  renderDetail();
+  // Same as setFeDirty: refresh totals only, keep the input alive.
+  updateDetailTotals();
+}
+function setIncomeItemDirty(id, field, raw) {
+  let value = raw;
+  if (field === 'amount_eur') value = raw === '' ? 0 : Number(raw);
+  const current = dirtyIncomeItems.get(id) || {};
+  current[field] = value;
+  dirtyIncomeItems.set(id, current);
+  // Refresh totals only — never rebuild the line being typed into.
+  updateDetailTotals();
 }
 
 // ────────────────────────────────────────────────────────────────
@@ -689,13 +815,25 @@ async function saveDraft() {
       }
     }));
   }
+  for (const [id, patchFields] of dirtyIncomeItems) {
+    const patch = { ...patchFields, updated_at: new Date().toISOString() };
+    ops.push(db.from('financial_income_items').update(patch).eq('id', id).then(({ error }) => {
+      if (error) throw error;
+      const rows = incomeItemsByEvent.get(fe.id) || [];
+      const r = rows.find(x => x.id === id);
+      if (r) Object.assign(r, patchFields);
+    }));
+  }
 
   const btn = document.getElementById('btn-save-pnl');
   if (btn) { btn.disabled = true; btn.textContent = 'Запазване…'; }
   try {
     await Promise.all(ops);
+    // Item edits are now applied in memory — refresh the cached column.
+    await syncAddonsColumn(fe);
     dirtyFe = {};
     dirtyExpenses = new Map();
+    dirtyIncomeItems = new Map();
     renderEventsList(document.getElementById('events-search').value);
     renderMonthSummary();
     renderDetail();
@@ -709,6 +847,7 @@ async function saveDraft() {
 function cancelDraft() {
   dirtyFe = {};
   dirtyExpenses = new Map();
+  dirtyIncomeItems = new Map();
   renderDetail();
 }
 
@@ -727,8 +866,10 @@ async function deletePnl() {
     : `Изтриване на ръчното събитие "${label}"?\nСамото събитие и всички прикачени разходи се изтриват.`;
   if (!confirm(msg)) return;
 
-  // Delete expenses first to avoid the FK leaving orphans (event_id has
-  // ON DELETE SET NULL, which would otherwise silently un-attach them).
+  // Delete expenses first: financial_expenses.event_id is ON DELETE SET NULL,
+  // so dropping the fe row would null-orphan them rather than remove them.
+  // Income items (financial_income_items.event_id is ON DELETE CASCADE) are
+  // removed by the DB automatically — only the in-memory map needs clearing.
   const rows = expensesByEvent.get(fe.id) || [];
   if (rows.length) {
     const { error: exErr } = await db.from('financial_expenses').delete().eq('event_id', fe.id);
@@ -740,8 +881,10 @@ async function deletePnl() {
   financialEventsById.delete(fe.id);
   if (enquiry) financialEventByEnquiryId.delete(enquiry.id);
   expensesByEvent.delete(fe.id);
+  incomeItemsByEvent.delete(fe.id); // DB rows cascade with the fe delete
   dirtyFe = {};
   dirtyExpenses = new Map();
+  dirtyIncomeItems = new Map();
   clearSelection();
   renderEventsList(document.getElementById('events-search').value);
   renderMonthSummary();
@@ -758,6 +901,7 @@ async function selectEnquiry(enquiryId) {
   }
   dirtyFe = {};
   dirtyExpenses = new Map();
+  dirtyIncomeItems = new Map();
   selectedEnquiryId = enquiryId;
   selectedManualFeId = null;
   const enquiry = allEnquiries.find(e => e.id === enquiryId);
@@ -774,6 +918,7 @@ async function selectManual(feId) {
   }
   dirtyFe = {};
   dirtyExpenses = new Map();
+  dirtyIncomeItems = new Map();
   selectedEnquiryId = null;
   selectedManualFeId = feId;
   renderEventsList(document.getElementById('events-search').value);
@@ -818,6 +963,7 @@ async function addManualEvent() {
   selectedManualFeId = data.id;
   dirtyFe = {};
   dirtyExpenses = new Map();
+  dirtyIncomeItems = new Map();
   // If the new event lands in a different month than the current filter,
   // jump the filter to its month so the user sees what they just created.
   if (data.month && data.month !== monthFilter) {
@@ -861,6 +1007,67 @@ async function deleteExpense(id) {
     expensesByEvent.set(evId, rows.filter(x => x.id !== id));
   }
   dirtyExpenses.delete(id);
+  renderEventsList(document.getElementById('events-search').value);
+  renderMonthSummary();
+  renderDetail();
+}
+
+// ── Income service items ───────────────────────────────────────────
+// Add/delete hit the DB immediately (like expenses); edits stay draft
+// until Save. income_addons_eur is a cached mirror of the item sum.
+
+// Keep income_addons_eur equal to the sum of the event's service lines.
+// The UI reads the items directly; the column is synced for any external
+// reader and so the value survives even if the items are reloaded.
+async function syncAddonsColumn(fe) {
+  if (!fe) return;
+  const rows = incomeItemsByEvent.get(fe.id) || [];
+  const sum = Math.round(rows.reduce((s, r) => s + Number(r.amount_eur || 0), 0) * 100) / 100;
+  if (Number(fe.income_addons_eur || 0) === sum) return;
+  fe.income_addons_eur = sum;
+  const { error } = await db.from('financial_events')
+    .update({ income_addons_eur: sum, updated_at: new Date().toISOString() })
+    .eq('id', fe.id);
+  if (error) console.error('syncAddonsColumn failed', error);
+}
+
+async function addIncomeService() {
+  const sel = currentSelection();
+  if (!sel) return;
+  // Enquiry selection might not have its fe created yet — lazily create.
+  let fe = sel.fe;
+  if (!fe && sel.enquiry) fe = await ensureFinancialEvent(sel.enquiry);
+  if (!fe) return;
+  const row = {
+    event_id: fe.id,
+    month: fe.month,
+    category: 'other',
+    amount_eur: 0,
+    notes: '',
+  };
+  const { data, error } = await db.from('financial_income_items').insert(row).select().single();
+  if (error) { console.error(error); alert('Грешка при добавяне на услуга'); return; }
+  const arr = incomeItemsByEvent.get(fe.id) || [];
+  arr.push(data);
+  incomeItemsByEvent.set(fe.id, arr);
+  // New line starts at €0 — no need to touch the cached sum yet.
+  renderDetail();
+}
+
+async function deleteIncomeItem(id) {
+  if (!confirm('Изтриване на тази услуга?')) return;
+  const { error } = await db.from('financial_income_items').delete().eq('id', id);
+  if (error) { console.error(error); alert('Грешка при изтриване'); return; }
+  let ownerFeId = null;
+  for (const [evId, rows] of incomeItemsByEvent) {
+    if (rows.some(x => x.id === id)) ownerFeId = evId;
+    incomeItemsByEvent.set(evId, rows.filter(x => x.id !== id));
+  }
+  dirtyIncomeItems.delete(id);
+  if (ownerFeId) {
+    const fe = financialEventsById.get(ownerFeId);
+    if (fe) await syncAddonsColumn(fe);
+  }
   renderEventsList(document.getElementById('events-search').value);
   renderMonthSummary();
   renderDetail();
@@ -912,6 +1119,7 @@ document.addEventListener('click', evt => {
   if (manual) { selectManual(manual.getAttribute('data-manual-fe')); return; }
   if (evt.target.closest('#btn-add-manual-event')) { addManualEvent(); return; }
   if (evt.target.closest('#btn-add-event-expense')) { addEventExpense(); return; }
+  if (evt.target.closest('#btn-add-income-service')) { addIncomeService(); return; }
   if (evt.target.closest('#btn-save-pnl'))          { saveDraft(); return; }
   if (evt.target.closest('#btn-cancel-pnl'))        { cancelDraft(); return; }
   if (evt.target.closest('#btn-delete-pnl'))        { deletePnl(); return; }
@@ -941,6 +1149,8 @@ document.addEventListener('click', evt => {
     renderMonthSummary();
     return;
   }
+  const delInc = evt.target.closest('[data-del-income]');
+  if (delInc) { deleteIncomeItem(delInc.getAttribute('data-del-income')); return; }
   const del = evt.target.closest('[data-del]');
   if (del) { deleteExpense(del.getAttribute('data-del')); return; }
 
@@ -962,6 +1172,12 @@ document.addEventListener('click', evt => {
 document.addEventListener('input', evt => {
   if (evt.target.id === 'events-search') { renderEventsList(evt.target.value); return; }
 
+  // Income service field draft
+  const incInp = evt.target.closest('[data-fi]');
+  if (incInp) {
+    const li = incInp.closest('[data-income-id]');
+    if (li) { setIncomeItemDirty(li.dataset.incomeId, incInp.dataset.fi, incInp.value); return; }
+  }
   // Expense field draft
   const expInp = evt.target.closest('[data-f]');
   if (expInp) {

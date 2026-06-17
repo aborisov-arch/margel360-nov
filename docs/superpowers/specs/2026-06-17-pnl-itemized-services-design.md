@@ -106,11 +106,18 @@ updated_at    timestamptz
 
 ### Migration steps (one migration file)
 
-1. `create table financial_income_items …` + RLS policies.
+1. `create table financial_income_items …` + RLS. **RLS gates on `public.is_admin()`**
+   (the 6-email allowlist), matching `financial_events`/`financial_expenses` per
+   `20260609120000` — NOT a blanket `USING(true)`, which would expose financial data
+   to any authenticated user.
 2. Seed: for every `financial_events` row with `income_addons_eur > 0`, insert one
    income item `{ event_id, month, category:'other', amount_eur: income_addons_eur }`
    so no existing add-on income is orphaned.
-3. Remap existing expense categories: `update financial_expenses set category='staff_service' where category in ('staff','employees')`; `… set category='music_dj' where category in ('music','dj')`.
+3. Remap existing expense categories: `update financial_expenses set category='staff_service' where category in ('staff','employees')`; `… set category='music_dj' where category in ('music','dj')`; then re-add the widened CHECK constraint.
+4. `CREATE OR REPLACE` the `enquiries_auto_create_financial_event()` trigger fn so the
+   pipeline auto-confirm path ALSO seeds one `financial_income_items` "Други" line when
+   `b.addons > 0` (mirrors the JS `ensureFinancialEvent` seed). Without this,
+   future auto-confirmed events would show €0 add-on income in the itemized UI.
 
 ### UI / code changes (`financials.js`)
 
