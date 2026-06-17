@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import { json, preflight } from "../_shared/cors.ts";
-import { getIp, rateLimit } from "../_shared/rate-limit.ts";
+import { getIp, rateLimitHit } from "../_shared/rate-limit.ts";
 import { diffEnquiry, EDITABLE_FIELDS } from "../_shared/diff.ts";
 import { validateField } from "../_shared/validate.ts";
 
@@ -45,8 +45,9 @@ serve(async (req) => {
 
   const ip = getIp(req);
   const ua = req.headers.get("user-agent") ?? "";
-  const rl = rateLimit(`upd:${ip}`, 10, 60_000);
-  if (!rl.ok) return json({ error: "rate_limited" }, 429);
+  if (!await rateLimitHit(sb, `update-enquiry:ip:${ip}`, 10, 60)) {
+    return json({ error: "rate_limited" }, 429);
+  }
 
   let payload: { token?: string; changes?: Record<string, unknown> };
   try { payload = await req.json(); } catch { return json({ error: "bad_json" }, 400); }

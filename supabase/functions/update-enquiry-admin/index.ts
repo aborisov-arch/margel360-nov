@@ -14,18 +14,10 @@ const SERVICE_ROLE    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANON_KEY        = Deno.env.get("SUPABASE_ANON_KEY")!;
 const INTERNAL_SECRET = Deno.env.get("INTERNAL_SHARED_SECRET") ?? "";
 
-// Admin allowlist. Kept in sync with public.is_admin() in the DB.
-// If the JWT email isn't in this list we 403, even if the user is
-// authenticated. Without this gate, ANY signed-up Supabase user could
-// rewrite enquiries via this endpoint.
-const ADMIN_EMAILS = new Set([
-  "aborisov@margel.info",
-  "360@margel.info",
-  "borisov@margel.info",
-  "office@margel.info",
-  "vitosha@margel.info",
-  "dimov@margel.info",
-]);
+// Authorization is delegated to the DB's public.is_admin() — the single
+// source of truth, the same function the RLS policies use. No admin email
+// list is duplicated in this file; see migration
+// 20260609120000_sync_is_admin_rls_with_live.sql.
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -127,10 +119,11 @@ serve(async (req) => {
   });
   const { data: { user }, error: userErr } = await sbUser.auth.getUser();
   if (userErr || !user) return json({ error: "unauthorized" }, 401);
-  // Admin allowlist gate. Authenticated ≠ authorized — must be on the
-  // pre-approved email list.
-  const email = (user.email || "").toLowerCase();
-  if (!ADMIN_EMAILS.has(email)) return json({ error: "forbidden" }, 403);
+  // Authorization gate. Authenticated ≠ authorized — ask the DB's
+  // single-source is_admin() under the caller's identity. Fail closed on
+  // any error (missing/expired claim, RPC failure).
+  const { data: isAdmin, error: adminErr } = await sbUser.rpc("is_admin");
+  if (adminErr || isAdmin !== true) return json({ error: "forbidden" }, 403);
 
   let payload: { id?: string; changes?: Record<string, unknown> };
   try { payload = await req.json(); } catch { return json({ error: "bad_json" }, 400); }

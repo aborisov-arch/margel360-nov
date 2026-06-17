@@ -31,14 +31,32 @@
           <label for="password" data-i18n="login_password">Парола</label>
           <input type="password" id="password" name="password" autocomplete="current-password" required>
         </div>
+        <!-- Cloudflare Turnstile (managed mode — invisible for most). When
+             Supabase Auth CAPTCHA protection is enabled, the token is
+             required server-side; until then it's accepted and ignored. -->
+        <div class="cf-turnstile" data-sitekey="0x4AAAAAADjSB9200ZicBIRp" data-language="auto" style="margin:14px 0 4px"></div>
         <p class="login-error" id="login-error" role="alert" style="display:none"></p>
         <button type="submit" class="btn btn-primary btn-full" id="login-btn" data-i18n="login_btn">Вход</button>
+      </form>
+
+      <!-- Second-factor step: shown after a password sign-in when the
+           account has a verified TOTP factor. -->
+      <form id="totp-form" novalidate style="display:none">
+        <h2 class="login-2fa-title" data-i18n="login_2fa_title">Код за две стъпки</h2>
+        <p class="login-2fa-prompt" data-i18n="login_2fa_prompt">Въведете 6-цифрения код от приложението за автентикация.</p>
+        <div class="form-group">
+          <label for="totp-code" data-i18n="login_2fa_code">Код за автентикация</label>
+          <input type="text" id="totp-code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="6" required>
+        </div>
+        <p class="login-error" id="totp-error" role="alert" style="display:none"></p>
+        <button type="submit" class="btn btn-primary btn-full" id="totp-btn" data-i18n="login_2fa_verify">Потвърди</button>
       </form>
     </div>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase-client.js"></script>
-  <script src="js/admin-i18n.js"></script>
+  <script src="js/admin-i18n.js?v=13"></script>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <script>
     try {
       // ?return=<encoded-url> lets other pages (e.g. /edit.html in admin
@@ -50,20 +68,67 @@
         if (!raw) return 'dashboard.html';
         let decoded;
         try { decoded = decodeURIComponent(raw); } catch { return 'dashboard.html'; }
-        // Reject anything that isn't a same-origin absolute path.
-        if (!/^\/[^/\\]/.test(decoded)) return 'dashboard.html';
-        if (/[\r\n]/.test(decoded)) return 'dashboard.html';
-        return decoded;
+        if (/[\r\n\t]/.test(decoded)) return 'dashboard.html';
+        // Resolve against our own origin and only accept a result that
+        // stays on it. The URL constructor normalises absolute URLs,
+        // protocol-relative "//evil.com", and backslash / %5C tricks that
+        // a character-class regex can miss — anything off-origin falls
+        // back to the dashboard. Path + query + hash are preserved so
+        // /edit.html?token=… in admin mode still round-trips.
+        try {
+          const u = new URL(decoded, window.location.origin);
+          if (u.origin !== window.location.origin) return 'dashboard.html';
+          const path = u.pathname + u.search + u.hash;
+          return path.startsWith('/') ? path : 'dashboard.html';
+        } catch {
+          return 'dashboard.html';
+        }
       }
       const postLogin = safeReturn(new URLSearchParams(window.location.search).get('return'));
+
+      // Turnstile token is single-use — read it at submit, then reset the
+      // widget so a retry gets a fresh one.
+      function captchaToken() {
+        try { return (typeof turnstile !== 'undefined' && turnstile.getResponse()) || undefined; }
+        catch { return undefined; }
+      }
+      function resetCaptcha() {
+        try { if (typeof turnstile !== 'undefined') turnstile.reset(); } catch { /* not rendered */ }
+      }
+
+      const loginForm = document.getElementById('login-form');
+      const totpForm  = document.getElementById('totp-form');
+
+      function showTotpStep() {
+        loginForm.style.display = 'none';
+        totpForm.style.display  = '';
+        const codeEl = document.getElementById('totp-code');
+        if (codeEl) codeEl.focus();
+      }
+
+      // Route by assurance level after a password sign-in (or an existing
+      // session):
+      //   aal2                     → fully authenticated, proceed
+      //   aal1 + verified factor   → ask for the TOTP code here
+      //   aal1 + no factor         → force enrollment on security.html
+      async function routeByAssurance() {
+        const { data: aal, error } = await db.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (error || !aal) return false;
+        if (aal.currentLevel === 'aal2') { window.location.href = postLogin; return true; }
+        if (aal.nextLevel === 'aal2') { showTotpStep(); return true; }
+        window.location.href = 'security.html';
+        return true;
+      }
+
+      // Already signed in? Route immediately instead of showing the form.
       db.auth.getSession().then(({ data: { session } }) => {
-        if (session) window.location.href = postLogin;
+        if (session) routeByAssurance();
       });
 
-      document.getElementById('login-form').addEventListener('submit', async (e) => {
+      loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const btn    = document.getElementById('login-btn');
-        const errEl  = document.getElementById('login-error');
+        const btn   = document.getElementById('login-btn');
+        const errEl = document.getElementById('login-error');
         btn.disabled = true;
         btn.textContent = t('login_signing');
         errEl.style.display = 'none';
@@ -71,14 +136,55 @@
         const email    = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value;
 
-        const { error } = await db.auth.signInWithPassword({ email, password });
+        const { error } = await db.auth.signInWithPassword({
+          email, password, options: { captchaToken: captchaToken() },
+        });
+        resetCaptcha();
         if (error) {
-          errEl.textContent    = t('login_error');
-          errEl.style.display  = 'block';
-          btn.disabled         = false;
-          btn.textContent      = t('login_btn');
-        } else {
+          // If the captcha wasn't ready yet (managed widget still solving on
+          // a fast submit), say so instead of "wrong password".
+          const emsg = String(error.message || error).toLowerCase();
+          errEl.textContent   = emsg.includes('captcha') ? t('login_captcha_wait') : t('login_error');
+          errEl.style.display = 'block';
+          btn.disabled        = false;
+          btn.textContent     = t('login_btn');
+          return;
+        }
+        // Password OK — decide TOTP / enrollment / done.
+        const routed = await routeByAssurance();
+        if (!routed) {
+          errEl.textContent   = t('login_error');
+          errEl.style.display = 'block';
+          btn.disabled        = false;
+          btn.textContent     = t('login_btn');
+        }
+      });
+
+      totpForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn   = document.getElementById('totp-btn');
+        const errEl = document.getElementById('totp-error');
+        const code  = document.getElementById('totp-code').value.replace(/\s/g, '');
+        btn.disabled = true;
+        btn.textContent = t('login_2fa_verifying');
+        errEl.style.display = 'none';
+
+        try {
+          const { data: factors, error: lfErr } = await db.auth.mfa.listFactors();
+          if (lfErr) throw lfErr;
+          const totp = (factors.totp || [])[0];
+          if (!totp) { window.location.href = 'security.html'; return; }
+          const { data: ch, error: chErr } = await db.auth.mfa.challenge({ factorId: totp.id });
+          if (chErr) throw chErr;
+          const { error: vErr } = await db.auth.mfa.verify({ factorId: totp.id, challengeId: ch.id, code });
+          if (vErr) throw vErr;
           window.location.href = postLogin;
+        } catch (err) {
+          console.error('2FA verify failed:', err);
+          errEl.textContent   = t('login_2fa_error');
+          errEl.style.display = 'block';
+          btn.disabled        = false;
+          btn.textContent     = t('login_2fa_verify');
         }
       });
     } catch (err) {

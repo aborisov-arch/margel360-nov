@@ -1,4 +1,4 @@
-// One-click "Send offer". Admin-authenticated (Supabase JWT + email allowlist,
+// One-click "Send offer". Admin-authenticated (Supabase JWT + is_admin() RPC,
 // same gate as update-enquiry-admin). The browser builds the offer XLSX with
 // the existing client-side ExcelJS code and POSTs it here as base64; we email
 // the customer a branded cover note with the spreadsheet attached, then stamp
@@ -15,15 +15,9 @@ const FROM_ADDR    = Deno.env.get("EVENT_HALL_FROM_EMAIL") ?? "enquiries@margel3
 const FROM_EMAIL   = FROM_ADDR.includes("<") ? FROM_ADDR : `Margel360 <${FROM_ADDR}>`;
 const SITE_URL     = (Deno.env.get("PUBLIC_SITE_URL") ?? "https://margel360.bg").replace(/\/$/, "");
 
-// Admin allowlist — keep in sync with public.is_admin() and update-enquiry-admin.
-const ADMIN_EMAILS = new Set([
-  "aborisov@margel.info",
-  "360@margel.info",
-  "borisov@margel.info",
-  "office@margel.info",
-  "vitosha@margel.info",
-  "dimov@margel.info",
-]);
+// Authorization is delegated to the DB's public.is_admin() — the single
+// source of truth, the same function the RLS policies use. No admin email
+// list is duplicated in this file.
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -51,8 +45,10 @@ serve(async (req) => {
   });
   const { data: { user }, error: userErr } = await sbUser.auth.getUser();
   if (userErr || !user) return json({ error: "unauthorized" }, 401);
-  const email = (user.email || "").toLowerCase();
-  if (!ADMIN_EMAILS.has(email)) return json({ error: "forbidden" }, 403);
+  // Authorization gate — single-source is_admin() under the caller's
+  // identity. Fail closed on any error.
+  const { data: isAdmin, error: adminErr } = await sbUser.rpc("is_admin");
+  if (adminErr || isAdmin !== true) return json({ error: "forbidden" }, 403);
 
   let payload: { id?: string; attachment_base64?: string; xlsx_base64?: string; filename?: string };
   try { payload = await req.json(); } catch { return json({ error: "bad_json" }, 400); }
