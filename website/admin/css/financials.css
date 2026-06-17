@@ -686,6 +686,11 @@
   font-variant-numeric: tabular-nums;
 }
 .event-pnl__line-input:focus { outline: 2px solid var(--fin-gold); outline-offset: 1px; border-color: var(--fin-gold); }
+/* Overtime: a narrow "hours" box sitting just left of the € amount on the
+   same row. Letting the label grow keeps both inputs grouped at the right
+   instead of being scattered by the row's space-between. */
+.event-pnl__line--editable .event-pnl__line-lbl { flex: 1 1 auto; }
+.event-pnl__line-hours { width: 64px; }
 
 /* Save / cancel bar — sits below the net profit summary on the detail
    panel and stays visible while editing. */
@@ -824,7 +829,7 @@
   color: var(--fin-muted-2); font-style: italic; text-align: right;
 }
 .event-pnl__pay-dates {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px;
   margin-top: 10px;
 }
 .event-pnl__pay-dates label {

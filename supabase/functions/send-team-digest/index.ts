@@ -280,14 +280,18 @@ serve(async (req) => {
     }
   }
 
-  // 6. Overdue balances — events 7+ days past with a total recorded but no
-  // balance entered (cash balances that never got logged leak money).
+  // 6. Overdue balances — events 7+ days past that are still not fully paid
+  // (money owed that never got collected leaks). "Paid" is summed across
+  // EVERY payment slot and method, matching the P&L source of truth
+  // (fePaid in financials.js): deposit + balance + the third installment,
+  // each across cash/bank/card. Summing only the balance row here used to
+  // wrongly flag clients who settled via the 3rd slot (or by card).
   let overdueBalance: Row[] = [];
   {
     const cutoff = new Date(Date.now() - 7 * 86_400_000).toISOString().slice(0, 10);
     const { data: fin, error: finErr } = await sb
       .from("financial_events")
-      .select("enquiry_id, customer_name, event_date, offer_total_eur, deposit_cash_eur, deposit_bank_eur, balance_cash_eur, balance_bank_eur")
+      .select("enquiry_id, customer_name, event_date, offer_total_eur, deposit_cash_eur, deposit_bank_eur, deposit_card_eur, balance_cash_eur, balance_bank_eur, balance_card_eur, payment3_cash_eur, payment3_bank_eur, payment3_card_eur")
       .lt("event_date", cutoff)
       .gte("event_date", new Date(Date.now() - 120 * 86_400_000).toISOString().slice(0, 10))
       .order("event_date", { ascending: true })
@@ -296,21 +300,22 @@ serve(async (req) => {
       console.error("overdue-balance query failed (section skipped):", finErr);
     } else {
       const byId = new Map(all.map(e => [e.id, e]));
-      overdueBalance = (fin ?? []).filter(f => {
+      overdueBalance = (fin ?? []).map(f => {
         const total = Number(f.offer_total_eur) || 0;
-        const balance = (Number(f.balance_cash_eur) || 0) + (Number(f.balance_bank_eur) || 0);
-        return total > 0 && balance <= 0;
-      }).map(f => {
+        const paid = (Number(f.deposit_cash_eur) || 0) + (Number(f.deposit_bank_eur) || 0) + (Number(f.deposit_card_eur) || 0)
+          + (Number(f.balance_cash_eur) || 0) + (Number(f.balance_bank_eur) || 0) + (Number(f.balance_card_eur) || 0)
+          + (Number(f.payment3_cash_eur) || 0) + (Number(f.payment3_bank_eur) || 0) + (Number(f.payment3_card_eur) || 0);
+        const owed = Math.max(0, total - paid);
+        return { f, total, owed };
+      }).filter(x => x.total > 0 && x.owed > 0.01).map(x => {
+        const f = x.f;
         const en = f.enquiry_id ? byId.get(f.enquiry_id) : null;
-        const total = Number(f.offer_total_eur) || 0;
-        const deposit = (Number(f.deposit_cash_eur) || 0) + (Number(f.deposit_bank_eur) || 0);
-        const owed = Math.max(0, total - deposit);
         const e = en ?? ({
           id: f.enquiry_id ?? "", enquiry_number: null, full_name: f.customer_name ?? "—",
           email: null, phone: null, event_type: null, preferred_date: null, pipeline_status: null,
           next_followup_at: null, created_at: "", edit_token: null, offer_sent_at: null,
         } as Enquiry);
-        return { e, meta: owed > 0 ? `остатък ~€${owed.toFixed(0)}` : "няма записан остатък" };
+        return { e, meta: `остатък ~€${x.owed.toFixed(0)}` };
       });
     }
   }
