@@ -32,7 +32,9 @@
           <input type="password" id="password" name="password" autocomplete="current-password" required>
         </div>
         <p class="login-error" id="login-error" role="alert" style="display:none"></p>
+        <p id="login-info" role="status" style="display:none;color:#2E7D32;text-align:center;font-size:0.88rem;margin:0 0 4px"></p>
         <button type="submit" class="btn btn-primary btn-full" id="login-btn" data-i18n="login_btn">Вход</button>
+        <button type="button" id="forgot-link" style="display:block;margin:14px auto 0;background:none;border:none;color:#B9894A;font-size:0.85rem;cursor:pointer;text-decoration:underline">Забравена парола?</button>
       </form>
     </div>
   </main>
@@ -91,6 +93,27 @@
         } else {
           window.location.href = postLogin;
         }
+      });
+
+      // Forgot password — sends a Supabase recovery link to reset.html.
+      // Always shows the same neutral message (never reveals whether an
+      // account exists for that email).
+      document.getElementById('forgot-link').addEventListener('click', async () => {
+        const errEl  = document.getElementById('login-error');
+        const infoEl = document.getElementById('login-info');
+        const email  = document.getElementById('email').value.trim();
+        errEl.style.display = 'none';
+        infoEl.style.display = 'none';
+        if (!email) {
+          errEl.textContent = 'Въведете имейла си, после натиснете „Забравена парола?".';
+          errEl.style.display = 'block';
+          return;
+        }
+        try {
+          await db.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + '/admin/reset.html' });
+        } catch (_) { /* neutral message either way */ }
+        infoEl.textContent = 'Ако има акаунт с този имейл, изпратихме линк за смяна на паролата.';
+        infoEl.style.display = 'block';
       });
     } catch (err) {
       console.error('Admin login init error:', err);
