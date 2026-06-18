@@ -71,27 +71,44 @@ serve(async (req) => {
   if (!enq) return json({ error: "not_found" }, 404);
   if (!enq.email) return json({ error: "no_customer_email" }, 422);
 
-  const safeName = (payload.filename && /^[\p{L}\p{N}_.\- ]+\.(pdf|xlsx)$/u.test(payload.filename))
+  // ASCII-only attachment filename. Some Resend / SMTP paths reject a
+  // non-ASCII (Cyrillic) attachment name, so we don't pass the customer's
+  // raw filename through — a fixed Latin name is fine for the attached PDF.
+  const safeName = (payload.filename && /^[\w.\- ]+\.(pdf|xlsx)$/.test(payload.filename))
     ? payload.filename
-    : "Оферта.pdf";
+    : "Margel360-oferta.pdf";
 
-  const { subject, html } = renderOfferEmail(enq, SITE_URL);
+  let subject: string, html: string;
+  try {
+    ({ subject, html } = renderOfferEmail(enq, SITE_URL));
+  } catch (e) {
+    console.error("renderOfferEmail threw:", e);
+    return json({ error: "render_failed", detail: String(e) }, 500);
+  }
 
-  const r = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${RESEND_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      from: FROM_EMAIL,
-      to: enq.email,
-      subject,
-      html,
-      attachments: [{ filename: safeName, content: attachB64 }],
-    }),
-  });
+  let r: Response;
+  try {
+    r = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${RESEND_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: FROM_EMAIL,
+        to: enq.email,
+        subject,
+        html,
+        attachments: [{ filename: safeName, content: attachB64 }],
+      }),
+    });
+  } catch (e) {
+    console.error("resend fetch threw:", e);
+    return json({ error: "send_failed", detail: String(e) }, 502);
+  }
   if (!r.ok) {
-    const t = await r.text();
-    console.error("resend failed:", t);
-    return json({ error: "send_failed" }, 502);
+    const t = await r.text().catch(() => "");
+    console.error("resend failed:", r.status, t);
+    // Surface the real Resend status + reason instead of a generic failure,
+    // so the dashboard can show WHY (was hiding attachment/validation errors).
+    return json({ error: "send_failed", resend_status: r.status, detail: t.slice(0, 600) }, 502);
   }
 
   const stamp = new Date().toISOString();

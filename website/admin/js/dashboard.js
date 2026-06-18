@@ -681,7 +681,14 @@ function bindTableHandlers() {
         sendBtn.textContent = t('btn_send_offer_again');
       } catch (err) {
         console.error('Send offer failed:', err);
-        showToast(t('send_offer_failed'), 'error');
+        // Surface the edge function's real reason (e.g. the Resend error) so
+        // the failure isn't just a generic message.
+        let detail = '';
+        try {
+          const b = err && err.context && (await err.context.json());
+          if (b) detail = [b.error, b.resend_status, b.detail].filter(Boolean).join(' · ');
+        } catch (_) { /* response body not readable */ }
+        showToast(detail ? `${t('send_offer_failed')} — ${detail}` : t('send_offer_failed'), 'error');
         sendBtn.textContent = enquiry.offer_sent_at ? t('btn_send_offer_again') : t('btn_send_offer');
       } finally {
         sendBtn.disabled = false;
