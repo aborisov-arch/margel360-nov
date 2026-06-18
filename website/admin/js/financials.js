@@ -1384,11 +1384,80 @@ function highlightEventsWithCategory(catId) {
 // Event handlers
 // ────────────────────────────────────────────────────────────────
 
+// ── KPI drill-down ──────────────────────────────────────────────
+// Click a summary box → modal listing every event that makes up that
+// figure (same month scope + same date gate as renderMonthSummary).
+function eventHasHappened(fe) {
+  const todayISO = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Sofia' });
+  return !fe.event_date || fe.event_date < todayISO;
+}
+function closeDrill() {
+  const m = document.getElementById('drill-modal');
+  if (m) m.setAttribute('hidden', '');
+}
+function drillRowHtml(fe, amt, signed) {
+  const enq = fe.enquiry_id ? allEnquiries.find(e => e.id === fe.enquiry_id) : null;
+  const name = enq ? (enq.full_name || '—') : (fe.customer_name || '—');
+  const badge = enq ? `#${esc(enq.enquiry_number ?? '—')}` : 'M';
+  const sel = enq ? `data-enquiry="${esc(fe.enquiry_id)}"` : `data-manual-fe="${esc(fe.id)}"`;
+  const negColor = signed && amt < 0 ? 'color:#c0392b;' : '';
+  return `<button type="button" class="drill-row" ${sel}
+      style="display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;text-align:left;padding:10px 12px;border:1px solid var(--fin-border,#e6e1d6);border-radius:8px;background:var(--fin-bg,#fff);cursor:pointer;font:inherit;color:inherit">
+      <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span class="enquiry-no">${badge}</span> ${esc(name)}</span>
+      <span style="opacity:.7;font-size:.85em;white-space:nowrap">${esc(fmtDateBg(fe.event_date))}</span>
+      <span style="font-weight:700;white-space:nowrap;${negColor}">${fmtEur(amt)}</span>
+    </button>`;
+}
+function openMetricBreakdown(metric) {
+  const TITLES = { income: 'Приходи (реализирани)', upcoming: 'Очаквани (предстоящи)', paid: 'Платено от клиенти', expense: 'Разходи', profit: 'Печалба' };
+  const scopeFes = [];
+  for (const fe of financialEventsById.values()) {
+    if (!monthFilter || fe.month === monthFilter) scopeFes.push(fe);
+  }
+  const amountOf = (fe) => {
+    const past = eventHasHappened(fe);
+    switch (metric) {
+      case 'income':   return past  ? feIncome(fe).total : null;
+      case 'upcoming': return !past ? feIncome(fe).total : null;
+      case 'paid':     return fePaid(fe) || null;
+      case 'expense':  return past  ? (feExpenseTotal(fe) || null) : null;
+      case 'profit':   return past  ? (feIncome(fe).total - feExpenseTotal(fe)) : null;
+      default:         return null;
+    }
+  };
+  const rows = scopeFes
+    .map(fe => ({ fe, amt: amountOf(fe) }))
+    .filter(r => r.amt != null && (metric === 'profit' ? r.amt !== 0 : r.amt > 0))
+    .sort((a, b) => b.amt - a.amt);
+  const total = rows.reduce((s, r) => s + r.amt, 0);
+  const title = document.getElementById('drill-title');
+  if (title) title.textContent = `${TITLES[metric] || 'Разбивка'} · ${monthLabel(monthFilter)}`;
+  const body = document.getElementById('drill-body');
+  if (body) {
+    body.innerHTML = rows.length
+      ? `<div class="link-modal__list">${rows.map(r => drillRowHtml(r.fe, r.amt, metric === 'profit')).join('')}</div>
+         <div style="display:flex;justify-content:space-between;margin-top:14px;padding-top:10px;border-top:2px solid var(--fin-border,#e6e1d6);font-weight:800">
+           <span>Общо · ${rows.length} ${rows.length === 1 ? 'събитие' : 'събития'}</span><span>${fmtEur(total)}</span>
+         </div>`
+      : '<div class="empty-state">Няма събития в този период.</div>';
+  }
+  const m = document.getElementById('drill-modal');
+  if (m) m.removeAttribute('hidden');
+}
+document.addEventListener('keydown', evt => {
+  if (evt.key === 'Escape') { closeDrill(); return; }
+  if (evt.key === 'Enter' || evt.key === ' ') {
+    const kpi = evt.target.closest && evt.target.closest('#month-summary .kpi[data-metric]');
+    if (kpi) { evt.preventDefault(); openMetricBreakdown(kpi.getAttribute('data-metric')); }
+  }
+});
+
 document.addEventListener('click', evt => {
+  if (evt.target.closest('[data-drill-close]')) { closeDrill(); return; }
   const ev = evt.target.closest('[data-enquiry]');
-  if (ev) { selectEnquiry(ev.getAttribute('data-enquiry')); return; }
+  if (ev) { closeDrill(); selectEnquiry(ev.getAttribute('data-enquiry')); return; }
   const manual = evt.target.closest('[data-manual-fe]');
-  if (manual) { selectManual(manual.getAttribute('data-manual-fe')); return; }
+  if (manual) { closeDrill(); selectManual(manual.getAttribute('data-manual-fe')); return; }
   if (evt.target.closest('#btn-add-manual-event')) { addManualEvent(); return; }
   if (evt.target.closest('#btn-add-event-expense')) { addEventExpense(); return; }
   if (evt.target.closest('#btn-add-income-service')) { addIncomeService(); return; }
@@ -1410,7 +1479,11 @@ document.addEventListener('click', evt => {
     scrollEventsIntoView();
     return;
   }
-  if (kpi || sumHead) {
+  if (kpi) {
+    openMetricBreakdown(kpi.getAttribute('data-metric'));
+    return;
+  }
+  if (sumHead) {
     scrollEventsIntoView();
     return;
   }
