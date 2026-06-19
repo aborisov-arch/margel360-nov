@@ -24,10 +24,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/gallery.css">
-  <!-- Google tag (gtag.js) — Consent Mode v2 defaults to denied: no
-       cookies are set without consent; Google Ads still receives
-       cookieless conversion pings (modeled attribution). -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-KV38TVL9VM"></script>
+  <!-- Consent Mode v2 default (denied), set before GTM fires any tag.
+       GA4 + Google Ads are now fired by GTM (GTM-5FFZHPPP), not directly here. -->
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
@@ -35,9 +33,6 @@
       ad_storage: 'denied', ad_user_data: 'denied',
       ad_personalization: 'denied', analytics_storage: 'denied'
     });
-    gtag('js', new Date());
-    gtag('config', 'G-KV38TVL9VM');
-    gtag('config', 'AW-17875820737');
   </script>
   <link rel="icon" href="/favicon.ico" sizes="48x48">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
