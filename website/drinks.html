@@ -35,24 +35,13 @@
   </script>
   <!-- Consent Mode v2 default (denied), set before GTM fires any tag.
        GA4 + Google Ads are now fired by GTM (GTM-5FFZHPPP), not directly here. -->
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('consent', 'default', {
-      ad_storage: 'denied', ad_user_data: 'denied',
-      ad_personalization: 'denied', analytics_storage: 'denied'
-    });
-  </script>
+  
   <link rel="icon" href="/favicon.ico" sizes="48x48">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link rel="icon" type="image/png" sizes="192x192" href="/assets/favicon-192.png">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
   <!-- Google Tag Manager -->
-  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-  })(window,document,'script','dataLayer','GTM-5FFZHPPP');</script>
+  <script src="js/analytics-init.js"></script>
   <!-- End Google Tag Manager -->
 </head>
 <body>
@@ -146,11 +135,7 @@
   <script src="js/translations-drinks.js"></script>
   <script src="js/main.js"></script>
   <script src="js/age-gate.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      if (window.AgeGate) window.AgeGate.verify();
-    });
-  </script>
+  <script src="js/age-gate-init.js"></script>
   <script src="js/drinks-data.js?v=5"></script>
   <script src="js/drinks.js"></script>
   <a href="tel:+359888100042" class="fab-phone" aria-label="Обадете се"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg></a>

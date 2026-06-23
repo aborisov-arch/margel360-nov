@@ -37,24 +37,13 @@
 </script>
   <!-- Consent Mode v2 default (denied), set before GTM fires any tag.
        GA4 + Google Ads are now fired by GTM (GTM-5FFZHPPP), not directly here. -->
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('consent', 'default', {
-      ad_storage: 'denied', ad_user_data: 'denied',
-      ad_personalization: 'denied', analytics_storage: 'denied'
-    });
-  </script>
+  
   <link rel="icon" href="/favicon.ico" sizes="48x48">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link rel="icon" type="image/png" sizes="192x192" href="/assets/favicon-192.png">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
   <!-- Google Tag Manager -->
-  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-  })(window,document,'script','dataLayer','GTM-5FFZHPPP');</script>
+  <script src="js/analytics-init.js"></script>
   <!-- End Google Tag Manager -->
 </head>
 <body>
@@ -160,7 +149,7 @@
             <div class="selected-event-preview" id="event-preview"></div>
           </div>
           <div class="wizard-nav">
-            <button class="btn btn-outline" onclick="goToStep(0)" data-i18n="btn_back">Назад</button>
+            <button class="btn btn-outline" data-goto="0" data-i18n="btn_back">Назад</button>
             <button class="btn btn-primary" id="btn-step2-next" data-i18n="btn_next">Напред</button>
           </div>
         </div>
@@ -179,8 +168,8 @@
             <span class="rt-value" id="addons-total-val">€0</span>
           </div>
           <div class="wizard-nav">
-            <button class="btn btn-outline" onclick="goToStep(1)" data-i18n="btn_back">Назад</button>
-            <button class="btn btn-primary" onclick="showDrinksPrompt()" data-i18n="btn_next">Напред</button>
+            <button class="btn btn-outline" data-goto="1" data-i18n="btn_back">Назад</button>
+            <button class="btn btn-primary" data-action="drinks-prompt" data-i18n="btn_next">Напред</button>
           </div>
         </div>
 
@@ -206,8 +195,8 @@
             <span class="rt-value" id="drinks-total-val">€0</span>
           </div>
           <div class="wizard-nav">
-            <button class="btn btn-outline" onclick="goToStep(2)" data-i18n="btn_back">Назад</button>
-            <button class="btn btn-primary" onclick="goToStep(4)" data-i18n="btn_next">Напред</button>
+            <button class="btn btn-outline" data-goto="2" data-i18n="btn_back">Назад</button>
+            <button class="btn btn-primary" data-goto="4" data-i18n="btn_next">Напред</button>
           </div>
         </div>
 
@@ -247,7 +236,7 @@
             </div>
           </div>
           <div class="wizard-nav">
-            <button class="btn btn-outline" onclick="goToStep(3)" data-i18n="btn_back">Назад</button>
+            <button class="btn btn-outline" data-goto="3" data-i18n="btn_back">Назад</button>
             <button class="btn btn-primary" id="btn-step5-next" data-i18n="btn_next">Напред</button>
           </div>
         </div>
@@ -295,7 +284,7 @@
                valid token. -->
           <div class="cf-turnstile" data-sitekey="0x4AAAAAADjSB9200ZicBIRp" data-language="auto" style="margin:18px 0 4px"></div>
           <div class="wizard-nav">
-            <button class="btn btn-outline" onclick="goToStep(4)" data-i18n="btn_back">Назад</button>
+            <button class="btn btn-outline" data-goto="4" data-i18n="btn_back">Назад</button>
             <button class="btn btn-primary" id="btn-submit" data-i18n="res_submit">Изпрати запитване</button>
           </div>
         </div>

@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const wrapEl    = document.getElementById('enquiries-wrap');
 
   const [{ data: enquiries, error }, { data: notes, error: notesErr }] = await Promise.all([
-    db.from('enquiries').select('*').order('created_at', { ascending: false }),
+    db.from('enquiries').select('*').order('created_at', { ascending: false }).limit(1000), // cap: most-recent 1000 (M-3)
     db.from('enquiry_notes').select('*').order('created_at', { ascending: false }),
   ]);
 
