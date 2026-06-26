@@ -863,7 +863,7 @@ function bindTableHandlers() {
 // update-enquiry-admin).
 const NON_ALCOHOLIC_DRINK_IDS = new Set([
   'granini_a', 'granini_o', 'tonic_mango', 'tonic_cherry', 'sanben_tea_lem5', 'sanben_tea_lem3', 'sanben_tea_peach', 'cola', 'cola0', 'fanta', 'redbull',
-  'benedo_st', 'benedo_spa', 'perrier_st', 'perrier_spa', 'panna25', 'panna75', 'pelegrino75', 'pelegrino',
+  'benedo_spa', 'perrier_st', 'perrier_spa', 'panna25', 'panna50', 'panna75', 'pelegrino75', 'pelegrino',
 ]);
 function maxDrinkQty(id) { return NON_ALCOHOLIC_DRINK_IDS.has(id) ? 200 : 100; }
 

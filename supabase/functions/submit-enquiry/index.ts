@@ -96,7 +96,7 @@ const MAX_NAME = 200, MAX_NOTES = 2000, MAX_PHONE = 30, MAX_GUESTS = 200, MAX_AD
 // Keep NON_ALCOHOLIC_DRINK_IDS in sync with website/js/drinks-data.js.
 const NON_ALCOHOLIC_DRINK_IDS = new Set([
   "granini_a","granini_o","tonic_mango","tonic_cherry","sanben_tea_lem5","sanben_tea_lem3","sanben_tea_peach","cola","cola0","fanta","redbull",
-  "benedo_st","benedo_spa","perrier_st","perrier_spa","panna25","panna75","pelegrino75","pelegrino",
+  "benedo_spa","perrier_st","perrier_spa","panna25","panna50","panna75","pelegrino75","pelegrino",
 ]);
 function maxDrinkQty(id: string): number { return NON_ALCOHOLIC_DRINK_IDS.has(id) ? 200 : 100; }
 const DATE_RE = /^\d{2}\/\d{2}\/\d{4}$/;
