@@ -56,6 +56,75 @@ function esc(s) {
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+// ── i18n (BG default; strings live in translations-edit.js / EDIT_T) ──
+const LANG_KEY = 'margel_lang';
+
+function getLang() {
+  try { return localStorage.getItem(LANG_KEY) === 'en' ? 'en' : 'bg'; } catch (e) { return 'bg'; }
+}
+
+// Translate a key for the current language, falling back to BG then ''.
+function t(key) {
+  const dict = (typeof EDIT_T !== 'undefined' && (EDIT_T[getLang()] || EDIT_T.bg)) || {};
+  return dict[key] !== undefined ? dict[key] : '';
+}
+
+// Display name for a catalog item (addon/drink) in the current language.
+// IMPORTANT: this is for DISPLAY only — the save payload always uses name_en
+// (see onSave) to stay consistent with what the booking wizard stores.
+function nameOf(obj) {
+  if (!obj) return '';
+  return getLang() === 'en'
+    ? (obj.name_en || obj.name_bg || obj.id || '')
+    : (obj.name_bg || obj.name_en || obj.id || '');
+}
+
+// Apply the static (markup) translations for the current language.
+function applyStaticI18n() {
+  const lang = getLang();
+  const dict = (typeof EDIT_T !== 'undefined' && EDIT_T[lang]) || {};
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.getAttribute('data-i18n');
+    if (dict[k] !== undefined) el.textContent = dict[k];
+  });
+  document.querySelectorAll('[data-i18n-html]').forEach(el => {
+    const k = el.getAttribute('data-i18n-html');
+    if (dict[k] !== undefined) el.innerHTML = dict[k];
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+    const k = el.getAttribute('data-i18n-ph');
+    if (dict[k] !== undefined) el.setAttribute('placeholder', dict[k]);
+  });
+  document.documentElement.lang = lang;
+  if (dict.doc_title) document.title = dict.doc_title;
+  const tog = $('lang-toggle');
+  if (tog) tog.textContent = lang === 'bg' ? 'EN' : 'BG';
+}
+
+function setupLangToggle() {
+  const tog = $('lang-toggle');
+  if (!tog || tog.dataset.wired) return;
+  tog.dataset.wired = '1';
+  tog.addEventListener('click', () => {
+    const next = getLang() === 'bg' ? 'en' : 'bg';
+    try { localStorage.setItem(LANG_KEY, next); } catch (e) {}
+    applyStaticI18n();
+    if (state.enquiry) refreshDynamicI18n();
+  });
+}
+
+// Re-paint the language-dependent dynamic content after a toggle. Preserves all
+// user input (date/guests/phone/notes are untouched) and all selections
+// (addon/drink quantities live in state and survive the re-render). The
+// flatpickr calendar keeps its initial locale until reload — a minor cosmetic
+// detail not worth a risky destroy/recreate on the live edit flow.
+function refreshDynamicI18n() {
+  paintDynamic();
+  renderAddons();
+  const panel = $('drinks-panel');
+  if (panel && !panel.hidden) renderDrinks();
+}
+
 // ── Entry ───────────────────────────────────────────────────
 
 async function main() {
@@ -119,10 +188,9 @@ async function mainAdmin(id) {
 
   state.enquiry = data;
   state.occupiedDates = await loadOccupiedDates();
+  // adminMode is already true, so paintDynamic() renders the "Админ редакция"
+  // eyebrow — a visual cue that the admin is editing on the customer's behalf.
   renderForm();
-  // Visual cue so the admin knows they're editing on the customer's behalf.
-  const eyebrow = document.getElementById('form-eyebrow');
-  if (eyebrow) eyebrow.textContent = `Админ редакция · ${data.event_type}`;
 }
 
 async function loadOccupiedDates() {
@@ -140,31 +208,13 @@ async function loadOccupiedDates() {
 
 function renderForm() {
   const e = state.enquiry;
-  const timeLabel = e.time_of_day === 'day' ? 'Дневно · до 17:30' : 'Вечерно · след 19:00';
 
-  $('form-eyebrow').textContent = `Редактиране · ${e.event_type}`;
-  $('form-headline').innerHTML = `Вашето събитие <em>на ${fmtDateBg(e.preferred_date)}</em>.`;
-  $('colophon-date').textContent = fmtDateBg(e.preferred_date);
-
-  $('readonly-block').innerHTML = `
-    <div>
-      <span class="label-caps">Събитие</span>
-      <strong>${esc(e.event_type)}</strong>
-    </div>
-    <div>
-      <span class="label-caps">Час</span>
-      <strong>${timeLabel}</strong>
-    </div>
-    <div>
-      <span class="label-caps">Имейл</span>
-      <strong>${esc(e.email)}</strong>
-    </div>
-  `;
+  applyStaticI18n();   // static chrome (labels, states) in the current language
+  paintDynamic();      // language-dependent dynamic text (eyebrow, headline, readonly…)
 
   $('field-guests').value = e.guests ?? '';
   $('field-phone').value = e.phone ?? '';
   $('field-notes').value = e.notes ?? '';
-  $('saved-email').textContent = e.email || 'вашия имейл';
 
   initDatePicker();
   renderAddons();
@@ -173,27 +223,70 @@ function renderForm() {
 
   $('edit-form').addEventListener('submit', onSave);
   $('btn-reload').addEventListener('click', () => window.location.reload());
+  setupLangToggle();
 
   show('state-form');
+}
+
+// Paint every language-dependent dynamic string. Safe to call repeatedly (on
+// initial render and after a language toggle): it only writes text/markup, it
+// never binds listeners.
+function paintDynamic() {
+  const e = state.enquiry;
+  const timeLabel = e.time_of_day === 'day' ? t('time_day') : t('time_evening');
+
+  $('form-eyebrow').textContent = `${adminMode ? t('admin_edit_prefix') : t('edit_prefix')} · ${e.event_type}`;
+  $('form-headline').innerHTML = `${esc(t('headline_pre'))} <em>${esc(t('headline_on'))} ${esc(fmtDateBg(e.preferred_date))}</em>.`;
+  $('colophon-date').textContent = fmtDateBg(e.preferred_date);
+
+  $('readonly-block').innerHTML = `
+    <div>
+      <span class="label-caps">${esc(t('ro_event'))}</span>
+      <strong>${esc(e.event_type)}</strong>
+    </div>
+    <div>
+      <span class="label-caps">${esc(t('ro_time'))}</span>
+      <strong>${esc(timeLabel)}</strong>
+    </div>
+    <div>
+      <span class="label-caps">${esc(t('ro_email'))}</span>
+      <strong>${esc(e.email)}</strong>
+    </div>
+  `;
+
+  $('saved-email').textContent = e.email || t('saved_email_fallback');
+  paintDrinksToggle();
 }
 
 // Drinks are always hidden behind a CTA so the form opens shorter. If the
 // customer already has drinks saved we surface a count on the button instead
 // of auto-expanding, so they still notice there are items to review.
-function setupDrinksToggle() {
+// Text-only (no binding) — safe to call on initial render and on language
+// toggle. If the customer already has drinks saved, surface a count instead of
+// the generic prompt.
+function paintDrinksToggle() {
   const btn = $('btn-toggle-drinks');
-  const panel = $('drinks-panel');
   const wrap = $('drinks-toggle-wrap');
   const prompt = wrap?.querySelector('.drinks-toggle-prompt');
-  if (!btn || !panel) return;
+  if (!btn) return;
 
   const existing = Array.isArray(state.enquiry.drinks) ? state.enquiry.drinks : [];
   const existingCount = existing.reduce((n, d) => n + (Number(d.qty) || 0), 0);
 
-  if (existingCount > 0 && prompt) {
-    prompt.textContent = `Имате ${existingCount} избрани напитки. Желаете ли да ги прегледате или промените?`;
-    btn.textContent = 'Покажи напитките';
+  if (existingCount > 0) {
+    if (prompt) prompt.textContent = `${t('drinks_have_a')} ${existingCount} ${t('drinks_have_b')}`;
+    btn.textContent = t('drinks_show_short');
+  } else {
+    if (prompt) prompt.textContent = t('drinks_prompt');
+    btn.textContent = t('drinks_show_menu');
   }
+}
+
+function setupDrinksToggle() {
+  const btn = $('btn-toggle-drinks');
+  const panel = $('drinks-panel');
+  const wrap = $('drinks-toggle-wrap');
+  if (!btn || !panel) return;
 
   btn.addEventListener('click', () => {
     if (wrap) wrap.hidden = true;
@@ -219,7 +312,7 @@ function initDatePicker() {
     });
 
   flatpickr(dateEl, {
-    locale: (typeof flatpickr.l10ns !== 'undefined' && flatpickr.l10ns.bg) ? 'bg' : 'default',
+    locale: (getLang() === 'bg' && typeof flatpickr.l10ns !== 'undefined' && flatpickr.l10ns.bg) ? 'bg' : 'default',
     dateFormat: 'd/m/Y',
     minDate: 'today',
     disableMobile: true,
@@ -273,21 +366,21 @@ function renderAddons() {
       const info = document.createElement('span');
       info.className = 'addon-card__info';
       info.innerHTML = `
-        <span class="addon-card__name">${esc(svc.name_bg)}</span>
-        <span class="addon-card__price">€${Math.round(svc.price)} / бр.</span>
-        ${svc.freeUntil != null ? `<span class="addon-card__hint">Първите ${svc.freeUntil} са включени</span>` : ''}
+        <span class="addon-card__name">${esc(nameOf(svc))}</span>
+        <span class="addon-card__price">€${Math.round(svc.price)} ${esc(t('per_piece'))}</span>
+        ${svc.freeUntil != null ? `<span class="addon-card__hint">${esc(t('first_incl_a'))} ${svc.freeUntil} ${esc(t('first_incl_b'))}</span>` : ''}
       `;
 
       const qtyWrap = document.createElement('span');
       qtyWrap.className = 'addon-qty';
       const minus = document.createElement('button');
-      minus.type = 'button'; minus.textContent = '−'; minus.setAttribute('aria-label', 'Намали');
+      minus.type = 'button'; minus.textContent = '−'; minus.setAttribute('aria-label', t('aria_decrease'));
       const num = document.createElement('input');
       num.type = 'number'; num.min = '0'; num.max = String(addonMaxQty(svc)); num.step = '1';
       num.inputMode = 'numeric'; num.value = qty;
-      num.setAttribute('aria-label', 'Количество');
+      num.setAttribute('aria-label', t('aria_qty'));
       const plus = document.createElement('button');
-      plus.type = 'button'; plus.textContent = '+'; plus.setAttribute('aria-label', 'Увеличи');
+      plus.type = 'button'; plus.textContent = '+'; plus.setAttribute('aria-label', t('aria_increase'));
       qtyWrap.append(minus, num, plus);
 
       li.append(visual, info, qtyWrap);
@@ -327,7 +420,7 @@ function renderAddons() {
     const info = document.createElement('span');
     info.className = 'addon-card__info';
     info.innerHTML = `
-      <span class="addon-card__name">${esc(svc.name_bg)}</span>
+      <span class="addon-card__name">${esc(nameOf(svc))}</span>
       <span class="addon-card__price">€${Math.round(svc.price)}</span>
     `;
 
@@ -363,7 +456,7 @@ function renderDrinks() {
 function renderDrinkTabs() {
   const tabs = $('drinks-tabs');
   tabs.innerHTML = '';
-  const cats = (typeof drinkCategories !== 'undefined' ? drinkCategories.bg : []) || [];
+  const cats = (typeof drinkCategories !== 'undefined' ? (drinkCategories[getLang()] || drinkCategories.bg) : []) || [];
   cats.forEach((name, i) => {
     const btn = document.createElement('button');
     btn.type = 'button';
@@ -398,11 +491,11 @@ function renderDrinkTiles() {
       i.loading = 'lazy';
       // If the asset is missing, drop the <img> and let the CSS placeholder
       // (label-caps initial) show through — keeps the layout from collapsing.
-      i.addEventListener('error', () => { i.remove(); img.classList.add('drink-tile__img--fallback'); img.textContent = (drink.name_bg || drink.name_en || '?')[0]; });
+      i.addEventListener('error', () => { i.remove(); img.classList.add('drink-tile__img--fallback'); img.textContent = (nameOf(drink) || '?')[0]; });
       img.appendChild(i);
     } else {
       img.classList.add('drink-tile__img--fallback');
-      img.textContent = (drink.name_bg || drink.name_en || '?')[0];
+      img.textContent = (nameOf(drink) || '?')[0];
     }
 
     const body = document.createElement('span');
@@ -410,11 +503,11 @@ function renderDrinkTiles() {
 
     const name = document.createElement('span');
     name.className = 'drink-tile__name';
-    name.textContent = drink.name_bg || drink.name_en || drink.id;
+    name.textContent = nameOf(drink);
 
     const price = document.createElement('span');
     price.className = 'drink-tile__price';
-    price.textContent = drink.price_eur != null ? `€${drink.price_eur.toFixed(2)}` : 'По запитване';
+    price.textContent = drink.price_eur != null ? `€${drink.price_eur.toFixed(2)}` : t('price_on_request');
 
     // Same per-category caps as the wizard and the server: non-alcoholic
     // (soft drinks + water, cat 3 & 4) up to 200, alcoholic up to 100.
@@ -422,7 +515,7 @@ function renderDrinkTiles() {
     const qtyWrap = document.createElement('span');
     qtyWrap.className = 'drink-qty';
     const minus = document.createElement('button');
-    minus.type = 'button'; minus.textContent = '−'; minus.setAttribute('aria-label', 'Намали');
+    minus.type = 'button'; minus.textContent = '−'; minus.setAttribute('aria-label', t('aria_decrease'));
     const num = document.createElement('input');
     num.type = 'number';
     num.min = '0';
@@ -430,9 +523,9 @@ function renderDrinkTiles() {
     num.step = '1';
     num.inputMode = 'numeric';
     num.value = qty;
-    num.setAttribute('aria-label', 'Количество');
+    num.setAttribute('aria-label', t('aria_qty'));
     const plus = document.createElement('button');
-    plus.type = 'button'; plus.textContent = '+'; plus.setAttribute('aria-label', 'Увеличи');
+    plus.type = 'button'; plus.textContent = '+'; plus.setAttribute('aria-label', t('aria_increase'));
 
     qtyWrap.append(minus, num, plus);
     body.append(name, price, qtyWrap);
@@ -461,7 +554,7 @@ async function onSave(evt) {
   const errEl = $('edit-error');
   errEl.classList.add('hidden');
   btn.disabled = true;
-  btn.textContent = 'Запазване…';
+  btn.textContent = t('saving');
 
   const preferred_date = $('field-date').value.trim();
   const guests = parseInt($('field-guests').value, 10);
@@ -469,20 +562,20 @@ async function onSave(evt) {
   const notes = $('field-notes').value.trim() || null;
 
   if (!preferred_date) {
-    errEl.textContent = 'Моля, изберете дата.';
+    errEl.textContent = t('err_pick_date');
     errEl.classList.remove('hidden');
     btn.disabled = false;
-    btn.textContent = 'Запазете промените';
+    btn.textContent = t('save');
     return;
   }
 
   // Same bounds the server enforces (1..200) — fail here with a clear
   // message instead of a generic save error.
   if (!Number.isInteger(guests) || guests < 1 || guests > 200) {
-    errEl.textContent = 'Моля, въведете брой гости между 1 и 200.';
+    errEl.textContent = t('err_guests_range');
     errEl.classList.remove('hidden');
     btn.disabled = false;
-    btn.textContent = 'Запазете промените';
+    btn.textContent = t('save');
     return;
   }
 
@@ -539,11 +632,17 @@ async function onSave(evt) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch (err) {
     console.error(err);
-    errEl.textContent = 'Нещо се обърка при запазването. Моля опитайте отново или се свържете с нас на 360@margel.info.';
+    errEl.textContent = t('err_save');
     errEl.classList.remove('hidden');
     btn.disabled = false;
-    btn.textContent = 'Запазете промените';
+    btn.textContent = t('save');
   }
 }
 
-document.addEventListener('DOMContentLoaded', main);
+document.addEventListener('DOMContentLoaded', () => {
+  // Apply translations + wire the language toggle for EVERY state (loading,
+  // not-found, expired, locked, form), not just the form.
+  applyStaticI18n();
+  setupLangToggle();
+  main();
+});
