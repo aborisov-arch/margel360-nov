@@ -5,6 +5,33 @@
 (function () {
   'use strict';
   var KEY = 'margel_cookie_consent';
+  var CONSENT_VERSION = 1;                            // bump on a material cookie/privacy-policy change → re-prompts everyone
+  var CONSENT_TTL_MS = 365 * 24 * 60 * 60 * 1000;    // GDPR: re-ask for consent at least yearly
+
+  // Persist the choice with a version + timestamp so it can expire (yearly) or
+  // be invalidated by a policy-version bump.
+  function save(choice) {
+    try {
+      localStorage.setItem(KEY, JSON.stringify({ v: CONSENT_VERSION, choice: choice, ts: Date.now() }));
+    } catch (e) {}
+  }
+
+  // Return a still-valid stored choice ('granted' | 'denied'), or null if absent,
+  // expired, or from an older policy version. Legacy plain-string values (from
+  // before versioning existed) are grandfathered as current — existing visitors
+  // are not re-prompted on rollout, but pick up expiry/versioning from now on.
+  function readChoice() {
+    var raw = null;
+    try { raw = localStorage.getItem(KEY); } catch (e) { return null; }
+    if (!raw) return null;
+    if (raw === 'granted' || raw === 'denied') { save(raw); return raw; }   // migrate legacy value
+    var rec;
+    try { rec = JSON.parse(raw); } catch (e) { return null; }
+    if (!rec || (rec.choice !== 'granted' && rec.choice !== 'denied')) return null;
+    if (rec.v !== CONSENT_VERSION) return null;                                       // policy changed → re-ask
+    if (typeof rec.ts !== 'number' || (Date.now() - rec.ts) > CONSENT_TTL_MS) return null;   // expired → re-ask
+    return rec.choice;
+  }
 
   function grant() {
     if (typeof window.gtag === 'function') {
@@ -17,9 +44,8 @@
     }
   }
 
-  var saved = null;
-  try { saved = localStorage.getItem(KEY); } catch (e) {}
-  if (saved === 'granted') { grant(); return; }   // already accepted
+  var saved = readChoice();
+  if (saved === 'granted') { grant(); return; }   // already accepted (and still valid)
   if (saved === 'denied') { return; }             // already declined → stays denied
 
   function show() {
@@ -63,11 +89,11 @@
       setTimeout(function () { if (b.parentNode) b.parentNode.removeChild(b); }, 350);
     }
     b.querySelector('.cc-accept').addEventListener('click', function () {
-      try { localStorage.setItem(KEY, 'granted'); } catch (e) {}
+      save('granted');
       grant(); close();
     });
     b.querySelector('.cc-reject').addEventListener('click', function () {
-      try { localStorage.setItem(KEY, 'denied'); } catch (e) {}
+      save('denied');
       close();
     });
   }

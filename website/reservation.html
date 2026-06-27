@@ -24,7 +24,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/reservation.css?v=6">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" integrity="sha384-RkASv+6KfBMW9eknReJIJ6b3UnjKOKC5bOUaNgIY778NFbQ8MtWq9Lr/khUgqtTt" crossorigin="anonymous">
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -158,7 +158,7 @@
         <div class="wizard-step" id="step-2">
           <h2 class="step-heading" data-i18n="s3_title">Допълнителни услуги</h2>
           <section class="free-included">
-            <h3 class="free-included__title">Включено безплатно с всяка резервация</h3>
+            <h3 class="free-included__title" data-i18n="free_included_title">Включено безплатно с всяка резервация</h3>
             <ul class="free-included__list" id="free-included-list"></ul>
           </section>
           <p class="step-sub" data-i18n="s3_sub">Изберете допълнителни услуги към вашето събитие (по желание).</p>
@@ -227,7 +227,7 @@
             <div class="form-group" id="fg-guests">
               <label for="res-guests" data-i18n="res_guests">Брой гости (1–200)</label>
               <input type="number" id="res-guests" name="guests" min="1" max="200" placeholder="50" aria-describedby="err-guests-msg guests-hint">
-              <span class="field-hint" id="guests-hint">До 40 гости са включени в наема. Всеки следващ гост — €15.</span>
+              <span class="field-hint" id="guests-hint" data-i18n="guests_hint">До 40 гости са включени в наема. Всеки следващ гост — €15.</span>
               <span class="form-error" id="err-guests-msg" role="alert" data-i18n="err_guests">Моля въведете брой гости (1–200).</span>
             </div>
             <div class="form-group">
@@ -248,7 +248,7 @@
           <div class="price-summary" id="price-summary"></div>
 
           <div class="promo-box">
-            <label class="promo-box__label" for="promo-input">Имате промо код?</label>
+            <label class="promo-box__label" for="promo-input" data-i18n="promo_label">Имате промо код?</label>
             <div class="promo-box__row">
               <input type="text" id="promo-input" placeholder="MG-XXXX-XXXX" autocomplete="off" maxlength="13" style="text-transform:uppercase">
               <button type="button" class="btn btn-outline btn-sm" id="promo-apply">Приложи</button>
@@ -338,10 +338,10 @@
     </div>
   </footer>
 
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/bg.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js" integrity="sha384-5JqMv4L/Xa0hfvtF06qboNdhvuYXUku9ZrhZh3bSk8VXF0A/RuSLHpLsSV9Zqhl6" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/bg.js" integrity="sha384-4dvnw6wSzzDwWKeBuSYv0lc+miJSG1UXHYaASiAhbfJuy2n2I3uhjJWda30hRKYX" crossorigin="anonymous"></script>
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-  <script src="js/translations-reservation.js?v=2"></script>
+  <script src="js/translations-reservation.js?v=3"></script>
   <script src="js/main.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7" integrity="sha384-tD6X9wDfTRdKpuPoHFZrVW2RXjSYSWjLBPWXxpHprWWl9eaHlwl05aRjHsiKF97n" crossorigin="anonymous"></script>
   <script src="js/reservation-supabase.js"></script>
@@ -349,6 +349,6 @@
   <script src="js/drinks-data.js?v=6"></script>
   <script src="js/reservation.js?v=20"></script>
   <a href="tel:+359888100042" class="fab-phone" aria-label="Обадете се"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg></a>
-  <script src="js/cookie-consent.js" defer></script>
+  <script src="js/cookie-consent.js?v=1" defer></script>
 </body>
 </html>
