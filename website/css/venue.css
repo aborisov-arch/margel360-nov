@@ -171,6 +171,30 @@
   gap: 1.5rem;
 }
 
+/* Right-aligned masthead group: language toggle + sigil. */
+.venue__masthead-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.venue__lang {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: none;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  padding: 0.4rem 0.78rem;
+  cursor: pointer;
+  transition: color 200ms var(--ease-out), border-color 200ms var(--ease-out);
+}
+.venue__lang:hover { color: var(--gold); border-color: var(--gold); }
+.venue__lang:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
 .venue__wordmark {
   font-family: var(--font-display);
   font-weight: 500;

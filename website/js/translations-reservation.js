@@ -1,5 +1,8 @@
 const translations = {
   bg: {
+    free_included_title: 'Включено безплатно с всяка резервация',
+    guests_hint: 'До 40 гости са включени в наема. Всеки следващ гост — €15.',
+    promo_label: 'Имате промо код?',
     nav_home: 'Тип събитие', nav_gallery: 'Галерия', nav_faq: 'FAQ',
     nav_services: 'Услуги', nav_drinks: 'Меню', nav_contact: 'Контакти', nav_reserve: 'Запитване',
     res_title: 'Направете запитване',
@@ -51,6 +54,9 @@ const translations = {
     footer_copy: '© 2026 Маргел 360°. Всички права запазени.',
   },
   en: {
+    free_included_title: 'Included free with every booking',
+    guests_hint: 'Up to 40 guests are included in the rental. Each additional guest — €15.',
+    promo_label: 'Have a promo code?',
     nav_home: 'Event Types', nav_gallery: 'Gallery', nav_faq: 'FAQ',
     nav_services: 'Services', nav_drinks: 'Menu', nav_contact: 'Contacts', nav_reserve: 'Enquiry',
     res_title: 'Make an Enquiry',
