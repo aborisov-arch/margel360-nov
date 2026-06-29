@@ -204,6 +204,9 @@ serve(async (req) => {
   // Optional marketing opt-in from the booking form. Only an explicit `true`
   // counts as consent (column defaults to false); anything else → false.
   const marketing_consent = payload.marketing_consent === true;
+  // Language the customer used on the site — drives the language of the summary
+  // email. Only 'en' is honoured; anything else (incl. absent) defaults to 'bg'.
+  const lang = payload.lang === "en" ? "en" : "bg";
 
   if (!full_name)   return json({ error: "invalid_field", field: "full_name" }, 400);
   if (!email_raw || !EMAIL_RE.test(email_raw)) return json({ error: "invalid_field", field: "email" }, 400);
@@ -264,7 +267,7 @@ serve(async (req) => {
     preferred_date, time_of_day, arrival_time,
     guests, addons, drinks,
     payment_method, notes: notes_raw,
-    marketing_consent,
+    marketing_consent, lang,
   };
 
   const { data: inserted, error: insErr } = await sb
