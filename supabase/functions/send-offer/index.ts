@@ -19,13 +19,17 @@ const SITE_URL     = (Deno.env.get("PUBLIC_SITE_URL") ?? "https://margel360.bg")
 // source of truth, the same function the RLS policies use. No admin email
 // list is duplicated in this file.
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+// CORS locked to the admin-panel origins (defense-in-depth; the real gate
+// is the JWT + is_admin() check below). Unknown origins get the apex.
+const ADMIN_ORIGINS = new Set(["https://margel360.bg", "https://www.margel360.bg", "https://margell360.netlify.app"]);
+function corsHeadersFor(req: Request): Record<string, string> {
+  const origin = req.headers.get("origin") ?? "";
+  return {
+    "Access-Control-Allow-Origin": ADMIN_ORIGINS.has(origin) ? origin : "https://margel360.bg",
+    "Vary": "Origin",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+  };
 }
 
 // Cap the attachment so a malformed/oversized payload can't blow up Resend.
@@ -34,7 +38,10 @@ const MAX_ATTACH_B64_LEN = 6_000_000; // ~4.5 MB decoded
 const sbAdmin = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const cors = corsHeadersFor(req);
+  const json = (body: unknown, status = 200): Response =>
+    new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
+  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
 
   const authHeader = req.headers.get("Authorization") ?? "";
@@ -71,27 +78,44 @@ serve(async (req) => {
   if (!enq) return json({ error: "not_found" }, 404);
   if (!enq.email) return json({ error: "no_customer_email" }, 422);
 
-  const safeName = (payload.filename && /^[\p{L}\p{N}_.\- ]+\.(pdf|xlsx)$/u.test(payload.filename))
+  // ASCII-only attachment filename. Some Resend / SMTP paths reject a
+  // non-ASCII (Cyrillic) attachment name, so we don't pass the customer's
+  // raw filename through — a fixed Latin name is fine for the attached PDF.
+  const safeName = (payload.filename && /^[\w.\- ]+\.(pdf|xlsx)$/.test(payload.filename))
     ? payload.filename
-    : "Оферта.pdf";
+    : "Margel360-oferta.pdf";
 
-  const { subject, html } = renderOfferEmail(enq, SITE_URL);
+  let subject: string, html: string;
+  try {
+    ({ subject, html } = renderOfferEmail(enq, SITE_URL));
+  } catch (e) {
+    console.error("renderOfferEmail threw:", e);
+    return json({ error: "render_failed", detail: String(e) }, 500);
+  }
 
-  const r = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${RESEND_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      from: FROM_EMAIL,
-      to: enq.email,
-      subject,
-      html,
-      attachments: [{ filename: safeName, content: attachB64 }],
-    }),
-  });
+  let r: Response;
+  try {
+    r = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${RESEND_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: FROM_EMAIL,
+        to: enq.email,
+        subject,
+        html,
+        attachments: [{ filename: safeName, content: attachB64 }],
+      }),
+    });
+  } catch (e) {
+    console.error("resend fetch threw:", e);
+    return json({ error: "send_failed", detail: String(e) }, 502);
+  }
   if (!r.ok) {
-    const t = await r.text();
-    console.error("resend failed:", t);
-    return json({ error: "send_failed" }, 502);
+    const t = await r.text().catch(() => "");
+    console.error("resend failed:", r.status, t);
+    // Surface the real Resend status + reason instead of a generic failure,
+    // so the dashboard can show WHY (was hiding attachment/validation errors).
+    return json({ error: "send_failed", resend_status: r.status, detail: t.slice(0, 600) }, 502);
   }
 
   const stamp = new Date().toISOString();
