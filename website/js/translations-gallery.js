@@ -1,7 +1,7 @@
 const translations = {
   bg: {
     nav_home: 'Тип събитие', nav_gallery: 'Галерия', nav_faq: 'FAQ',
-    nav_services: 'Услуги', nav_drinks: 'Меню', nav_contact: 'Контакти', nav_reserve: 'Запитване',
+    nav_services: 'Услуги', nav_drinks: 'Меню', nav_partners: 'Партньори', nav_contact: 'Контакти', nav_reserve: 'Запитване',
     gallery_title: 'Галерия', gallery_sub: 'Моменти от изминали тържества',
     gallery_featured_eyebrow: '★ Спот на месеца',
     gallery_featured_title: 'Спот от Маргел 360°',
@@ -12,7 +12,7 @@ const translations = {
   },
   en: {
     nav_home: 'Event Types', nav_gallery: 'Gallery', nav_faq: 'FAQ',
-    nav_services: 'Services', nav_drinks: 'Menu', nav_contact: 'Contacts', nav_reserve: 'Enquiry',
+    nav_services: 'Services', nav_drinks: 'Menu', nav_partners: 'Partners', nav_contact: 'Contacts', nav_reserve: 'Enquiry',
     gallery_title: 'Gallery', gallery_sub: 'Photos from our events',
     gallery_featured_eyebrow: '★ Featured spot',
     gallery_featured_title: 'Featured Margel 360° spot',

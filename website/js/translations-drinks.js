@@ -1,7 +1,7 @@
 const translations = {
   bg: {
     nav_home: 'Събития', nav_gallery: 'Галерия', nav_faq: 'Често задавани въпроси',
-    nav_services: 'Услуги', nav_drinks: 'Меню', nav_contact: 'Контакти', nav_reserve: 'Запитване',
+    nav_services: 'Услуги', nav_drinks: 'Меню', nav_partners: 'Партньори', nav_contact: 'Контакти', nav_reserve: 'Запитване',
     drinks_title: 'Меню с напитки',
     drinks_sub: 'Шампанско, вино, спиртни и безалкохолни за вашето събитие',
     drinks_note: 'Цените са ориентировъчни и може да се актуализират. За точна оферта, моля свържете се с нас.',
@@ -12,7 +12,7 @@ const translations = {
   },
   en: {
     nav_home: 'Events', nav_gallery: 'Gallery', nav_faq: 'FAQ',
-    nav_services: 'Services', nav_drinks: 'Menu', nav_contact: 'Contacts', nav_reserve: 'Enquiry',
+    nav_services: 'Services', nav_drinks: 'Menu', nav_partners: 'Partners', nav_contact: 'Contacts', nav_reserve: 'Enquiry',
     drinks_title: 'Drinks Menu',
     drinks_sub: 'Champagne, wines, spirits and soft drinks for your event',
     drinks_note: 'Prices are indicative and subject to change. For a precise quote, please contact us.',

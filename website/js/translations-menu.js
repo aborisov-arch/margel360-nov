@@ -2,7 +2,7 @@
 const translations = {
   bg: {
     nav_home: 'Събития', nav_gallery: 'Галерия', nav_services: 'Услуги',
-    nav_drinks: 'Меню', nav_contact: 'Контакти', nav_faq: 'Често задавани въпроси', nav_reserve: 'Запитване',
+    nav_drinks: 'Меню', nav_partners: 'Партньори', nav_contact: 'Контакти', nav_faq: 'Често задавани въпроси', nav_reserve: 'Запитване',
     menu_title: 'Меню с напитки',
     menu_sub: 'Шампанско, вино, спиртни напитки, безалкохолно и вода — всичко за вашето събитие.',
     menu_note: 'Цените са ориентировъчни и може да се актуализират. Алкохолът се заплаща 100% предварително. За точна оферта, моля свържете се с нас.',
@@ -17,7 +17,7 @@ const translations = {
   },
   en: {
     nav_home: 'Events', nav_gallery: 'Gallery', nav_services: 'Services',
-    nav_drinks: 'Menu', nav_contact: 'Contacts', nav_faq: 'FAQ', nav_reserve: 'Enquiry',
+    nav_drinks: 'Menu', nav_partners: 'Partners', nav_contact: 'Contacts', nav_faq: 'FAQ', nav_reserve: 'Enquiry',
     menu_title: 'Drinks Menu',
     menu_sub: 'Champagne, wine, spirits, soft drinks and water — everything for your event.',
     menu_note: 'Prices are indicative and subject to change. Alcohol is paid 100% in advance. For a precise quote, please contact us.',
