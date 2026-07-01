@@ -167,6 +167,24 @@ function validateDrinks(raw: unknown): { id: string; name: string; qty: number; 
   return out;
 }
 
+// Wizard "Partners" step: array of partner uuids the customer marked
+// interest in. Shape errors → 400; ids that don't resolve to an ACTIVE
+// partner are silently dropped later (deactivated between page load and
+// submit must never fail a booking).
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const MAX_PARTNER_IDS = 20;
+
+function validatePartnerIds(raw: unknown): string[] | null {
+  if (raw == null) return [];
+  if (!Array.isArray(raw) || raw.length > MAX_PARTNER_IDS) return null;
+  const out: string[] = [];
+  for (const v of raw) {
+    if (typeof v !== "string" || !UUID_RE.test(v)) return null;
+    if (!out.includes(v)) out.push(v);
+  }
+  return out;
+}
+
 // ── Handler ──────────────────────────────────────────────────────────
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -225,6 +243,8 @@ serve(async (req) => {
   if (addons == null) return json({ error: "invalid_field", field: "addons" }, 400);
   const drinks = validateDrinks(payload.drinks ?? []);
   if (drinks == null) return json({ error: "invalid_field", field: "drinks" }, 400);
+  const partner_ids = validatePartnerIds(payload.partner_ids);
+  if (partner_ids == null) return json({ error: "invalid_field", field: "partner_ids" }, 400);
 
   let discount_code: string | null = null;
   if (payload.discount_code != null) {
@@ -258,6 +278,26 @@ serve(async (req) => {
     }
   }
 
+  // Snapshot partner interest server-side: names/categories come from the
+  // DB, not the client. Preserves the customer's selection order.
+  let partner_interest: { id: string; name: string; category: string }[] = [];
+  if (partner_ids.length) {
+    const { data: partnerRows, error: pErr } = await sb
+      .from("partners")
+      .select("id, name, category")
+      .in("id", partner_ids)
+      .eq("active", true);
+    if (pErr) console.error("partner lookup failed (continuing without):", pErr);
+    const byId = new Map((partnerRows ?? []).map(p => [p.id as string, p]));
+    partner_interest = partner_ids
+      .filter(id => byId.has(id))
+      .map(id => ({
+        id,
+        name: byId.get(id)!.name as string,
+        category: byId.get(id)!.category as string,
+      }));
+  }
+
   const row = {
     full_name, email: email_raw, phone,
     event_type, event_id,
@@ -265,6 +305,7 @@ serve(async (req) => {
     guests, addons, drinks,
     payment_method, notes: notes_raw,
     marketing_consent,
+    partner_interest,
   };
 
   const { data: inserted, error: insErr } = await sb
