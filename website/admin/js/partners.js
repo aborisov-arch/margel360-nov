@@ -30,6 +30,16 @@ function catLabel(cat) {
   return t(cat === 'catering' ? 'partners_cat_catering' : 'partners_cat_artist');
 }
 
+// Render-time guard: only ever emit an <a href> for http(s) URLs. A
+// javascript: (or other) scheme written to the row by any path other than
+// this form's validated submit would otherwise become a live link.
+function websiteCell(url) {
+  if (!url) return '';
+  return /^https?:\/\//i.test(url)
+    ? `<a href="${esc(url)}" target="_blank" rel="noopener">${esc(url.replace(/^https?:\/\//, ''))}</a>`
+    : esc(url);
+}
+
 async function loadPartners() {
   const { data, error } = await db.from('partners')
     .select('*')
@@ -59,7 +69,7 @@ function renderTable() {
         : `<span style="display:inline-flex;width:56px;height:40px;border-radius:6px;background:#eee;align-items:center;justify-content:center" aria-hidden="true">${p.category === 'catering' ? '🍽️' : '🎤'}</span>`}</td>
       <td><strong>${esc(p.name)}</strong>${p.active ? '' : ` <span style="color:#c62828;font-size:0.78rem">(${esc(t('partners_hidden'))})</span>`}</td>
       <td>${esc(catLabel(p.category))}</td>
-      <td style="font-size:0.84rem">${p.website_url ? `<a href="${esc(p.website_url)}" target="_blank" rel="noopener">${esc(p.website_url.replace(/^https?:\/\//, ''))}</a>` : ''}${p.website_url && p.phone ? ' · ' : ''}${esc(p.phone || '')}</td>
+      <td style="font-size:0.84rem">${websiteCell(p.website_url)}${p.website_url && p.phone ? ' · ' : ''}${esc(p.phone || '')}</td>
       <td>${Number(p.sort_order) || 0}</td>
       <td style="white-space:nowrap">
         <button class="btn btn-outline btn-sm btn-toggle" data-id="${esc(p.id)}">${esc(p.active ? t('partners_deactivate') : t('partners_activate'))}</button>
@@ -149,6 +159,12 @@ async function savePartner() {
     if (error) {
       console.error('partner save failed:', error);
       showToast(`${t('partners_save_failed')} — ${error.message}`, 'error');
+      // Row write failed after a fresh upload: clean up the now-orphaned
+      // object (best-effort) instead of leaving it to accumulate on retry.
+      if (pendingFile && image_path !== oldImagePath) {
+        db.storage.from(BUCKET).remove([image_path])
+          .catch(e => console.warn('orphaned image cleanup failed:', e));
+      }
       return;
     }
 
@@ -241,4 +257,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // admin-i18n.js calls this after a language switch.
-function rerenderPage() { renderTable(); }
+function rerenderPage() {
+  renderTable();
+  if (document.getElementById('partner-form').style.display !== 'none') {
+    document.getElementById('partner-form-title').textContent = t(editingId ? 'partners_form_edit' : 'partners_form_add');
+  }
+}
