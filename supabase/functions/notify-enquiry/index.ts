@@ -50,6 +50,12 @@ serve(async (req) => {
         ).join("\n")
       : null;
 
+    const partnersText = Array.isArray(record.partner_interest) && record.partner_interest.length
+      ? record.partner_interest.map((p: { name: string; category: string }) =>
+          `  - ${p.name} (${p.category === "catering" ? "catering" : "artist"})`
+        ).join("\n")
+      : null;
+
     const timeLabel = record.time_of_day === "day"
       ? "Daytime (until 17:30)"
       : "Evening (after 19:00)";
@@ -76,6 +82,7 @@ serve(async (req) => {
       "",
       ...(addonsText ? ["━━━━━━━━━━━━━━━━━━━━━━━━━━━━", "", "Add-on services:", addonsText, ""] : []),
       ...(drinksText ? ["━━━━━━━━━━━━━━━━━━━━━━━━━━━━", "", "Drinks:", drinksText, ""] : []),
+      ...(partnersText ? ["━━━━━━━━━━━━━━━━━━━━━━━━━━━━", "", "Partner interest (no charge):", partnersText, ""] : []),
       ...(record.notes ? ["━━━━━━━━━━━━━━━━━━━━━━━━━━━━", "", "Notes:", record.notes, ""] : []),
       "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
       "",

@@ -14,6 +14,7 @@ type Enquiry = {
   guests: number | null;
   addons: Array<{ id: string; name: string; price: number }> | null;
   drinks: Array<{ id: string; name: string; qty: number; price_eur?: number | null }> | null;
+  partner_interest?: Array<{ id: string; name: string; category: string }> | null;
   payment_method: string;
   notes: string | null;
   applied_discount_percent?: number | null;
@@ -148,6 +149,10 @@ export function renderCustomerEmail(e: Enquiry, siteUrl: string): { subject: str
     return `<tr><td style="${rowCell}">${esc(d.name)}</td><td style="${rowPrice}">${lineLabel}</td></tr>`;
   }).join("");
 
+  const partnerRows = (e.partner_interest ?? []).map(p =>
+    `<tr><td style="${rowCell}">${esc(p.name)}</td><td style="${rowPrice}">${p.category === "catering" ? "Кетъринг" : "Артист"}</td></tr>`
+  ).join("");
+
   const totals = computeTotals(e);
   const totalLabel = `padding:8px 0;font:14px/1.4 ${SANS};color:${SOFT}`;
   const totalValue = `padding:8px 0;font:italic 14px/1.4 ${SERIF};color:${GOLD};text-align:right;white-space:nowrap`;
@@ -260,6 +265,11 @@ export function renderCustomerEmail(e: Enquiry, siteUrl: string): { subject: str
         ${drinkRows ? `
         ${sectionTitle("Напитки")}
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 28px">${drinkRows}</table>` : ""}
+
+        ${partnerRows ? `
+        ${sectionTitle("Интерес към партньори")}
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 8px">${partnerRows}</table>
+        <p style="margin:0 0 28px;font:11px/1.5 ${SANS};color:${MUTED}">Безплатно и необвързващо — ще ви свържем с избраните партньори.</p>` : ""}
 
         ${e.notes ? `
         ${sectionTitle("Бележки")}
@@ -392,6 +402,9 @@ export function renderOwnerEmail(
       ? `  - ${d.name} × ${d.qty} — €${line.toFixed(2)}`
       : `  - ${d.name} × ${d.qty}`;
   }).join("\n");
+  const partnersText = (e.partner_interest ?? []).map(p =>
+    `  - ${p.name} (${p.category === "catering" ? "catering" : "artist"})`
+  ).join("\n");
   const timeLabel = e.arrival_time
     ? `Evening · arrival ${e.arrival_time}`
     : (e.time_of_day === "day" ? "Daytime (until 17:30)" : "Evening (after 19:00)");
@@ -450,6 +463,7 @@ export function renderOwnerEmail(
     "",
     ...(addonsText ? ["Add-on services:", addonsText, ""] : []),
     ...(drinksText ? ["Drinks:", drinksText, ""] : []),
+    ...(partnersText ? ["Partner interest (no charge):", partnersText, ""] : []),
     ...(e.notes ? ["Notes:", e.notes, ""] : []),
     ...totalsBlock,
     "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
