@@ -6,11 +6,11 @@
 
 // ── State ──
 let currentStep = 0;
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 7;
 // `addons` is keyed by svc.id; the value is the integer qty (0 = unselected).
 // Furniture items (freeUntil) and heater items have a typeable stepper; every
 // other addon behaves as a checkbox where qty toggles between 0 and 1.
-let booking = { event:null, date:'', time:'day', arrival_time:'', addons:{}, drinkQtys:{}, name:'', email:'', phone:'', guests:'', notes:'', payment:'cash' };
+let booking = { event:null, date:'', time:'day', arrival_time:'', addons:{}, drinkQtys:{}, partners:{}, name:'', email:'', phone:'', guests:'', notes:'', payment:'cash' };
 
 // Addons that use a +/- typeable qty input instead of an on/off toggle.
 // Physical inventory: 2 gas patio heaters, 1 gas heating table; glow_table caps at 10.
@@ -75,7 +75,8 @@ function goToStep(n) {
   if (n === 1) renderStep2VariantPicker();
   if (n === 2) renderAddons();
   if (n === 3) renderDrinks();
-  if (n === 5) renderSummary();
+  if (n === 4) renderPartners();
+  if (n === 6) renderSummary();
 }
 
 function updateProgress() {
@@ -502,6 +503,8 @@ function showDrinksPrompt() {
   prompt.style.display = 'flex';
 
   yesBtn.onclick = function() { prompt.style.display = 'none'; goToStep(3); };
+  // "Skip drinks" still lands on the Partners step (4) — skipping the drinks
+  // menu must not skip partners.
   noBtn.onclick = function() { prompt.style.display = 'none'; goToStep(4); };
 }
 
@@ -568,6 +571,102 @@ function updateDrinksTotal() {
   drinks.forEach(d => { if (d.price_eur) total += (booking.drinkQtys[d.id] || 0) * d.price_eur; });
   const el = document.getElementById('drinks-total-val');
   if (el) el.textContent = '€' + total.toFixed(2);
+}
+
+// ── Step 5: Partners (mark interest — non-binding, no price impact) ──
+// Fetched once per page load via the anon client; RLS exposes active rows
+// only. A fetch failure degrades to an empty step and NEVER blocks booking.
+let _partnersList = null;   // null = not loaded (yet); [] = loaded empty or failed
+
+async function loadPartners() {
+  try {
+    const { data, error } = await reservationDb
+      .from('partners')
+      .select('id, category, name, description_bg, description_en, image_path')
+      .order('sort_order', { ascending: true })
+      .order('name', { ascending: true });
+    if (error) { console.warn('Partners fetch error:', error.message); _partnersList = []; return; }
+    _partnersList = data || [];
+  } catch (err) {
+    console.warn('Partners fetch failed:', err);
+    _partnersList = [];
+  }
+  if (currentStep === 4) renderPartners();
+}
+
+function partnerImgUrl(path) {
+  return reservationDb.storage.from('partner-images').getPublicUrl(path).data.publicUrl;
+}
+
+function renderPartners() {
+  const l = getLang();
+  const wrap = document.getElementById('partners-wizard-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+
+  if (!_partnersList || !_partnersList.length) {
+    const note = document.createElement('p');
+    note.className = 'step-sub';
+    note.style.textAlign = 'center';
+    note.textContent = l === 'bg'
+      ? 'В момента няма партньори за показване — продължете напред.'
+      : 'No partners to show right now — please continue.';
+    wrap.appendChild(note);
+    return;
+  }
+
+  const CAT_LABELS = { catering: { bg: 'Кетъринг', en: 'Catering' }, artist: { bg: 'Артисти', en: 'Artists' } };
+  ['catering', 'artist'].forEach(cat => {
+    const inCat = _partnersList.filter(p => p.category === cat);
+    if (!inCat.length) return;
+
+    const h = document.createElement('h3');
+    h.className = 'free-included__title';
+    h.style.marginTop = '18px';
+    h.textContent = CAT_LABELS[cat][l];
+    wrap.appendChild(h);
+
+    const grid = document.createElement('div');
+    grid.className = 'addon-grid';
+    inCat.forEach(p => {
+      const selected = (booking.partners[p.id] || 0) > 0;
+      const item = document.createElement('label');
+      item.className = 'addon-item' + (selected ? ' selected' : '');
+      const input = document.createElement('input'); input.type = 'checkbox'; input.checked = selected;
+
+      const visual = document.createElement('div');
+      if (p.image_path) {
+        visual.className = 'addon-img';
+        const i = document.createElement('img');
+        i.src = partnerImgUrl(p.image_path); i.alt = ''; i.loading = 'lazy';
+        visual.appendChild(i);
+      } else {
+        visual.className = 'addon-emoji';
+        visual.textContent = cat === 'catering' ? '🍽️' : '🎤';
+        visual.setAttribute('aria-hidden', 'true');
+      }
+
+      const info = document.createElement('div'); info.className = 'addon-info';
+      const name = document.createElement('div'); name.className = 'addon-name'; name.textContent = p.name;
+      info.appendChild(name);
+      const desc = l === 'bg' ? p.description_bg : (p.description_en || p.description_bg);
+      if (desc) {
+        const d = document.createElement('div'); d.className = 'addon-hint'; d.textContent = desc;
+        info.appendChild(d);
+      }
+
+      const check = document.createElement('div'); check.className = 'addon-check'; check.setAttribute('aria-hidden', 'true'); check.textContent = '✓';
+
+      item.appendChild(input); item.appendChild(visual); item.appendChild(info); item.appendChild(check);
+      grid.appendChild(item);
+
+      item.addEventListener('change', () => {
+        booking.partners[p.id] = input.checked ? 1 : 0;
+        item.classList.toggle('selected', input.checked);
+      });
+    });
+    wrap.appendChild(grid);
+  });
 }
 
 // ── Step 5: Contact ──
@@ -812,7 +911,7 @@ function setupStep5() {
     booking.phone = `${dial?.value || '+359'} ${phone.value.trim().replace(/\D/g,'')}`;
     booking.guests = guests.value;
     booking.notes = document.getElementById('res-message')?.value.trim() || '';
-    goToStep(5);
+    goToStep(6);
   });
 }
 
@@ -843,6 +942,10 @@ function renderSummary() {
     { label: l==='bg'?'Три имена':'Name',  value: booking.name },
     { label: l==='bg'?'Имейл':'Email',     value: booking.email },
     { label: l==='bg'?'Телефон':'Phone',   value: booking.phone },
+    ...((_partnersList || []).some(p => booking.partners[p.id]) ? [{
+      label: l==='bg'?'Партньори (интерес)':'Partners (interest)',
+      value: (_partnersList || []).filter(p => booking.partners[p.id]).map(p => p.name).join(', '),
+    }] : []),
   ].forEach(row => {
     const div = document.createElement('div'); div.className = 'summary-row';
     const lbl = document.createElement('span'); lbl.className = 'sr-label'; lbl.textContent = row.label;
@@ -1027,6 +1130,7 @@ function setupSubmit() {
       guests: booking.guests ? parseInt(booking.guests, 10) : null,
       addons: addonsPayload,
       drinks: drinksPayload,
+      partner_ids: Object.keys(booking.partners).filter(id => booking.partners[id] > 0),
       payment_method: booking.payment,
       notes: booking.notes || null,
       marketing_consent: !!document.getElementById('res-marketing-consent')?.checked,
@@ -1117,7 +1221,7 @@ function setupSubmit() {
     } catch (e) { console.warn('gtag conversion failed:', e); }
 
     // Success — show confirmation
-    document.getElementById('step-5')?.classList.remove('active');
+    document.getElementById('step-6')?.classList.remove('active');
     document.querySelector('.wizard-progress').style.display = 'none';
     document.getElementById('form-success').style.display = 'block';
     window.scrollTo({ top: document.querySelector('.wizard-section').offsetTop - 90, behavior: 'smooth' });
@@ -1130,7 +1234,8 @@ document.addEventListener('langChange', () => {
   if (currentStep === 1) renderStep2VariantPicker();
   if (currentStep === 2) renderAddons();
   if (currentStep === 3) renderDrinks();
-  if (currentStep === 5) renderSummary();
+  if (currentStep === 4) renderPartners();
+  if (currentStep === 6) renderSummary();
   updatePreview();
   updateAddonsTotal();
   updateDrinksTotal();
@@ -1139,6 +1244,7 @@ document.addEventListener('langChange', () => {
 // ── Init ──
 document.addEventListener('DOMContentLoaded', async () => {
   await loadOccupiedDates();   // fetch occupied dates before flatpickr initialises
+  loadPartners();              // fire-and-forget — partners must never delay the wizard
   renderEventPicker();
   setupStep2();
   setupStep5();

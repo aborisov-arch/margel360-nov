@@ -128,10 +128,14 @@
           </button>
           <button class="wstep" data-step="4" role="listitem">
             <span class="wstep-num">5</span>
-            <span class="wstep-label" data-i18n="step5_label">Контакти</span>
+            <span class="wstep-label" data-i18n="stepP_label">Партньори</span>
           </button>
           <button class="wstep" data-step="5" role="listitem">
             <span class="wstep-num">6</span>
+            <span class="wstep-label" data-i18n="step5_label">Контакти</span>
+          </button>
+          <button class="wstep" data-step="6" role="listitem">
+            <span class="wstep-num">7</span>
             <span class="wstep-label" data-i18n="step6_label">Резюме</span>
           </button>
         </div>
@@ -207,8 +211,19 @@
           </div>
         </div>
 
-        <!-- Step 5: Contact -->
+        <!-- Step 5: Partners (mark interest — non-binding, no price impact) -->
         <div class="wizard-step" id="step-4">
+          <h2 class="step-heading" data-i18n="sP_title">Партньори</h2>
+          <p class="step-sub" data-i18n="sP_sub">Отбележете кетъринг или артисти, които ви интересуват — ще ви свържем с тях. Безплатно и необвързващо (по желание).</p>
+          <div id="partners-wizard-wrap"></div>
+          <div class="wizard-nav">
+            <button class="btn btn-outline" onclick="goToStep(3)" data-i18n="btn_back">Назад</button>
+            <button class="btn btn-primary" onclick="goToStep(5)" data-i18n="btn_next">Напред</button>
+          </div>
+        </div>
+
+        <!-- Step 5: Contact -->
+        <div class="wizard-step" id="step-5">
           <h2 class="step-heading" data-i18n="s5_title">Вашите данни</h2>
           <div class="form-wrapper">
             <div class="form-row">
@@ -243,13 +258,13 @@
             </div>
           </div>
           <div class="wizard-nav">
-            <button class="btn btn-outline" onclick="goToStep(3)" data-i18n="btn_back">Назад</button>
+            <button class="btn btn-outline" onclick="goToStep(4)" data-i18n="btn_back">Назад</button>
             <button class="btn btn-primary" id="btn-step5-next" data-i18n="btn_next">Напред</button>
           </div>
         </div>
 
         <!-- Step 6: Summary -->
-        <div class="wizard-step" id="step-5">
+        <div class="wizard-step" id="step-6">
           <h2 class="step-heading" data-i18n="s6_title">Преглед и изпращане</h2>
           <div class="summary-card" id="booking-summary"></div>
           <div class="price-summary" id="price-summary"></div>
@@ -291,7 +306,7 @@
                valid token. -->
           <div class="cf-turnstile" data-sitekey="0x4AAAAAADjSB9200ZicBIRp" data-language="auto" style="margin:18px 0 4px"></div>
           <div class="wizard-nav">
-            <button class="btn btn-outline" onclick="goToStep(4)" data-i18n="btn_back">Назад</button>
+            <button class="btn btn-outline" onclick="goToStep(5)" data-i18n="btn_back">Назад</button>
             <button class="btn btn-primary" id="btn-submit" data-i18n="res_submit">Изпрати запитване</button>
           </div>
         </div>
@@ -355,7 +370,7 @@
   <script src="js/reservation-supabase.js"></script>
   <script src="js/reservation-catalog.js?v=1"></script>
   <script src="js/drinks-data.js?v=5"></script>
-  <script src="js/reservation.js?v=19"></script>
+  <script src="js/reservation.js?v=20"></script>
   <a href="tel:+359888100042" class="fab-phone" aria-label="Обадете се"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg></a>
 </body>
 </html>
