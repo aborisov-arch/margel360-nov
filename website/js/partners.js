@@ -23,7 +23,7 @@ function partnerCard(p, lang) {
     img.loading = 'lazy';
     imgWrap.appendChild(img);
   } else {
-    imgWrap.style.cssText = 'display:flex;align-items:center;justify-content:center;font-size:2.6rem;background:#F6F1E8';
+    imgWrap.style.cssText = 'display:flex;align-items:center;justify-content:center;font-size:2.6rem;background:#F6F1E8;height:220px';
     imgWrap.textContent = p.category === 'catering' ? '🍽️' : '🎤';
     imgWrap.setAttribute('aria-hidden', 'true');
   }
@@ -43,18 +43,20 @@ function partnerCard(p, lang) {
   }
 
   if (p.website_url || p.phone) {
+    // Render-time guard: only http(s) URLs become a live link — website_url has no DB scheme constraint.
+    const safeUrl = p.website_url && /^https?:\/\//i.test(p.website_url) ? p.website_url : null;
     const contact = document.createElement('p');
     contact.className = 'service-card-price';
-    if (p.website_url) {
+    if (safeUrl) {
       const a = document.createElement('a');
-      a.href = p.website_url;
+      a.href = safeUrl;
       a.target = '_blank';
       a.rel = 'noopener';
       a.textContent = (typeof translations !== 'undefined' && translations[lang]?.partners_visit) || 'Посети сайта';
       contact.appendChild(a);
     }
     if (p.phone) {
-      if (p.website_url) contact.appendChild(document.createTextNode(' · '));
+      if (safeUrl) contact.appendChild(document.createTextNode(' · '));
       const tel = document.createElement('a');
       tel.href = 'tel:' + p.phone.replace(/[^\d+]/g, '');
       tel.textContent = p.phone;
