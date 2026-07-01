@@ -177,6 +177,12 @@ const SUPABASE_URL = 'https://wlxutsufrobzovdsiecb.supabase.co';
         const body = await r.json().catch(() => ({}));
         if (!r.ok) return show('state-not-found');
 
+        // Render the survey in the customer's booking language (from the
+        // enquiry), not the viewer's browser margel_lang. Falls back to the
+        // current language if the enquiry has none (older rows default 'bg').
+        const enqLang = body.enquiry && body.enquiry.lang;
+        if (enqLang === 'bg' || enqLang === 'en') { state.lang = enqLang; applyI18n(); }
+
         const ex = body.existing;
         if (ex) {
           state.experience = ex.experience_rating || 0;
