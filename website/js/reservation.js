@@ -669,7 +669,7 @@ function renderPartners() {
   });
 }
 
-// ── Step 5: Contact ──
+// ── Step 6: Contact ──
 
 // Country dial codes — ITU-T list (sovereign UN members + common territories).
 // `code` is the alpha-2 ISO code, `dial` includes the leading +, `flag` is the
@@ -915,7 +915,7 @@ function setupStep5() {
   });
 }
 
-// ── Step 6: Summary ──
+// ── Step 7: Summary ──
 function renderSummary() {
   const l = getLang();
   const container = document.getElementById('booking-summary');

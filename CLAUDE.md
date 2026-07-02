@@ -15,7 +15,7 @@ Full infrastructure inventory, accounts, secrets and the new-machine runbook: **
 
 - `website/` — public site (HTML/CSS/JS). Multi-page static; shared `style.css` and `main.js`. BG/EN i18n via per-page `translations-*.js` + `data-i18n` attributes + `localStorage` (`margel_lang`). `partners.html` + `js/partners.js` render the public partners catalog from the `partners` table (anon read).
 - `website/admin/` — internal admin panel (Supabase Auth + email allowlist): `dashboard` (enquiries CRM), `customers`, `calendar`, `feedback`, `marketing`, `partners` (public partners catalog CRUD + image upload to the `partner-images` storage bucket), `financials` (per-event P&L), `templates/offer-evening.xlsx`.
-- `website/js/reservation.js` — 6-step booking wizard; `edit.js` — customer magic-link edit page; `reservation-catalog.js` + `drinks-data.js` — the shared product catalog (also loaded by edit.html).
+- `website/js/reservation.js` — 7-step booking wizard; `edit.js` — customer magic-link edit page; `reservation-catalog.js` + `drinks-data.js` — the shared product catalog (also loaded by edit.html).
 - `supabase/` — migrations (canonical since `20260609120000`), Edge Functions, `_shared/` modules.
 - `docs/superpowers/` — original plans/specs; `docs/HANDOVER.md` — operations runbook.
 
