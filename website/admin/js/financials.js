@@ -788,7 +788,7 @@ function renderDetail() {
   // itemized list below (#pnl-drinks-lines); additional services are itemized
   // in #pnl-income-lines-services.
   const linesHtml = [
-    { lbl: 'Оферта (зала + гости)', field: 'income_rent_eur',   detail: null },
+    { lbl: 'Оферта (зала + гости)', field: 'income_rent_eur',   detail: null, discountable: true },
     { lbl: 'DJ',                     field: 'income_dj_eur',     detail: null },
     { lbl: 'Почистване',              field: 'income_employees_eur', detail: null },
     { lbl: 'Извънреден час (овъртайм)', field: 'income_overtime_eur', detail: null, hoursField: 'income_overtime_hours', rateField: 'income_overtime_rate_eur', computed: true },
@@ -837,6 +837,30 @@ function renderDetail() {
           </span>
         </li>
       `;
+    }
+    // Оферта: enquiry-linked rows get an inline hall-rent discount (%). The
+    // percent is stored on the ENQUIRY (applied_discount_percent - the same
+    // field promo codes and the dashboard control write), so offers, emails
+    // and the dashboard stay in sync; only the venue base is reduced and
+    // enquiryBreakdown re-derives the € amount. Manual rows (no linked
+    // enquiry / unknown event type) fall through to the plain € input.
+    if (r.discountable) {
+      const enq = fe && fe.enquiry_id ? allEnquiries.find(e => e.id === fe.enquiry_id) : null;
+      if (enq && EVENT_BASE[enq.event_id]) {
+        const pct = Number(enq.applied_discount_percent || 0);
+        return `
+        <li class="event-pnl__line event-pnl__line--editable event-pnl__line--discount">
+          <span class="event-pnl__line-lbl">${esc(r.lbl)}</span>
+          <span class="event-pnl__ot-calc">
+            <input type="number" step="1" min="0" max="100" id="pnl-discount-pct" class="event-pnl__line-input event-pnl__line-hours"
+                   value="${pct > 0 ? pct : ''}" placeholder="0" aria-label="Отстъпка от наема (%)" title="Отстъпка от наема (%)">
+            <span class="event-pnl__ot-op" aria-hidden="true">% =</span>
+            <input type="number" step="0.01" class="event-pnl__line-input"
+                   data-fe-field="${r.field}" value="${v ?? ''}" placeholder="€">
+          </span>
+        </li>
+      `;
+      }
     }
     return `
       <li class="event-pnl__line event-pnl__line--editable${expandable ? ' is-expandable' : ''}${open ? ' is-open' : ''}"${expandedAttr}>
@@ -1041,6 +1065,42 @@ function setFeDirty(field, raw) {
   // focus after every keystroke.
   updateDetailTotals();
 }
+// Оферта discount (%) on an enquiry-linked P&L row. Persists the percent to
+// the enquiry immediately (applied_discount_percent - shared with promo codes
+// and the dashboard control), then recomputes the Оферта € via
+// enquiryBreakdown and drops it into the dirty draft; the page's normal
+// Запази flow persists the row like any other edit.
+async function applyRentDiscount(inp) {
+  const sel = currentSelection();
+  const fe = sel?.fe;
+  const enq = fe?.enquiry_id ? allEnquiries.find(e => e.id === fe.enquiry_id) : null;
+  if (!enq) return;
+  const raw = String(inp.value).trim();
+  const num = raw === '' ? 0 : Number(raw);
+  if (!Number.isInteger(num) || num < 0 || num > 100) {
+    showToast('Въведете цяло число 0-100.', 'error');
+    const prev = Number(enq.applied_discount_percent || 0);
+    inp.value = prev > 0 ? prev : '';
+    return;
+  }
+  const value = num > 0 ? num : null;
+  const { error } = await db.from('enquiries')
+    .update({ applied_discount_percent: value })
+    .eq('id', enq.id);
+  if (error) {
+    console.error('Discount save failed:', error);
+    showToast('Отстъпката не се записа.', 'error');
+    return;
+  }
+  enq.applied_discount_percent = value;
+  const rent = enquiryBreakdown(enq).rent;
+  dirtyFe.income_rent_eur = rent;
+  const rentInput = document.querySelector('.event-pnl__line-input[data-fe-field="income_rent_eur"]');
+  if (rentInput) rentInput.value = rent;
+  updateDetailTotals();
+  showToast(value ? `Отстъпка ${value}% върху офертата.` : 'Отстъпката е премахната.', 'success');
+}
+
 function setExpenseDirty(id, field, raw) {
   let value = raw;
   if (field === 'amount_eur') value = raw === '' ? 0 : Number(raw);
@@ -1552,6 +1612,9 @@ document.addEventListener('input', evt => {
 });
 
 document.addEventListener('change', evt => {
+  // Оферта discount (%) - applies on blur/Enter, not per keystroke.
+  const pctInp = evt.target.closest('#pnl-discount-pct');
+  if (pctInp) { applyRentDiscount(pctInp); return; }
   // Drink catalog picker - swap the drink (and its live price) on the line.
   const drinkSel = evt.target.closest('[data-drink-f="select"]');
   if (drinkSel) {
