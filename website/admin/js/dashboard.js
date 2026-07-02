@@ -392,6 +392,41 @@ function bindTableHandlers() {
     }
   });
 
+  // Manual hall-rent discount (percent, venue base only - same scope as
+  // promo codes). Saved inline from the totals block; 0 or empty clears it.
+  // An existing discount code label is kept - only the percent changes.
+  tbody.addEventListener('click', async evt => {
+    const btn = evt.target.closest('.btn-discount-save');
+    if (!btn) return;
+    const id = btn.getAttribute('data-enquiry-id');
+    const enquiry = allEnquiries.find(x => String(x.id) === String(id));
+    const inp = btn.closest('.detail-totals')?.querySelector('.discount-input');
+    if (!enquiry || !inp) return;
+    const raw = inp.value.trim();
+    const num = raw === '' ? 0 : Number(raw);
+    if (!Number.isInteger(num) || num < 0 || num > 100) {
+      showToast(t('discount_invalid'), 'error');
+      inp.style.outline = '2px solid #c62828';
+      setTimeout(() => { inp.style.outline = ''; }, 1500);
+      return;
+    }
+    btn.disabled = true;
+    const value = num > 0 ? num : null;
+    const { error } = await db.from('enquiries')
+      .update({ applied_discount_percent: value })
+      .eq('id', id);
+    btn.disabled = false;
+    if (error) {
+      console.error('Discount save failed:', error);
+      showToast(t('discount_save_failed'), 'error');
+      return;
+    }
+    enquiry.applied_discount_percent = value;
+    const totalsEl = btn.closest('tr.detail-row')?.querySelector('.detail-totals');
+    if (totalsEl) totalsEl.outerHTML = renderTotals(enquiry);
+    showToast(t('discount_saved'), 'success');
+  });
+
   // CRM: add note (form submit)
   tbody.addEventListener('submit', async evt => {
     const form = evt.target.closest('.crm-notes__form');
@@ -921,6 +956,13 @@ function renderTotals(e) {
       ${totals.extraGuests > 0 ? row(`+${totals.extraGuests} допълнителни гости <span style="color:#888;font-size:0.78rem">(× €${EXTRA_GUEST_FEE_EUR})</span>`, totals.extraGuestsCost) : ''}
       ${totals.addons ? row(t('total_addons'), totals.addons) : ''}
       ${totals.drinks ? row(t('total_drinks'), totals.drinks) : ''}
+      <div class="total-row" style="align-items:center">
+        <span>${t('discount_edit_label')}${e.applied_discount_code ? ` <span style="color:#888;font-size:0.78rem">(${esc(e.applied_discount_code)})</span>` : ''}</span>
+        <span style="display:flex;gap:6px;align-items:center">
+          <input type="number" class="discount-input" value="${totals.discountPercent > 0 ? totals.discountPercent : ''}" min="0" max="100" step="1" inputmode="numeric" placeholder="0" aria-label="${t('discount_edit_label')}" style="width:64px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;text-align:right">
+          <button type="button" class="btn btn-outline btn-sm btn-discount-save" data-enquiry-id="${esc(e.id)}">${t('discount_save')}</button>
+        </span>
+      </div>
       ${totals.discount > 0 ? `
       <div class="total-row" style="color:#2F8F4F">
         <span>${t('total_discount')} (${totals.discountPercent}%)</span>
