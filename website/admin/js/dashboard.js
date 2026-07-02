@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const wrapEl    = document.getElementById('enquiries-wrap');
 
   const [{ data: enquiries, error }, { data: notes, error: notesErr }] = await Promise.all([
-    db.from('enquiries').select('*').order('created_at', { ascending: false }),
+    db.from('enquiries').select('*').order('created_at', { ascending: false }).limit(1000), // cap: most-recent 1000 (M-3)
     db.from('enquiry_notes').select('*').order('created_at', { ascending: false }),
   ]);
 
@@ -682,7 +682,14 @@ function bindTableHandlers() {
         sendBtn.textContent = t('btn_send_offer_again');
       } catch (err) {
         console.error('Send offer failed:', err);
-        showToast(t('send_offer_failed'), 'error');
+        // Surface the edge function's real reason (e.g. the Resend error) so
+        // the failure isn't just a generic message.
+        let detail = '';
+        try {
+          const b = err && err.context && (await err.context.json());
+          if (b) detail = [b.error, b.resend_status, b.detail].filter(Boolean).join(' · ');
+        } catch (_) { /* response body not readable */ }
+        showToast(detail ? `${t('send_offer_failed')} — ${detail}` : t('send_offer_failed'), 'error');
         sendBtn.textContent = enquiry.offer_sent_at ? t('btn_send_offer_again') : t('btn_send_offer');
       } finally {
         sendBtn.disabled = false;
@@ -857,7 +864,7 @@ function bindTableHandlers() {
 // update-enquiry-admin).
 const NON_ALCOHOLIC_DRINK_IDS = new Set([
   'granini_a', 'granini_o', 'tonic_mango', 'tonic_cherry', 'sanben_tea_lem5', 'sanben_tea_lem3', 'sanben_tea_peach', 'cola', 'cola0', 'fanta', 'redbull',
-  'benedo_st', 'benedo_spa', 'perrier_st', 'perrier_spa', 'panna25', 'panna75', 'pelegrino75', 'pelegrino',
+  'benedo_spa', 'perrier_st', 'perrier_spa', 'panna25', 'panna50', 'panna75', 'pelegrino75', 'pelegrino',
 ]);
 function maxDrinkQty(id) { return NON_ALCOHOLIC_DRINK_IDS.has(id) ? 200 : 100; }
 

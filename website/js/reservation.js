@@ -1265,3 +1265,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 });
+
+
+// CSP-safe replacement for the former inline onclick handlers (data-goto / data-action).
+document.addEventListener('click', function (e) {
+  var g = e.target.closest && e.target.closest('[data-goto]');
+  if (g) { goToStep(Number(g.getAttribute('data-goto'))); return; }
+  var a = e.target.closest && e.target.closest('[data-action="drinks-prompt"]');
+  if (a) { showDrinksPrompt(); return; }
+});

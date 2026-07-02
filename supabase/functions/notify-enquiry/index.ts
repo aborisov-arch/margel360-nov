@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 
 // notify-enquiry is fired by the database webhook on INSERT into
 // enquiries. The webhook is configured in the Supabase dashboard with

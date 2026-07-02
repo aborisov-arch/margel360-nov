@@ -9,27 +9,22 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Manrope:wght@300..800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/venue.css?v=1">
-  <!-- Google tag (gtag.js) — Consent Mode v2 defaults to denied: no
-       cookies are set without consent; Google Ads still receives
-       cookieless conversion pings (modeled attribution). -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-KV38TVL9VM"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('consent', 'default', {
-      ad_storage: 'denied', ad_user_data: 'denied',
-      ad_personalization: 'denied', analytics_storage: 'denied'
-    });
-    gtag('js', new Date());
-    gtag('config', 'G-KV38TVL9VM');
-    gtag('config', 'AW-17875820737');
-  </script>
+  <!-- Consent Mode v2 default (denied), set before GTM fires any tag.
+       GA4 + Google Ads are now fired by GTM (GTM-5FFZHPPP), not directly here. -->
+  
   <link rel="icon" href="/favicon.ico" sizes="48x48">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link rel="icon" type="image/png" sizes="192x192" href="/assets/favicon-192.png">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <!-- Google Tag Manager -->
+  <script src="js/analytics-init.js?v=1"></script>
+  <!-- End Google Tag Manager -->
 </head>
 <body class="venue">
+  <!-- Google Tag Manager (noscript) -->
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5FFZHPPP"
+  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  <!-- End Google Tag Manager (noscript) -->
 
   <div class="venue__container">
 
@@ -120,5 +115,6 @@
   </div>
 
   <script src="js/booking.js?v=1"></script>
+  <script src="js/cookie-consent.js" defer></script>
 </body>
 </html>

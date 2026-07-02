@@ -59,7 +59,7 @@ const drinks = [
   { id:'fanta',          cat:3, name_bg:'Fanta Портокал 0.33л',                  name_en:'Fanta Orange 0.33L',                 price_eur:1.07,   img:'assets/images/drinks/fanta.png' },
   { id:'redbull',        cat:3, name_bg:'Red Bull 0.355л',                       name_en:'Red Bull 0.355L',                    price_eur:1.59,   img:'assets/images/drinks/red-bull.png' },
   // Water
-  { id:'benedo_st',      cat:4, name_bg:'San Benedetto минерална 0.5л',          name_en:'San Benedetto still 0.5L',           price_eur:0.82,   img:'assets/images/drinks/san-benedetto-still.png' },
+  { id:'panna50',        cat:4, name_bg:'Aqua Panna 0.5л',                       name_en:'Aqua Panna 0.5L',                    price_eur:1.00,   img:'assets/images/drinks/aqua-panna-75.png' },
   { id:'benedo_spa',     cat:4, name_bg:'San Benedetto газирана 0.5л',           name_en:'San Benedetto sparkling 0.5L',       price_eur:0.82,   img:'assets/images/drinks/san-benedetto-sparkling.png' },
   { id:'perrier_st',     cat:4, name_bg:'Perrier Минерална вода 0.33л',          name_en:'Perrier Mineral Water 0.33L',        price_eur:1.23,   img:'assets/images/drinks/perrier-still.png' },
   { id:'perrier_spa',    cat:4, name_bg:'Perrier Газирана минерална 0.33л',      name_en:'Perrier Sparkling Mineral 0.33L',    price_eur:1.64,   img:'assets/images/drinks/perrier-sparkling.png' },
