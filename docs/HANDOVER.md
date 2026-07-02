@@ -8,7 +8,7 @@ Last verified against live infrastructure: **2026-06-12**. Companion to [CLAUDE.
 |---|---|---|
 | **GitHub** | This repo — the single source of truth for all code, migrations and docs | `aborisov-arch/margel360-nov` |
 | **Netlify** | Hosting + domain margel360.bg, auto-deploys `main`, security headers/CSP via `netlify.toml` | site `margell360.netlify.app` |
-| **Supabase** | Postgres, Auth (admin logins), 11 Edge Functions, secrets, pg_cron | project ref `wlxutsufrobzovdsiecb`, org `osfsbjycyufbpvhxkvxr`, eu-central-1 |
+| **Supabase** | Postgres, Auth (admin logins), 17 Edge Functions, Storage (`partner-images` bucket), secrets, pg_cron | project ref `wlxutsufrobzovdsiecb`, org `osfsbjycyufbpvhxkvxr`, eu-central-1 |
 | **Cloudflare** | Turnstile CAPTCHA widget (account only — DNS is NOT on Cloudflare) | widget for margel360.bg / www / margell360.netlify.app, Managed mode |
 | **Resend** | Transactional email, sender domain margel360.bg | sender `Margel360 <enquiries@margel360.bg>` |
 
@@ -88,8 +88,9 @@ Deploy command and the verify_jwt rule: see CLAUDE.md → Deploying.
 
 ## 6. Database snapshot
 
-- Tables: `enquiries` (+ `enquiry_number_seq` starting 1001), `enquiry_notes`, `enquiry_edit_log`, `enquiry_status_log` (pipeline transition history — feeds the weekly KPI won/lost), `event_feedback`, `discount_codes`, `financial_events`, `financial_expenses`, `occupied_dates`, `rate_limits`.
-- RLS: everything admin-facing behind `is_admin()`; anon may only SELECT `occupied_dates`; `rate_limits` service-role only.
+- Tables: `enquiries` (+ `enquiry_number_seq` starting 1001; `partner_interest` jsonb holds the wizard's mark-interest snapshot), `enquiry_notes`, `enquiry_edit_log`, `enquiry_status_log` (pipeline transition history — feeds the weekly KPI won/lost), `event_feedback`, `discount_codes`, `financial_events`, `financial_expenses`, `occupied_dates`, `partners` (catering/artist catalog — drives partners.html, the wizard step and admin/partners.html), `rate_limits`.
+- RLS: everything admin-facing behind `is_admin()`; anon may only SELECT `occupied_dates` and **active** `partners` rows; `rate_limits` service-role only.
+- Storage: bucket `partner-images` (public read via CDN URL; writes gated on `is_admin()`; 5 MB cap, jpeg/png/webp) — partner card images uploaded from admin/partners.html; `partners.image_path` stores the object path.
 - Triggers on `enquiries`: `enquiries_auto_block_date_trigger` (confirmed/completed → block date), `trg_set_enquiry_token_expiry` (token = created + 14 days), `enquiries_log_status_change_trigger` (every pipeline_status change → row in `enquiry_status_log`; SECURITY DEFINER so admin dashboard updates can write it).
 - Trigger on `enquiry_notes`: `enquiry_notes_advance_status_trigger` → `advance_on_first_admin_note()` advances a `new` enquiry to `contacted` when an admin (non-`system` author) writes the first note. SECURITY DEFINER.
 - Offer-conversion loop lives in **send-event-reminders** (daily): `quoted` enquiries with `offer_sent_at` get a "still valid" nudge ~24h in (`offer_followup_sent_at`), then auto-flip to `lost` + system note once validity+grace lapses (`offer_expiry_handled_at`). Also nudges discount codes expiring within 7 days (`discount_codes.nudge_sent_at`).

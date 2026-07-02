@@ -7,7 +7,7 @@
   <title>Дневник — Маргел 360° Админ</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/admin.css?v=15">
+  <link rel="stylesheet" href="css/admin.css?v=16">
   <style>
     .activity-filters { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; margin:0 0 20px; padding:16px 20px; background:#fff; border:1px solid var(--border); border-radius:10px; box-shadow:0 1px 3px rgba(0,0,0,0.04); }
     .activity-filters label { display:flex; flex-direction:column; gap:4px; font-size:0.72rem; letter-spacing:0.1em; color:#888; text-transform:uppercase; font-weight:600; }
@@ -45,29 +45,30 @@
       <a href="customers.html" data-i18n="nav_customers">Клиенти</a>
       <a href="calendar.html" data-i18n="nav_calendar">Календар</a>
       <a href="feedback.html">Впечатления</a>
+      <a href="partners.html" data-i18n="nav_partners">Партньори</a>
       <a href="marketing.html" data-i18n="nav_marketing">Маркетинг</a>
       <a href="financials.html" data-i18n="nav_financials">Финанси</a>
-      <a href="activity.html" class="active">Дневник</a>
+      <a href="activity.html" class="active" data-i18n="nav_activity">Дневник</a>
     </nav>
     <div class="lang-toggle">
       <button class="lang-btn" data-lang="bg">БГ</button>
       <button class="lang-btn" data-lang="en">EN</button>
     </div>
-    <button class="btn btn-outline btn-sm" id="logout-btn">Изход</button>
+    <button class="btn btn-outline btn-sm" id="logout-btn" data-i18n="nav_logout">Изход</button>
   </header>
 
   <main class="admin-main">
     <div class="admin-container">
-      <h1 class="page-title">Дневник на промените</h1>
-      <p class="page-subtitle" style="color:#777;margin:-8px 0 18px;font-size:0.92rem">Кой какво е променил по финансите и запитванията. Само за собственици.</p>
-      <div id="loading" class="loading-state">Зареждане…</div>
-      <div id="no-access" class="no-access" style="display:none">Тази страница е достъпна само за собственици.</div>
+      <h1 class="page-title" data-i18n="activity_title">Дневник на промените</h1>
+      <p class="page-subtitle" style="color:#777;margin:-8px 0 18px;font-size:0.92rem" data-i18n="activity_sub">Кой какво е променил по финансите и запитванията. Само за собственици.</p>
+      <div id="loading" class="loading-state" data-i18n="activity_loading">Зареждане…</div>
+      <div id="no-access" class="no-access" style="display:none" data-i18n="activity_no_access">Тази страница е достъпна само за собственици.</div>
       <div id="content" style="display:none">
         <div class="activity-filters">
-          <label>Потребител
+          <label><span data-i18n="activity_f_user">Потребител</span>
             <select id="filter-user"><option value="">Всички</option></select>
           </label>
-          <label>Раздел
+          <label><span data-i18n="activity_f_section">Раздел</span>
             <select id="filter-table"><option value="">Всички</option></select>
           </label>
           <span class="count" id="activity-count"></span>
@@ -79,8 +80,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7" integrity="sha384-tD6X9wDfTRdKpuPoHFZrVW2RXjSYSWjLBPWXxpHprWWl9eaHlwl05aRjHsiKF97n" crossorigin="anonymous" defer></script>
   <script src="js/supabase-client.js?v=3" defer></script>
-  <script src="js/admin-i18n.js?v=13" defer></script>
+  <script src="js/admin-i18n.js?v=15" defer></script>
   <script src="js/auth.js?v=5" defer></script>
-  <script src="js/activity.js?v=1" defer></script>
+  <script src="js/activity.js?v=2" defer></script>
 </body>
 </html>
