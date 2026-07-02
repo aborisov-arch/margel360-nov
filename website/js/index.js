@@ -1,4 +1,4 @@
-// Events data — pricing and images from margel360.bg
+// Events data - pricing and images from margel360.bg
 // `detail` points at the dedicated sub-page where the longer description and
 // gallery live. The card on the home page links here; the sub-page links
 // onward to /reservation.html?event=<id>.
@@ -8,8 +8,8 @@ const events = [
     detail: 'evening.html',
     title_bg: 'Вечерно събитие',
     title_en: 'Evening Event',
-    desc_bg: 'Вечерно тържество след 19:00ч. в Маргел 360° — за незабравима вечер с приятели и семейство.',
-    desc_en: 'Evening celebration from 19:00 at Margel 360° — an unforgettable night with friends and family.',
+    desc_bg: 'Вечерно тържество след 19:00ч. в Маргел 360° - за незабравима вечер с приятели и семейство.',
+    desc_en: 'Evening celebration from 19:00 at Margel 360° - an unforgettable night with friends and family.',
     hours_bg: '5 часа',
     hours_en: '5 hours',
     price_bg: '€1280',
@@ -21,12 +21,12 @@ const events = [
     detail: 'corporate.html',
     title_bg: 'Корпоративно събитие',
     title_en: 'Corporate Event',
-    desc_bg: 'Корпоративни събития 8:00–17:30. Фирмено парти, семинар или обучение с пълна АВ техника.',
-    desc_en: 'Corporate events 8:00–17:30. Company party, seminar or training with full AV equipment.',
+    desc_bg: 'Корпоративни събития 8:00-17:30. Фирмено парти, семинар или обучение с пълна АВ техника.',
+    desc_en: 'Corporate events 8:00-17:30. Company party, seminar or training with full AV equipment.',
     hours_bg: '4 или 8 часа',
     hours_en: '4 or 8 hours',
-    price_bg: '€330 – €440',
-    price_en: '€330 – €440',
+    price_bg: '€330 - €440',
+    price_en: '€330 - €440',
     img: 'assets/images/event-corporate.jpg',
   },
   {
@@ -38,8 +38,8 @@ const events = [
     desc_en: 'Children\'s birthday, daytime or evening. Games, animation and mini-disco.',
     hours_bg: 'Дневно или вечерно',
     hours_en: 'Daytime or evening',
-    price_bg: '€700 – €970',
-    price_en: '€700 – €970',
+    price_bg: '€700 - €970',
+    price_en: '€700 - €970',
     img: 'assets/images/event-birthday.jpg',
   },
   {
@@ -47,8 +47,8 @@ const events = [
     detail: 'wedding.html',
     title_bg: 'Сватба',
     title_en: 'Wedding',
-    desc_bg: 'Магическа декорация в залата и тераса с изглед към Витоша — перфектна за вашия специален ден.',
-    desc_en: 'Magical décor in the hall and a terrace overlooking Vitosha — perfect for your special day.',
+    desc_bg: 'Магическа декорация в залата и тераса с изглед към Витоша - перфектна за вашия специален ден.',
+    desc_en: 'Magical décor in the hall and a terrace overlooking Vitosha - perfect for your special day.',
     hours_bg: '6 часа',
     hours_en: '6 hours',
     price_bg: '€1500',

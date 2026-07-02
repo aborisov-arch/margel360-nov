@@ -12,7 +12,7 @@ try {
         // Resolve against our own origin and only accept a result that
         // stays on it. The URL constructor normalises absolute URLs,
         // protocol-relative "//evil.com", and backslash / %5C tricks that
-        // a character-class regex can miss — anything off-origin falls
+        // a character-class regex can miss - anything off-origin falls
         // back to the dashboard. Path + query + hash are preserved so
         // /edit.html?token=… in admin mode still round-trips.
         try {
@@ -51,7 +51,7 @@ try {
         }
       });
 
-      // Forgot password — sends a Supabase recovery link to reset.html.
+      // Forgot password - sends a Supabase recovery link to reset.html.
       // Always shows the same neutral message (never reveals whether an
       // account exists for that email).
       document.getElementById('forgot-link').addEventListener('click', async () => {

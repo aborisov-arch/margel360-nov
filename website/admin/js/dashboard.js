@@ -208,7 +208,7 @@ function renderEnquiries(enquiries) {
     const tr = document.createElement('tr');
     if (isAnswered) tr.classList.add('row-answered');
     tr.innerHTML = `
-      <td><span class="enquiry-no">#${esc(e.enquiry_number ?? '—')}</span> ${esc(e.full_name)}</td>
+      <td><span class="enquiry-no">#${esc(e.enquiry_number ?? '-')}</span> ${esc(e.full_name)}</td>
       <td>${esc(e.phone)}</td>
       <td>${esc(e.event_type)}</td>
       <td>${esc(e.preferred_date)}</td>
@@ -236,7 +236,7 @@ function renderEnquiries(enquiries) {
         <div class="detail-panel">
           <div class="detail-grid">
             <div><strong>${t('detail_email')}:</strong> ${esc(e.email)}</div>
-            <div><strong>${t('detail_guests')}:</strong> ${e.guests != null ? esc(e.guests) : '—'}</div>
+            <div><strong>${t('detail_guests')}:</strong> ${e.guests != null ? esc(e.guests) : '-'}</div>
             <div><strong>${t('detail_time')}:</strong> ${e.arrival_time ? `${esc(e.arrival_time)} (${t('detail_time_eve')})` : (e.time_of_day === 'day' ? t('detail_time_day') : t('detail_time_eve'))}</div>
             <div><strong>${t('detail_payment')}:</strong> ${esc(e.payment_method)}</div>
           </div>
@@ -293,7 +293,7 @@ function bindTableHandlers() {
   if (!tbody || tbody.dataset.bound === '1') return;
   tbody.dataset.bound = '1';
 
-  // CRM: pipeline stage dropdown — save on change
+  // CRM: pipeline stage dropdown - save on change
   tbody.addEventListener('change', async evt => {
     const sel = evt.target.closest('.crm-stage-select');
     if (sel) {
@@ -352,7 +352,7 @@ function bindTableHandlers() {
     if (!enquiry || !Array.isArray(enquiry.drinks) || !enquiry.drinks[idx]) return;
 
     // Clamp to the same per-category caps the server enforces on customer
-    // edits (100 alcoholic / 200 non-alcoholic) — a 999 value written here
+    // edits (100 alcoholic / 200 non-alcoholic) - a 999 value written here
     // via direct REST made the customer's own edit page unsavable.
     const prev = Number(enquiry.drinks[idx].qty) || 0;
     const next = Math.max(0, Math.min(maxDrinkQty(enquiry.drinks[idx].id), Math.floor(Number(inp.value) || 0)));
@@ -487,7 +487,7 @@ function bindTableHandlers() {
       const newStatus   = wasAnswered ? 'new' : 'answered';
       const isNowAnswered = newStatus === 'answered';
 
-      // ── Optimistic UI update — apply immediately ──
+      // ── Optimistic UI update - apply immediately ──
       const detailRow  = statusBtn.closest('tr.detail-row');
       const summaryRow = detailRow.previousElementSibling;
 
@@ -503,7 +503,7 @@ function bindTableHandlers() {
       statusBtn.textContent = isNowAnswered ? t('btn_mark_new') : t('btn_mark_answered');
       statusBtn.disabled    = true;
 
-      // ── Persist to Supabase — revert on failure ──
+      // ── Persist to Supabase - revert on failure ──
       const { error } = await db
         .from('enquiries')
         .update({ status: newStatus })
@@ -537,7 +537,7 @@ function bindTableHandlers() {
       if (!isVisibleAfter) renderEnquiries(applyStatusFilter(allEnquiries));
     }
 
-    // Edit payment — switch to edit mode
+    // Edit payment - switch to edit mode
     const editPayBtn = evt.target.closest('.btn-edit-payment');
     if (editPayBtn) {
       const wrap = editPayBtn.closest('.payment-tracking');
@@ -548,7 +548,7 @@ function bindTableHandlers() {
       return;
     }
 
-    // Cancel payment edit — revert to view mode, restore fields from cache
+    // Cancel payment edit - revert to view mode, restore fields from cache
     const cancelPayBtn = evt.target.closest('.btn-cancel-payment');
     if (cancelPayBtn) {
       const id = cancelPayBtn.getAttribute('data-id');
@@ -613,7 +613,7 @@ function bindTableHandlers() {
       return;
     }
 
-    // Export offer — generate populated .xlsx for download.
+    // Export offer - generate populated .xlsx for download.
     const exportBtn = evt.target.closest('.btn-export-offer');
     if (exportBtn) {
       const id = exportBtn.getAttribute('data-id');
@@ -639,7 +639,7 @@ function bindTableHandlers() {
       return;
     }
 
-    // Send offer — build the same .xlsx in the browser, then hand it to the
+    // Send offer - build the same .xlsx in the browser, then hand it to the
     // send-offer edge function (admin JWT carried by db.functions.invoke) which
     // emails the customer a branded cover note with the spreadsheet attached.
     const sendBtn = evt.target.closest('.btn-send-offer');
@@ -669,7 +669,7 @@ function bindTableHandlers() {
         enquiry.offer_sent_at = data.offer_sent_at;
         showToast(t('send_offer_ok').replace('{email}', data.sent_to || toEmail), 'success');
         // Live UI update: add the offer-sent badge to the summary row (if not
-        // already there) and relabel the button — no re-render needed.
+        // already there) and relabel the button - no re-render needed.
         const summaryRow = sendBtn.closest('tr.detail-row')?.previousElementSibling;
         const statusCell = summaryRow?.querySelector('.status-badge')?.parentElement;
         if (statusCell && !statusCell.querySelector('.offer-sent')) {
@@ -689,7 +689,7 @@ function bindTableHandlers() {
           const b = err && err.context && (await err.context.json());
           if (b) detail = [b.error, b.resend_status, b.detail].filter(Boolean).join(' · ');
         } catch (_) { /* response body not readable */ }
-        showToast(detail ? `${t('send_offer_failed')} — ${detail}` : t('send_offer_failed'), 'error');
+        showToast(detail ? `${t('send_offer_failed')} - ${detail}` : t('send_offer_failed'), 'error');
         sendBtn.textContent = enquiry.offer_sent_at ? t('btn_send_offer_again') : t('btn_send_offer');
       } finally {
         sendBtn.disabled = false;
@@ -697,7 +697,7 @@ function bindTableHandlers() {
       return;
     }
 
-    // Delete enquiry — destructive, requires confirmation. Cleans up the
+    // Delete enquiry - destructive, requires confirmation. Cleans up the
     // linked occupied_dates row too so the calendar doesn't keep a ghost.
     const delBtn = evt.target.closest('.btn-delete-enquiry');
     if (delBtn) {
@@ -748,7 +748,7 @@ function bindTableHandlers() {
       return;
     }
 
-    // Lock toggle button — optimistic in-place update; do NOT re-render
+    // Lock toggle button - optimistic in-place update; do NOT re-render
     // (renderEnquiries re-binds the tbody click listener, stacking handlers).
     const lockBtn = evt.target.closest('.btn-lock');
     if (lockBtn) {
@@ -762,7 +762,7 @@ function bindTableHandlers() {
       lockBtn.disabled = true;
       // "Потвърди резервация" now means: lock customer edits AND flip the
       // pipeline stage to 'confirmed' (so the auto-block-date trigger
-      // marks the calendar). Undoing rolls the stage back to 'new' — we
+      // marks the calendar). Undoing rolls the stage back to 'new' - we
       // don't try to remember the previous stage, since the explicit
       // pipeline dropdown above is the place to set anything finer.
       const patch = newLocked
@@ -897,7 +897,7 @@ function computeTotals(e) {
   const drinks = (e.drinks || []).reduce(
     (sum, d) => sum + (Number(d?.price_eur) || 0) * (Number(d?.qty) || 0), 0,
   );
-  // Discount applies to the venue base only — same scope as the public
+  // Discount applies to the venue base only - same scope as the public
   // wizard's summary and the financials prefill.
   const discountPercent = Number(e.applied_discount_percent || 0);
   const discount = discountPercent > 0 ? venue * discountPercent / 100 : 0;
@@ -978,7 +978,7 @@ function renderPaymentTracking(e) {
 }
 
 function esc(str) {
-  if (str == null) return '—';
+  if (str == null) return '-';
   return String(str)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -987,7 +987,7 @@ function esc(str) {
 }
 
 function fmtDate(iso) {
-  if (!iso) return '—';
+  if (!iso) return '-';
   return new Date(iso).toLocaleDateString('en-GB', {
     day: '2-digit', month: '2-digit', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
@@ -998,8 +998,8 @@ function fmtAddons(addons) {
   if (!Array.isArray(addons) || !addons.length) return '';
   const items = addons.map(a => {
     const price = Number(a?.price);
-    const priceStr = Number.isFinite(price) ? addonPriceEur(a?.id, price).toFixed(2) : '—';
-    return `<li>${esc(a?.name)} — €${priceStr}</li>`;
+    const priceStr = Number.isFinite(price) ? addonPriceEur(a?.id, price).toFixed(2) : '-';
+    return `<li>${esc(a?.name)} - €${priceStr}</li>`;
   }).join('');
   return `<div class="detail-section"><strong>${t('detail_addons')}:</strong><ul>${items}</ul></div>`;
 }

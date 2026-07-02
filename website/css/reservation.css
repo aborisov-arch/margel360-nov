@@ -46,7 +46,7 @@
 .step-sub { color: var(--text-muted); margin-bottom: 28px; font-size: 0.92rem; }
 
 /* ── Step 1: Event picker ── */
-/* Vertical stack — one event per row. Each row is an anchor to the event
+/* Vertical stack - one event per row. Each row is an anchor to the event
    sub-page (evening.html / wedding.html / etc.), where the "Резервирай" CTA
    sends the customer back to /reservation.html?event=ID. */
 .event-picker { display: flex; flex-direction: column; gap: 16px; }
@@ -343,7 +343,7 @@
 }
 .qty-btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
 .qty-num { font-size: 0.9rem; font-weight: 700; color: var(--text); min-width: 20px; text-align: center; }
-/* Typeable qty input for drinks — keep the +/− buttons; the input lets
+/* Typeable qty input for drinks - keep the +/− buttons; the input lets
    guests type a larger number (e.g. 24 bottles) without clicking + 24 times. */
 .qty-num--input {
   width: 44px; min-width: 44px; height: 26px;
@@ -465,7 +465,7 @@
 
   /* Event picker now uses .event-pick-row; mobile tweaks already handled in the row block above. */
 
-  /* Time options — side-by-side but compact */
+  /* Time options - side-by-side but compact */
   .time-options { gap: 10px; }
   .time-option-card { padding: 14px 10px; font-size: 0.82rem; gap: 6px; }
   .time-icon { font-size: 1.5rem; }
@@ -484,7 +484,7 @@
   .drinks-tabs { gap: 6px; margin-bottom: 16px; }
   .drinks-tab { padding: 6px 12px; font-size: 0.75rem; }
 
-  /* Drinks grid — 2 columns */
+  /* Drinks grid - 2 columns */
   .drinks-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
   .drink-item img { height: 90px; padding: 6px; }
   .drink-body { padding: 8px; }
@@ -516,7 +516,7 @@
   .payment-options { gap: 8px; }
   .payment-option span { padding: 8px 14px; font-size: 0.82rem; }
 
-  /* Wizard nav — full width */
+  /* Wizard nav - full width */
   .wizard-nav { flex-direction: column-reverse; gap: 10px; margin-top: 20px; }
   .wizard-nav .btn-outline,
   .wizard-nav .btn-primary { width: 100%; margin-left: 0; text-align: center; justify-content: center; padding: 14px; }
@@ -597,7 +597,7 @@ span.flatpickr-weekday { color: var(--text-muted); font-size: 0.75rem; font-weig
 
 .numInputWrapper:hover { background: var(--bg-2); }
 
-/* Flatpickr — full width and readable on mobile */
+/* Flatpickr - full width and readable on mobile */
 @media (max-width: 600px) {
   .flatpickr-calendar { width: calc(100vw - 32px) !important; left: 16px !important; right: 16px !important; }
   .flatpickr-day { height: 36px; line-height: 36px; }

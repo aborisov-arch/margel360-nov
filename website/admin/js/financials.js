@@ -1,4 +1,4 @@
-// Financials — per-event P&L.
+// Financials - per-event P&L.
 //
 // Single source of truth: the financial_events + financial_expenses rows
 // that the bookkeeper saves. The enquiry is used only to PRE-FILL the
@@ -38,7 +38,7 @@ const INCOME_SERVICE_CATS = [
   { id: 'other',         label: 'Други' },
 ];
 
-// Expense categories — the 7 income buckets plus running-cost essentials.
+// Expense categories - the 7 income buckets plus running-cost essentials.
 // Kept in sync with the CHECK constraint on financial_expenses.category.
 const EXPENSE_CATS = [
   { id: 'photo_video',   label: 'Фото / Видео' },
@@ -62,7 +62,7 @@ function esc(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 function fmtDateBg(iso) {
-  if (!iso) return '—';
+  if (!iso) return '-';
   const [y, m, d] = iso.split('-');
   return `${d}.${m}.${y}`;
 }
@@ -139,7 +139,7 @@ function isDirty() {
 }
 
 // All financial_events that are NOT reachable through the enquiry list:
-// hand-entered rows (no enquiry link — back-fills, walk-ins, cash bookings)
+// hand-entered rows (no enquiry link - back-fills, walk-ins, cash bookings)
 // PLUS rows whose enquiry has since left confirmed/completed (e.g. the
 // admin unlocked it on the dashboard). Without the second group those
 // orphaned rows kept inflating the month KPIs while being impossible to
@@ -177,7 +177,7 @@ function currentSelection() {
 function clearSelection() { selectedEnquiryId = null; selectedManualFeId = null; }
 
 // ────────────────────────────────────────────────────────────────
-// Saved-state accessors — used by the summary + left rail. They
+// Saved-state accessors - used by the summary + left rail. They
 // intentionally read ONLY from financial_events / financial_expenses
 // rows, never from the enquiry, so the summary reflects what the
 // employee saved.
@@ -297,7 +297,7 @@ async function ensureFinancialEvent(enquiry) {
   const iso = parsePreferredDate(enquiry.preferred_date);
   const month = iso ? iso.slice(0, 7) : null;
   // Paid-by-customer prefill: the Bank/Cash/Card amounts marked on the enquiry
-  // (Enquiries section). They go into the deposit buckets — the enquiry has no
+  // (Enquiries section). They go into the deposit buckets - the enquiry has no
   // deposit/balance split, and the bookkeeper can reclassify before saving.
   const pt = enquiry.payment_tracking || {};
   const ptAmt = (k) => { const n = parseFloat(pt[k]); return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : 0; };
@@ -340,7 +340,7 @@ async function ensureFinancialEvent(enquiry) {
 // ────────────────────────────────────────────────────────────────
 
 function renderMonthSummary() {
-  // Iterate EVERY financial_event in the month filter — enquiry-linked
+  // Iterate EVERY financial_event in the month filter - enquiry-linked
   // AND manual. This is the right scope because the summary should
   // reflect "money I actually saw this month", regardless of whether
   // each event came from the public form or a hand entry.
@@ -447,13 +447,13 @@ function renderEventsList(filter = '') {
   const cnt  = document.getElementById('events-list-count');
   const needle = filter.trim().toLowerCase();
 
-  // Section 1 — enquiry-linked events (from public form).
+  // Section 1 - enquiry-linked events (from public form).
   const monthScopedEnq = filteredEvents();
   const enqMatches = needle
     ? monthScopedEnq.filter(e => (e.full_name || '').toLowerCase().includes(needle))
     : monthScopedEnq;
 
-  // Section 2 — manual events (bookkeeper-entered, no enquiry).
+  // Section 2 - manual events (bookkeeper-entered, no enquiry).
   const monthScopedManual = filteredManualFeRows();
   const manualMatches = needle
     ? monthScopedManual.filter(fe => (fe.customer_name || '').toLowerCase().includes(needle))
@@ -472,9 +472,9 @@ function renderEventsList(filter = '') {
     const iso = parsePreferredDate(e.preferred_date);
     return `
       <button type="button" class="event-pnl__event${selected}" data-enquiry="${esc(e.id)}">
-        <div class="event-pnl__event-name"><span class="enquiry-no">#${esc(e.enquiry_number ?? '—')}</span> ${esc(e.full_name || '—')}</div>
-        <div class="event-pnl__event-meta">${fmtDateBg(iso)} · ${inc != null ? fmtEur(inc) : '—'}</div>
-        <div class="event-pnl__event-margin${marginClass}">${margin == null ? '—' : margin + '%'}</div>
+        <div class="event-pnl__event-name"><span class="enquiry-no">#${esc(e.enquiry_number ?? '-')}</span> ${esc(e.full_name || '-')}</div>
+        <div class="event-pnl__event-meta">${fmtDateBg(iso)} · ${inc != null ? fmtEur(inc) : '-'}</div>
+        <div class="event-pnl__event-margin${marginClass}">${margin == null ? '-' : margin + '%'}</div>
       </button>
     `;
   };
@@ -488,9 +488,9 @@ function renderEventsList(filter = '') {
     const marginClass = margin == null ? '' : (margin >= 0 ? ' is-positive' : ' is-negative');
     return `
       <button type="button" class="event-pnl__event${selected}" data-manual-fe="${esc(fe.id)}">
-        <div class="event-pnl__event-name"><span class="enquiry-no enquiry-no--manual">M</span> ${esc(fe.customer_name || '—')}</div>
+        <div class="event-pnl__event-name"><span class="enquiry-no enquiry-no--manual">M</span> ${esc(fe.customer_name || '-')}</div>
         <div class="event-pnl__event-meta">${fmtDateBg(fe.event_date)} · ${fmtEur(inc)}</div>
-        <div class="event-pnl__event-margin${marginClass}">${margin == null ? '—' : margin + '%'}</div>
+        <div class="event-pnl__event-margin${marginClass}">${margin == null ? '-' : margin + '%'}</div>
       </button>
     `;
   };
@@ -504,7 +504,7 @@ function renderEventsList(filter = '') {
     html += sectionLabel('От запитвания', enqMatches.length);
     html += enqMatches.map(renderEnq).join('');
   }
-  // Manual events section — always show the header so the "+ Add manual"
+  // Manual events section - always show the header so the "+ Add manual"
   // button has a home, even when the list is empty.
   html += sectionLabel('Ръчни събития', manualMatches.length);
   if (manualMatches.length) {
@@ -515,7 +515,7 @@ function renderEventsList(filter = '') {
   html += `<button type="button" class="event-pnl__add-manual" id="btn-add-manual-event">+ Добави ръчно събитие</button>`;
 
   if (!enqMatches.length && !manualMatches.length) {
-    // No enquiries OR manual — still want the add button visible above.
+    // No enquiries OR manual - still want the add button visible above.
     // Already added; nothing else to do.
   }
 
@@ -523,7 +523,7 @@ function renderEventsList(filter = '') {
 }
 
 // ────────────────────────────────────────────────────────────────
-// Right detail — P&L
+// Right detail - P&L
 // ────────────────────────────────────────────────────────────────
 
 // Returns the current (dirty-aware) value of a fe field.
@@ -578,7 +578,7 @@ function liveExpenseTotal(fe) {
 }
 
 // ────────────────────────────────────────────────────────────────
-// P&L drinks — editable, live-priced list. The P&L keeps its own adjusted
+// P&L drinks - editable, live-priced list. The P&L keeps its own adjusted
 // copy (financial_events.pnl_drinks); the booking's drinks are never
 // mutated. All edits are draft (staged in dirtyFe.pnl_drinks +
 // dirtyFe.income_drinks_eur) until Save, like the rest of the panel.
@@ -702,7 +702,7 @@ function drinkCatalogOptions(selId) {
   const groups = (typeof drinkCategories !== 'undefined' && drinkCategories?.bg) ? drinkCategories.bg : [];
   return groups.map((g, ci) => {
     const opts = drinks.filter(d => d.cat === ci).map(d =>
-      `<option value="${esc(d.id)}"${d.id === selId ? ' selected' : ''}>${esc(d.name_bg)} — ${fmtEur(d.price_eur)}</option>`
+      `<option value="${esc(d.id)}"${d.id === selId ? ' selected' : ''}>${esc(d.name_bg)} - ${fmtEur(d.price_eur)}</option>`
     ).join('');
     return opts ? `<optgroup label="${esc(g)}">${opts}</optgroup>` : '';
   }).join('');
@@ -721,12 +721,12 @@ function renderDrinks() {
   wrap.innerHTML = arr.map((l, i) => {
     const lineEur = fmtEur(drinkLineTotal(l));
     // Keep the <select>, the priced unit, and the stored id in agreement even
-    // for a drink that has since left the catalog — otherwise the browser
+    // for a drink that has since left the catalog - otherwise the browser
     // silently auto-selects the first option while pricing the stored fallback.
     const inCatalog = !l.manual && l.id && drinkCatalogById.has(l.id);
     const selectOptions = inCatalog
       ? drinkCatalogOptions(l.id)
-      : `<option value="${esc(l.id || '')}" selected>${esc(l.name || '—')} — ${fmtEur(drinkUnitPrice(l))} (извън каталога)</option>` + drinkCatalogOptions(null);
+      : `<option value="${esc(l.id || '')}" selected>${esc(l.name || '-')} - ${fmtEur(drinkUnitPrice(l))} (извън каталога)</option>` + drinkCatalogOptions(null);
     if (l.manual) {
       return `
         <li class="event-pnl__line event-pnl__line--drink" data-drink-index="${i}">
@@ -766,24 +766,24 @@ function renderDetail() {
 
   const { kind, enquiry, fe } = sel;
 
-  // Hero — enquiry path shows "#1001 Name + event type + guests".
+  // Hero - enquiry path shows "#1001 Name + event type + guests".
   // Manual path shows "M Name + raw date" and an explicit "Ръчно" badge.
   if (kind === 'enquiry' && enquiry) {
     document.getElementById('pnl-customer').innerHTML =
-      `<span class="enquiry-no">#${esc(enquiry.enquiry_number ?? '—')}</span> ${esc(enquiry.full_name || '—')}`;
+      `<span class="enquiry-no">#${esc(enquiry.enquiry_number ?? '-')}</span> ${esc(enquiry.full_name || '-')}`;
     document.getElementById('pnl-date').textContent     = fmtDateBg(parsePreferredDate(enquiry.preferred_date));
-    document.getElementById('pnl-event-type').textContent = enquiry.event_type || '—';
-    document.getElementById('pnl-guests').textContent   = (enquiry.guests != null ? enquiry.guests + ' гости' : '—');
+    document.getElementById('pnl-event-type').textContent = enquiry.event_type || '-';
+    document.getElementById('pnl-guests').textContent   = (enquiry.guests != null ? enquiry.guests + ' гости' : '-');
   } else {
-    // Manual event — name + date are stored on the fe row itself.
+    // Manual event - name + date are stored on the fe row itself.
     document.getElementById('pnl-customer').innerHTML =
-      `<span class="enquiry-no enquiry-no--manual">M</span> ${esc(fe.customer_name || '—')}`;
+      `<span class="enquiry-no enquiry-no--manual">M</span> ${esc(fe.customer_name || '-')}`;
     document.getElementById('pnl-date').textContent     = fmtDateBg(fe.event_date);
     document.getElementById('pnl-event-type').textContent = fe.event_type || 'Ръчно събитие';
-    document.getElementById('pnl-guests').textContent   = '—';
+    document.getElementById('pnl-guests').textContent   = '-';
   }
 
-  // Fixed income lines — editable. Prefilled by ensureFinancialEvent from
+  // Fixed income lines - editable. Prefilled by ensureFinancialEvent from
   // the enquiry breakdown; admin can refine before saving. Drinks are an
   // itemized list below (#pnl-drinks-lines); additional services are itemized
   // in #pnl-income-lines-services.
@@ -807,13 +807,13 @@ function renderDetail() {
       <ul class="event-pnl__sub-items" id="sub-${esc(r.field)}"${open ? '' : ' hidden'}>
         ${items.map(it => {
           // Addons store LINE price as 'price'; drinks store unit price as 'price_eur' + qty.
-          const name = it.name || it.id || '—';
+          const name = it.name || it.id || '-';
           const qty = it.qty;
           const unit = it.price_eur != null ? Number(it.price_eur) : null;
           const linePrice = it.price != null ? Number(it.price)
                           : (unit != null && qty != null ? unit * qty : null);
           const qtyLabel = qty != null ? ` × ${qty}` : '';
-          const priceLabel = linePrice != null ? fmtEur(linePrice) : '—';
+          const priceLabel = linePrice != null ? fmtEur(linePrice) : '-';
           return `<li><span class="event-pnl__sub-name">${esc(name)}${qtyLabel}</span><span class="event-pnl__sub-val">${priceLabel}</span></li>`;
         }).join('')}
       </ul>
@@ -849,10 +849,10 @@ function renderDetail() {
   }).join('');
   document.getElementById('pnl-income-lines').innerHTML = linesHtml;
 
-  // Drinks — editable, live-priced list (seeded from the booking).
+  // Drinks - editable, live-priced list (seeded from the booking).
   renderDrinks();
 
-  // Additional services — itemized, categorized income lines. Mirrors the
+  // Additional services - itemized, categorized income lines. Mirrors the
   // expense-line UI (category + amount + note + delete). Above the editable
   // lines we show, read-only, what the customer originally added on the
   // booking form so the bookkeeper knows what to itemize.
@@ -863,8 +863,8 @@ function renderDetail() {
       <div class="event-pnl__svc-ref-lbl">Клиентът добави към офертата:</div>
       <ul class="event-pnl__sub-items">
         ${pickedAddons.map(a => {
-          const name = a.name || a.id || '—';
-          const price = a.price != null ? fmtEur(Number(a.price)) : '—';
+          const name = a.name || a.id || '-';
+          const price = a.price != null ? fmtEur(Number(a.price)) : '-';
           return `<li><span class="event-pnl__sub-name">${esc(name)}</span><span class="event-pnl__sub-val">${price}</span></li>`;
         }).join('')}
       </ul>
@@ -941,7 +941,7 @@ function renderDetail() {
     document.getElementById('pnl-payments').innerHTML = '<div class="empty-state">Зареждане…</div>';
   }
 
-  // Expense lines — dirty-aware. One horizontal scrolling row per
+  // Expense lines - dirty-aware. One horizontal scrolling row per
   // expense: category, amount, delete, comment. The old standalone
   // 'description' field was removed; the comment textarea covers that
   // need with more room. Scroll right to reach the comment.
@@ -974,7 +974,7 @@ function renderDetail() {
 
 // Refresh only the DERIVED figures (hero totals + Save button) for the
 // open event. Reads dirty-aware values, touches no <input>, so it is
-// safe to call on every keystroke — this is what stops the focus loss.
+// safe to call on every keystroke - this is what stops the focus loss.
 function updateDetailTotals() {
   const sel = currentSelection();
   if (!sel) return;
@@ -998,7 +998,7 @@ function updateDetailTotals() {
   set('pnl-net-bgn',       fmtBgn(net * BGN_RATE));
   const marginEl = document.getElementById('pnl-margin');
   if (marginEl) {
-    marginEl.textContent = margin == null ? '—' : margin + '%';
+    marginEl.textContent = margin == null ? '-' : margin + '%';
     marginEl.className = 'event-pnl__hero-val ' + (margin == null ? '' : (margin >= 0 ? 'is-positive' : 'is-negative'));
   }
 
@@ -1056,7 +1056,7 @@ function setIncomeItemDirty(id, field, raw) {
   const current = dirtyIncomeItems.get(id) || {};
   current[field] = value;
   dirtyIncomeItems.set(id, current);
-  // Refresh totals only — never rebuild the line being typed into.
+  // Refresh totals only - never rebuild the line being typed into.
   updateDetailTotals();
 }
 
@@ -1101,7 +1101,7 @@ async function saveDraft() {
   if (btn) { btn.disabled = true; btn.textContent = 'Запазване…'; }
   try {
     await Promise.all(ops);
-    // Item edits are now applied in memory — refresh the cached column.
+    // Item edits are now applied in memory - refresh the cached column.
     await syncAddonsColumn(fe);
     dirtyFe = {};
     dirtyExpenses = new Map();
@@ -1132,7 +1132,7 @@ async function deletePnl() {
   const sel = currentSelection();
   if (!sel || !sel.fe) return;
   const { kind, enquiry, fe } = sel;
-  const label = enquiry ? (enquiry.full_name || '—') : (fe.customer_name || '—');
+  const label = enquiry ? (enquiry.full_name || '-') : (fe.customer_name || '-');
   const msg = kind === 'enquiry'
     ? `Изтриване на P&L за "${label}"?\nЗапитването НЕ се изтрива. Прикачените разходи се изтриват също.`
     : `Изтриване на ръчното събитие "${label}"?\nСамото събитие и всички прикачени разходи се изтриват.`;
@@ -1141,7 +1141,7 @@ async function deletePnl() {
   // Delete expenses first: financial_expenses.event_id is ON DELETE SET NULL,
   // so dropping the fe row would null-orphan them rather than remove them.
   // Income items (financial_income_items.event_id is ON DELETE CASCADE) are
-  // removed by the DB automatically — only the in-memory map needs clearing.
+  // removed by the DB automatically - only the in-memory map needs clearing.
   const rows = expensesByEvent.get(fe.id) || [];
   if (rows.length) {
     const { error: exErr } = await db.from('financial_expenses').delete().eq('event_id', fe.id);
@@ -1198,7 +1198,7 @@ async function selectManual(feId) {
 }
 
 // Create a manual financial_events row from prompts. We don't bother
-// with a custom modal — the inputs are: customer name, date, optional
+// with a custom modal - the inputs are: customer name, date, optional
 // event type. Income fields stay at 0 so the bookkeeper fills them in
 // via the normal P&L editor.
 async function addManualEvent() {
@@ -1251,7 +1251,7 @@ async function addManualEvent() {
 async function addEventExpense() {
   const sel = currentSelection();
   if (!sel) return;
-  // Enquiry selection might not have its fe created yet — lazily create.
+  // Enquiry selection might not have its fe created yet - lazily create.
   let fe = sel.fe;
   if (!fe && sel.enquiry) fe = await ensureFinancialEvent(sel.enquiry);
   if (!fe) return;
@@ -1306,7 +1306,7 @@ async function syncAddonsColumn(fe) {
 async function addIncomeService() {
   const sel = currentSelection();
   if (!sel) return;
-  // Enquiry selection might not have its fe created yet — lazily create.
+  // Enquiry selection might not have its fe created yet - lazily create.
   let fe = sel.fe;
   if (!fe && sel.enquiry) fe = await ensureFinancialEvent(sel.enquiry);
   if (!fe) return;
@@ -1322,7 +1322,7 @@ async function addIncomeService() {
   const arr = incomeItemsByEvent.get(fe.id) || [];
   arr.push(data);
   incomeItemsByEvent.set(fe.id, arr);
-  // New line starts at €0 — no need to touch the cached sum yet.
+  // New line starts at €0 - no need to touch the cached sum yet.
   renderDetail();
 }
 
@@ -1397,8 +1397,8 @@ function closeDrill() {
 }
 function drillRowHtml(fe, amt, signed) {
   const enq = fe.enquiry_id ? allEnquiries.find(e => e.id === fe.enquiry_id) : null;
-  const name = enq ? (enq.full_name || '—') : (fe.customer_name || '—');
-  const badge = enq ? `#${esc(enq.enquiry_number ?? '—')}` : 'M';
+  const name = enq ? (enq.full_name || '-') : (fe.customer_name || '-');
+  const badge = enq ? `#${esc(enq.enquiry_number ?? '-')}` : 'M';
   const sel = enq ? `data-enquiry="${esc(fe.enquiry_id)}"` : `data-manual-fe="${esc(fe.id)}"`;
   const negColor = signed && amt < 0 ? 'color:#c0392b;' : '';
   return `<button type="button" class="drill-row" ${sel}
@@ -1552,7 +1552,7 @@ document.addEventListener('input', evt => {
 });
 
 document.addEventListener('change', evt => {
-  // Drink catalog picker — swap the drink (and its live price) on the line.
+  // Drink catalog picker - swap the drink (and its live price) on the line.
   const drinkSel = evt.target.closest('[data-drink-f="select"]');
   if (drinkSel) {
     const li = drinkSel.closest('[data-drink-index]');

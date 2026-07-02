@@ -1,20 +1,20 @@
-// Offer PDF — builds a branded, customer-facing offer document client-side
+// Offer PDF - builds a branded, customer-facing offer document client-side
 // with pdfmake and returns a Blob. Used by the dashboard "Изпрати оферта"
 // action (the PDF is attached to the customer email by the send-offer edge
 // function). The .xlsx export stays separate for internal use.
 //
 // SYNC MAP: venue base prices, the +€15 extra-guest fee and the
-// "discount applies to the venue base only" rule are duplicated here — keep
+// "discount applies to the venue base only" rule are duplicated here - keep
 // in step with reservation-catalog.js / enquiry-email.ts / dashboard.js /
 // financials.js / offer-export.js when pricing changes.
 
 // Venue base config by event_id. Mirrors offer-export.js EVENT_CONFIG.
 const PDF_EVENT_CONFIG = {
-  evening:  { price: 1280, label: 'Вечерно парти',                 slot: '19:00–24:00' },
-  corp4:    { price: 330,  label: 'Корпоративно събитие — 4 часа', slot: '08:00–12:00' },
-  corp8:    { price: 440,  label: 'Корпоративно събитие — 8 часа', slot: '08:00–17:30' },
-  bday_day: { price: 700,  label: 'Детски рожден ден — Дневно',    slot: '12:00–17:30' },
-  bday_eve: { price: 970,  label: 'Детски рожден ден — Вечерно',   slot: '16:00–24:00' },
+  evening:  { price: 1280, label: 'Вечерно парти',                 slot: '19:00-24:00' },
+  corp4:    { price: 330,  label: 'Корпоративно събитие - 4 часа', slot: '08:00-12:00' },
+  corp8:    { price: 440,  label: 'Корпоративно събитие - 8 часа', slot: '08:00-17:30' },
+  bday_day: { price: 700,  label: 'Детски рожден ден - Дневно',    slot: '12:00-17:30' },
+  bday_eve: { price: 970,  label: 'Детски рожден ден - Вечерно',   slot: '16:00-24:00' },
   wedding:  { price: 1500, label: 'Сватба',                        slot: '' },
 };
 
@@ -24,7 +24,7 @@ const PDF_DEPOSIT_RATE = 0.5;       // template: AF90*0.5
 const PDF_OFFER_VALID_DAYS = 2;     // template note: "валидна 2 дни"
 
 // Old BGN addon prices (pre-2026-05-04). Same table as offer-export.js /
-// enquiry-email.ts — detect-and-convert legacy BGN line prices to EUR.
+// enquiry-email.ts - detect-and-convert legacy BGN line prices to EUR.
 const PDF_ADDON_BGN_PRICES = {
   dj: 587, photo2: 340, photo4: 580, booth2: 390, booth4: 560,
   arch: 760, wall_s: 355, wall_g: 355, flare_s: 440, flare_l: 790,
@@ -52,7 +52,7 @@ const BANK = {
 // Cyrillic paths are percent-encoded so the PDF hyperlinks resolve correctly.
 const USEFUL_LINKS = [
   { label: 'Услуги и цени', url: 'https://margel360.bg/%d1%83%d1%81%d0%bb%d1%83%d0%b3%d0%b8/' },
-  { label: 'Алкохолно меню — изберете предварително', url: 'https://margel360.bg/%d0%b0%d0%bb%d0%ba%d0%be%d1%85%d0%be%d0%bb/' },
+  { label: 'Алкохолно меню - изберете предварително', url: 'https://margel360.bg/%d0%b0%d0%bb%d0%ba%d0%be%d1%85%d0%be%d0%bb/' },
   { label: "Кетъринг партньор · L'Instant", url: 'https://www.linstant.bg' },
   { label: 'Кетъринг партньор · VIP Catering', url: 'https://vipcatering.bg' },
 ];
@@ -78,7 +78,7 @@ function fmtDateObjBg(date) {
 }
 // Offer number: prefer the sequential customer-facing enquiry_number (dense,
 // collision-free). Fall back to a uuid-derived number only for legacy rows
-// without one — note the hex-tail scheme can collide across a multi-year log.
+// without one - note the hex-tail scheme can collide across a multi-year log.
 function pdfOfferNumber(enquiry) {
   if (enquiry && enquiry.enquiry_number) return enquiry.enquiry_number;
   const id = enquiry && enquiry.id;
@@ -88,7 +88,7 @@ function pdfOfferNumber(enquiry) {
 }
 
 // Lazy-load pdfmake + its default (Roboto, Cyrillic-capable) vfs once.
-// SRI hashes pin the exact published bytes — a CDN compromise of these
+// SRI hashes pin the exact published bytes - a CDN compromise of these
 // packages can't execute in the admin session (which carries a Supabase JWT).
 let _pdfMakePromise = null;
 function loadPdfMake() {
@@ -230,15 +230,15 @@ function buildDocDefinition(enquiry) {
         columns: [
           { width: '*', stack: [
             { text: 'КЛИЕНТ', style: 'label' },
-            { text: enquiry.full_name || '—', margin: [0, 3, 0, 0], bold: true },
+            { text: enquiry.full_name || '-', margin: [0, 3, 0, 0], bold: true },
             { text: enquiry.phone || '', color: MUTED, fontSize: 9, margin: [0, 2, 0, 0] },
             { text: enquiry.email || '', color: MUTED, fontSize: 9 },
           ] },
           { width: '*', stack: [
             { text: 'СЪБИТИЕ', style: 'label' },
-            { text: eventLabel || '—', margin: [0, 3, 0, 0], bold: true },
-            { text: `Дата: ${fmtDateBg(enquiry.preferred_date) || '—'}${slot ? '  ·  ' + slot : ''}`, color: MUTED, fontSize: 9, margin: [0, 2, 0, 0] },
-            { text: `Гости: ${b.guests || '—'}`, color: MUTED, fontSize: 9 },
+            { text: eventLabel || '-', margin: [0, 3, 0, 0], bold: true },
+            { text: `Дата: ${fmtDateBg(enquiry.preferred_date) || '-'}${slot ? '  ·  ' + slot : ''}`, color: MUTED, fontSize: 9, margin: [0, 2, 0, 0] },
+            { text: `Гости: ${b.guests || '-'}`, color: MUTED, fontSize: 9 },
           ] },
         ],
         margin: [0, 0, 0, 16],
@@ -274,7 +274,7 @@ function buildDocDefinition(enquiry) {
         ],
       },
 
-      // ── Payment terms + bank details + note — ONE unbreakable unit so the
+      // ── Payment terms + bank details + note - ONE unbreakable unit so the
       // deposit amount, the IBAN and the terms note are never split across a
       // page break or orphaned onto the next page. If the whole block can't
       // fit after the line items it moves to the next page together.

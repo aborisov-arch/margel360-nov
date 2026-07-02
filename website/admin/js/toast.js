@@ -1,4 +1,4 @@
-// Tiny toast helper — non-blocking feedback instead of native alert().
+// Tiny toast helper - non-blocking feedback instead of native alert().
 // Usage: showToast('Saved.', 'success' | 'error' | undefined)
 // Styles live in admin.css (.toast-stack / .toast).
 (function () {

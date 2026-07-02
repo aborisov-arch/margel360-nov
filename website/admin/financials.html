@@ -4,11 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title>Финанси · P&L по събитие — Маргел 360° Админ</title>
+  <title>Финанси · P&L по събитие - Маргел 360° Админ</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/admin.css?v=16">
-  <link rel="stylesheet" href="css/financials.css?v=17">
+  <link rel="stylesheet" href="css/admin.css?v=17">
+  <link rel="stylesheet" href="css/financials.css?v=18">
   <link rel="icon" href="/favicon.ico" sizes="48x48">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link rel="icon" type="image/png" sizes="192x192" href="/assets/favicon-192.png">
@@ -39,7 +39,7 @@
       <h1 class="page-title">Финанси · P&amp;L по събитие</h1>
       <p class="fin-page-sub">Изберете събитие за да видите оферираните приходи (авто-генерирани от запитването), плащанията от клиента и разходите към доставчиците.</p>
 
-      <!-- Month filter — restricts the event list AND the summary block below.
+      <!-- Month filter - restricts the event list AND the summary block below.
            "all" shows every booking ever. -->
       <div class="fin-toolbar">
         <div class="fin-toolbar__field">
@@ -50,7 +50,7 @@
         <span class="fin-toolbar__rate"><strong>1 €</strong> = 1.95583 лв · фиксиран курс</span>
       </div>
 
-      <!-- Monthly summary KPIs — auto-recompute from the events in the
+      <!-- Monthly summary KPIs - auto-recompute from the events in the
            current month filter. Same layout as the old financials.html. -->
       <section class="fin-section" id="month-summary">
         <div class="fin-section__head">
@@ -111,7 +111,7 @@
         <aside class="event-pnl__list">
           <div class="event-pnl__list-head">
             <h2>Събития</h2>
-            <span class="count" id="events-list-count">—</span>
+            <span class="count" id="events-list-count">-</span>
           </div>
           <input type="search" id="events-search" placeholder="Търсене по клиент…">
           <div id="events-list" class="event-pnl__events"><div class="empty-state">Зареждане…</div></div>
@@ -123,17 +123,17 @@
             <div class="event-pnl__hero">
               <div>
                 <div class="event-pnl__hero-lbl">Събитие</div>
-                <h2 id="pnl-customer">—</h2>
-                <div class="event-pnl__hero-meta"><span id="pnl-date">—</span> · <span id="pnl-event-type">—</span> · <span id="pnl-guests">—</span></div>
+                <h2 id="pnl-customer">-</h2>
+                <div class="event-pnl__hero-meta"><span id="pnl-date">-</span> · <span id="pnl-event-type">-</span> · <span id="pnl-guests">-</span></div>
               </div>
               <div class="event-pnl__hero-margin">
                 <div class="event-pnl__hero-lbl">Марж</div>
-                <div class="event-pnl__hero-val" id="pnl-margin">—</div>
+                <div class="event-pnl__hero-val" id="pnl-margin">-</div>
               </div>
             </div>
 
             <div class="event-pnl__cols">
-              <!-- INCOME — auto-filled from the enquiry, plus payments received -->
+              <!-- INCOME - auto-filled from the enquiry, plus payments received -->
               <div class="event-pnl__col event-pnl__col--income">
                 <div class="event-pnl__col-head">
                   <h3>Приходи · оферта</h3>
@@ -169,7 +169,7 @@
                 </div>
               </div>
 
-              <!-- EXPENSES — per-vendor cost (DJ, cleaner, catering, etc.) -->
+              <!-- EXPENSES - per-vendor cost (DJ, cleaner, catering, etc.) -->
               <div class="event-pnl__col event-pnl__col--expense">
                 <div class="event-pnl__col-head">
                   <h3>Разходи · доставчици</h3>
@@ -188,7 +188,7 @@
               </div>
             </div>
 
-            <!-- Save / cancel — nothing persists or hits the summary
+            <!-- Save / cancel - nothing persists or hits the summary
                  until "Запази промените" is pressed. Изтрий resets the
                  whole P&L for the event if it was filled in by mistake;
                  the enquiry itself is untouched. -->
@@ -204,10 +204,10 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7" integrity="sha384-tD6X9wDfTRdKpuPoHFZrVW2RXjSYSWjLBPWXxpHprWWl9eaHlwl05aRjHsiKF97n" crossorigin="anonymous" defer></script>
-  <script src="js/supabase-client.js?v=3" defer></script>
-  <script src="js/admin-i18n.js?v=16" defer></script>
+  <script src="js/supabase-client.js?v=4" defer></script>
+  <script src="js/admin-i18n.js?v=17" defer></script>
   <script src="js/auth.js?v=5" defer></script>
-  <script src="../js/drinks-data.js?v=5" defer></script>
-  <script src="js/financials.js?v=37" defer></script>
+  <script src="../js/drinks-data.js?v=6" defer></script>
+  <script src="js/financials.js?v=38" defer></script>
 </body>
 </html>

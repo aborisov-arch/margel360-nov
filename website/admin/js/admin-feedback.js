@@ -1,5 +1,5 @@
 function esc(s){ return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-    function fmt(iso){ if(!iso) return '—'; return new Date(iso).toLocaleString('bg-BG',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
+    function fmt(iso){ if(!iso) return '-'; return new Date(iso).toLocaleString('bg-BG',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
     function avg(arr){ if(!arr.length) return 0; return arr.reduce((s,n)=>s+n,0)/arr.length; }
 
     const SOURCE_LABELS = { friends: 'Приятели', social: 'Социални мрежи', google: 'Google', other: 'Друго' };
@@ -63,7 +63,7 @@ function esc(s){ return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;
           <div class="qa-block">
             <div class="qa-block__q">
               <span class="qa-block__label">${esc(label)}</span>
-              <span class="qa-block__rating">${rating ?? '—'}/4</span>
+              <span class="qa-block__rating">${rating ?? '-'}/4</span>
             </div>
             ${comment ? `<div class="qa-block__comment">„${esc(comment)}"</div>` : ''}
           </div>`;
@@ -72,14 +72,14 @@ function esc(s){ return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;
             <div class="qa-block__q">
               <span class="qa-block__label">Откъде научиха</span>
             </div>
-            <div class="qa-block__source">${esc(SOURCE_LABELS[r.source] || r.source || '—')}${r.source === 'other' && r.source_other ? `<em>— ${esc(r.source_other)}</em>` : ''}</div>
+            <div class="qa-block__source">${esc(SOURCE_LABELS[r.source] || r.source || '-')}${r.source === 'other' && r.source_other ? `<em>- ${esc(r.source_other)}</em>` : ''}</div>
           </div>`;
         return `
           <div class="feedback-card">
             <div class="feedback-card__hdr">
               <div>
                 <span class="feedback-card__name">${esc(e.full_name)}</span>
-                <span class="feedback-card__meta"> · ${esc(e.event_type || '—')} · ${esc(e.preferred_date || '—')}</span>
+                <span class="feedback-card__meta"> · ${esc(e.event_type || '-')} · ${esc(e.preferred_date || '-')}</span>
               </div>
               <span class="feedback-card__meta">${fmt(r.submitted_at)}</span>
             </div>

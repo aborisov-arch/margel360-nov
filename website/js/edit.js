@@ -1,4 +1,4 @@
-// edit.js — customer self-service edit page
+// edit.js - customer self-service edit page
 // Fetches enquiry by magic-link token, renders the editorial form, and
 // submits changes through the token-authenticated edge function.
 
@@ -35,7 +35,7 @@ function addonLinePrice(svc, qty) {
   return qty * svc.price;
 }
 
-// Mandatory hall cleaning — added on every event, same rule as the wizard.
+// Mandatory hall cleaning - added on every event, same rule as the wizard.
 
 const $ = id => document.getElementById(id);
 
@@ -259,7 +259,7 @@ function renderAddons() {
     const qty = state.addonQtys[svc.id] || 0;
 
     if (isQtyAddon(svc)) {
-      // Quantity card — typeable input similar to the drinks tiles.
+      // Quantity card - typeable input similar to the drinks tiles.
       li.className = 'addon-card addon-card--qty' + (qty > 0 ? ' is-selected' : '');
 
       const visual = document.createElement('span');
@@ -343,7 +343,7 @@ function renderAddons() {
 
 // Seed the drink quantities from the saved enquiry at FORM LOAD, not when
 // the drinks panel is first opened. onSave always sends `drinks` built from
-// state.drinkQtys — seeding lazily meant a save without opening the panel
+// state.drinkQtys - seeding lazily meant a save without opening the panel
 // sent an empty array and silently wiped the customer's whole drinks order.
 function seedDrinkQtys() {
   if (Object.keys(state.drinkQtys).length > 0) return;
@@ -397,7 +397,7 @@ function renderDrinkTiles() {
       i.alt = '';
       i.loading = 'lazy';
       // If the asset is missing, drop the <img> and let the CSS placeholder
-      // (label-caps initial) show through — keeps the layout from collapsing.
+      // (label-caps initial) show through - keeps the layout from collapsing.
       i.addEventListener('error', () => { i.remove(); img.classList.add('drink-tile__img--fallback'); img.textContent = (drink.name_bg || drink.name_en || '?')[0]; });
       img.appendChild(i);
     } else {
@@ -476,7 +476,7 @@ async function onSave(evt) {
     return;
   }
 
-  // Same bounds the server enforces (1..200) — fail here with a clear
+  // Same bounds the server enforces (1..200) - fail here with a clear
   // message instead of a generic save error.
   if (!Number.isInteger(guests) || guests < 1 || guests > 200) {
     errEl.textContent = 'Моля, въведете брой гости между 1 и 200.';
@@ -491,7 +491,7 @@ async function onSave(evt) {
     const qty = state.addonQtys[svc.id] || 0;
     if (qty <= 0) return;
     const linePrice = addonLinePrice(svc, qty);
-    // name_en matches what the reservation wizard stores — using name_bg here
+    // name_en matches what the reservation wizard stores - using name_bg here
     // made every save rename untouched items, firing a spurious "changed"
     // diff email and burning an edit_count increment toward the lock cap.
     const entry = { id: svc.id, name: svc.name_en, price: linePrice };
@@ -499,7 +499,7 @@ async function onSave(evt) {
     addons.push(entry);
   });
 
-  // Mandatory hall cleaning — added on every event, same rule the wizard
+  // Mandatory hall cleaning - added on every event, same rule the wizard
   // applies at booking time; ensures an edit never drops the obligatory fee.
   if (!addons.some(a => a.id === 'cleaning')) {
     const cleaningSvc = addonServices.find(s => s.id === 'cleaning');
@@ -516,7 +516,7 @@ async function onSave(evt) {
       // name_en matches the wizard's stored shape (see addons note above).
       drinksOut.push({ id: d.id, name: d.name_en || d.name_bg, qty, price_eur: d.price_eur ?? null });
     } else {
-      // Drink no longer in the catalog — keep the saved row instead of
+      // Drink no longer in the catalog - keep the saved row instead of
       // silently dropping the customer's item.
       const orig = savedDrinks.find(x => x.id === id);
       if (orig) drinksOut.push({ ...orig, qty });

@@ -1,4 +1,4 @@
-// Public partners page — reads public.partners with the anon key (RLS
+// Public partners page - reads public.partners with the anon key (RLS
 // exposes active rows only) and renders the Catering + Artists sections.
 // A partner added in the admin panel appears here automatically.
 // Depends on: reservation-supabase.js (reservationDb), main.js (langChange).

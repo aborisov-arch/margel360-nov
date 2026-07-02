@@ -1,4 +1,4 @@
-// Marketing export — deduplicates enquiries by email (then phone) and writes
+// Marketing export - deduplicates enquiries by email (then phone) and writes
 // a CSV with one row per unique customer. Aggregates per-customer fields
 // (count, last enquiry, event types, total est. spend, marketing consent).
 

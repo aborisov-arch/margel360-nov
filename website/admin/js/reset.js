@@ -1,4 +1,4 @@
-// Reaches here two ways: (1) from a Supabase recovery link — the client
+// Reaches here two ways: (1) from a Supabase recovery link - the client
     // auto-detects the token in the URL and establishes a temporary session;
     // (2) an already-logged-in admin changing their own password. Either way,
     // a present session means we can call updateUser({ password }).

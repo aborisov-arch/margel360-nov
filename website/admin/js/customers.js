@@ -1,4 +1,4 @@
-// Customers view — groups enquiries by normalised email (then phone) so the
+// Customers view - groups enquiries by normalised email (then phone) so the
 // team can see every contact and their full history in one place.
 // Click a row to expand the enquiry list with status, date, guests, est.
 // total spend per event.
@@ -13,7 +13,7 @@ function esc(str) {
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 function fmtDate(iso) {
-  if (!iso) return '—';
+  if (!iso) return '-';
   return new Date(iso).toLocaleDateString('bg-BG', { day:'2-digit', month:'2-digit', year:'numeric' });
 }
 
@@ -48,7 +48,7 @@ function groupEnquiries(enquiries) {
     if (!key) return;
     if (!map.has(key)) {
       map.set(key, {
-        key, label: e.full_name || '—',
+        key, label: e.full_name || '-',
         contact: e.email || e.phone || '',
         count: 0, lastAt: e.created_at, lifetime: 0,
         events: new Set(), marketing: false, enquiries: [],
@@ -80,7 +80,7 @@ function renderRows(rows) {
       <td>${esc(g.contact)}</td>
       <td>${g.count}</td>
       <td>${esc(fmtDate(g.lastAt))}</td>
-      <td>${Array.from(g.events).map(esc).join(', ') || '—'}</td>
+      <td>${Array.from(g.events).map(esc).join(', ') || '-'}</td>
       <td>€${g.lifetime}</td>
     </tr>
   `).join('');
@@ -94,7 +94,7 @@ function renderDetail(g) {
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
     .map(e => `
       <div class="enquiry-row">
-        <strong>${esc(e.event_type || '—')}</strong>
+        <strong>${esc(e.event_type || '-')}</strong>
         <span>${esc(e.preferred_date || '')}</span>
         <span>${e.guests != null ? e.guests + ' гости' : ''}</span>
         <span class="pipe-badge pipe-${esc(e.pipeline_status || 'new')}">${esc(e.pipeline_status || 'new')}</span>

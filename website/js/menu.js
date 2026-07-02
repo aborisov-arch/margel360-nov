@@ -1,4 +1,4 @@
-// Standalone drinks menu page — renders an editorial price list grouped by
+// Standalone drinks menu page - renders an editorial price list grouped by
 // category from the shared drinks-data.js catalog (drinks + drinkCategories).
 // Re-renders on language change.
 document.addEventListener('DOMContentLoaded', () => {
