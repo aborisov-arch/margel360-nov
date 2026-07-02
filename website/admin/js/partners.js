@@ -69,7 +69,7 @@ function renderTable() {
         : `<span style="display:inline-flex;width:56px;height:40px;border-radius:6px;background:#eee;align-items:center;justify-content:center" aria-hidden="true">${p.category === 'catering' ? '🍽️' : '🎤'}</span>`}</td>
       <td><strong>${esc(p.name)}</strong>${p.active ? '' : ` <span style="color:#c62828;font-size:0.78rem">(${esc(t('partners_hidden'))})</span>`}</td>
       <td>${esc(catLabel(p.category))}</td>
-      <td style="font-size:0.84rem">${websiteCell(p.website_url)}${p.website_url && p.phone ? ' · ' : ''}${esc(p.phone || '')}</td>
+      <td style="font-size:0.84rem">${[websiteCell(p.website_url), esc([p.contact_name, p.phone].filter(Boolean).join(' '))].filter(Boolean).join(' · ')}</td>
       <td>${Number(p.sort_order) || 0}</td>
       <td style="white-space:nowrap">
         <button class="btn btn-outline btn-sm btn-toggle" data-id="${esc(p.id)}">${esc(p.active ? t('partners_deactivate') : t('partners_activate'))}</button>
@@ -90,6 +90,7 @@ function openForm(partner) {
   document.getElementById('pf-desc-en').value = partner ? (partner.description_en || '') : '';
   document.getElementById('pf-url').value = partner ? (partner.website_url || '') : '';
   document.getElementById('pf-phone').value = partner ? (partner.phone || '') : '';
+  document.getElementById('pf-contact').value = partner ? (partner.contact_name || '') : '';
   document.getElementById('pf-sort').value = partner ? (partner.sort_order ?? 100) : 100;
   document.getElementById('pf-active').checked = partner ? !!partner.active : true;
   document.getElementById('pf-image').value = '';
@@ -147,6 +148,7 @@ async function savePartner() {
       description_en: document.getElementById('pf-desc-en').value.trim() || null,
       website_url,
       phone: document.getElementById('pf-phone').value.trim() || null,
+      contact_name: document.getElementById('pf-contact').value.trim() || null,
       sort_order: Math.max(0, Math.min(9999, parseInt(document.getElementById('pf-sort').value, 10) || 100)),
       active: document.getElementById('pf-active').checked,
       image_path,
