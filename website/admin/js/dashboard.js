@@ -242,6 +242,7 @@ function renderEnquiries(enquiries) {
           </div>
           ${fmtAddons(e.addons)}
           ${fmtDrinks(e.drinks, e.id)}
+          ${fmtPartners(e.partner_interest)}
           ${e.notes ? `<div class="detail-notes"><strong>${t('detail_notes')}:</strong> ${esc(e.notes)}</div>` : ''}
           ${renderTotals(e)}
           ${renderPaymentTracking(e)}
@@ -1016,5 +1017,14 @@ function fmtDrinks(drinks, enquiryId) {
     </li>`;
   }).join('');
   return `<div class="detail-section"><strong>${t('detail_drinks')}:</strong><ul class="admin-drink-list">${items}</ul></div>`;
+}
+
+function fmtPartners(list) {
+  if (!Array.isArray(list) || !list.length) return '';
+  const items = list.map(p => {
+    const cat = p?.category === 'catering' ? t('partners_cat_catering') : t('partners_cat_artist');
+    return `<li>${esc(p?.name)} <span style="color:#7A7568">(${esc(cat)})</span></li>`;
+  }).join('');
+  return `<div class="detail-section"><strong>${t('detail_partners')}:</strong><ul>${items}</ul></div>`;
 }
 
