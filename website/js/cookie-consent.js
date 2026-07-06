@@ -1,4 +1,4 @@
-// Cookie consent banner - Google Consent Mode v2.
+// Cookie consent banner - Google Consent Mode v2 + Meta Pixel.
 // Each page's <head> sets the consent default to 'denied'; this banner lets
 // the visitor grant it (gtag('consent','update', …)) and remembers the choice
 // so analytics/ads only run with consent. Self-contained (no dependencies).
@@ -14,6 +14,9 @@
         ad_personalization: 'granted',
         analytics_storage: 'granted'
       });
+    }
+    if (typeof window.fbq === 'function') {
+      window.fbq('consent', 'grant');
     }
   }
 
