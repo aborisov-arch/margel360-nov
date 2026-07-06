@@ -26,13 +26,13 @@ const ACTION_CLASS = { INSERT: 'ins', UPDATE: 'upd', DELETE: 'del' };
 
 const FIELD_LABELS = {
   bg: {
-    // financial_events — income
+    // financial_events - income
     income_rent_eur: 'Оферта', income_drinks_eur: 'Напитки', income_addons_eur: 'Доп. услуги',
     income_dj_eur: 'DJ', income_employees_eur: 'Почистване',
     income_overtime_eur: 'Извънреден час €', income_overtime_hours: 'Извънреден час (часове)',
     income_overtime_rate_eur: 'Ставка/час', offer_total_eur: 'Оферта общо',
     pnl_drinks: 'Напитки (списък)',
-    // financial_events — payments
+    // financial_events - payments
     deposit_cash_eur: 'Аванс брой', deposit_bank_eur: 'Аванс банка', deposit_card_eur: 'Аванс карта',
     balance_cash_eur: 'Доплащане брой', balance_bank_eur: 'Доплащане банка', balance_card_eur: 'Доплащане карта',
     payment3_cash_eur: '3-то плащане брой', payment3_bank_eur: '3-то плащане банка', payment3_card_eur: '3-то плащане карта',
@@ -48,13 +48,13 @@ const FIELD_LABELS = {
     partner_interest: 'Партньори (интерес)',
   },
   en: {
-    // financial_events — income
+    // financial_events - income
     income_rent_eur: 'Offer', income_drinks_eur: 'Drinks', income_addons_eur: 'Add-on services',
     income_dj_eur: 'DJ', income_employees_eur: 'Cleaning',
     income_overtime_eur: 'Overtime €', income_overtime_hours: 'Overtime (hours)',
     income_overtime_rate_eur: 'Rate/hour', offer_total_eur: 'Offer total',
     pnl_drinks: 'Drinks (list)',
-    // financial_events — payments
+    // financial_events - payments
     deposit_cash_eur: 'Deposit cash', deposit_bank_eur: 'Deposit bank', deposit_card_eur: 'Deposit card',
     balance_cash_eur: 'Balance cash', balance_bank_eur: 'Balance bank', balance_card_eur: 'Balance card',
     payment3_cash_eur: '3rd payment cash', payment3_bank_eur: '3rd payment bank', payment3_card_eur: '3rd payment card',
@@ -80,12 +80,12 @@ function lbl(map, key) {
 
 function esc(s) { return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 function fmt(iso) {
-  if (!iso) return '—';
+  if (!iso) return '-';
   const locale = getAdminLang() === 'en' ? 'en-GB' : 'bg-BG';
   return new Date(iso).toLocaleString(locale, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 function fmtVal(key, v) {
-  if (v === null || v === undefined || v === '') return '—';
+  if (v === null || v === undefined || v === '') return '-';
   if (typeof v === 'object') {
     if (Array.isArray(v)) return `${v.length} ${v.length === 1 ? t('activity_item_one') : t('activity_item_many')}`;
     return t('activity_data');
@@ -132,7 +132,7 @@ function renderList() {
     return `
       <div class="audit-row">
         <div class="audit-row__hdr">
-          <span class="audit-row__who">${esc(r.changed_by || '—')}
+          <span class="audit-row__who">${esc(r.changed_by || '-')}
             <span class="audit-row__act audit-row__act--${actCls}">${esc(actLbl)}</span></span>
           <span class="audit-row__meta">${fmt(r.changed_at)}</span>
         </div>
@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const loading = document.getElementById('loading');
 
-  // Owner gate — clear message for non-owner admins (RLS would just return []).
+  // Owner gate - clear message for non-owner admins (RLS would just return []).
   let isOwner = false;
   try { const { data } = await db.rpc('is_owner'); isOwner = !!data; } catch (_) { isOwner = false; }
   if (!isOwner) {

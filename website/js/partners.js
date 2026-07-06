@@ -1,4 +1,4 @@
-// Public partners page — reads public.partners with the anon key (RLS
+// Public partners page - reads public.partners with the anon key (RLS
 // exposes active rows only) and renders the Catering + Artists sections.
 // A partner added in the admin panel appears here automatically.
 // Depends on: reservation-supabase.js (reservationDb), main.js (langChange).
@@ -42,8 +42,8 @@ function partnerCard(p, lang) {
     body.appendChild(d);
   }
 
-  if (p.website_url || p.phone) {
-    // Render-time guard: only http(s) URLs become a live link — website_url has no DB scheme constraint.
+  if (p.website_url || p.phone || p.contact_name) {
+    // Render-time guard: only http(s) URLs become a live link - website_url has no DB scheme constraint.
     const safeUrl = p.website_url && /^https?:\/\//i.test(p.website_url) ? p.website_url : null;
     const contact = document.createElement('p');
     contact.className = 'service-card-price';
@@ -55,12 +55,17 @@ function partnerCard(p, lang) {
       a.textContent = (typeof translations !== 'undefined' && translations[lang]?.partners_visit) || 'Посети сайта';
       contact.appendChild(a);
     }
-    if (p.phone) {
+    if (p.contact_name || p.phone) {
       if (safeUrl) contact.appendChild(document.createTextNode(' · '));
-      const tel = document.createElement('a');
-      tel.href = 'tel:' + p.phone.replace(/[^\d+]/g, '');
-      tel.textContent = p.phone;
-      contact.appendChild(tel);
+      if (p.contact_name) {
+        contact.appendChild(document.createTextNode(p.contact_name + (p.phone ? ' ' : '')));
+      }
+      if (p.phone) {
+        const tel = document.createElement('a');
+        tel.href = 'tel:' + p.phone.replace(/[^\d+]/g, '');
+        tel.textContent = p.phone;
+        contact.appendChild(tel);
+      }
     }
     body.appendChild(contact);
   }
@@ -98,7 +103,7 @@ async function loadPartnersPage() {
   try {
     const { data, error } = await reservationDb
       .from('partners')
-      .select('id, category, name, description_bg, description_en, website_url, phone, image_path')
+      .select('id, category, name, description_bg, description_en, website_url, phone, contact_name, image_path')
       .order('sort_order', { ascending: true })
       .order('name', { ascending: true });
     if (error) throw error;

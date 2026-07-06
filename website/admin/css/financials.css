@@ -29,7 +29,7 @@
       font-variant-numeric: tabular-nums;
     }
 
-    /* ── Sticky toolbar — keeps the month picker + export always reachable ── */
+    /* ── Sticky toolbar - keeps the month picker + export always reachable ── */
     .fin-toolbar {
       position: sticky; top: 0; z-index: 30;
       display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;
@@ -137,7 +137,7 @@
       font-size: 0.875rem;
     }
 
-    /* ── Ledger table — shadcn Table aesthetic ──
+    /* ── Ledger table - shadcn Table aesthetic ──
        - Tall 48px header (h-12), 16px cell padding (p-4)
        - Header labels: muted-foreground, normal weight, sentence case
        - Hairline border between rows only (no zebra, no border on tfoot)
@@ -239,7 +239,7 @@
     }
     .ledger input.num, .ledger input[type=number] { text-align: right; font-variant-numeric: tabular-nums; }
 
-    /* Footer total row — shadcn TableFooter: muted bg, no inversion. */
+    /* Footer total row - shadcn TableFooter: muted bg, no inversion. */
     .ledger tfoot {
       border-top: 1px solid var(--fin-border);
       background: var(--fin-bg-muted-50);
@@ -313,7 +313,7 @@
     }
     .btn-ghost:hover { color: var(--fin-text); border-color: var(--fin-muted-foreground); }
 
-    /* ── Summary — KPI cards + category breakdown badges ──
+    /* ── Summary - KPI cards + category breakdown badges ──
        shadcn Card aesthetic: clean white surface, subtle border, no shadow.
        Profit card uses a soft tint instead of gradient. */
     .kpi-grid {
@@ -610,7 +610,7 @@
 .event-pnl__line-lbl { color: var(--fin-text); font-size: 0.88rem; }
 .event-pnl__line-val { font-weight: 600; font-variant-numeric: tabular-nums; }
 .event-pnl__line--expense { padding: 6px; }
-/* Horizontal scroll row — category, amount, delete, then a wide comment
+/* Horizontal scroll row - category, amount, delete, then a wide comment
    textarea. Total width exceeds the column on narrow viewports so the
    bookkeeper can scroll right to reach the comment. */
 .event-pnl__line-row { display: flex; gap: 6px; align-items: center; width: 100%; overflow-x: auto; padding-bottom: 2px; }
@@ -661,7 +661,7 @@
 .event-pnl__balance-lbl { font-size: 0.82rem; color: var(--fin-muted-foreground); }
 .event-pnl__balance-val { font: 700 1rem/1 'Inter', sans-serif; font-variant-numeric: tabular-nums; color: var(--fin-gold); }
 
-/* Per-expense comment box — sits under the main expense row so the
+/* Per-expense comment box - sits under the main expense row so the
    bookkeeper can stash vendor phone numbers, deadlines, notes, etc. */
 .event-pnl__line-notes {
   display: block; width: 100%; margin: 4px 0 0;
@@ -676,7 +676,7 @@
 /* Month "All" reset button alignment in the toolbar. */
 .fin-toolbar .btn-sm { align-self: flex-end; margin-bottom: 1px; }
 
-/* Editable income lines — same row layout as the read-only version but
+/* Editable income lines - same row layout as the read-only version but
    with a number input on the right. */
 .event-pnl__line--editable { padding: 6px 10px; align-items: center; }
 .event-pnl__line-input {
@@ -697,7 +697,7 @@
 .event-pnl__ot-op { color: var(--fin-muted-foreground); font-size: 0.85rem; }
 .event-pnl__ot-result-input { width: 92px; }
 
-/* Drinks — editable, live-priced lines: [drink/name · price] × [qty] = € · ×.
+/* Drinks - editable, live-priced lines: [drink/name · price] × [qty] = € · ×.
    Wraps on narrow widths so it never overflows the income column. */
 .event-pnl__drinks-add { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 2px; }
 .event-pnl__line--drink { padding: 6px 10px; }
@@ -712,7 +712,7 @@
 .event-pnl__drink-select:focus, .event-pnl__drink-name:focus,
 .event-pnl__drink-price:focus, .event-pnl__drink-qty:focus { outline: 2px solid var(--fin-gold); outline-offset: 1px; border-color: var(--fin-gold); }
 
-/* Save / cancel bar — sits below the net profit summary on the detail
+/* Save / cancel bar - sits below the net profit summary on the detail
    panel and stays visible while editing. */
 .event-pnl__actions {
   display: flex; justify-content: flex-end; gap: 8px;

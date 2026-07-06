@@ -1,6 +1,6 @@
 /* ─────────────────────────────────────────────────────────────
    MARGEL 360° · venue stylesheet
-   Editorial luxury — ink, cream, gold. Shared by edit.html and
+   Editorial luxury - ink, cream, gold. Shared by edit.html and
    booking.html. Motif: hairline gold rules, small-caps labels,
    roman-numeral section markers, Fraunces display + Manrope body.
    ───────────────────────────────────────────────────────────── */
@@ -50,7 +50,7 @@
   overflow-x: hidden;
 }
 
-/* Subtle paper grain — layered twice for depth without performance cost */
+/* Subtle paper grain - layered twice for depth without performance cost */
 .venue::before {
   content: "";
   position: fixed;
@@ -107,7 +107,7 @@
 .label-caps--ink { color: var(--ink); }
 .label-caps--muted { color: var(--muted); }
 
-/* Roman numeral section title — numeral set in italic serif, title set in body */
+/* Roman numeral section title - numeral set in italic serif, title set in body */
 .numeral {
   font-family: var(--font-body);
   font-weight: 600;
@@ -122,7 +122,7 @@
 }
 .numeral::before {
   content: attr(data-num);
-  /* Manrope (body sans) instead of Fraunces italic — reads elegant but
+  /* Manrope (body sans) instead of Fraunces italic - reads elegant but
      normal, especially with Arabic numbers (1. 2. 3.) rather than roman. */
   font-family: var(--font-body);
   font-style: normal;
@@ -348,7 +348,7 @@
   min-height: 5rem;
 }
 
-/* Flatpickr overrides — editorial feel */
+/* Flatpickr overrides - editorial feel */
 .venue .flatpickr-calendar {
   border-radius: 2px;
   box-shadow: var(--venue-shadow);
@@ -410,7 +410,7 @@
 .btn-primary:active { transform: translateY(1px); }
 .btn-primary[disabled] { opacity: 0.55; cursor: wait; }
 
-/* Green "Save changes" pill — distinct affirmative action for the edit page. */
+/* Green "Save changes" pill - distinct affirmative action for the edit page. */
 .btn-save {
   background: #2F8F4F;
   color: #FFFFFF;
@@ -743,7 +743,7 @@
 .state-page .lead { margin: 0 auto; }
 .state-page .btn, .state-page .link { margin-top: 2rem; }
 
-/* ── Saved — the hero moment ───────────────────────────────── */
+/* ── Saved - the hero moment ───────────────────────────────── */
 
 .saved-stage {
   min-height: 70vh;

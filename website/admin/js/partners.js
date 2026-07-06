@@ -1,4 +1,4 @@
-// Partners CRUD — catering companies + artists shown on the public site and
+// Partners CRUD - catering companies + artists shown on the public site and
 // in the reservation wizard's mark-interest step. Rows live in
 // public.partners (RLS: admin ALL via is_admin(), anon SELECT active only).
 // Images upload to the public 'partner-images' bucket; partners.image_path
@@ -6,7 +6,7 @@
 
 const BUCKET = 'partner-images';
 // Keep in sync with the bucket's file_size_limit / allowed_mime_types
-// (migration 20260701120000_partners_catalog.sql) — the server enforces
+// (migration 20260701120000_partners_catalog.sql) - the server enforces
 // them; this pre-check just gives a friendlier error.
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const IMAGE_EXT = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
@@ -69,7 +69,7 @@ function renderTable() {
         : `<span style="display:inline-flex;width:56px;height:40px;border-radius:6px;background:#eee;align-items:center;justify-content:center" aria-hidden="true">${p.category === 'catering' ? '🍽️' : '🎤'}</span>`}</td>
       <td><strong>${esc(p.name)}</strong>${p.active ? '' : ` <span style="color:#c62828;font-size:0.78rem">(${esc(t('partners_hidden'))})</span>`}</td>
       <td>${esc(catLabel(p.category))}</td>
-      <td style="font-size:0.84rem">${websiteCell(p.website_url)}${p.website_url && p.phone ? ' · ' : ''}${esc(p.phone || '')}</td>
+      <td style="font-size:0.84rem">${[websiteCell(p.website_url), esc([p.contact_name, p.phone].filter(Boolean).join(' '))].filter(Boolean).join(' · ')}</td>
       <td>${Number(p.sort_order) || 0}</td>
       <td style="white-space:nowrap">
         <button class="btn btn-outline btn-sm btn-toggle" data-id="${esc(p.id)}">${esc(p.active ? t('partners_deactivate') : t('partners_activate'))}</button>
@@ -90,6 +90,7 @@ function openForm(partner) {
   document.getElementById('pf-desc-en').value = partner ? (partner.description_en || '') : '';
   document.getElementById('pf-url').value = partner ? (partner.website_url || '') : '';
   document.getElementById('pf-phone').value = partner ? (partner.phone || '') : '';
+  document.getElementById('pf-contact').value = partner ? (partner.contact_name || '') : '';
   document.getElementById('pf-sort').value = partner ? (partner.sort_order ?? 100) : 100;
   document.getElementById('pf-active').checked = partner ? !!partner.active : true;
   document.getElementById('pf-image').value = '';
@@ -133,7 +134,7 @@ async function savePartner() {
         .upload(path, pendingFile, { contentType: pendingFile.type });
       if (upErr) {
         console.error('image upload failed:', upErr);
-        showToast(`${t('partners_save_failed')} — ${upErr.message}`, 'error');
+        showToast(`${t('partners_save_failed')} - ${upErr.message}`, 'error');
         return;
       }
       image_path = path;
@@ -147,6 +148,7 @@ async function savePartner() {
       description_en: document.getElementById('pf-desc-en').value.trim() || null,
       website_url,
       phone: document.getElementById('pf-phone').value.trim() || null,
+      contact_name: document.getElementById('pf-contact').value.trim() || null,
       sort_order: Math.max(0, Math.min(9999, parseInt(document.getElementById('pf-sort').value, 10) || 100)),
       active: document.getElementById('pf-active').checked,
       image_path,
@@ -158,7 +160,7 @@ async function savePartner() {
       : await db.from('partners').insert(row);
     if (error) {
       console.error('partner save failed:', error);
-      showToast(`${t('partners_save_failed')} — ${error.message}`, 'error');
+      showToast(`${t('partners_save_failed')} - ${error.message}`, 'error');
       // Row write failed after a fresh upload: clean up the now-orphaned
       // object (best-effort) instead of leaving it to accumulate on retry.
       if (pendingFile && image_path !== oldImagePath) {
@@ -189,7 +191,7 @@ async function deletePartner(id) {
   const { error } = await db.from('partners').delete().eq('id', id);
   if (error) {
     console.error('partner delete failed:', error);
-    showToast(`${t('partners_save_failed')} — ${error.message}`, 'error');
+    showToast(`${t('partners_save_failed')} - ${error.message}`, 'error');
     return;
   }
   if (p.image_path) {
@@ -208,7 +210,7 @@ async function toggleActive(id) {
     .eq('id', id);
   if (error) {
     console.error('partner toggle failed:', error);
-    showToast(`${t('partners_save_failed')} — ${error.message}`, 'error');
+    showToast(`${t('partners_save_failed')} - ${error.message}`, 'error');
     return;
   }
   await loadPartners();

@@ -24,7 +24,7 @@ function addonLinePrice(svc, qty) {
   return qty * svc.price;
 }
 
-// Mandatory hall cleaning — auto-added on EVERY event regardless of guest
+// Mandatory hall cleaning - auto-added on EVERY event regardless of guest
 // count. Returns the cleaning addon (or null if the catalog entry is missing,
 // or the user already selected it on the addons page). Used by both the
 // summary and the submit payload so the customer sees + gets billed for it.
@@ -50,7 +50,7 @@ function timeOfDayFor(eventId) {
 
 function getLang() { return localStorage.getItem('margel_lang') || 'bg'; }
 
-// Display helpers — EUR throughout. Services are stored as integers, drinks as decimals.
+// Display helpers - EUR throughout. Services are stored as integers, drinks as decimals.
 function fmtSvc(eur) {
   if (eur == null) return getLang() === 'bg' ? 'По запитване' : 'On request';
   return '€' + eur;
@@ -161,7 +161,7 @@ function renderEventPicker() {
       const priceRange = document.createElement('span'); priceRange.className = 'event-pick-row__price';
       const lo = Math.min(...ev.variants.map(v => v.price_eur));
       const hi = Math.max(...ev.variants.map(v => v.price_eur));
-      priceRange.textContent = '€' + lo + ' – €' + hi;
+      priceRange.textContent = '€' + lo + ' - €' + hi;
       meta.append(priceRange);
     }
 
@@ -261,8 +261,8 @@ function renderStep2VariantPicker() {
       const parentEv = ev; // still has .variants at this point
       booking.event = {
         ...variant,
-        title_bg: parentEv.title_bg + ' — ' + variant.label_bg,
-        title_en: parentEv.title_en + ' — ' + variant.label_en,
+        title_bg: parentEv.title_bg + ' - ' + variant.label_bg,
+        title_en: parentEv.title_en + ' - ' + variant.label_en,
         img: parentEv.img,
       };
       booking.time = timeOfDayFor(variant.id);
@@ -368,7 +368,7 @@ function updatePreview() {
   h4.textContent = l === 'bg' ? booking.event.title_bg : booking.event.title_en;
   preview.appendChild(h4);
 
-  // Variant tag (day/night or 4h/8h) — only when variant is resolved
+  // Variant tag (day/night or 4h/8h) - only when variant is resolved
   if (booking.event.label_bg && !booking.event.variants) {
     const tag = document.createElement('span');
     tag.className = 'preview-variant-tag';
@@ -376,7 +376,7 @@ function updatePreview() {
     preview.appendChild(tag);
   }
 
-  // Price line — only show when variant is resolved (price_eur available)
+  // Price line - only show when variant is resolved (price_eur available)
   if (!booking.event.variants) {
     const p = document.createElement('p');
     p.textContent = fmtEvent(booking.event) + (booking.date ? ' · ' + booking.date : '');
@@ -503,7 +503,7 @@ function showDrinksPrompt() {
   prompt.style.display = 'flex';
 
   yesBtn.onclick = function() { prompt.style.display = 'none'; goToStep(3); };
-  // "Skip drinks" still lands on the Partners step (4) — skipping the drinks
+  // "Skip drinks" still lands on the Partners step (4) - skipping the drinks
   // menu must not skip partners.
   noBtn.onclick = function() { prompt.style.display = 'none'; goToStep(4); };
 }
@@ -573,7 +573,7 @@ function updateDrinksTotal() {
   if (el) el.textContent = '€' + total.toFixed(2);
 }
 
-// ── Step 5: Partners (mark interest — non-binding, no price impact) ──
+// ── Step 5: Partners (mark interest - non-binding, no price impact) ──
 // Fetched once per page load via the anon client; RLS exposes active rows
 // only. A fetch failure degrades to an empty step and NEVER blocks booking.
 let _partnersList = null;   // null = not loaded (yet); [] = loaded empty or failed
@@ -609,8 +609,8 @@ function renderPartners() {
     note.className = 'step-sub';
     note.style.textAlign = 'center';
     note.textContent = l === 'bg'
-      ? 'В момента няма партньори за показване — продължете напред.'
-      : 'No partners to show right now — please continue.';
+      ? 'В момента няма партньори за показване - продължете напред.'
+      : 'No partners to show right now - please continue.';
     wrap.appendChild(note);
     return;
   }
@@ -671,7 +671,7 @@ function renderPartners() {
 
 // ── Step 6: Contact ──
 
-// Country dial codes — ITU-T list (sovereign UN members + common territories).
+// Country dial codes - ITU-T list (sovereign UN members + common territories).
 // `code` is the alpha-2 ISO code, `dial` includes the leading +, `flag` is the
 // regional indicator emoji pair. Bulgaria is the default selection.
 const DIAL_CODES = [
@@ -949,12 +949,12 @@ function renderSummary() {
   ].forEach(row => {
     const div = document.createElement('div'); div.className = 'summary-row';
     const lbl = document.createElement('span'); lbl.className = 'sr-label'; lbl.textContent = row.label;
-    const val = document.createElement('span'); val.className = 'sr-value'; val.textContent = row.value || '—';
+    const val = document.createElement('span'); val.className = 'sr-value'; val.textContent = row.value || '-';
     div.appendChild(lbl); div.appendChild(val); body.appendChild(div);
   });
   container.appendChild(img); container.appendChild(body);
 
-  // Price breakdown — all in EUR
+  // Price breakdown - all in EUR
   if (priceSummary) {
     priceSummary.innerHTML = '';
     let addonsTotal = 0;
@@ -992,7 +992,7 @@ function renderSummary() {
       if (row.total) { div.style.fontWeight = '700'; div.style.fontSize = '1rem'; }
       if (row.discount) { div.style.color = '#2F8F4F'; }
       // Sub-rows detail a line already counted above (auto-cleaning inside
-      // the add-ons total) — mute them so they don't read as a second charge.
+      // the add-ons total) - mute them so they don't read as a second charge.
       if (row.sub) { div.style.fontSize = '0.85em'; div.style.color = '#7A7568'; div.style.paddingLeft = '14px'; }
       div.appendChild(lbl); div.appendChild(val); priceSummary.appendChild(div);
     });
@@ -1035,14 +1035,14 @@ function setupPromo() {
           already_used: 'Кодът вече е използван.',
           expired: 'Кодът е изтекъл.',
           invalid_format: 'Невалиден формат.',
-          confusable_chars: 'Проверете цифрите 0/1 и буквите O/I — кодовете ни не съдържат тези знаци.',
+          confusable_chars: 'Проверете цифрите 0/1 и буквите O/I - кодовете ни не съдържат тези знаци.',
         };
         const en = {
           not_found: 'Code not found.',
           already_used: 'Code already used.',
           expired: 'Code expired.',
           invalid_format: 'Invalid format.',
-          confusable_chars: 'Check 0/1 and O/I — our codes never contain those characters.',
+          confusable_chars: 'Check 0/1 and O/I - our codes never contain those characters.',
         };
         const dict = getLang() === 'bg' ? bg : en;
         status.textContent = dict[body.error] || (getLang() === 'bg' ? 'Невалиден код.' : 'Invalid code.');
@@ -1116,7 +1116,7 @@ function setupSubmit() {
       });
 
     // Post to submit-enquiry edge function. Anon role no longer has any
-    // direct table access — the function handles validation, the
+    // direct table access - the function handles validation, the
     // insert, and the optional discount-code claim atomically.
     const payload = {
       full_name: booking.name,
@@ -1166,7 +1166,7 @@ function setupSubmit() {
       const lang = getLang();
       // Surface known errors so the user knows what to fix instead of
       // being told to phone us. "rate_limited" is the most common during
-      // testing — separate message.
+      // testing - separate message.
       let msg;
       if (String(error).includes('rate_limited') || String(error).includes('429')) {
         msg = lang === 'bg'
@@ -1179,8 +1179,8 @@ function setupSubmit() {
         try { if (typeof turnstile !== 'undefined') turnstile.reset(); } catch { /* widget not rendered */ }
       } else if (String(error).includes('invalid_field')) {
         msg = lang === 'bg'
-          ? 'Моля проверете формата — едно от полетата има невалидна стойност.'
-          : 'Please check the form — one of the fields has an invalid value.';
+          ? 'Моля проверете формата - едно от полетата има невалидна стойност.'
+          : 'Please check the form - one of the fields has an invalid value.';
       } else {
         msg = (lang === 'bg'
           ? 'Нещо се обърка. Моля обадете ни се директно на 0888 100 042.'
@@ -1191,7 +1191,7 @@ function setupSubmit() {
       return;
     }
 
-    // Google Ads conversion — fires only after the server confirmed the
+    // Google Ads conversion - fires only after the server confirmed the
     // insert. transaction_id = enquiry number so a refresh/retry can never
     // double-count; value = the quoted booking total in EUR (same math as
     // renderSummary: venue + extra guests + addons incl. auto-cleaning +
@@ -1220,7 +1220,7 @@ function setupSubmit() {
       }
     } catch (e) { console.warn('gtag conversion failed:', e); }
 
-    // Success — show confirmation
+    // Success - show confirmation
     document.getElementById('step-6')?.classList.remove('active');
     document.querySelector('.wizard-progress').style.display = 'none';
     document.getElementById('form-success').style.display = 'block';
@@ -1244,7 +1244,7 @@ document.addEventListener('langChange', () => {
 // ── Init ──
 document.addEventListener('DOMContentLoaded', async () => {
   await loadOccupiedDates();   // fetch occupied dates before flatpickr initialises
-  loadPartners();              // fire-and-forget — partners must never delay the wizard
+  loadPartners();              // fire-and-forget - partners must never delay the wizard
   renderEventPicker();
   setupStep2();
   setupStep5();

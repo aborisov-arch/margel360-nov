@@ -1,4 +1,4 @@
-// Offer export — populates the Margel360 Excel template with enquiry data
+// Offer export - populates the Margel360 Excel template with enquiry data
 // and triggers a download. Admin opens the file in Excel/Google Sheets,
 // edits if needed, then exports to PDF themselves.
 //
@@ -31,11 +31,11 @@ const ADDON_TO_CELL = {
 // Base party config by event id. `title` rewrites A15 so the offer reads
 // correctly for non-Evening events; `start`/`end` populate Z8/AF8.
 const EVENT_CONFIG = {
-  evening:  { price:1280, title:'Парти /19:00–24:00/ за 5 часа до 40 човека -',           start:'19:00', end:'24:00', label:'Вечерно парти' },
-  corp4:    { price:330,  title:'Корпоративно събитие /4 часа, 08:00–12:00/ до 40 човека -', start:'08:00', end:'12:00', label:'Корпоративно — 4 часа' },
-  corp8:    { price:440,  title:'Корпоративно събитие /8 часа, 08:00–17:30/ до 40 човека -', start:'08:00', end:'17:30', label:'Корпоративно — 8 часа' },
-  bday_day: { price:700,  title:'Детски рожден ден /дневно, до 17:30, 5 часа/ до 40 човека -', start:'12:00', end:'17:30', label:'Детски рожден ден — Дневно' },
-  bday_eve: { price:970,  title:'Детски рожден ден /16:00–24:00, 5 часа/ до 40 човека -',  start:'16:00', end:'24:00', label:'Детски рожден ден — Вечерно' },
+  evening:  { price:1280, title:'Парти /19:00-24:00/ за 5 часа до 40 човека -',           start:'19:00', end:'24:00', label:'Вечерно парти' },
+  corp4:    { price:330,  title:'Корпоративно събитие /4 часа, 08:00-12:00/ до 40 човека -', start:'08:00', end:'12:00', label:'Корпоративно - 4 часа' },
+  corp8:    { price:440,  title:'Корпоративно събитие /8 часа, 08:00-17:30/ до 40 човека -', start:'08:00', end:'17:30', label:'Корпоративно - 8 часа' },
+  bday_day: { price:700,  title:'Детски рожден ден /дневно, до 17:30, 5 часа/ до 40 човека -', start:'12:00', end:'17:30', label:'Детски рожден ден - Дневно' },
+  bday_eve: { price:970,  title:'Детски рожден ден /16:00-24:00, 5 часа/ до 40 човека -',  start:'16:00', end:'24:00', label:'Детски рожден ден - Вечерно' },
   wedding:  { price:1500, title:'Сватба до 40 човека -',                                    start:'',      end:'',      label:'Сватба' },
 };
 
@@ -117,7 +117,7 @@ function formatDDMMYY(date) {
 // Use the last 6 hex chars of the enquiry uuid (% 1,000,000) as the offer
 // number. Stable per-enquiry so re-exports give the same number, and 1-in-a-
 // million collision odds across enquiries (vs ~1-in-10,000 with the prior
-// 4-hex window — too tight for a multi-year customer log).
+// 4-hex window - too tight for a multi-year customer log).
 function offerNumberFromId(id) {
   if (!id) return Date.now().toString().slice(-6);
   const s = String(id).replace(/-/g, '');
@@ -198,7 +198,7 @@ async function buildOfferXLSXBlob(enquiry) {
   for (const a of addons) {
     // The template has a dedicated always-on cleaning row (AA85 below), so a
     // cleaning addon on the enquiry (auto-added on every event) must not also
-    // land in "Други услуги" — that double-charged the cleaning fee.
+    // land in "Други услуги" - that double-charged the cleaning fee.
     if (a.id === 'cleaning') continue;
     const cell = ADDON_TO_CELL[a.id];
     if (cell) {
@@ -222,14 +222,14 @@ async function buildOfferXLSXBlob(enquiry) {
   // ── Cleaning fee always applies
   ws.getCell('AA85').value = 1;
 
-  // Drinks: per user direction, alcohol stays "on standby" — the template
+  // Drinks: per user direction, alcohol stays "on standby" - the template
   // shows just a link to the drinks menu and the admin handles itemized
   // drinks separately (paid 100% in advance per template note). Do NOT set
   // AA82; setting it to 1 would charge €1 on the alcohol line.
 
   const out = await wb.xlsx.writeBuffer();
   const blob = new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  // Allow Cyrillic + Latin letters, digits, dots and hyphens — \w would strip
+  // Allow Cyrillic + Latin letters, digits, dots and hyphens - \w would strip
   // Bulgarian names (Иван Петров → empty) and the file would be named "offer".
   const safeName = (enquiry.full_name || 'offer').replace(/[^\p{L}\p{N}\s.-]/gu, '').trim().replace(/\s+/g, '_') || 'offer';
   const filename = `Оферта_${safeName}_${formatDDMMYY(new Date())}.xlsx`;

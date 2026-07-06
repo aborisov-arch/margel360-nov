@@ -1,4 +1,4 @@
-// Services page — derived directly from `addonServices` in
+// Services page - derived directly from `addonServices` in
 // reservation-catalog.js so the public services page and the reservation
 // wizard never drift apart. Adding/renaming a service or swapping its image
 // in the catalog updates both surfaces.
@@ -6,7 +6,7 @@
 // Services that come in multiple sizes/lengths/styles are merged into a
 // single card on this page (e.g. fireworks 150-170s vs 300-340s render as
 // one "Заря" card with two side-by-side variant pills). The catalog stays
-// flat — the grouping is presentation-only and only on the services page;
+// flat - the grouping is presentation-only and only on the services page;
 // the reservation wizard still lists each variant separately.
 const SERVICE_GROUPS = [
   { key:'photographer', ids:['photo2','photo4'],
@@ -30,8 +30,8 @@ const SERVICE_GROUPS = [
     desc_bg:'Студена заря за торта или ефектен момент.',
     desc_en:'Cold sparkle fountains for the cake or showpiece moment.',
     variants:[
-      { id:'flare_s', label_bg:'150–170 сек.', label_en:'150–170 sec.' },
-      { id:'flare_l', label_bg:'300–340 сек.', label_en:'300–340 sec.' },
+      { id:'flare_s', label_bg:'150-170 сек.', label_en:'150-170 sec.' },
+      { id:'flare_l', label_bg:'300-340 сек.', label_en:'300-340 sec.' },
     ] },
   { key:'light_fountain', ids:['fountain_s','fountain_l'],
     title_bg:'Светлинен фонтан',  title_en:'Light Fountain',
@@ -62,8 +62,8 @@ const SERVICE_GROUPS = [
     desc_bg:'Свещи за залата и терасата.',
     desc_en:'Candles for the hall and the terrace.',
     variants:[
-      { id:'candles_h', label_bg:'Залата — 60 бр.',    label_en:'Hall — 60 pcs' },
-      { id:'candles_t', label_bg:'Терасата — 50 бр.', label_en:'Terrace — 50 pcs' },
+      { id:'candles_h', label_bg:'Залата - 60 бр.',    label_en:'Hall - 60 pcs' },
+      { id:'candles_t', label_bg:'Терасата - 50 бр.', label_en:'Terrace - 50 pcs' },
     ] },
   { key:'heating', ids:['heater','heater_tbl'],
     title_bg:'Газово отопление',  title_en:'Gas Heating',
@@ -90,7 +90,7 @@ function fmtPrice(svc) {
 
 function descFor(svc, lang) {
   const bg = {
-    dj:          'DJ за 5 часа — професионално озвучаване и осветление.',
+    dj:          'DJ за 5 часа - професионално озвучаване и осветление.',
     photo2:      'Професионален фотограф за вашето събитие.',
     photo4:      'Професионален фотограф за вашето събитие.',
     booth2:      'Фото будка 360°, RGB Ø100 см.',
@@ -99,10 +99,10 @@ function descFor(svc, lang) {
     wall_s:      'Декоративна стена SILVER L-3000 × H2500.',
     wall_g:      'Декоративна стена GOLD L-3000 × H2500.',
     decoration:  'Персонализирана украса за вашето тържество.',
-    flare_s:     'Заря 150–170 сек. / 100 изстрела.',
-    flare_l:     'Заря 300–340 сек. / 200 изстрела.',
-    fountain_s:  'Светлинен фонтан H 1300 мм — 6 бр.',
-    fountain_l:  'Светлинен фонтан H 2600 мм — 2 бр.',
+    flare_s:     'Заря 150-170 сек. / 100 изстрела.',
+    flare_l:     'Заря 300-340 сек. / 200 изстрела.',
+    fountain_s:  'Светлинен фонтан H 1300 мм - 6 бр.',
+    fountain_l:  'Светлинен фонтан H 2600 мм - 2 бр.',
     led:         'LED екран за VIDEO/FOTO 3800 × 2500 мм.',
     mic:         '3 броя + 1 брошка.',
     proj:        'Мултимедиен EPSON проектор за презентации и видео.',
@@ -112,23 +112,23 @@ function descFor(svc, lang) {
     wardrobe:    'Гардеробиер за 5 часа.',
     valet:       'Вале-паркинг за 5 часа.',
     cleaning:    'Цялостно почистване на залата след събитието.',
-    carpet_l:    'Червена пътека с оградни стойки и въже — 8 бр.',
-    carpet_s:    'Червена пътека с оградни стойки и въже — 6 бр.',
-    candles_h:   'Декоративни свещи за залата — 60 броя.',
-    candles_t:   'Декоративни свещи за терасата — 50 броя.',
+    carpet_l:    'Червена пътека с оградни стойки и въже - 8 бр.',
+    carpet_s:    'Червена пътека с оградни стойки и въже - 6 бр.',
+    candles_h:   'Декоративни свещи за залата - 60 броя.',
+    candles_t:   'Декоративни свещи за терасата - 50 броя.',
     numbers:     'Светещи цифри H = 1100 мм.',
     heater:      'Газова отоплителна гъба за терасата.',
     heater_tbl:  'Газова отоплителна маса за терасата.',
     glow_table:  'Маса светеща 1100 мм Ø60 см RGB.',
-    bar_stool:   'Бар стол — първите 40 бр. са включени в наема.',
-    conf_chair:  'Конферентен стол — първите 40 бр. са включени в наема.',
-    chiavari:    'Стол „Шивари" — първите 10 бр. са включени в наема.',
-    cocktail_t:  'Коктейлна маса Ø70 — първите 16 бр. са включени в наема.',
-    rect_table:  'Правоъгълна маса 180 см — 1 бр. включена в наема.',
-    round_table: 'Кръгла маса Ø152 — 1 бр. включена в наема.',
+    bar_stool:   'Бар стол - първите 40 бр. са включени в наема.',
+    conf_chair:  'Конферентен стол - първите 40 бр. са включени в наема.',
+    chiavari:    'Стол „Шивари" - първите 10 бр. са включени в наема.',
+    cocktail_t:  'Коктейлна маса Ø70 - първите 16 бр. са включени в наема.',
+    rect_table:  'Правоъгълна маса 180 см - 1 бр. включена в наема.',
+    round_table: 'Кръгла маса Ø152 - 1 бр. включена в наема.',
   };
   const en = {
-    dj:          'DJ for 5 hours — professional sound and lighting.',
+    dj:          'DJ for 5 hours - professional sound and lighting.',
     photo2:      'Professional photographer for your event.',
     photo4:      'Professional photographer for your event.',
     booth2:      '360° photo booth, RGB Ø100 cm.',
@@ -137,10 +137,10 @@ function descFor(svc, lang) {
     wall_s:      'Decorative wall SILVER L-3000 × H2500.',
     wall_g:      'Decorative wall GOLD L-3000 × H2500.',
     decoration:  'Personalised decoration for your celebration.',
-    flare_s:     'Sparkle fountain 150–170 sec. / 100 shots.',
-    flare_l:     'Sparkle fountain 300–340 sec. / 200 shots.',
-    fountain_s:  'Light fountain H 1300 mm — 6 pcs.',
-    fountain_l:  'Light fountain H 2600 mm — 2 pcs.',
+    flare_s:     'Sparkle fountain 150-170 sec. / 100 shots.',
+    flare_l:     'Sparkle fountain 300-340 sec. / 200 shots.',
+    fountain_s:  'Light fountain H 1300 mm - 6 pcs.',
+    fountain_l:  'Light fountain H 2600 mm - 2 pcs.',
     led:         'LED screen for VIDEO/PHOTO 3800 × 2500 mm.',
     mic:         '3 handheld + 1 lapel microphone.',
     proj:        'EPSON multimedia projector for presentations and video.',
@@ -150,20 +150,20 @@ function descFor(svc, lang) {
     wardrobe:    'Wardrobe attendant for 5 hours.',
     valet:       'Valet parking for 5 hours.',
     cleaning:    'Full hall cleaning after the event.',
-    carpet_l:    'Red carpet with barrier posts and rope — 8 pieces.',
-    carpet_s:    'Red carpet with barrier posts and rope — 6 pieces.',
-    candles_h:   'Decorative candles for the hall — 60 pieces.',
-    candles_t:   'Decorative candles for the terrace — 50 pieces.',
+    carpet_l:    'Red carpet with barrier posts and rope - 8 pieces.',
+    carpet_s:    'Red carpet with barrier posts and rope - 6 pieces.',
+    candles_h:   'Decorative candles for the hall - 60 pieces.',
+    candles_t:   'Decorative candles for the terrace - 50 pieces.',
     numbers:     'Light-up numbers H = 1100 mm.',
     heater:      'Gas patio heater for the terrace.',
     heater_tbl:  'Gas heating table for the terrace.',
     glow_table:  'RGB glowing table 1100 mm Ø60 cm.',
-    bar_stool:   'Bar stool — first 40 included with venue rental.',
-    conf_chair:  'Conference chair — first 40 included with venue rental.',
-    chiavari:    'Chiavari chair — first 10 included with venue rental.',
-    cocktail_t:  'Cocktail table Ø70 — first 16 included with venue rental.',
-    rect_table:  'Rectangular table 180 cm — 1 included with venue rental.',
-    round_table: 'Round table Ø152 — 1 included with venue rental.',
+    bar_stool:   'Bar stool - first 40 included with venue rental.',
+    conf_chair:  'Conference chair - first 40 included with venue rental.',
+    chiavari:    'Chiavari chair - first 10 included with venue rental.',
+    cocktail_t:  'Cocktail table Ø70 - first 16 included with venue rental.',
+    rect_table:  'Rectangular table 180 cm - 1 included with venue rental.',
+    round_table: 'Round table Ø152 - 1 included with venue rental.',
   };
   return (lang === 'bg' ? bg : en)[svc.id] || '';
 }
