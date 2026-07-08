@@ -47,7 +47,6 @@
           <input type="month" id="fin-month">
         </div>
         <button type="button" class="btn btn-sm btn-outline" id="btn-month-all">Всички</button>
-        <span class="fin-toolbar__rate"><strong>1 €</strong> = 1.95583 лв · фиксиран курс</span>
       </div>
 
       <!-- Monthly summary KPIs - auto-recompute from the events in the
@@ -61,32 +60,27 @@
           <div class="kpi" data-metric="income" role="button" tabindex="0" style="cursor:pointer" title="Вижте кои събития формират тази сума">
             <div class="kpi__label">Приходи (реализирани)</div>
             <div class="kpi__value" id="sum-income-eur">€0.00</div>
-            <div class="kpi__sub" id="sum-income-bgn">лв 0.00</div>
           </div>
           <div class="kpi" data-metric="upcoming" role="button" tabindex="0" style="cursor:pointer" title="Вижте кои събития формират тази сума">
             <div class="kpi__label">Очаквани (предстоящи)</div>
             <div class="kpi__value" id="sum-upcoming-eur">€0.00</div>
-            <div class="kpi__sub" id="sum-upcoming-bgn">лв 0.00</div>
           </div>
           <div class="kpi" data-metric="paid" role="button" tabindex="0" style="cursor:pointer" title="Вижте кои събития формират тази сума">
             <div class="kpi__label">Платено от клиенти</div>
             <div class="kpi__value" id="sum-paid-eur">€0.00</div>
-            <div class="kpi__sub" id="sum-paid-bgn">лв 0.00</div>
           </div>
           <div class="kpi" data-metric="expense" role="button" tabindex="0" style="cursor:pointer" title="Вижте кои събития формират тази сума">
             <div class="kpi__label">Разходи</div>
             <div class="kpi__value" id="sum-expense-eur">€0.00</div>
-            <div class="kpi__sub" id="sum-expense-bgn">лв 0.00</div>
           </div>
           <div class="kpi kpi--highlight" data-metric="profit" role="button" tabindex="0" style="cursor:pointer" title="Вижте кои събития формират тази сума">
             <div class="kpi__label">Печалба</div>
             <div class="kpi__value" id="sum-profit-eur">€0.00</div>
-            <div class="kpi__sub" id="sum-profit-bgn">лв 0.00</div>
           </div>
         </div>
 
-        <!-- KPI drill-down: click a summary box to see which events make up
-             that figure (rendered by openMetricBreakdown in financials.js). -->
+        <!-- Drill-down modal: KPI boxes (openMetricBreakdown) and category
+             pills (openCategoryBreakdown) both render into it. -->
         <div class="link-modal" id="drill-modal" hidden>
           <div class="link-modal__backdrop" data-drill-close></div>
           <div class="link-modal__panel">
@@ -184,7 +178,6 @@
               <div>
                 <div class="event-pnl__net-lbl">Нетна печалба</div>
                 <div class="event-pnl__net-val" id="pnl-net-eur">€0.00</div>
-                <div class="event-pnl__net-sub" id="pnl-net-bgn">лв 0.00</div>
               </div>
             </div>
 
@@ -208,6 +201,6 @@
   <script src="js/admin-i18n.js?v=18" defer></script>
   <script src="js/auth.js?v=5" defer></script>
   <script src="../js/drinks-data.js?v=6" defer></script>
-  <script src="js/financials.js?v=39" defer></script>
+  <script src="js/financials.js?v=40" defer></script>
 </body>
 </html>

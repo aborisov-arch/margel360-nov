@@ -10,9 +10,8 @@
 // All edits are local draft until "Запази промените" is pressed. Until
 // then the summary keeps showing the last-saved values.
 //
-// All amounts in EUR. BGN derived via the fixed peg 1.95583.
-
-const BGN_RATE = 1.95583;
+// All amounts in EUR (the admin panel is EUR-only; the public site keeps
+// the dual EUR/BGN display required for customers).
 
 // Same EVENT_BASE + guest fee constants used by reservation.js etc.
 const EVENT_BASE = { evening: 1280, wedding: 1500, corp4: 330, corp8: 440, bday_day: 700, bday_eve: 970 };
@@ -55,8 +54,18 @@ const EXPENSE_CATS = [
   { id: 'other',         label: 'Други' },
 ];
 
+// Income category labels - shared by the summary pills and the category
+// drill-down modal.
+const INCOME_LABELS = [
+  { id: 'rent',   label: 'Оферта' },
+  { id: 'drinks', label: 'Напитки' },
+  { id: 'addons', label: 'Доп. услуги' },
+  { id: 'dj',     label: 'DJ' },
+  { id: 'employees', label: 'Почистване' },
+  { id: 'overtime', label: 'Извънреден час' },
+];
+
 const fmtEur = n => '€' + (Number(n) || 0).toFixed(2);
-const fmtBgn = n => 'лв ' + (Number(n) || 0).toFixed(2);
 function esc(s) {
   if (s == null) return '';
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -394,44 +403,31 @@ function renderMonthSummary() {
   set('sum-month-label', monthLabel(monthFilter));
   set('sum-count',       `${realizedCount} ${realizedCount === 1 ? 'проведено' : 'проведени'}${upcomingCount ? ` · ${upcomingCount} предстоящи` : ''}`);
   set('sum-income-eur',  fmtEur(income));
-  set('sum-income-bgn',  fmtBgn(income * BGN_RATE));
   set('sum-upcoming-eur', fmtEur(upcomingIncome));
-  set('sum-upcoming-bgn', fmtBgn(upcomingIncome * BGN_RATE));
   set('sum-paid-eur',    fmtEur(paid));
-  set('sum-paid-bgn',    fmtBgn(paid * BGN_RATE));
   set('sum-expense-eur', fmtEur(expense));
-  set('sum-expense-bgn', fmtBgn(expense * BGN_RATE));
   set('sum-profit-eur',  fmtEur(profit));
-  set('sum-profit-bgn',  fmtBgn(profit * BGN_RATE));
   const profitEl = document.getElementById('sum-profit-eur');
   if (profitEl) profitEl.className = 'kpi__value ' + (profit >= 0 ? 'is-positive' : 'is-negative');
 
   const incomeCats = { rent, drinks, addons, overtime, dj, employees };
-  const INCOME_LABELS = [
-    { id: 'rent',   label: 'Оферта' },
-    { id: 'drinks', label: 'Напитки' },
-    { id: 'addons', label: 'Доп. услуги' },
-    { id: 'dj',     label: 'DJ' },
-    { id: 'employees', label: 'Почистване' },
-    { id: 'overtime', label: 'Извънреден час' },
-  ];
   const incomeBreak = document.getElementById('income-cat-breakdown');
   if (incomeBreak) {
     incomeBreak.innerHTML = INCOME_LABELS.filter(c => incomeCats[c.id] > 0).map(c => `
-      <div class="pill" data-cat="${esc(c.id)}">
+      <div class="pill" data-cat="${esc(c.id)}" role="button" tabindex="0" style="cursor:pointer" title="Пълна разбивка по събития">
         <div class="pill__label">${esc(c.label)}</div>
         <div class="pill__value">${fmtEur(incomeCats[c.id])}</div>
-        <div class="pill__sub">${fmtBgn(incomeCats[c.id] * BGN_RATE)}${income ? ` <span class="pill__pct">${Math.round(incomeCats[c.id] / income * 100)}%</span>` : ''}</div>
+        <div class="pill__sub">${income ? `<span class="pill__pct">${Math.round(incomeCats[c.id] / income * 100)}%</span>` : ''}</div>
       </div>
     `).join('');
   }
   const expenseBreak = document.getElementById('expense-cat-breakdown');
   if (expenseBreak) {
     const html = EXPENSE_CATS.filter(c => expByCat[c.id] > 0).map(c => `
-      <div class="pill" data-cat="${esc(c.id)}">
+      <div class="pill" data-cat="${esc(c.id)}" role="button" tabindex="0" style="cursor:pointer" title="Пълна разбивка по разходи">
         <div class="pill__label">${esc(c.label)}</div>
         <div class="pill__value">${fmtEur(expByCat[c.id])}</div>
-        <div class="pill__sub">${fmtBgn(expByCat[c.id] * BGN_RATE)}${expense ? ` <span class="pill__pct">${Math.round(expByCat[c.id] / expense * 100)}%</span>` : ''}</div>
+        <div class="pill__sub">${expense ? `<span class="pill__pct">${Math.round(expByCat[c.id] / expense * 100)}%</span>` : ''}</div>
       </div>
     `).join('');
     expenseBreak.innerHTML = html || '<div class="empty-state">Няма разходи в този период.</div>';
@@ -1019,7 +1015,6 @@ function updateDetailTotals() {
   set('pnl-paid-total',    fmtEur(paid));
   set('pnl-balance',       fmtEur(balance));
   set('pnl-net-eur',       fmtEur(net));
-  set('pnl-net-bgn',       fmtBgn(net * BGN_RATE));
   const marginEl = document.getElementById('pnl-margin');
   if (marginEl) {
     marginEl.textContent = margin == null ? '-' : margin + '%';
@@ -1415,31 +1410,6 @@ function scrollEventsIntoView() {
   list.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-// Briefly highlight events in the left rail whose linked expenses
-// contain the given category. Useful for "who's eating the catering
-// budget this month?".
-function highlightEventsWithCategory(catId) {
-  const matchingEnquiryIds = new Set();
-  filteredEvents().forEach(e => {
-    const fe = financialEventByEnquiryId.get(e.id);
-    if (!fe) return;
-    const rows = expensesByEvent.get(fe.id) || [];
-    if (rows.some(x => (x.category || 'other') === catId)) {
-      matchingEnquiryIds.add(e.id);
-    }
-  });
-  document.querySelectorAll('[data-enquiry]').forEach(btn => {
-    if (matchingEnquiryIds.has(btn.getAttribute('data-enquiry'))) {
-      btn.classList.add('is-highlight');
-    }
-  });
-  // Auto-fade the highlight so it's clearly transient.
-  setTimeout(() => {
-    document.querySelectorAll('[data-enquiry].is-highlight')
-      .forEach(b => b.classList.remove('is-highlight'));
-  }, 2600);
-}
-
 // ────────────────────────────────────────────────────────────────
 // Event handlers
 // ────────────────────────────────────────────────────────────────
@@ -1504,11 +1474,85 @@ function openMetricBreakdown(metric) {
   const m = document.getElementById('drill-modal');
   if (m) m.removeAttribute('hidden');
 }
+
+// ── Category drill-down ─────────────────────────────────────────
+// Click an income/expense category pill → same modal, full breakdown of
+// that category: income = one row per event; expense = one row per
+// expense line (event + note + amount). Rows jump to the event's P&L.
+// Same month scope + realized-only gate as renderMonthSummary, so the
+// modal total always matches the pill.
+function expenseDrillRowHtml(fe, x, amt) {
+  const enq = fe.enquiry_id ? allEnquiries.find(e => e.id === fe.enquiry_id) : null;
+  const name = enq ? (enq.full_name || '-') : (fe.customer_name || '-');
+  const badge = enq ? `#${esc(enq.enquiry_number ?? '-')}` : 'M';
+  const sel = enq ? `data-enquiry="${esc(fe.enquiry_id)}"` : `data-manual-fe="${esc(fe.id)}"`;
+  const note = x.notes ? ` · <span style="opacity:.75">${esc(x.notes)}</span>` : '';
+  return `<button type="button" class="drill-row" ${sel}
+      style="display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;text-align:left;padding:10px 12px;border:1px solid var(--fin-border,#e6e1d6);border-radius:8px;background:var(--fin-bg,#fff);cursor:pointer;font:inherit;color:inherit">
+      <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span class="enquiry-no">${badge}</span> ${esc(name)}${note}</span>
+      <span style="opacity:.7;font-size:.85em;white-space:nowrap">${esc(fmtDateBg(fe.event_date))}</span>
+      <span style="font-weight:700;white-space:nowrap">${fmtEur(amt)}</span>
+    </button>`;
+}
+function openCategoryBreakdown(kind, catId) {
+  const scopeFes = [];
+  for (const fe of financialEventsById.values()) {
+    if ((!monthFilter || fe.month === monthFilter) && eventHasHappened(fe)) scopeFes.push(fe);
+  }
+  let label, rowsHtml, lineCount;
+  let total = 0;
+  const eventIds = new Set();
+  if (kind === 'income') {
+    label = (INCOME_LABELS.find(c => c.id === catId) || {}).label || catId;
+    const rows = scopeFes
+      .map(fe => ({ fe, amt: feIncome(fe)[catId] || 0 }))
+      .filter(r => r.amt > 0)
+      .sort((a, b) => b.amt - a.amt);
+    rows.forEach(r => { total += r.amt; eventIds.add(r.fe.id); });
+    lineCount = rows.length;
+    rowsHtml = rows.map(r => drillRowHtml(r.fe, r.amt, false)).join('');
+  } else {
+    label = (EXPENSE_CATS.find(c => c.id === catId) || {}).label || catId;
+    const rows = [];
+    scopeFes.forEach(fe => {
+      (expensesByEvent.get(fe.id) || []).forEach(x => {
+        const amt = Number(x.amount_eur || 0);
+        if ((x.category || 'other') === catId && amt > 0) rows.push({ fe, x, amt });
+      });
+    });
+    rows.sort((a, b) => b.amt - a.amt);
+    rows.forEach(r => { total += r.amt; eventIds.add(r.fe.id); });
+    lineCount = rows.length;
+    rowsHtml = rows.map(r => expenseDrillRowHtml(r.fe, r.x, r.amt)).join('');
+  }
+  const title = document.getElementById('drill-title');
+  if (title) title.textContent = `${label} · ${monthLabel(monthFilter)}`;
+  const body = document.getElementById('drill-body');
+  if (body) {
+    const n = eventIds.size;
+    const linePart = kind === 'expense' && lineCount !== n
+      ? `${lineCount} ${lineCount === 1 ? 'разход' : 'разхода'} · ` : '';
+    body.innerHTML = lineCount
+      ? `<div class="link-modal__list">${rowsHtml}</div>
+         <div style="display:flex;justify-content:space-between;margin-top:14px;padding-top:10px;border-top:2px solid var(--fin-border,#e6e1d6);font-weight:800">
+           <span>Общо · ${linePart}${n} ${n === 1 ? 'събитие' : 'събития'}</span><span>${fmtEur(total)}</span>
+         </div>`
+      : '<div class="empty-state">Няма записи в тази категория за периода.</div>';
+  }
+  const m = document.getElementById('drill-modal');
+  if (m) m.removeAttribute('hidden');
+}
+function pillBreakdownFromTarget(pill) {
+  const kind = pill.closest('#income-cat-breakdown') ? 'income' : 'expense';
+  openCategoryBreakdown(kind, pill.getAttribute('data-cat'));
+}
 document.addEventListener('keydown', evt => {
   if (evt.key === 'Escape') { closeDrill(); return; }
   if (evt.key === 'Enter' || evt.key === ' ') {
     const kpi = evt.target.closest && evt.target.closest('#month-summary .kpi[data-metric]');
-    if (kpi) { evt.preventDefault(); openMetricBreakdown(kpi.getAttribute('data-metric')); }
+    if (kpi) { evt.preventDefault(); openMetricBreakdown(kpi.getAttribute('data-metric')); return; }
+    const pill = evt.target.closest && evt.target.closest('#month-summary .pill[data-cat]');
+    if (pill) { evt.preventDefault(); pillBreakdownFromTarget(pill); }
   }
 });
 
@@ -1527,16 +1571,13 @@ document.addEventListener('click', evt => {
   if (evt.target.closest('#btn-cancel-pnl'))        { cancelDraft(); return; }
   if (evt.target.closest('#btn-delete-pnl'))        { deletePnl(); return; }
 
-  // Click anywhere on the summary block to jump to the event list. Lets
-  // the bookkeeper drill down from "Печалба €X" → "which events made
-  // that?" without scrolling manually. Expense category pills also
-  // highlight events that contain that category.
-  const pill = evt.target.closest('#expense-cat-breakdown .pill');
+  // Summary drill-downs: KPI boxes open the per-event metric breakdown,
+  // category pills open the per-category breakdown in the same modal.
+  const pill = evt.target.closest('#month-summary .pill[data-cat]');
   const kpi  = evt.target.closest('#month-summary .kpi');
   const sumHead = evt.target.closest('#month-summary .fin-section__head');
   if (pill) {
-    highlightEventsWithCategory(pill.getAttribute('data-cat'));
-    scrollEventsIntoView();
+    pillBreakdownFromTarget(pill);
     return;
   }
   if (kpi) {
