@@ -21,7 +21,7 @@ serve(async (req) => {
 
   const { data: e, error } = await sb
     .from("enquiries")
-    .select("id, full_name, event_type, preferred_date")
+    .select("id, full_name, event_type, preferred_date, lang")
     .eq("feedback_token", token)
     .maybeSingle();
 
