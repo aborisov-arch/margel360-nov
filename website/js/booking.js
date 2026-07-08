@@ -1,4 +1,4 @@
-// booking.js — read-only keepsake view for a customer's booking.
+// booking.js - read-only keepsake view for a customer's booking.
 // Same token flow as edit.html, but purely presentational; links out
 // to edit.html?token=... if the customer wants to change anything.
 
@@ -18,7 +18,7 @@ function fmtDateBg(stored) {
 
 function fmtEur(n) {
   const v = Number(n);
-  return Number.isFinite(v) ? `€${Math.round(v)}` : '—';
+  return Number.isFinite(v) ? `€${Math.round(v)}` : '-';
 }
 
 function show(id) {
@@ -79,7 +79,7 @@ function renderProgram(e, token) {
     </div>
     <div>
       <span class="label-caps">Гости</span>
-      <strong>${e.guests != null ? esc(e.guests) : '—'}</strong>
+      <strong>${e.guests != null ? esc(e.guests) : '-'}</strong>
     </div>
     <div>
       <span class="label-caps">Телефон</span>

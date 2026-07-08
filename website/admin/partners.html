@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Партньори - Маргел 360° Админ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/admin.css?v=17">
+  <link rel="icon" href="/favicon.ico" sizes="48x48">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/assets/favicon-192.png">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+</head>
+<body>
+  <header class="admin-header">
+    <a href="dashboard.html" class="admin-logo">МАРГЕЛ <span>360°</span></a>
+    <nav class="admin-nav">
+      <a href="dashboard.html" data-i18n="nav_enquiries">Запитвания</a>
+      <a href="customers.html" data-i18n="nav_customers">Клиенти</a>
+      <a href="calendar.html" data-i18n="nav_calendar">Календар</a>
+      <a href="feedback.html">Впечатления</a>
+      <a href="partners.html" class="active" data-i18n="nav_partners">Партньори</a>
+      <a href="marketing.html" data-i18n="nav_marketing">Маркетинг</a>
+      <a href="financials.html" data-i18n="nav_financials">Финанси</a>
+      <a href="activity.html" class="owner-only" hidden data-i18n="nav_activity">Дневник</a>
+    </nav>
+    <div class="lang-toggle">
+      <button class="lang-btn" data-lang="bg">БГ</button>
+      <button class="lang-btn" data-lang="en">EN</button>
+    </div>
+    <button class="btn btn-outline btn-sm" id="logout-btn" data-i18n="nav_logout">Изход</button>
+  </header>
+
+  <main class="admin-main">
+    <div class="admin-container">
+      <h1 class="page-title" data-i18n="partners_title">Партньори</h1>
+      <p class="page-sub" data-i18n="partners_lead" style="max-width:720px;color:#666">Кетъринг фирми и артисти, показвани на сайта и в стъпката „Партньори" на запитването. Скрит партньор изчезва и от двете веднага.</p>
+
+      <div style="display:flex;gap:10px;align-items:center;margin:18px 0;flex-wrap:wrap">
+        <div id="partners-filter" role="group" aria-label="Category filter">
+          <button class="btn btn-outline btn-sm cat-filter active" data-cat="" data-i18n="partners_all">Всички</button>
+          <button class="btn btn-outline btn-sm cat-filter" data-cat="catering" data-i18n="partners_cat_catering">Кетъринг</button>
+          <button class="btn btn-outline btn-sm cat-filter" data-cat="artist" data-i18n="partners_cat_artist">Артист</button>
+        </div>
+        <button class="btn btn-primary btn-sm" id="partner-add-btn" data-i18n="partners_add" style="margin-left:auto">Добави партньор</button>
+      </div>
+
+      <div class="marketing-card" id="partner-form" style="display:none;max-width:760px;margin-bottom:22px">
+        <h3 id="partner-form-title" style="margin:0 0 16px">Добави партньор</h3>
+        <div class="form-group">
+          <label for="pf-name" data-i18n="partners_f_name">Име</label>
+          <input type="text" id="pf-name" maxlength="200">
+        </div>
+        <div class="form-group">
+          <label for="pf-category" data-i18n="partners_f_category">Категория</label>
+          <select id="pf-category" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px">
+            <option value="catering" data-i18n="partners_cat_catering">Кетъринг</option>
+            <option value="artist" data-i18n="partners_cat_artist">Артист</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="pf-desc-bg" data-i18n="partners_f_desc_bg">Описание (БГ)</label>
+          <textarea id="pf-desc-bg" rows="2" maxlength="500" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="pf-desc-en" data-i18n="partners_f_desc_en">Описание (EN)</label>
+          <textarea id="pf-desc-en" rows="2" maxlength="500" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="pf-url" data-i18n="partners_f_url">Уебсайт (https://…)</label>
+          <input type="url" id="pf-url" maxlength="300" placeholder="https://">
+        </div>
+        <div class="form-group">
+          <label for="pf-phone" data-i18n="partners_f_phone">Телефон</label>
+          <input type="text" id="pf-phone" maxlength="30">
+        </div>
+        <div class="form-group">
+          <label for="pf-contact" data-i18n="partners_f_contact">Лице за контакт (име)</label>
+          <input type="text" id="pf-contact" maxlength="120">
+        </div>
+        <div class="form-group">
+          <label for="pf-sort" data-i18n="partners_f_sort">Ред (по-малко = по-напред)</label>
+          <input type="number" id="pf-sort" value="100" min="0" max="9999" step="1">
+        </div>
+        <div class="form-group">
+          <label for="pf-image" data-i18n="partners_f_image">Снимка</label>
+          <input type="file" id="pf-image" accept="image/jpeg,image/png,image/webp">
+          <div id="pf-image-preview" style="margin-top:10px"></div>
+        </div>
+        <div class="form-group" style="display:flex;gap:8px;align-items:center">
+          <input type="checkbox" id="pf-active" checked style="width:18px;height:18px">
+          <label for="pf-active" style="margin:0" data-i18n="partners_f_active">Видим на сайта</label>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-primary" id="pf-save" data-i18n="partners_save">Запази</button>
+          <button class="btn btn-outline" id="pf-cancel" data-i18n="partners_cancel">Отказ</button>
+        </div>
+      </div>
+
+      <table class="customers-table">
+        <thead>
+          <tr>
+            <th data-i18n="partners_col_image">Снимка</th>
+            <th data-i18n="partners_col_name">Име</th>
+            <th data-i18n="partners_col_category">Категория</th>
+            <th data-i18n="partners_col_contact">Контакт</th>
+            <th data-i18n="partners_col_sort">Ред</th>
+            <th data-i18n="partners_col_actions">Действия</th>
+          </tr>
+        </thead>
+        <tbody id="partners-body"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7" integrity="sha384-tD6X9wDfTRdKpuPoHFZrVW2RXjSYSWjLBPWXxpHprWWl9eaHlwl05aRjHsiKF97n" crossorigin="anonymous" defer></script>
+  <script src="js/supabase-client.js?v=4" defer></script>
+  <script src="js/admin-i18n.js?v=18" defer></script>
+  <script src="js/auth.js?v=5" defer></script>
+  <script src="js/toast.js?v=2" defer></script>
+  <script src="js/partners.js?v=3" defer></script>
+</body>
+</html>

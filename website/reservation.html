@@ -3,27 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Резервирайте Зала в София — Онлайн Запитване | Маргел 360°</title>
-  <meta name="description" content="Резервирайте зала Маргел 360° онлайн — изберете събитие, дата и услуги. Наем от €330. Отговаряме до 24 часа. бул. Околовръстен път 155, ет.4, София 1618.">
+  <title>Резервирайте Зала в София - Онлайн Запитване | Маргел 360°</title>
+  <meta name="description" content="Резервирайте зала Маргел 360° онлайн - изберете събитие, дата и услуги. Наем от €330. Отговаряме до 24 часа. бул. Околовръстен път 155, ет.4, София 1618.">
   <link rel="canonical" href="https://margel360.bg/reservation.html">
   <link rel="alternate" hreflang="bg" href="https://margel360.bg/reservation.html">
   <link rel="alternate" hreflang="x-default" href="https://margel360.bg/reservation.html">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="bg_BG">
   <meta property="og:site_name" content="Маргел 360°">
-  <meta property="og:title" content="Запитване за наем — Маргел 360°">
-  <meta property="og:description" content="Резервирайте вашата дата в зала Маргел 360° — онлайн запитване за сватба, рожден ден или корпоративно събитие.">
+  <meta property="og:title" content="Запитване за наем - Маргел 360°">
+  <meta property="og:description" content="Резервирайте вашата дата в зала Маргел 360° - онлайн запитване за сватба, рожден ден или корпоративно събитие.">
   <meta property="og:image" content="https://margel360.bg/assets/images/header-gallery.jpg">
   <meta property="og:url" content="https://margel360.bg/reservation.html">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Резервирайте Зала в София — Маргел 360°">
+  <meta name="twitter:title" content="Резервирайте Зала в София - Маргел 360°">
   <meta name="twitter:description" content="Онлайн запитване за наем на зала Маргел 360°. Наем от €330. Отговаряме до 24 часа. бул. Околовръстен път 155, София.">
   <meta name="twitter:image" content="https://margel360.bg/assets/images/header-gallery.jpg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="css/reservation.css?v=6">
+  <link rel="stylesheet" href="css/style.css?v=2">
+  <link rel="stylesheet" href="css/reservation.css?v=7">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <script type="application/ld+json">
 {
@@ -43,7 +43,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="/assets/favicon-192.png">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
   <!-- Google Tag Manager -->
-  <script src="js/analytics-init.js?v=1"></script>
+  <script src="js/analytics-init.js?v=2"></script>
   <!-- End Google Tag Manager -->
 </head>
 <body>
@@ -121,10 +121,14 @@
           </button>
           <button class="wstep" data-step="4" role="listitem">
             <span class="wstep-num">5</span>
-            <span class="wstep-label" data-i18n="step5_label">Контакти</span>
+            <span class="wstep-label" data-i18n="stepP_label">Партньори</span>
           </button>
           <button class="wstep" data-step="5" role="listitem">
             <span class="wstep-num">6</span>
+            <span class="wstep-label" data-i18n="step5_label">Контакти</span>
+          </button>
+          <button class="wstep" data-step="6" role="listitem">
+            <span class="wstep-num">7</span>
             <span class="wstep-label" data-i18n="step6_label">Резюме</span>
           </button>
         </div>
@@ -200,8 +204,19 @@
           </div>
         </div>
 
-        <!-- Step 5: Contact -->
+        <!-- Step 5: Partners (mark interest - non-binding, no price impact) -->
         <div class="wizard-step" id="step-4">
+          <h2 class="step-heading" data-i18n="sP_title">Партньори</h2>
+          <p class="step-sub" data-i18n="sP_sub">Отбележете кетъринг или артисти, които ви интересуват - ще ви свържем с тях. Безплатно и необвързващо (по желание).</p>
+          <div id="partners-wizard-wrap"></div>
+          <div class="wizard-nav">
+            <button class="btn btn-outline" data-goto="3" data-i18n="btn_back">Назад</button>
+            <button class="btn btn-primary" data-goto="5" data-i18n="btn_next">Напред</button>
+          </div>
+        </div>
+
+        <!-- Step 6: Contact -->
+        <div class="wizard-step" id="step-5">
           <h2 class="step-heading" data-i18n="s5_title">Вашите данни</h2>
           <div class="form-wrapper">
             <div class="form-row">
@@ -225,10 +240,10 @@
               <span class="form-error" id="err-email-msg" role="alert" data-i18n="err_email">Моля въведете валиден имейл адрес.</span>
             </div>
             <div class="form-group" id="fg-guests">
-              <label for="res-guests" data-i18n="res_guests">Брой гости (1–200)</label>
+              <label for="res-guests" data-i18n="res_guests">Брой гости (1-200)</label>
               <input type="number" id="res-guests" name="guests" min="1" max="200" placeholder="50" aria-describedby="err-guests-msg guests-hint">
-              <span class="field-hint" id="guests-hint">До 40 гости са включени в наема. Всеки следващ гост — €15.</span>
-              <span class="form-error" id="err-guests-msg" role="alert" data-i18n="err_guests">Моля въведете брой гости (1–200).</span>
+              <span class="field-hint" id="guests-hint">До 40 гости са включени в наема. Всеки следващ гост - €15.</span>
+              <span class="form-error" id="err-guests-msg" role="alert" data-i18n="err_guests">Моля въведете брой гости (1-200).</span>
             </div>
             <div class="form-group">
               <label for="res-message" data-i18n="res_message">Бележки (по желание)</label>
@@ -236,13 +251,13 @@
             </div>
           </div>
           <div class="wizard-nav">
-            <button class="btn btn-outline" data-goto="3" data-i18n="btn_back">Назад</button>
+            <button class="btn btn-outline" data-goto="4" data-i18n="btn_back">Назад</button>
             <button class="btn btn-primary" id="btn-step5-next" data-i18n="btn_next">Напред</button>
           </div>
         </div>
 
-        <!-- Step 6: Summary -->
-        <div class="wizard-step" id="step-5">
+        <!-- Step 7: Summary -->
+        <div class="wizard-step" id="step-6">
           <h2 class="step-heading" data-i18n="s6_title">Преглед и изпращане</h2>
           <div class="summary-card" id="booking-summary"></div>
           <div class="price-summary" id="price-summary"></div>
@@ -273,18 +288,18 @@
               </label>
             </div>
           </div>
-          <!-- Marketing consent — optional opt-in (GDPR: freely given, never
+          <!-- Marketing consent - optional opt-in (GDPR: freely given, never
                blocks submission). Stored as enquiries.marketing_consent. -->
           <label class="consent-check" for="res-marketing-consent" style="display:flex;gap:10px;align-items:flex-start;margin:18px 0 4px;font-size:0.9rem;line-height:1.45;cursor:pointer">
             <input type="checkbox" id="res-marketing-consent" name="marketing_consent" style="margin-top:3px;flex:0 0 auto;width:18px;height:18px;cursor:pointer">
             <span data-i18n="res_marketing_consent">Съгласявам се Margel 360 да се свързва с мен с оферти, промоции и новини по имейл и телефон. (по желание)</span>
           </label>
-          <!-- Cloudflare Turnstile (Managed mode — invisible for most
+          <!-- Cloudflare Turnstile (Managed mode - invisible for most
                visitors). submit-enquiry rejects submissions without a
                valid token. -->
           <div class="cf-turnstile" data-sitekey="0x4AAAAAADjSB9200ZicBIRp" data-language="auto" style="margin:18px 0 4px"></div>
           <div class="wizard-nav">
-            <button class="btn btn-outline" data-goto="4" data-i18n="btn_back">Назад</button>
+            <button class="btn btn-outline" data-goto="5" data-i18n="btn_back">Назад</button>
             <button class="btn btn-primary" id="btn-submit" data-i18n="res_submit">Изпрати запитване</button>
           </div>
         </div>
@@ -341,14 +356,14 @@
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/bg.js"></script>
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-  <script src="js/translations-reservation.js?v=2"></script>
-  <script src="js/main.js"></script>
+  <script src="js/translations-reservation.js?v=4"></script>
+  <script src="js/main.js?v=2"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7" integrity="sha384-tD6X9wDfTRdKpuPoHFZrVW2RXjSYSWjLBPWXxpHprWWl9eaHlwl05aRjHsiKF97n" crossorigin="anonymous"></script>
-  <script src="js/reservation-supabase.js"></script>
-  <script src="js/reservation-catalog.js?v=1"></script>
-  <script src="js/drinks-data.js?v=6"></script>
-  <script src="js/reservation.js?v=21"></script>
+  <script src="js/reservation-supabase.js?v=2"></script>
+  <script src="js/reservation-catalog.js?v=2"></script>
+  <script src="js/drinks-data.js?v=7"></script>
+  <script src="js/reservation.js?v=23"></script>
   <a href="tel:+359888100042" class="fab-phone" aria-label="Обадете се"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg></a>
-  <script src="js/cookie-consent.js" defer></script>
+  <script src="js/cookie-consent.js?v=3" defer></script>
 </body>
 </html>

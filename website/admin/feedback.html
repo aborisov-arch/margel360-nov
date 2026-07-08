@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title>Впечатления — Маргел 360° Админ</title>
+  <title>Впечатления - Маргел 360° Админ</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/admin.css?v=15">
+  <link rel="stylesheet" href="css/admin.css?v=17">
   <style>
     .feedback-summary { display:flex; flex-wrap:wrap; gap:20px; margin:0 0 22px; padding:18px 22px; background:#fff; border:1px solid var(--border); border-radius:10px; box-shadow:0 1px 3px rgba(0,0,0,0.04); }
     .feedback-summary > div { display:flex; flex-direction:column; min-width:90px; }
@@ -47,9 +47,10 @@
       <a href="customers.html" data-i18n="nav_customers">Клиенти</a>
       <a href="calendar.html" data-i18n="nav_calendar">Календар</a>
       <a href="feedback.html" class="active">Впечатления</a>
+      <a href="partners.html" data-i18n="nav_partners">Партньори</a>
       <a href="marketing.html" data-i18n="nav_marketing">Маркетинг</a>
       <a href="financials.html" data-i18n="nav_financials">Финанси</a>
-      <a href="activity.html" class="owner-only" hidden>Дневник</a>
+      <a href="activity.html" class="owner-only" hidden data-i18n="nav_activity">Дневник</a>
     </nav>
     <div class="lang-toggle">
       <button class="lang-btn" data-lang="bg">БГ</button>
@@ -70,9 +71,9 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7" integrity="sha384-tD6X9wDfTRdKpuPoHFZrVW2RXjSYSWjLBPWXxpHprWWl9eaHlwl05aRjHsiKF97n" crossorigin="anonymous" defer></script>
-  <script src="js/supabase-client.js?v=3" defer></script>
-  <script src="js/admin-i18n.js?v=13" defer></script>
+  <script src="js/supabase-client.js?v=4" defer></script>
+  <script src="js/admin-i18n.js?v=18" defer></script>
   <script src="js/auth.js?v=5" defer></script>
-  <script src="js/admin-feedback.js"></script>
+  <script src="js/admin-feedback.js?v=2"></script>
 </body>
 </html>

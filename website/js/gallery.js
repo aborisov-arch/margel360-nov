@@ -60,7 +60,7 @@ const categories = [
     title_bg: 'Зала Маргел 360°',
     title_en: 'Margel 360° Venue',
     images: [
-      // Real photos of the hall — taken at evening events. The previous
+      // Real photos of the hall - taken at evening events. The previous
       // venue-1..17 set was a mix of equipment / illustration stock and got
       // cleared out per Angel's request.
       { src:'assets/images/_C1_2507.jpg',          alt_bg:'Зала Маргел 360°', alt_en:'Margel 360° hall' },

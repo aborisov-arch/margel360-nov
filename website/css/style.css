@@ -26,7 +26,7 @@
    1px tinted border + a sibling pseudo-element painting a soft gold radial
    gradient masked to the border ring. The gradient uses
    background-attachment: fixed and reads --gx / --gy from :root, set once
-   per pointermove in main.js — so cards light up at the edge nearest the
+   per pointermove in main.js - so cards light up at the edge nearest the
    cursor with zero per-card JS work. Skip on touch devices.
 
    Apply by tagging the selector list below. To add a new card type, just
@@ -215,7 +215,7 @@ p { color: var(--text-muted); }
 .nav-links a:hover::after, .nav-links a.active::after { transform: scaleX(1); }
 .nav-links a.active { color: var(--text); }
 
-/* Interior pages — nav always scrolled */
+/* Interior pages - nav always scrolled */
 .nav.scrolled .nav-logo { color: var(--text); }
 
 /* Lang toggle */
@@ -298,7 +298,7 @@ p { color: var(--text-muted); }
 }
 .hero-content { position: relative; z-index: 1; }
 
-/* Gallery — featured video block */
+/* Gallery - featured video block */
 .gl-featured-video { padding-top: 64px; padding-bottom: 12px; }
 .gl-featured-video__head { text-align: center; margin: 0 0 24px; }
 .gl-featured-video__eyebrow {
@@ -628,7 +628,7 @@ p { color: var(--text-muted); }
   .page-header-img h1 { font-size: clamp(1.6rem, 7vw, 2.6rem); }
 }
 
-/* Buttons — full-width on very small screens */
+/* Buttons - full-width on very small screens */
 @media (max-width: 400px) {
   .hero-content .btn { width: 100%; text-align: center; }
 }
@@ -677,13 +677,13 @@ p { color: var(--text-muted); }
   .stat-num { font-size: 2rem; }
 }
 
-/* Event cards — ensure image doesn't crop too aggressively */
+/* Event cards - ensure image doesn't crop too aggressively */
 @media (max-width: 768px) {
   .event-card img { height: 200px; }
   .events-grid { gap: 16px; }
 }
 
-/* About — put image after text on mobile */
+/* About - put image after text on mobile */
 @media (max-width: 768px) {
   .about-grid { gap: 36px; }
   .about-image { order: 1; }
@@ -737,7 +737,7 @@ p { color: var(--text-muted); }
   .contact-grid { gap: 36px; }
 }
 
-/* Nav drawer — larger tap targets */
+/* Nav drawer - larger tap targets */
 @media (max-width: 768px) {
   .nav-drawer a { padding: 6px 0; font-size: 1.05rem; min-height: 44px; display: flex; align-items: center; }
   .hamburger span { width: 26px; height: 2.5px; }
@@ -755,7 +755,7 @@ p { color: var(--text-muted); }
   .lang-toggle { min-height: 44px; padding: 0 12px; }
 }
 
-/* ── Drinks menu page (menu.html) — editorial price list ── */
+/* ── Drinks menu page (menu.html) - editorial price list ── */
 .menu-sections { max-width: 760px; margin: 0 auto; }
 .menu-category { margin-bottom: 48px; }
 .menu-category:last-child { margin-bottom: 0; }

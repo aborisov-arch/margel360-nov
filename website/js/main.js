@@ -7,7 +7,7 @@
   const tryPlay = vid.play();
   if (tryPlay && tryPlay.catch) {
     tryPlay.catch(function() {
-      // Autoplay blocked — retry on first user interaction
+      // Autoplay blocked - retry on first user interaction
       function playOnInteraction() {
         vid.play();
         document.removeEventListener('touchstart', playOnInteraction);
@@ -129,7 +129,7 @@ function initCounters() {
 // coordinates and expose it as --gx / --gy on the document root. Cards
 // styled with .glow-border use a fixed-attachment radial-gradient masked
 // to the border ring, so each card lights up the part of its edge nearest
-// to the cursor. One listener, all cards — no per-element work.
+// to the cursor. One listener, all cards - no per-element work.
 function initGlowBorders() {
   if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) return;
   const root = document.documentElement;

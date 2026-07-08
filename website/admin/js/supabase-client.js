@@ -1,5 +1,5 @@
 // Supabase project credentials
-// The anon key is safe to expose client-side — Row Level Security controls data access.
+// The anon key is safe to expose client-side - Row Level Security controls data access.
 // Replace the placeholder values below with your actual Supabase project values from:
 // Project Settings → API → Project URL and anon/public key
 const SUPABASE_URL = 'https://wlxutsufrobzovdsiecb.supabase.co';
@@ -10,6 +10,6 @@ const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // Also expose as window.db so feature scripts can sanity-check whether
 // the client loaded before they try to use it (classic-script top-level
 // `const` is reachable as a bare identifier but is NOT a property of
-// window — that mismatch caused a false-negative guard on the financials
+// window - that mismatch caused a false-negative guard on the financials
 // page).
 window.db = db;

@@ -13,9 +13,9 @@ Full infrastructure inventory, accounts, secrets and the new-machine runbook: **
 
 ## File structure
 
-- `website/` — public site (HTML/CSS/JS). Multi-page static; shared `style.css` and `main.js`. BG/EN i18n via per-page `translations-*.js` + `data-i18n` attributes + `localStorage` (`margel_lang`).
-- `website/admin/` — internal admin panel (Supabase Auth + email allowlist): `dashboard` (enquiries CRM), `customers`, `calendar`, `feedback`, `marketing`, `financials` (per-event P&L), `templates/offer-evening.xlsx`.
-- `website/js/reservation.js` — 6-step booking wizard; `edit.js` — customer magic-link edit page; `reservation-catalog.js` + `drinks-data.js` — the shared product catalog (also loaded by edit.html).
+- `website/` — public site (HTML/CSS/JS). Multi-page static; shared `style.css` and `main.js`. BG/EN i18n via per-page `translations-*.js` + `data-i18n` attributes + `localStorage` (`margel_lang`). `partners.html` + `js/partners.js` render the public partners catalog from the `partners` table (anon read).
+- `website/admin/` — internal admin panel (Supabase Auth + email allowlist): `dashboard` (enquiries CRM), `customers`, `calendar`, `feedback`, `marketing`, `partners` (public partners catalog CRUD + image upload to the `partner-images` storage bucket), `financials` (per-event P&L), `templates/offer-evening.xlsx`.
+- `website/js/reservation.js` — 7-step booking wizard; `edit.js` — customer magic-link edit page; `reservation-catalog.js` + `drinks-data.js` — the shared product catalog (also loaded by edit.html).
 - `supabase/` — migrations (canonical since `20260609120000`), Edge Functions, `_shared/` modules.
 - `docs/superpowers/` — original plans/specs; `docs/HANDOVER.md` — operations runbook.
 
@@ -64,6 +64,7 @@ All senders are `Margel360 <enquiries@margel360.bg>` via Resend. On new booking,
 - `enquiries_auto_block_date_trigger` inserts into `occupied_dates` when pipeline_status → confirmed/completed. `occupied_dates` is keyed by date only (no enquiry link) — dashboard delete/unlock free a date **only** when that enquiry owns it and no other confirmed enquiry shares it (keep that guard).
 - `public.rate_limits` + `rate_limit_hit()` — service-role only.
 - Migrations are applied via the Supabase MCP/`apply_migration` AND committed to `supabase/migrations/` — keep both in sync (the repo drifted from live once; migration `20260609120000` resynced it).
+- `public.partners` (catering|artist; anon SELECT active rows) + storage bucket `partner-images` (public read, admin write). `enquiries.partner_interest` jsonb stores the wizard's mark-interest snapshot `[{id,name,category}]` — written only by submit-enquiry; the edit paths never touch it.
 
 ## Offer XLSX export (`offer-export.js` + templates/offer-evening.xlsx)
 

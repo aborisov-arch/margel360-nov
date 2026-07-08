@@ -1,9 +1,9 @@
-/* Fraunces display serif for headings — carries the public site's
+/* Fraunces display serif for headings - carries the public site's
    serif+sans brand pairing into the admin. Loaded here (not per-page HTML)
    so every admin page gets it through the shared stylesheet. */
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..600;1,9..144,400..600&display=swap');
 
-/* Screen reader only — visually hidden but accessible */
+/* Screen reader only - visually hidden but accessible */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -206,6 +206,8 @@ body {
 
 .btn-full { width: 100%; }
 .btn-sm { padding: 6px 14px; font-size: 0.8rem; }
+
+.cat-filter.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
 /* ── Form elements ── */
 .form-group { margin-bottom: 20px; }
@@ -479,7 +481,7 @@ body {
 .payment-tracking.is-view .payment-edit { display: none; }
 .payment-tracking.is-edit .payment-view { display: none; }
 
-/* Compact view mode — three inline rows */
+/* Compact view mode - three inline rows */
 .payment-view-row {
   display: grid;
   grid-template-columns: 70px 1fr;
@@ -491,7 +493,7 @@ body {
 .payment-view-row span { color: var(--text-muted, #888); font-weight: 500; }
 .payment-view-row strong { color: var(--text); font-weight: 500; word-break: break-word; }
 
-/* Edit mode — compact single-line inputs */
+/* Edit mode - compact single-line inputs */
 .payment-row {
   display: grid;
   grid-template-columns: 70px 1fr;
@@ -690,7 +692,7 @@ body {
 }
 .crm-note-input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 
-/* Pipeline badge — one per stage, gradient pill */
+/* Pipeline badge - one per stage, gradient pill */
 .pipe-badge {
   display: inline-block; padding: 3px 9px; border-radius: 999px;
   font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em;
@@ -762,7 +764,7 @@ body {
 .status-tab [data-count] { color: #a3a09a; font-weight: 600; font-size: 0.78rem; }
 .status-tab.is-active [data-count] { color: var(--accent); }
 
-/* Customer-facing enquiry number — small gold tag in front of the name. */
+/* Customer-facing enquiry number - small gold tag in front of the name. */
 .enquiry-no {
   display: inline-block; padding: 1px 6px; margin-right: 6px;
   background: var(--accent-dim); color: var(--accent);
@@ -772,7 +774,7 @@ body {
   letter-spacing: 0.02em;
 }
 
-/* ── Toasts — non-blocking feedback replacing native alert() ── */
+/* ── Toasts - non-blocking feedback replacing native alert() ── */
 .toast-stack {
   position: fixed; bottom: 24px; right: 24px; z-index: 1000;
   display: flex; flex-direction: column; gap: 8px;
@@ -798,7 +800,7 @@ body {
 .toast--success::before { background: #2eaa6e; }
 .toast--error::before   { background: #e05252; }
 
-/* ── Offer-sent badge — shown once offer_sent_at is stamped ── */
+/* ── Offer-sent badge - shown once offer_sent_at is stamped ── */
 .status-badge.offer-sent {
   background: rgba(46,170,110,0.12);
   color: #1e7a4f;

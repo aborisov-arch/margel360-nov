@@ -45,7 +45,7 @@ async function loadOccupiedDates() {
 }
 
 // Pull every confirmed/completed enquiry and group by event date so the
-// side panel can show "DD.MM.YYYY — Name (Event type)" per booked day.
+// side panel can show "DD.MM.YYYY - Name (Event type)" per booked day.
 // preferred_date is stored as "DD/MM/YYYY"; convert to ISO YYYY-MM-DD.
 async function loadBookings() {
   const { data, error } = await db
@@ -60,7 +60,7 @@ async function loadBookings() {
     const iso = `${m[3]}-${m[2]}-${m[1]}`;
     if (!bookingsByDate.has(iso)) bookingsByDate.set(iso, []);
     bookingsByDate.get(iso).push({
-      name: e.full_name || '—',
+      name: e.full_name || '-',
       event_type: e.event_type || '',
       id: e.id,
     });
@@ -128,7 +128,7 @@ async function toggleDate(dateStr, btn) {
     );
   }
 
-  // Persist to Supabase — revert on failure
+  // Persist to Supabase - revert on failure
   // Note: unmarking a date no longer force-unlocks any linked enquiries.
   // That cross-write was too risky (could bypass the edit_count cap, and
   // could remove a date that was manually occupied for unrelated reasons).
@@ -155,12 +155,12 @@ async function toggleDate(dateStr, btn) {
     }
   }
 
-  // Keep the "bookings this month" side panel in sync — it reads from
+  // Keep the "bookings this month" side panel in sync - it reads from
   // occupiedDates, which we just changed (or reverted on failure).
   renderSidePanel();
 }
 
-// Side-panel rendering — only the currently displayed month. For every
+// Side-panel rendering - only the currently displayed month. For every
 // occupied date in that month we either show the customer(s) who booked
 // it (from bookingsByDate) OR a placeholder "Заето" pill when the date
 // was marked occupied manually without an enquiry attached.
@@ -212,7 +212,7 @@ function renderSidePanel() {
   });
 }
 
-// HTML-escape — same helper as the other admin pages (dashboard.js has its
+// HTML-escape - same helper as the other admin pages (dashboard.js has its
 // own copy). Duplicated because this script doesn't load dashboard.js.
 function esc(str) {
   if (str == null) return '';

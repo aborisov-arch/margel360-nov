@@ -12,7 +12,7 @@ const drinks = [
   { id:'moet',           cat:0, name_bg:'Moët & Chandon Brut',                   name_en:'Moët & Chandon Brut',                price_eur:62.38,  img:'assets/images/drinks/moet.png' },
   { id:'prosecco',       cat:0, name_bg:'Andreola Prosecco Dirupo 0.75л',        name_en:'Andreola Prosecco Dirupo 0.75L',     price_eur:15.85,  img:'assets/images/drinks/prosecco.png' },
   { id:'prosecco_glera', cat:0, name_bg:'Andreola Prosecco Glera Superiore DOCG 0.75л', name_en:'Andreola Prosecco Glera Superiore DOCG 0.75L', price_eur:18.81, img:'assets/images/drinks/prosecco-glera.png' },
-  // Wine — Red, White, Rosé
+  // Wine - Red, White, Rosé
   { id:'le_volte',       cat:1, name_bg:"Tenuta dell'Ornellaia Le Volte 0.75л",  name_en:"Tenuta dell'Ornellaia Le Volte 0.75L", price_eur:30.17, img:'assets/images/drinks/le-volte.png' },
   { id:'laverite',       cat:1, name_bg:'La Vérité Cabernet Franc',              name_en:'La Vérité Cabernet Franc',           price_eur:21.99,  img:'assets/images/drinks/laverite-cabernet-franc.png' },
   { id:'question_mark',  cat:1, name_bg:'Question Mark Катаржина 2020 0.75л',    name_en:'Question Mark Katarzyna 2020 0.75L', price_eur:17.36, img:'assets/images/drinks/question-mark-katarzyna.png' },
