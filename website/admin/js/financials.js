@@ -18,6 +18,27 @@ const EVENT_BASE = { evening: 1280, wedding: 1500, corp4: 330, corp8: 440, bday_
 const VENUE_MIN_GUESTS = 40;
 const EXTRA_GUEST_FEE_EUR = 15;
 
+// Legacy addon prices (pre-2026-05-04 the reservation form stored addon
+// prices in BGN). If a stored price exactly matches its old BGN value we
+// convert to EUR — same rule as offer-export.js / offer-pdf.js, so the
+// read-only offer view matches the customer's real quote. Prefixed to avoid
+// colliding with offer-export.js's addonPriceEur (not loaded on this page).
+const OFFER_ADDON_BGN_PRICES = {
+  dj: 587, photo2: 340, photo4: 580, booth2: 390, booth4: 560,
+  arch: 760, wall_s: 355, wall_g: 355, flare_s: 440, flare_l: 790,
+  fountain_s: 96, fountain_l: 160, led: 290, mic: 97, proj: 180,
+  security: 196, hygiene: 156, wardrobe: 176, valet: 275,
+  carpet_l: 148, candles_h: 100, numbers: 68,
+};
+function offerAddonPriceEur(id, price) {
+  const old = OFFER_ADDON_BGN_PRICES[id];
+  return old != null && price === old ? price / 1.95583 : price;
+}
+// Offer payment terms — kept in sync with offer-pdf.js (PDF_DEPOSIT_RATE /
+// PDF_OFFER_VALID_DAYS) and the offer XLSX template per the CLAUDE.md sync map.
+const OFFER_DEPOSIT_RATE = 0.5;
+const OFFER_VALID_DAYS = 2;
+
 // Live drinks catalog (drinks-data.js is loaded before this script). Used to
 // price P&L drink lines by id so website price changes flow straight through.
 const drinkCatalogById = (typeof drinks !== 'undefined' && Array.isArray(drinks))
@@ -1425,6 +1446,9 @@ function closeDrill() {
   const m = document.getElementById('drill-modal');
   if (m) m.setAttribute('hidden', '');
 }
+// Records the list currently behind the offer view so "← back" can restore
+// it. Set by openMetricBreakdown / openCategoryBreakdown at entry.
+let lastDrill = null;
 function drillRowHtml(fe, amt, signed) {
   const enq = fe.enquiry_id ? allEnquiries.find(e => e.id === fe.enquiry_id) : null;
   const name = enq ? (enq.full_name || '-') : (fe.customer_name || '-');
@@ -1439,6 +1463,7 @@ function drillRowHtml(fe, amt, signed) {
     </button>`;
 }
 function openMetricBreakdown(metric) {
+  lastDrill = { kind: 'metric', metric };
   const TITLES = { income: 'Приходи (реализирани)', upcoming: 'Очаквани (предстоящи)', paid: 'Платено от клиенти', expense: 'Разходи', profit: 'Печалба' };
   const scopeFes = [];
   for (const fe of financialEventsById.values()) {
@@ -1495,6 +1520,7 @@ function expenseDrillRowHtml(fe, x, amt) {
     </button>`;
 }
 function openCategoryBreakdown(kind, catId) {
+  lastDrill = { kind: 'cat', catKind: kind, catId };
   const scopeFes = [];
   for (const fe of financialEventsById.values()) {
     if ((!monthFilter || fe.month === monthFilter) && eventHasHappened(fe)) scopeFes.push(fe);
@@ -1546,6 +1572,115 @@ function pillBreakdownFromTarget(pill) {
   const kind = pill.closest('#income-cat-breakdown') ? 'income' : 'expense';
   openCategoryBreakdown(kind, pill.getAttribute('data-cat'));
 }
+
+// ── Offer drill-down ────────────────────────────────────────────
+// Click an event row inside the drill modal → read-only breakdown of that
+// customer's full offer (оферта), rendered in the SAME modal. Mirrors the
+// canonical quote in offer-pdf.js: venue + extra guests + drinks + addons
+// (cleaning rides as a normal addon) − discount (venue base only) → total,
+// deposit 50%, balance, 2-day validity. Read-only: never mutates saved P&L.
+function computeOffer(enq) {
+  const venue = EVENT_BASE[enq.event_id] || 0;
+  const guests = Number(enq.guests) || 0;
+  const extraGuests = Math.max(0, guests - VENUE_MIN_GUESTS);
+  const extraGuestsCost = extraGuests * EXTRA_GUEST_FEE_EUR;
+
+  const drinkRows = (Array.isArray(enq.drinks) ? enq.drinks : [])
+    .map(d => {
+      const qty = Number(d.qty) || 0;
+      const unit = d.price_eur != null ? Number(d.price_eur) : (Number(d.price) || 0);
+      return { name: d.name || d.id || '-', qty, unit, line: unit * qty };
+    })
+    .filter(d => d.qty > 0);
+  const drinksSum = drinkRows.reduce((s, d) => s + d.line, 0);
+
+  const addonRows = (Array.isArray(enq.addons) ? enq.addons : [])
+    .map(a => ({
+      name: a.name || a.id || '-',
+      qty: a.qty != null ? Number(a.qty) : null,
+      line: offerAddonPriceEur(a.id, Number(a.price) || 0),
+    }));
+  const addonsSum = addonRows.reduce((s, a) => s + a.line, 0);
+
+  const pct = Number(enq.applied_discount_percent || 0);
+  const discount = pct > 0 ? Math.round(venue * pct) / 100 : 0; // % of venue base only
+  const total = venue + extraGuestsCost + addonsSum + drinksSum - discount;
+  const deposit = Math.round(total * OFFER_DEPOSIT_RATE * 100) / 100;
+  return {
+    venue, extraGuests, extraGuestsCost,
+    drinkRows, drinksSum, addonRows, addonsSum,
+    discountPct: pct, discount,
+    total: Math.round(total * 100) / 100,
+    deposit, balance: Math.round((total - deposit) * 100) / 100,
+  };
+}
+function offerViewHtml(enq, o) {
+  const rowCss = 'display:flex;justify-content:space-between;gap:12px;padding:6px 0';
+  const subCss = 'display:flex;justify-content:space-between;gap:12px;padding:4px 0 4px 16px;opacity:.85;font-size:.94em';
+  const grpCss = 'padding:8px 0 2px;font-weight:700;font-size:.9em;opacity:.8';
+  const row = (l, v, extra = '') => `<div style="${rowCss}"><span>${l}</span><span style="white-space:nowrap;font-weight:600;${extra}">${v}</span></div>`;
+  const sub = (l, v) => `<div style="${subCss}"><span style="flex:1;min-width:0">${l}</span><span style="white-space:nowrap">${v}</span></div>`;
+
+  const parts = [];
+  parts.push(row(`Наем на залата · ${esc(enq.event_type || '-')}`, fmtEur(o.venue)));
+  if (o.extraGuests > 0) parts.push(row(`Допълнителни гости (${o.extraGuests} × ${fmtEur(EXTRA_GUEST_FEE_EUR)})`, fmtEur(o.extraGuestsCost)));
+  if (o.drinkRows.length) {
+    parts.push(`<div style="${grpCss}">Напитки</div>`);
+    o.drinkRows.forEach(d => parts.push(sub(`${esc(d.name)} · ${fmtEur(d.unit)}/бр. × ${d.qty}`, fmtEur(d.line))));
+  }
+  if (o.addonRows.length) {
+    parts.push(`<div style="${grpCss}">Допълнителни услуги</div>`);
+    o.addonRows.forEach(a => parts.push(sub(`${esc(a.name)}${a.qty != null ? ` · ×${a.qty}` : ''}`, fmtEur(a.line))));
+  }
+  if (o.discount > 0) parts.push(row(`Отстъпка (${o.discountPct}% от наема)`, `− ${fmtEur(o.discount)}`, 'color:var(--fin-accent,#b8923a)'));
+
+  const dateStr = esc(fmtDateBg(parsePreferredDate(enq.preferred_date)));
+  const guestsStr = enq.guests != null ? `${esc(enq.guests)} гости` : '-';
+  return `
+    <button type="button" class="btn btn-ghost btn-sm" data-drill-back style="margin-bottom:12px">← Назад към разбивката</button>
+    <div style="font-weight:800;font-size:1.05em"><span class="enquiry-no">#${esc(enq.enquiry_number ?? '-')}</span> ${esc(enq.full_name || '-')}</div>
+    <div style="opacity:.7;font-size:.9em;margin-bottom:12px">${esc(enq.event_type || '-')} · ${dateStr} · ${guestsStr}</div>
+    <div>${parts.join('')}</div>
+    <div style="${rowCss};margin-top:12px;padding-top:10px;border-top:2px solid var(--fin-border,#e6e1d6);font-weight:800;font-size:1.05em">
+      <span>Общо</span><span style="white-space:nowrap">${fmtEur(o.total)}</span></div>
+    <div style="${rowCss};opacity:.85"><span>Депозит (50%)</span><span style="white-space:nowrap">${fmtEur(o.deposit)}</span></div>
+    <div style="${rowCss};opacity:.85"><span>Остатък</span><span style="white-space:nowrap">${fmtEur(o.balance)}</span></div>
+    <div style="${rowCss};opacity:.7;font-size:.9em"><span>Валидна</span><span>${OFFER_VALID_DAYS} дни</span></div>
+    <button type="button" class="btn btn-primary btn-sm" data-offer-open-pnl="${esc(enq.id)}" style="margin-top:16px;width:100%">Отвори пълния P&amp;L</button>
+  `;
+}
+function openOfferView(enqId) {
+  const enq = allEnquiries.find(e => e.id === enqId);
+  if (!enq) return;
+  const title = document.getElementById('drill-title');
+  if (title) title.textContent = `Оферта № ${enq.enquiry_number ?? '-'}`;
+  const body = document.getElementById('drill-body');
+  if (body) body.innerHTML = offerViewHtml(enq, computeOffer(enq));
+  const m = document.getElementById('drill-modal');
+  if (m) m.removeAttribute('hidden');
+}
+function reopenLastDrill() {
+  if (!lastDrill) { closeDrill(); return; }
+  if (lastDrill.kind === 'metric') openMetricBreakdown(lastDrill.metric);
+  else if (lastDrill.kind === 'cat') openCategoryBreakdown(lastDrill.catKind, lastDrill.catId);
+}
+async function openPnlFromOffer(enqId) {
+  closeDrill();
+  // An enquiry that was confirmed then unlocked keeps its financial_events
+  // row but drops out of the bookable list, so the left rail shows it as a
+  // "manual" event. Open it the same way the rail would (selectManual) so the
+  // rail highlights it; a still-bookable enquiry opens normally.
+  const fe = financialEventByEnquiryId.get(enqId);
+  const bookable = bookableEvents.some(e => e.id === enqId);
+  if (fe && !bookable) await selectManual(fe.id);
+  else await selectEnquiry(enqId);
+  scrollEventsIntoView();
+}
+async function openManualPnlFromDrill(feId) {
+  closeDrill();
+  await selectManual(feId);
+  scrollEventsIntoView();
+}
 document.addEventListener('keydown', evt => {
   if (evt.key === 'Escape') { closeDrill(); return; }
   if (evt.key === 'Enter' || evt.key === ' ') {
@@ -1558,6 +1693,20 @@ document.addEventListener('keydown', evt => {
 
 document.addEventListener('click', evt => {
   if (evt.target.closest('[data-drill-close]')) { closeDrill(); return; }
+
+  // Inside the drill modal: enquiry rows open the read-only offer view
+  // in-place; manual rows have no customer offer, so drop straight into
+  // their P&L (scrolled). "← back" restores the list; the offer's
+  // "open P&L" button opens the editable panel. These are scoped to
+  // #drill-modal so the left-rail event list keeps its own behavior.
+  const drillEnqRow = evt.target.closest('#drill-modal [data-enquiry]');
+  if (drillEnqRow) { openOfferView(drillEnqRow.getAttribute('data-enquiry')); return; }
+  const drillManualRow = evt.target.closest('#drill-modal [data-manual-fe]');
+  if (drillManualRow) { openManualPnlFromDrill(drillManualRow.getAttribute('data-manual-fe')); return; }
+  if (evt.target.closest('[data-drill-back]')) { reopenLastDrill(); return; }
+  const offerPnlBtn = evt.target.closest('[data-offer-open-pnl]');
+  if (offerPnlBtn) { openPnlFromOffer(offerPnlBtn.getAttribute('data-offer-open-pnl')); return; }
+
   const ev = evt.target.closest('[data-enquiry]');
   if (ev) { closeDrill(); selectEnquiry(ev.getAttribute('data-enquiry')); return; }
   const manual = evt.target.closest('[data-manual-fe]');
