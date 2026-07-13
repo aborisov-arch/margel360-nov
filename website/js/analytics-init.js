@@ -13,9 +13,9 @@ window.dataLayer = window.dataLayer || [];
   'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
   })(window,document,'script','dataLayer','GTM-5FFZHPPP');
 
-// Meta Pixel - consent-gated like the Google tags above: 'revoke' queues
-// events locally (no cookies, nothing sent) until cookie-consent.js calls
-// fbq('consent', 'grant') after the visitor accepts.
+// Meta Pixel - always on. Unlike the Google tags above (Consent Mode v2,
+// denied until the banner is accepted), the pixel fires on load for every
+// visitor and sets its cookies immediately, per the site owner's decision.
 !function(f,b,e,v,n,t,s)
 {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
 n.callMethod.apply(n,arguments):n.queue.push(arguments)};
@@ -24,6 +24,5 @@ n.queue=[];t=b.createElement(e);t.async=!0;
 t.src=v;s=b.getElementsByTagName(e)[0];
 s.parentNode.insertBefore(t,s)}(window, document,'script',
 'https://connect.facebook.net/en_US/fbevents.js');
-fbq('consent', 'revoke');
 fbq('init', '1183486957157099');
 fbq('track', 'PageView');
