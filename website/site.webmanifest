@@ -1,0 +1,12 @@
+{
+  "name": "Маргел 360° — Зала за събития",
+  "short_name": "Маргел 360°",
+  "icons": [
+    { "src": "/assets/favicon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/assets/favicon-512.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "theme_color": "#ffffff",
+  "background_color": "#ffffff",
+  "display": "browser",
+  "start_url": "/"
+}
