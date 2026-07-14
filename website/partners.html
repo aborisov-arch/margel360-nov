@@ -15,11 +15,25 @@
   <meta property="og:description" content="Кетъринг и артисти, с които зала Маргел 360° работи. Разгледайте и отбележете интерес при запитване.">
   <meta property="og:image" content="https://margel360.bg/assets/images/header-gallery.jpg">
   <meta property="og:url" content="https://margel360.bg/partners.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Партньори - кетъринг и артисти | Маргел 360°">
+  <meta name="twitter:description" content="Доверени кетъринг партньори и артисти за вашето събитие в зала Маргел 360°, София.">
+  <meta name="twitter:image" content="https://margel360.bg/assets/images/header-gallery.jpg">
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Начало", "item": "https://margel360.bg/" },
+    { "@type": "ListItem", "position": 2, "name": "Партньори", "item": "https://margel360.bg/partners.html" }
+  ]
+}
+</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=2">
-  <script src="js/analytics-init.js?v=3"></script>
+  <link rel="stylesheet" href="css/style.css?v=3">
+  <script src="js/analytics-init.js?v=3" defer></script>
   <link rel="icon" href="/favicon.ico" sizes="48x48">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link rel="icon" type="image/png" sizes="192x192" href="/assets/favicon-192.png">
@@ -32,7 +46,7 @@
     <div class="container">
       <a href="index.html" class="nav-logo"><img src="assets/images/logo-real.png" alt="" class="logo-img" aria-hidden="true">МАРГЕЛ <span>360°</span></a>
       <ul class="nav-links" role="list">
-        <li><a href="index.html" data-i18n="nav_home">Тип събитие</a></li>
+        <li><a href="index.html" data-i18n="nav_home">Начало</a></li>
         <li><a href="gallery.html" data-i18n="nav_gallery">Галерия</a></li>
         <li><a href="faq.html" data-i18n="nav_faq">FAQ</a></li>
         <li><a href="services.html" data-i18n="nav_services">Услуги</a></li>
@@ -50,7 +64,7 @@
 
   <nav class="nav-drawer" id="nav-drawer" aria-label="Mobile navigation">
     <ul role="list" style="display:contents">
-      <li><a href="index.html" data-i18n="nav_home">Тип събитие</a></li>
+      <li><a href="index.html" data-i18n="nav_home">Начало</a></li>
       <li><a href="gallery.html" data-i18n="nav_gallery">Галерия</a></li>
       <li><a href="faq.html" data-i18n="nav_faq">FAQ</a></li>
       <li><a href="services.html" data-i18n="nav_services">Услуги</a></li>
@@ -94,19 +108,23 @@
           <p data-i18n="footer_desc">Маргел 360° е професионална зала за събития в София - сватби, рождени дни, корпоративни срещи, тематични партита и конференции. До 140 гости, панорамна тераса 360 м² с изглед към Витоша, професионално 360° озвучаване, професионално осветление и 70+ безплатни паркоместа.</p>
         </div>
         <div>
-          <h4 data-i18n="footer_nav">Навигация</h4>
+          <p class="footer-heading" data-i18n="footer_nav">Навигация</p>
           <ul class="footer-links" role="list">
-            <li><a href="index.html" data-i18n="nav_home">Тип събитие</a></li>
+            <li><a href="index.html" data-i18n="nav_home">Начало</a></li>
             <li><a href="gallery.html" data-i18n="nav_gallery">Галерия</a></li>
             <li><a href="faq.html" data-i18n="nav_faq">FAQ</a></li>
             <li><a href="services.html" data-i18n="nav_services">Услуги</a></li>
             <li><a href="menu.html" data-i18n="nav_drinks">Меню</a></li>
+            <li><a href="wedding.html" data-i18n="nav_ev_wedding">Сватбена зала</a></li>
+            <li><a href="birthday.html" data-i18n="nav_ev_birthday">Детски рожден ден</a></li>
+            <li><a href="corporate.html" data-i18n="nav_ev_corporate">Корпоративни събития</a></li>
+            <li><a href="evening.html" data-i18n="nav_ev_evening">Вечерни тържества</a></li>
             <li><a href="partners.html" data-i18n="nav_partners">Партньори</a></li>
             <li><a href="contact.html" data-i18n="nav_contact">Контакти</a></li>
           </ul>
         </div>
         <div class="footer-contact">
-          <h4 data-i18n="footer_contact">Контакти</h4>
+          <p class="footer-heading" data-i18n="footer_contact">Контакти</p>
           <p><span aria-hidden="true">📞</span> 0888 100 042</p>
           <p data-i18n="footer_address">бул. Околовръстен път 155, ет.4, София</p>
           <div class="social-links">
@@ -121,7 +139,7 @@
     </div>
   </footer>
 
-  <script src="js/translations-partners.js?v=2"></script>
+  <script src="js/translations-partners.js?v=3"></script>
   <script src="js/main.js?v=2"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7" integrity="sha384-tD6X9wDfTRdKpuPoHFZrVW2RXjSYSWjLBPWXxpHprWWl9eaHlwl05aRjHsiKF97n" crossorigin="anonymous"></script>
   <script src="js/reservation-supabase.js?v=2"></script>

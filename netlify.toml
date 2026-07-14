@@ -2,6 +2,35 @@
   base = "website"
   publish = "."
 
+# drinks.html was an orphaned near-duplicate of menu.html (SEO audit
+# 2026-07-13). force = true because the file still exists on disk.
+[[redirects]]
+  from = "/drinks.html"
+  to = "/menu.html"
+  status = 301
+  force = true
+
+# Long-lived caching for static assets (SEO audit: everything was
+# max-age=0). Safe for css/js because every HTML reference carries a ?v=N
+# that must be bumped when a file changes (repo cache rule); images get 30
+# days because their filenames are stable but occasionally replaced in
+# place (e.g. favicons). HTML keeps Netlify's default revalidation. Admin
+# assets live under /admin/* whose no-store rule still applies.
+[[headers]]
+  for = "/css/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/js/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=2592000"
+
 # Admin entry points. /admin/ has no index page, and /admin/security.html
 # was removed with the 2FA rollback — send both (and the no-slash form) to
 # the login, which routes on to the dashboard when a session exists.

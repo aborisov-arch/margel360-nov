@@ -1,7 +1,9 @@
 const translations = {
   bg: {
-    nav_home: 'Събития', nav_gallery: 'Галерия', nav_faq: 'Често задавани въпроси',
+    nav_home: 'Начало', nav_gallery: 'Галерия', nav_faq: 'Често задавани въпроси',
     nav_services: 'Услуги', nav_drinks: 'Меню', nav_partners: 'Партньори', nav_contact: 'Контакти', nav_reserve: 'Запитване',
+    nav_ev_wedding: 'Сватбена зала', nav_ev_birthday: 'Детски рожден ден',
+    nav_ev_corporate: 'Корпоративни събития', nav_ev_evening: 'Вечерни тържества',
     drinks_title: 'Меню с напитки',
     drinks_sub: 'Шампанско, вино, спиртни и безалкохолни за вашето събитие',
     drinks_note: 'Цените са ориентировъчни и може да се актуализират. За точна оферта, моля свържете се с нас.',
@@ -11,8 +13,10 @@ const translations = {
     footer_copy: '© 2026 Маргел 360°. Всички права запазени.',
   },
   en: {
-    nav_home: 'Events', nav_gallery: 'Gallery', nav_faq: 'FAQ',
+    nav_home: 'Home', nav_gallery: 'Gallery', nav_faq: 'FAQ',
     nav_services: 'Services', nav_drinks: 'Menu', nav_partners: 'Partners', nav_contact: 'Contacts', nav_reserve: 'Enquiry',
+    nav_ev_wedding: 'Wedding venue', nav_ev_birthday: "Children's birthday",
+    nav_ev_corporate: 'Corporate events', nav_ev_evening: 'Evening celebrations',
     drinks_title: 'Drinks Menu',
     drinks_sub: 'Champagne, wines, spirits and soft drinks for your event',
     drinks_note: 'Prices are indicative and subject to change. For a precise quote, please contact us.',
