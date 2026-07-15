@@ -817,3 +817,9 @@ p { color: var(--text-muted); }
 .event-xlinks { margin-top: 28px; font-size: 0.92rem; color: var(--text-muted); }
 .event-xlinks a { color: var(--accent); text-decoration: none; }
 .event-xlinks a:hover { color: var(--accent-hover); text-decoration: underline; }
+
+/* Answer-first fact list on the event pages (SEO/GEO: statistics density,
+   easy extraction by search/AI engines). */
+.event-facts { list-style: none; margin: 0 0 28px; padding: 18px 22px; background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius); display: grid; gap: 8px; }
+.event-facts li { font-size: 0.95rem; line-height: 1.5; }
+.event-facts strong { color: var(--accent); font-weight: 600; margin-right: 6px; }
