@@ -1,8 +1,10 @@
 // i18n for the standalone drinks menu page (menu.html).
 const translations = {
   bg: {
-    nav_home: 'Събития', nav_gallery: 'Галерия', nav_services: 'Услуги',
+    nav_home: 'Начало', nav_gallery: 'Галерия', nav_services: 'Услуги',
     nav_drinks: 'Меню', nav_partners: 'Партньори', nav_contact: 'Контакти', nav_faq: 'Често задавани въпроси', nav_reserve: 'Запитване',
+    nav_ev_wedding: 'Сватбена зала', nav_ev_birthday: 'Детски рожден ден',
+    nav_ev_corporate: 'Корпоративни събития', nav_ev_evening: 'Вечерни тържества',
     menu_title: 'Меню с напитки',
     menu_sub: 'Шампанско, вино, спиртни напитки, безалкохолно и вода - всичко за вашето събитие.',
     menu_note: 'Цените са ориентировъчни и може да се актуализират. Алкохолът се заплаща 100% предварително. За точна оферта, моля свържете се с нас.',
@@ -16,8 +18,10 @@ const translations = {
     footer_copy: '© 2026 Маргел 360°. Всички права запазени.',
   },
   en: {
-    nav_home: 'Events', nav_gallery: 'Gallery', nav_services: 'Services',
+    nav_home: 'Home', nav_gallery: 'Gallery', nav_services: 'Services',
     nav_drinks: 'Menu', nav_partners: 'Partners', nav_contact: 'Contacts', nav_faq: 'FAQ', nav_reserve: 'Enquiry',
+    nav_ev_wedding: 'Wedding venue', nav_ev_birthday: "Children's birthday",
+    nav_ev_corporate: 'Corporate events', nav_ev_evening: 'Evening celebrations',
     menu_title: 'Drinks Menu',
     menu_sub: 'Champagne, wine, spirits, soft drinks and water - everything for your event.',
     menu_note: 'Prices are indicative and subject to change. Alcohol is paid 100% in advance. For a precise quote, please contact us.',

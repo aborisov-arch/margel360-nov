@@ -1,7 +1,9 @@
 const translations = {
   bg: {
-    nav_home: 'Тип събитие', nav_gallery: 'Галерия', nav_faq: 'FAQ',
+    nav_home: 'Начало', nav_gallery: 'Галерия', nav_faq: 'FAQ',
     nav_services: 'Услуги', nav_drinks: 'Меню', nav_partners: 'Партньори', nav_contact: 'Контакти', nav_reserve: 'Запитване',
+    nav_ev_wedding: 'Сватбена зала', nav_ev_birthday: 'Детски рожден ден',
+    nav_ev_corporate: 'Корпоративни събития', nav_ev_evening: 'Вечерни тържества',
     res_title: 'Направете запитване',
     res_sub: 'Изберете вашето събитие и резервирайте датата',
     step1_label: 'Събитие',
@@ -54,8 +56,10 @@ const translations = {
     footer_copy: '© 2026 Маргел 360°. Всички права запазени.',
   },
   en: {
-    nav_home: 'Event Types', nav_gallery: 'Gallery', nav_faq: 'FAQ',
+    nav_home: 'Home', nav_gallery: 'Gallery', nav_faq: 'FAQ',
     nav_services: 'Services', nav_drinks: 'Menu', nav_partners: 'Partners', nav_contact: 'Contacts', nav_reserve: 'Enquiry',
+    nav_ev_wedding: 'Wedding venue', nav_ev_birthday: "Children's birthday",
+    nav_ev_corporate: 'Corporate events', nav_ev_evening: 'Evening celebrations',
     res_title: 'Make an Enquiry',
     res_sub: 'Choose your event type and book your date',
     step1_label: 'Event',

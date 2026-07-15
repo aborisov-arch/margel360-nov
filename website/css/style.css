@@ -260,7 +260,7 @@ p { color: var(--text-muted); }
 .footer { background: #111; border-top: 1px solid #1e1e1e; padding: 56px 0 28px; }
 .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 48px; margin-bottom: 48px; }
 .footer-brand p { color: #888; margin-top: 12px; font-size: 0.88rem; max-width: 280px; }
-.footer h4 { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--accent); margin-bottom: 18px; }
+.footer .footer-heading { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--accent); margin: 0 0 18px; }
 .footer-links { display: flex; flex-direction: column; gap: 10px; }
 .footer-links a { color: #888; font-size: 0.88rem; transition: color var(--transition); }
 .footer-links a:hover { color: #fff; }
@@ -812,3 +812,8 @@ p { color: var(--text-muted); }
 .menu-offer h2 { font-size: clamp(1.4rem, 3vw, 2rem); margin-bottom: 8px; color: var(--text); }
 .menu-offer p { color: var(--text-muted); margin-bottom: 22px; }
 .menu-offer-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+/* Cross-links between the four event landing pages (SEO internal mesh). */
+.event-xlinks { margin-top: 28px; font-size: 0.92rem; color: var(--text-muted); }
+.event-xlinks a { color: var(--accent); text-decoration: none; }
+.event-xlinks a:hover { color: var(--accent-hover); text-decoration: underline; }

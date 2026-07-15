@@ -2,6 +2,37 @@
   base = "website"
   publish = "."
 
+# drinks.html was an orphaned near-duplicate of menu.html (SEO audit
+# 2026-07-13). force = true because the file still exists on disk.
+[[redirects]]
+  from = "/drinks.html"
+  to = "/menu.html"
+  status = 301
+  force = true
+
+# Caching for static assets (SEO audit: everything was max-age=0 and every
+# visit re-validated every file). css/js get 7 days, NOT immutable/1y: the
+# ?v= bump rule guards freshness, but version drift has happened before
+# (venue.css v2/v4/v5 across pages), and /js/* is also reached from admin
+# pages via ../js/ (outside the /admin/* no-store rule) — a missed bump
+# must self-heal in days, not a year. Images: 30 days (stable filenames,
+# occasionally replaced in place, e.g. favicons). HTML keeps Netlify's
+# default revalidation.
+[[headers]]
+  for = "/css/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+[[headers]]
+  for = "/js/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=2592000"
+
 # Admin entry points. /admin/ has no index page, and /admin/security.html
 # was removed with the 2FA rollback — send both (and the no-slash form) to
 # the login, which routes on to the dashboard when a session exists.
@@ -35,7 +66,7 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), interest-cohort=()"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://cdn.sheetjs.com https://challenges.cloudflare.com https://www.googletagmanager.com https://www.googleadservices.com https://www.google-analytics.com https://ssl.google-analytics.com https://googleads.g.doubleclick.net https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://wlxutsufrobzovdsiecb.supabase.co wss://wlxutsufrobzovdsiecb.supabase.co https://challenges.cloudflare.com https://www.google-analytics.com https://*.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://googleads.g.doubleclick.net https://www.google.com https://pagead2.googlesyndication.com https://www.googleadservices.com https://www.facebook.com https://connect.facebook.net; frame-src https://challenges.cloudflare.com https://td.doubleclick.net https://www.googletagmanager.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://cdn.sheetjs.com https://challenges.cloudflare.com https://www.googletagmanager.com https://www.googleadservices.com https://www.google-analytics.com https://ssl.google-analytics.com https://googleads.g.doubleclick.net https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://wlxutsufrobzovdsiecb.supabase.co wss://wlxutsufrobzovdsiecb.supabase.co https://challenges.cloudflare.com https://www.google-analytics.com https://*.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://googleads.g.doubleclick.net https://www.google.com https://pagead2.googlesyndication.com https://www.googleadservices.com https://www.facebook.com https://connect.facebook.net; frame-src https://challenges.cloudflare.com https://td.doubleclick.net https://www.googletagmanager.com https://maps.google.com https://www.google.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
 
 # Admin pages get extra-strict no-cache + same security headers above.
 [[headers]]
