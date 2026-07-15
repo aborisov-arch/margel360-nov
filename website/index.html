@@ -52,6 +52,12 @@
   },
   "openingHours": "Mo-Su 00:00-23:59",
   "priceRange": "€330 - €1500",
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "5.0",
+    "bestRating": "5",
+    "reviewCount": "8"
+  },
   "hasMap": "https://www.google.com/maps/place/?q=place_id:ChIJh1NYQWWFqkARkGKRWKZYab0",
   "maximumAttendeeCapacity": 180,
   "currenciesAccepted": "EUR",
@@ -85,7 +91,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=4">
+  <link rel="stylesheet" href="css/style.css?v=5">
   <!-- Consent Mode v2 default (denied), set before GTM fires any tag.
        GA4 + Google Ads are now fired by GTM (GTM-5FFZHPPP), not directly here. -->
   
@@ -268,6 +274,38 @@
         </div>
       </div>
     </section>
+
+    <!-- REVIEWS - real Google reviews (Margel360 Event Hall: 5,0 от 8 отзива,
+         2026-07). The quotes are customer content: verbatim, never translated,
+         no data-i18n on them. When the listing's rating/count changes, update
+         reviews_sub (translations-index.js, bg+en) AND the aggregateRating in
+         the JSON-LD head together. -->
+    <section class="section reviews-section" aria-labelledby="reviews-heading">
+      <div class="container">
+        <div class="section-title fade-up">
+          <h2 id="reviews-heading" data-i18n="reviews_title">Оценка 5,0 в Google</h2>
+          <p class="reviews-sub"><span class="reviews-stars" aria-hidden="true">★★★★★</span> <span data-i18n="reviews_sub">8 отзива от реални събития в залата</span></p>
+        </div>
+        <div class="reviews-grid">
+          <blockquote class="review-card">
+            <p>„Зала с прекрасни условия за да направите вашия празник! Огромна панорамна тераса. Звука от музиката е впечатляващ. Всичко е направено на високо ниво!“</p>
+            <footer><span class="reviews-stars" aria-label="5 от 5 звезди">★★★★★</span><br><strong>Vladimir Iliev</strong> · Google</footer>
+          </blockquote>
+          <blockquote class="review-card">
+            <p>„Топ локация и гледка. Високо ниво на осветление и озвучаване. Модерен дизайн на залата и мебелите. Изключително отзивчив и компетентен управител.“</p>
+            <footer><span class="reviews-stars" aria-label="5 от 5 звезди">★★★★★</span><br><strong>Lachezar Bojilov</strong> · Google</footer>
+          </blockquote>
+          <blockquote class="review-card">
+            <p>„Залата има невероятна тераса, плениха ме гледките към София и Витоша.“</p>
+            <footer><span class="reviews-stars" aria-label="5 от 5 звезди">★★★★★</span><br><strong>Vanya Arbova</strong> · Google</footer>
+          </blockquote>
+        </div>
+        <div class="reviews-cta fade-up">
+          <a href="https://maps.google.com/?cid=13648537617196737168" target="_blank" rel="noopener" class="btn btn-outline" data-i18n="reviews_all">Вижте всички отзиви в Google</a>
+          <a href="https://search.google.com/local/writereview?placeid=ChIJh1NYQWWFqkARkGKRWKZYab0" target="_blank" rel="noopener" class="btn-link" data-i18n="reviews_write">Оставете отзив</a>
+        </div>
+      </div>
+    </section>
   </main>
 
   <!-- FOOTER -->
@@ -313,7 +351,7 @@
     </div>
   </footer>
 
-  <script src="js/translations-index.js?v=4"></script>
+  <script src="js/translations-index.js?v=5"></script>
   <script src="js/main.js?v=2"></script>
   <script src="js/index.js?v=2"></script>
   <a href="tel:+359888100042" class="fab-phone" aria-label="Обадете се"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg></a>
