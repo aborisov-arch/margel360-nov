@@ -930,7 +930,9 @@ function weekdayPromoPercent(dateStr) {
   const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(dateStr || '');
   if (!m) return 0;
   const iso = `${m[3]}-${m[2]}-${m[1]}`;
-  const todayISO = new Date().toLocaleDateString('en-CA');
+  // Europe/Sofia, matching the server - a browser west of Sofia must not
+  // show a discount the server will refuse (or vice versa).
+  const todayISO = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Sofia' });
   if (iso < todayISO || iso > WEEKDAY_PROMO.lastDate) return 0;
   const day = new Date(`${iso}T12:00:00`).getDay(); // 1=Mon .. 4=Thu
   return WEEKDAY_PROMO.days.includes(day) ? WEEKDAY_PROMO.percent : 0;
@@ -1008,6 +1010,15 @@ function renderSummary() {
     const discountLabel = disc.weekday
       ? (l==='bg' ? 'Отстъпка делнични дни' : 'Weekday discount')
       : (l==='bg' ? 'Отстъпка' : 'Discount');
+    // If a validated code is outranked by the weekday promo, tell the
+    // customer their code is kept (the server will not claim it).
+    const promoStatus = document.getElementById('promo-status');
+    if (promoStatus && disc.weekday && (booking.discountPercent || 0) > 0) {
+      promoStatus.textContent = l==='bg'
+        ? 'Приложена е по-голямата отстъпка (−20% делнични дни). Кодът ви остава валиден за друга резервация.'
+        : 'The larger discount applies (−20% weekdays). Your code stays valid for another booking.';
+      promoStatus.style.color = '#2F8F4F';
+    }
     const grandTotal = venuePrice + extraGuestsCost + addonsTotal + drinksTotal - discountAmount;
     const rows = [
       { label: (l==='bg'?'Наем на зала':'Venue rental') + ` (${l==='bg'?'до':'up to'} ${VENUE_MIN_GUESTS} ${l==='bg'?'гости':'guests'})`, value: '€' + venuePrice.toFixed(2) },
@@ -1258,7 +1269,9 @@ function setupSubmit() {
     // Meta Pixel lead conversion (pixel loads always-on via analytics-init.js).
     try {
       if (typeof fbq === 'function') {
-        fbq('track', 'Lead', { content_name: booking.event?.id || '', content_category: 'enquiry' });
+        fbq('track', 'Lead',
+          { content_name: booking.event?.id || '', content_category: 'enquiry' },
+          { eventID: 'lead-' + String(inserted.enquiry_number ?? inserted.id ?? '') });
       }
     } catch (e) { console.warn('fbq lead failed:', e); }
 

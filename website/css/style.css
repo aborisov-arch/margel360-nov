@@ -845,5 +845,12 @@ p { color: var(--text-muted); }
 .promo-bar .promo-bar-cta { text-decoration: underline; white-space: nowrap; }
 .promo-bar-close { position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
   background: none; border: 0; font-size: 0.95rem; cursor: pointer; color: #1a1a1a; padding: 10px; }
-body.has-promo-bar .nav { top: 42px; }
-body.has-promo-bar .nav-drawer { top: calc(var(--nav-height) + 42px); }
+body.has-promo-bar .nav { top: var(--promo-bar-h, 42px); }
+body.has-promo-bar .nav-drawer { top: calc(var(--nav-height) + var(--promo-bar-h, 42px)); }
+@media (max-width: 600px) {
+  .promo-bar a { font-size: 0.78rem; padding-right: 36px; }
+}
+
+/* Positive-green nudge under the wizard's date field when the picked date
+   qualifies for the weekday promo. */
+.weekday-promo-hint { color: #2F8F4F; font-weight: 600; font-size: 0.88rem; margin: 8px 0 0; }

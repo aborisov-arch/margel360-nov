@@ -168,7 +168,16 @@ document.addEventListener('DOMContentLoaded', () => {
   if (dismissed || todayISO > PROMO_BAR_LAST_DATE) return;
   bar.hidden = false;
   document.body.classList.add('has-promo-bar');
-  document.getElementById('promo-bar-close')?.addEventListener('click', () => {
+  // The bar can wrap to two lines on narrow phones - measure it and expose
+  // the real height so the fixed nav shifts by the right amount.
+  const setBarHeight = () => document.documentElement.style.setProperty('--promo-bar-h', bar.offsetHeight + 'px');
+  setBarHeight();
+  window.addEventListener('resize', setBarHeight);
+  const closeBtn = document.getElementById('promo-bar-close');
+  const labelClose = () => { if (closeBtn) closeBtn.setAttribute('aria-label', (localStorage.getItem('margel_lang') || 'bg') === 'bg' ? 'Затвори' : 'Close'); };
+  try { labelClose(); } catch (e) {}
+  document.addEventListener('langChange', () => { try { labelClose(); } catch (e) {} });
+  closeBtn?.addEventListener('click', () => {
     bar.hidden = true;
     document.body.classList.remove('has-promo-bar');
     try { localStorage.setItem('margel_promo_bar', 'dismissed'); } catch (e) {}
