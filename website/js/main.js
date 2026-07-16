@@ -183,3 +183,22 @@ document.addEventListener('DOMContentLoaded', () => {
     try { localStorage.setItem('margel_promo_bar', 'dismissed'); } catch (e) {}
   });
 })();
+
+// ── Title/description language swap ──
+// Crawlers always see the BG defaults (this runs client-side only); for
+// human EN visitors the tab title and share preview text follow the toggle.
+// EN values live in data-en attributes on <title> and the description meta.
+(function () {
+  const titleEl = document.querySelector('title');
+  const descEl = document.querySelector('meta[name="description"]');
+  if (titleEl && titleEl.dataset.en && !titleEl.dataset.bg) titleEl.dataset.bg = titleEl.textContent;
+  if (descEl && descEl.dataset.en && !descEl.dataset.bg) descEl.dataset.bg = descEl.getAttribute('content') || '';
+  const apply = () => {
+    let lang = 'bg';
+    try { lang = localStorage.getItem('margel_lang') || 'bg'; } catch (e) {}
+    if (titleEl && titleEl.dataset.en) document.title = lang === 'bg' ? titleEl.dataset.bg : titleEl.dataset.en;
+    if (descEl && descEl.dataset.en) descEl.setAttribute('content', lang === 'bg' ? descEl.dataset.bg : descEl.dataset.en);
+  };
+  apply();
+  document.addEventListener('langChange', apply);
+})();
