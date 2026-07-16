@@ -4,6 +4,7 @@ import { json, preflight } from "../_shared/cors.ts";
 import { getIp, rateLimitHit } from "../_shared/rate-limit.ts";
 import { diffEnquiry, EDITABLE_FIELDS } from "../_shared/diff.ts";
 import { validateField } from "../_shared/validate.ts";
+import { weekdayPromoPercent } from "../_shared/weekday-promo.ts";
 
 const SUPABASE_URL    = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -91,12 +92,23 @@ serve(async (req) => {
   // Increment edit count, possibly lock
   const nextCount = (current.edit_count ?? 0) + 1;
   const willLock = nextCount >= EDIT_COUNT_CAP;
-  const updateRow = {
+  const updateRow: Record<string, unknown> = {
     ...patch,
     edit_count: nextCount,
     last_edited_at: new Date().toISOString(),
     edit_locked: willLock,
   };
+
+  // Weekday promo follows the DATE. When the customer moves the event to a
+  // different date, recompute the campaign discount - otherwise booking a
+  // Monday and editing to a Saturday would keep the 20% (and vice versa a
+  // legit move Tue->Wed would lose it). Only weekday-sourced discounts are
+  // touched: a code-sourced discount (applied_discount_code set) is the
+  // customer's own claimed code and stays as-is.
+  if ("preferred_date" in patch && !current.applied_discount_code) {
+    const pct = weekdayPromoPercent(String(patch.preferred_date));
+    updateRow.applied_discount_percent = pct > 0 ? pct : null;
+  }
 
   const { data: updated, error: upErr } = await sb
     .from("enquiries").update(updateRow).eq("edit_token", token).select("*").single();

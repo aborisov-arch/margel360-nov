@@ -321,6 +321,10 @@ function setupStep2() {
       onChange(_selectedDates, dateStr) {
         booking.date = dateStr;
         dateEl.closest('.form-group')?.classList.remove('has-error');
+        // Weekday promo nudge: show the -20% hint when the picked date
+        // qualifies (Mon-Thu until 2026-08-31).
+        const promoHint = document.getElementById('weekday-promo-hint');
+        if (promoHint) promoHint.hidden = weekdayPromoPercent(dateStr) === 0;
         updatePreview();
       }
     });
@@ -916,6 +920,33 @@ function setupStep5() {
 }
 
 // ── Step 7: Summary ──
+// ── Weekday promo ──
+// 20% off the VENUE BASE for events on Monday-Thursday up to and including
+// 2026-08-31. Display-only mirror: the authoritative copy lives in
+// supabase/functions/submit-enquiry (keep both in sync - CLAUDE.md sync
+// map). Does not stack with promo codes: the higher percent wins.
+const WEEKDAY_PROMO = { percent: 20, lastDate: '2026-08-31', days: [1, 2, 3, 4] };
+function weekdayPromoPercent(dateStr) {
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(dateStr || '');
+  if (!m) return 0;
+  const iso = `${m[3]}-${m[2]}-${m[1]}`;
+  // Europe/Sofia, matching the server - a browser west of Sofia must not
+  // show a discount the server will refuse (or vice versa).
+  const todayISO = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Sofia' });
+  if (iso < todayISO || iso > WEEKDAY_PROMO.lastDate) return 0;
+  const day = new Date(`${iso}T12:00:00`).getDay(); // 1=Mon .. 4=Thu
+  return WEEKDAY_PROMO.days.includes(day) ? WEEKDAY_PROMO.percent : 0;
+}
+// The discount the server will actually apply: weekday promo beats the
+// promo code (codes are never burned when the weekday promo wins).
+function effectiveDiscount() {
+  const code = booking.discountPercent || 0;
+  const weekday = weekdayPromoPercent(booking.date);
+  return weekday >= code && weekday > 0
+    ? { percent: weekday, weekday: true }
+    : { percent: code, weekday: false };
+}
+
 function renderSummary() {
   const l = getLang();
   const container = document.getElementById('booking-summary');
@@ -973,8 +1004,21 @@ function renderSummary() {
     const guests = Number(booking.guests) || 0;
     const extraGuests = Math.max(0, guests - VENUE_MIN_GUESTS);
     const extraGuestsCost = extraGuests * EXTRA_GUEST_FEE_EUR;
-    const discountPercent = booking.discountPercent || 0;
+    const disc = effectiveDiscount();
+    const discountPercent = disc.percent;
     const discountAmount = discountPercent > 0 ? venuePrice * (discountPercent / 100) : 0;
+    const discountLabel = disc.weekday
+      ? (l==='bg' ? 'Отстъпка делнични дни' : 'Weekday discount')
+      : (l==='bg' ? 'Отстъпка' : 'Discount');
+    // If a validated code is outranked by the weekday promo, tell the
+    // customer their code is kept (the server will not claim it).
+    const promoStatus = document.getElementById('promo-status');
+    if (promoStatus && disc.weekday && (booking.discountPercent || 0) > 0) {
+      promoStatus.textContent = l==='bg'
+        ? 'Приложена е по-голямата отстъпка (−20% делнични дни). Кодът ви остава валиден за друга резервация.'
+        : 'The larger discount applies (−20% weekdays). Your code stays valid for another booking.';
+      promoStatus.style.color = '#2F8F4F';
+    }
     const grandTotal = venuePrice + extraGuestsCost + addonsTotal + drinksTotal - discountAmount;
     const rows = [
       { label: (l==='bg'?'Наем на зала':'Venue rental') + ` (${l==='bg'?'до':'up to'} ${VENUE_MIN_GUESTS} ${l==='bg'?'гости':'guests'})`, value: '€' + venuePrice.toFixed(2) },
@@ -982,7 +1026,7 @@ function renderSummary() {
       ...(addonsTotal > 0 ? [{ label: l==='bg'?'Допълнителни услуги':'Add-on services', value: '€' + addonsTotal.toFixed(2) }] : []),
       ...(autoClean ? [{ label: (l==='bg' ? `${autoClean.name_bg} (задължително)` : `${autoClean.name_en} (mandatory)`), value: '€' + autoClean.price.toFixed(2), sub: true }] : []),
       ...(drinksTotal > 0 ? [{ label: l==='bg'?'Напитки':'Drinks', value: '€' + drinksTotal.toFixed(2) }] : []),
-      ...(discountAmount > 0 ? [{ label: (l==='bg'?'Отстъпка':'Discount') + ` (${discountPercent}%)`, value: '−€' + discountAmount.toFixed(2), discount: true }] : []),
+      ...(discountAmount > 0 ? [{ label: `${discountLabel} (${discountPercent}%)`, value: '−€' + discountAmount.toFixed(2), discount: true }] : []),
       { label: l==='bg'?'Обща сума':'Total', value: '€' + grandTotal.toFixed(2), total: true },
     ];
     rows.forEach(row => {
@@ -1210,7 +1254,8 @@ function setupSubmit() {
         drinks.forEach(d => { if (d.price_eur) drinksTotal += (booking.drinkQtys[d.id] || 0) * d.price_eur; });
         const venuePrice = booking.event?.price_eur || 0;
         const extraGuestsCost = Math.max(0, (Number(booking.guests) || 0) - 40) * 15;
-        const discount = (booking.discountPercent || 0) > 0 ? venuePrice * booking.discountPercent / 100 : 0;
+        const discPct = effectiveDiscount().percent;
+        const discount = discPct > 0 ? venuePrice * discPct / 100 : 0;
         const total = venuePrice + extraGuestsCost + addonsTotal + drinksTotal - discount;
         gtag('event', 'conversion', {
           send_to: 'AW-17875820737/wvhpCO2LmegbEMHB7ctC',
@@ -1220,6 +1265,15 @@ function setupSubmit() {
         });
       }
     } catch (e) { console.warn('gtag conversion failed:', e); }
+
+    // Meta Pixel lead conversion (pixel loads always-on via analytics-init.js).
+    try {
+      if (typeof fbq === 'function') {
+        fbq('track', 'Lead',
+          { content_name: booking.event?.id || '', content_category: 'enquiry' },
+          { eventID: 'lead-' + String(inserted.enquiry_number ?? inserted.id ?? '') });
+      }
+    } catch (e) { console.warn('fbq lead failed:', e); }
 
     // Success - show confirmation
     document.getElementById('step-6')?.classList.remove('active');

@@ -15,6 +15,7 @@
 // supabase/functions/_shared/*.ts.
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
+import { weekdayPromoPercent } from "../_shared/weekday-promo.ts";
 
 const SUPABASE_URL    = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -349,10 +350,37 @@ serve(async (req) => {
     console.error("duplicate-check note failed (non-fatal):", e);
   }
 
-  // Atomic discount claim, best-effort. If the code is taken/expired we
-  // still keep the booking — the customer just doesn't get the discount.
-  let discount_percent: number | null = null;
+  // Weekday promo vs discount code: the HIGHER percent wins (see
+  // _shared/weekday-promo.ts - the authoritative campaign rule). We peek at
+  // the code's percent WITHOUT claiming it first, so that when the weekday
+  // promo wins the customer keeps their code for a future booking. The
+  // claim itself stays atomic (redeemed_at IS NULL guard) - if someone
+  // else claims the code between the peek and the claim, the claim just
+  // returns nothing and the booking proceeds without the code discount.
+  const weekday_percent = weekdayPromoPercent(preferred_date);
+  let code_percent = 0;
   if (discount_code) {
+    const { data: codeRow } = await sb
+      .from("discount_codes")
+      .select("percent")
+      .eq("code", discount_code)
+      .is("redeemed_at", null)
+      .gt("expires_at", new Date().toISOString())
+      .maybeSingle();
+    code_percent = (codeRow?.percent as number) ?? 0;
+  }
+
+  let discount_percent: number | null = null;
+  if (weekday_percent > 0 && weekday_percent >= code_percent) {
+    discount_percent = weekday_percent;
+    const { error: promoErr } = await sb.from("enquiries").update({
+      applied_discount_percent: weekday_percent,
+    }).eq("id", inserted.id);
+    if (promoErr) {
+      console.error("weekday promo update failed:", promoErr);
+      discount_percent = null;
+    }
+  } else if (discount_code && code_percent > 0) {
     const { data: claimed } = await sb
       .from("discount_codes")
       .update({
@@ -366,10 +394,11 @@ serve(async (req) => {
       .maybeSingle();
     if (claimed?.percent != null) {
       discount_percent = claimed.percent as number;
-      await sb.from("enquiries").update({
+      const { error: codeErr } = await sb.from("enquiries").update({
         applied_discount_code: discount_code,
         applied_discount_percent: discount_percent,
       }).eq("id", inserted.id);
+      if (codeErr) console.error("discount code update failed:", codeErr);
     }
   }
 
