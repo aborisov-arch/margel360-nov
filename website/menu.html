@@ -24,7 +24,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=5">
+  <link rel="stylesheet" href="css/style.css?v=6">
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -50,6 +50,11 @@
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5FFZHPPP"
   height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <!-- End Google Tag Manager (noscript) -->
+  <!-- Weekday-promo bar (campaign until 2026-08-31; shown/expired by main.js). -->
+  <div class="promo-bar" id="promo-bar" hidden>
+    <a href="promo.html"><span data-i18n="promo_bar_text">−20% за събития понеделник – четвъртък до 31 август</span> <span class="promo-bar-cta" data-i18n="promo_bar_cta">Виж повече →</span></a>
+    <button type="button" class="promo-bar-close" id="promo-bar-close" aria-label="Затвори">✕</button>
+  </div>
 
   <nav class="nav scrolled" aria-label="Main navigation">
     <div class="container">
@@ -149,8 +154,8 @@
     </div>
   </footer>
 
-  <script src="js/translations-menu.js?v=4"></script>
-  <script src="js/main.js?v=2"></script>
+  <script src="js/translations-menu.js?v=5"></script>
+  <script src="js/main.js?v=3"></script>
   <script src="js/age-gate.js?v=1"></script>
   <script src="js/age-gate-init.js?v=1"></script>
   <script src="js/drinks-data.js?v=7"></script>

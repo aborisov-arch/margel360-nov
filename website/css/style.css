@@ -834,3 +834,16 @@ p { color: var(--text-muted); }
 .review-card footer { font-size: 0.88rem; color: var(--text-muted); }
 .review-card footer strong { color: var(--text); font-weight: 600; }
 .reviews-cta { text-align: center; margin-top: 36px; display: flex; gap: 18px; justify-content: center; flex-wrap: wrap; align-items: center; }
+
+/* Weekday-promo bar (campaign until 2026-08-31). When visible,
+   body.has-promo-bar shifts the fixed nav and drawer down by 42px. */
+.promo-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 101; min-height: 42px;
+  display: flex; align-items: center; justify-content: center; background: var(--accent); }
+.promo-bar[hidden] { display: none; }
+.promo-bar a { color: #1a1a1a; font-weight: 600; font-size: 0.88rem; text-decoration: none;
+  padding: 8px 40px 8px 14px; text-align: center; line-height: 1.3; }
+.promo-bar .promo-bar-cta { text-decoration: underline; white-space: nowrap; }
+.promo-bar-close { position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  background: none; border: 0; font-size: 0.95rem; cursor: pointer; color: #1a1a1a; padding: 10px; }
+body.has-promo-bar .nav { top: 42px; }
+body.has-promo-bar .nav-drawer { top: calc(var(--nav-height) + 42px); }

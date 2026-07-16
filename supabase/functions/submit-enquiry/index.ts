@@ -349,10 +349,33 @@ serve(async (req) => {
     console.error("duplicate-check note failed (non-fatal):", e);
   }
 
+  // Weekday promo: 20% off the VENUE BASE for events on Monday-Thursday up
+  // to and including 2026-08-31 (Europe/Sofia). This is the AUTHORITATIVE
+  // copy; reservation.js mirrors it for the summary display - keep both in
+  // sync (CLAUDE.md sync map). Does not stack with discount codes: when the
+  // weekday promo applies it wins (all MG- codes are 3%), and we deliberately
+  // skip claiming the code so the customer keeps it for a future booking.
+  const WEEKDAY_PROMO = { percent: 20, lastDate: "2026-08-31", days: [1, 2, 3, 4] };
+  function weekdayPromoPercent(ddmmyyyy: string): number {
+    const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(ddmmyyyy);
+    if (!m) return 0;
+    const iso = `${m[3]}-${m[2]}-${m[1]}`;
+    const todayISO = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Sofia" });
+    if (iso < todayISO || iso > WEEKDAY_PROMO.lastDate) return 0;
+    const day = new Date(`${iso}T12:00:00Z`).getUTCDay(); // 1=Mon .. 4=Thu
+    return WEEKDAY_PROMO.days.includes(day) ? WEEKDAY_PROMO.percent : 0;
+  }
+  const weekday_percent = weekdayPromoPercent(preferred_date);
+
   // Atomic discount claim, best-effort. If the code is taken/expired we
   // still keep the booking — the customer just doesn't get the discount.
   let discount_percent: number | null = null;
-  if (discount_code) {
+  if (weekday_percent > 0) {
+    discount_percent = weekday_percent;
+    await sb.from("enquiries").update({
+      applied_discount_percent: weekday_percent,
+    }).eq("id", inserted.id);
+  } else if (discount_code) {
     const { data: claimed } = await sb
       .from("discount_codes")
       .update({

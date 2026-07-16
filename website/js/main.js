@@ -153,3 +153,24 @@ document.addEventListener('DOMContentLoaded', () => {
   initCounters();
   initGlowBorders();
 });
+
+// ── Weekday-promo bar ──
+// Visible until 2026-08-31 incl. (campaign end - keep in sync with the
+// weekday promo in reservation.js / submit-enquiry), dismissible per
+// browser. Self-expires: after the date it simply never shows.
+(function () {
+  const bar = document.getElementById('promo-bar');
+  if (!bar) return;
+  const PROMO_BAR_LAST_DATE = '2026-08-31';
+  let dismissed = false;
+  try { dismissed = localStorage.getItem('margel_promo_bar') === 'dismissed'; } catch (e) {}
+  const todayISO = new Date().toLocaleDateString('en-CA');
+  if (dismissed || todayISO > PROMO_BAR_LAST_DATE) return;
+  bar.hidden = false;
+  document.body.classList.add('has-promo-bar');
+  document.getElementById('promo-bar-close')?.addEventListener('click', () => {
+    bar.hidden = true;
+    document.body.classList.remove('has-promo-bar');
+    try { localStorage.setItem('margel_promo_bar', 'dismissed'); } catch (e) {}
+  });
+})();
