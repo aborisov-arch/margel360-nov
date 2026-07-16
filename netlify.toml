@@ -10,6 +10,25 @@
   status = 301
   force = true
 
+# The pre-2026 site was WooCommerce; Google still has its /product/ pages
+# indexed (drinks catalog). 301 the legacy shop paths to the drinks menu so
+# old links land somewhere useful and the index consolidates faster
+# (GSC cleanup, 2026-07-16).
+[[redirects]]
+  from = "/product/*"
+  to = "/menu.html"
+  status = 301
+
+[[redirects]]
+  from = "/product-category/*"
+  to = "/menu.html"
+  status = 301
+
+[[redirects]]
+  from = "/shop/*"
+  to = "/menu.html"
+  status = 301
+
 # Caching for static assets (SEO audit: everything was max-age=0 and every
 # visit re-validated every file). css/js get 7 days, NOT immutable/1y: the
 # ?v= bump rule guards freshness, but version drift has happened before
