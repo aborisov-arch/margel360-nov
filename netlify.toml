@@ -30,8 +30,11 @@
   status = 301
 
 # Old WP "Тип събития" page, still indexed (site: check 2026-07-17).
+# Netlify matches non-ASCII paths only in percent-encoded form; the literal
+# Cyrillic `from` never matched (verified live). Splat covers with/without
+# trailing slash.
 [[redirects]]
-  from = "/тип-събития/"
+  from = "/%D1%82%D0%B8%D0%BF-%D1%81%D1%8A%D0%B1%D0%B8%D1%82%D0%B8%D1%8F*"
   to = "/"
   status = 301
 
