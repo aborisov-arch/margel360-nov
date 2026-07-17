@@ -386,7 +386,7 @@ p { color: var(--text-muted); }
 .about-text p { font-size: 1rem; line-height: 1.9; }
 .about-text p + p { margin-top: 16px; }
 .about-image { position: relative; }
-.about-image img { border-radius: var(--radius-lg); width: 100%; object-fit: cover; aspect-ratio: 4/3; box-shadow: var(--shadow-lg); }
+.about-image img { border-radius: var(--radius-lg); width: 100%; height: auto; object-fit: cover; aspect-ratio: 4/3; box-shadow: var(--shadow-lg); }
 .about-image::before {
   content: ''; position: absolute; inset: -8px;
   border: 1px solid rgba(201,168,76,0.2); border-radius: calc(var(--radius-lg) + 8px); pointer-events: none;
@@ -854,3 +854,9 @@ body.has-promo-bar .nav-drawer { top: calc(var(--nav-height) + var(--promo-bar-h
 /* Positive-green nudge under the wizard's date field when the picked date
    qualifies for the weekday promo. */
 .weekday-promo-hint { color: #2F8F4F; font-weight: 600; font-size: 0.88rem; margin: 8px 0 0; }
+
+/* Content images carry width/height ATTRIBUTES (CLS hints). Without this
+   guard the attribute height overrides CSS aspect-ratio/width-only sizing
+   and portrait photos render at full intrinsic height (the 'very long
+   image' bug). Class-based CSS heights still win over this rule. */
+main img { height: auto; }
