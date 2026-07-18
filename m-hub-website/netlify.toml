@@ -1,0 +1,5 @@
+# M-HUB Warehouse & Logistic Park — Netlify config
+# Redirects live in site/_redirects, headers in site/_headers so that
+# drag-and-drop deploys of the site/ folder behave identically.
+[build]
+  publish = "site"

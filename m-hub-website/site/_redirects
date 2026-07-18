@@ -1,0 +1,3 @@
+# Language-aware root redirect (Netlify)
+/   /en/   302   Language=en
+/   /bg/   302

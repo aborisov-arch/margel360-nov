@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact — M-HUB Warehouse & Logistic Park</title>
+  <meta name="description" content="Contact the M-HUB Warehouse & Logistic Park team — enquiries about units, viewings and commercial terms.">
+  <link rel="canonical" href="https://m-hub.zone/en/contact/">
+  <link rel="alternate" hreflang="bg" href="https://m-hub.zone/bg/kontakti/">
+  <link rel="alternate" hreflang="en" href="https://m-hub.zone/en/contact/">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-in">
+      <a class="brand" href="/en/"><img src="/assets/logo.png" alt="M-HUB Warehouse &amp; Logistic Park"></a>
+      <nav class="main-nav">
+        <a href="/en/">Home</a>
+        <a href="/en/the-park/">The Park</a>
+        <a href="/en/units/">Units & Prices</a>
+        <a href="/en/location/">Location</a>
+        <a href="/en/contact/" class="active">Contact</a>
+        <a class="lang-switch" href="/bg/kontakti/">БГ</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="page-hero">
+    <div class="container">
+      <span class="kicker" style="color:var(--gold-soft)">Contact</span>
+      <h1>Get in touch</h1>
+      <p>Send an enquiry about a unit, a viewing or commercial terms — we will get back to you as soon as possible.</p>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="container">
+      <span class="kicker">Address</span>
+      <h2 style="font-size:1.3rem">348 Botevgradsko Shose Blvd, Sofia, Bulgaria</h2>
+
+      <form class="form-card" name="contact" method="POST" action="/en/contact/sent/"
+            data-netlify="true" netlify-honeypot="bot-field">
+        <input type="hidden" name="form-name" value="contact">
+        <p style="display:none"><label>Do not fill: <input name="bot-field"></label></p>
+        <input type="hidden" name="lang" value="en">
+        <div class="form-grid">
+          <div class="field">
+            <label for="f-name">Full name *</label>
+            <input id="f-name" name="name" type="text" required autocomplete="name">
+          </div>
+          <div class="field">
+            <label for="f-email">Email *</label>
+            <input id="f-email" name="email" type="email" required autocomplete="email">
+          </div>
+          <div class="field">
+            <label for="f-phone">Phone</label>
+            <input id="f-phone" name="phone" type="tel" autocomplete="tel">
+          </div>
+          <div class="field">
+            <label for="f-interest">Interested in</label>
+            <select id="f-interest" name="interest">
+                <option>General enquiry</option>
+                <option>Building 2 — Unit 1</option>
+                <option>Building 2 — Unit 2</option>
+                <option>Building 2 — Unit 3</option>
+                <option>Building 2 — Unit 4</option>
+                <option>Building 2 — Unit 5</option>
+                <option>Building 2 — Unit 6</option>
+                <option>Building 2 — Unit 7</option>
+                <option>Building 2 — Unit 8</option>
+                <option>Building 1 (waiting list)</option>
+            </select>
+          </div>
+          <div class="field full">
+            <label for="f-msg">Message *</label>
+            <textarea id="f-msg" name="message" rows="6" required></textarea>
+          </div>
+        </div>
+        <div class="form-foot">
+          <button class="btn btn-gold" type="submit">Send enquiry</button>
+          <span class="hint">Fields marked with * are required.</span>
+        </div>
+      </form>
+    </div>
+  </section>
+
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-brand">M<span>-</span>HUB</div>
+          <div class="footer-tag">Warehouse & Logistic Park</div>
+          <p style="margin-top:16px">348 Botevgradsko Shose Blvd, Sofia, Bulgaria</p>
+        </div>
+        <div>
+          <h4>Navigation</h4>
+          <ul>
+            <li><a href="/en/">Home</a></li>
+            <li><a href="/en/the-park/">The Park</a></li>
+            <li><a href="/en/units/">Units & Prices</a></li>
+            <li><a href="/en/location/">Location</a></li>
+            <li><a href="/en/contact/">Contact</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Documents</h4>
+          <ul>
+            <li><a href="/assets/MHUB-Targovska-Oferta-Sgrada-2.pdf" download>Commercial offer — Building 2 (PDF)</a></li>
+            <li><a href="/assets/MHUB-Sgrada-2-Plan-Etazh-1.pdf" download>Architectural plan — Building 2 (PDF)</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 M-HUB Warehouse &amp; Logistic Park</span>
+        <span>All prices are quoted excluding VAT.</span>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
