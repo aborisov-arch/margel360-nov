@@ -893,8 +893,8 @@ function bindTableHandlers() {
 }
 
 // Per-category drink quantity caps: non-alcoholic (soft drinks + water,
-// drinks-data.js cat 3 & 4) up to 200; everything alcoholic up to 100.
-// Keep NON_ALCOHOLIC_DRINK_IDS in sync with website/js/drinks-data.js and
+// public.drinks cat 3 & 4) up to 200; everything alcoholic up to 100.
+// Keep NON_ALCOHOLIC_DRINK_IDS in sync with public.drinks table and
 // the server-side validators (submit-enquiry, _shared/validate.ts,
 // update-enquiry-admin).
 const NON_ALCOHOLIC_DRINK_IDS = new Set([

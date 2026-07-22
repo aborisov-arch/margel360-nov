@@ -39,7 +39,7 @@ function offerAddonPriceEur(id, price) {
 const OFFER_DEPOSIT_RATE = 0.5;
 const OFFER_VALID_DAYS = 2;
 
-// Live drinks catalog (drinks-data.js is loaded before this script). Used to
+// Drinks catalog is now DB-backed (public.drinks table). Used to
 // price P&L drink lines by id so website price changes flow straight through.
 const drinkCatalogById = (typeof drinks !== 'undefined' && Array.isArray(drinks))
   ? new Map(drinks.map(d => [d.id, d]))
