@@ -479,6 +479,8 @@ function renderQtyAddon(grid, svc, l) {
 }
 
 function updateAddonsTotal() {
+  // langChange can fire before loadCatalog() resolves (main.js dispatches it at startup)
+  if (typeof addonServices === 'undefined') return;
   let total = 0;
   for (const [id, qty] of Object.entries(booking.addons)) {
     const svc = addonServices.find(s => s.id === id);
@@ -570,6 +572,8 @@ function renderDrinks() {
 }
 
 function updateDrinksTotal() {
+  // langChange can fire before loadCatalog() resolves (main.js dispatches it at startup)
+  if (typeof drinks === 'undefined') return;
   let total = 0;
   drinks.forEach(d => { if (d.price_eur) total += (booking.drinkQtys[d.id] || 0) * d.price_eur; });
   const el = document.getElementById('drinks-total-val');
