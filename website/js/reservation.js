@@ -1,7 +1,7 @@
 // Catalog loaded externally: window globals `eventTypes`, `includedLabels`,
-// `venueIncluded`, `addonServices`, `drinkCategories`, `drinks` come from
-// `js/reservation-catalog.js` and `js/drinks-data.js`. Keep this file ordered
-// AFTER those two in reservation.html.
+// `venueIncluded` come from `js/reservation-catalog.js`; `addonServices`,
+// `drinkCategories`, `drinks` come from `js/catalog-db.js`. Keep this file
+// ordered AFTER those two in reservation.html.
 
 
 // ── State ──
