@@ -13,11 +13,10 @@ const TOTAL_STEPS = 7;
 let booking = { event:null, date:'', time:'day', arrival_time:'', addons:{}, drinkQtys:{}, partners:{}, name:'', email:'', phone:'', guests:'', notes:'', payment:'cash' };
 
 // Addons that use a +/- typeable qty input instead of an on/off toggle.
-// Physical inventory: 2 gas patio heaters, 1 gas heating table; glow_table caps at 10.
-// Furniture uses freeUntil from the catalog; everything else falls back to 999.
-const ADDON_MAX_QTY = { heater: 2, heater_tbl: 1, glow_table: 10 };
-function isQtyAddon(svc) { return svc.freeUntil != null || ADDON_MAX_QTY[svc.id] != null; }
-function addonMaxQty(svc) { return ADDON_MAX_QTY[svc.id] ?? 999; }
+// Inventory caps come from the catalog's max_qty column (admin-editable);
+// furniture uses freeUntil. Everything else is an on/off checkbox.
+function isQtyAddon(svc) { return svc.freeUntil != null || svc.maxQty != null; }
+function addonMaxQty(svc) { return svc.maxQty ?? 999; }
 function addonLinePrice(svc, qty) {
   if (!qty || qty < 1) return 0;
   if (svc.freeUntil != null) return Math.max(0, qty - svc.freeUntil) * svc.price;
@@ -1296,8 +1295,31 @@ document.addEventListener('langChange', () => {
   updateDrinksTotal();
 });
 
+// The wizard cannot run without the catalog - prices and steppers would be
+// wrong. Hide the steps and show a reload prompt instead of a broken form.
+function showCatalogError() {
+  document.querySelectorAll('.wizard-step').forEach(el => el.classList.remove('active'));
+  const progress = document.querySelector('.wizard-progress');
+  if (progress) progress.style.display = 'none';
+  const box = document.getElementById('catalog-error');
+  if (!box) return;
+  if (getLang() === 'en') {
+    document.getElementById('catalog-error-msg').textContent = 'The service catalog could not be loaded. Please try again.';
+    document.getElementById('catalog-error-retry').textContent = 'Try again';
+  }
+  box.hidden = false;
+  document.getElementById('catalog-error-retry').addEventListener('click', () => window.location.reload());
+}
+
 // ── Init ──
 document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    await window.loadCatalog();   // populates drinks/drinkCategories/addonServices globals
+  } catch (err) {
+    console.error('catalog load failed:', err);
+    showCatalogError();
+    return;
+  }
   await loadOccupiedDates();   // fetch occupied dates before flatpickr initialises
   loadPartners();              // fire-and-forget - partners must never delay the wizard
   renderEventPicker();
