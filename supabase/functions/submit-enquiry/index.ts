@@ -9,10 +9,11 @@
 // edit_token = full takeover of every booking). Routing through a
 // service-role insert removes the SELECT path entirely.
 //
-// This file inlines validate / cors / rate-limit because the Supabase
-// edge-function bundler can't follow ../_shared imports for this
-// project's deploy path. Keep in sync with the canonical copies under
-// supabase/functions/_shared/*.ts.
+// validate / cors / rate-limit stay inlined here for historical reasons
+// (kept in sync with the canonical copies under supabase/functions/_shared/*.ts).
+// ../_shared imports do work — this file already pulls in weekday-promo.ts
+// and catalog.ts below — as long as deploys use `--use-api`, which bundles
+// _shared/ correctly (see CLAUDE.md's verify_jwt map for the deploy command).
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import { weekdayPromoPercent } from "../_shared/weekday-promo.ts";

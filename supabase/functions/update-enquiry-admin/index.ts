@@ -3,9 +3,10 @@
 // edit_locked. Still fires send-enquiry-summary with reason="updated" so
 // the diff email logic does not fork.
 //
-// Shared modules (validate.ts, diff.ts, cors.ts) are inlined here because
-// the Supabase Edge Function deploy bundler doesn't currently follow
-// `../_shared/*` imports through this project's deploy path.
+// validate.ts, diff.ts, and cors.ts stay inlined here for historical reasons.
+// `../_shared/*` imports do work — this file already pulls in catalog.ts
+// below — as long as deploys use `--use-api`, which bundles _shared/
+// correctly (see CLAUDE.md's verify_jwt map for the deploy command).
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import { loadCatalog, repriceAddons, repriceDrinks } from "../_shared/catalog.ts";
