@@ -61,6 +61,15 @@
         <a class="btn btn-ghost" href="mailto:360@margel.info">360@margel.info</a>
       </section>
 
+      <!-- CATALOG ERROR -->
+      <section class="spread state-page" id="state-catalog-error" hidden>
+        <p class="label-caps">Грешка</p>
+        <h1 class="display display-lg">Нещо се обърка.</h1>
+        <hr class="rule-gold">
+        <p class="lead">Каталогът с услуги не можа да се зареди. Моля, опитайте отново.</p>
+        <button id="btn-catalog-retry" type="button" class="btn btn-ghost">Презареди страницата</button>
+      </section>
+
       <!-- FORM -->
       <section class="spread" id="state-form" hidden>
         <header class="spread__header">
@@ -113,6 +122,7 @@
               <button type="button" class="btn btn-ghost" id="btn-toggle-drinks">Покажи менюто с напитки</button>
             </div>
             <div id="drinks-panel" hidden>
+              <ul class="drinks-list" id="drinks-legacy" hidden></ul>
               <nav class="drinks-nav" id="drinks-tabs" role="tablist"></nav>
               <ul class="drinks-list" id="drinks-grid"></ul>
             </div>
@@ -167,8 +177,7 @@
 
   </div>
 
-  <script src="js/reservation-catalog.js?v=2"></script>
-  <script src="js/drinks-data.js?v=7"></script>
+  <script src="js/catalog-db.js?v=1"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/bg.js"></script>
   <!-- Supabase JS is only used when this page is opened in admin mode
@@ -176,6 +185,6 @@
        unchanged and adds ~30KB gzipped - acceptable for this internal-ish
        page. -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7" integrity="sha384-tD6X9wDfTRdKpuPoHFZrVW2RXjSYSWjLBPWXxpHprWWl9eaHlwl05aRjHsiKF97n" crossorigin="anonymous"></script>
-  <script src="js/edit.js?v=13"></script>
+  <script src="js/edit.js?v=14"></script>
 </body>
 </html>
