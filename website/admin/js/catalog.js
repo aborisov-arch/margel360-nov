@@ -127,6 +127,11 @@ function openForm(row) {
     document.getElementById('cf-qty-item').checked = !!row && (row.max_qty != null || row.free_until != null);
     document.getElementById('cf-max-qty').value = row?.max_qty ?? '';
     document.getElementById('cf-free-until').value = row?.free_until ?? '';
+
+    const qtyBox = document.getElementById('cf-qty-item');
+    qtyBox.disabled = isCleaning;   // cleaning is auto-added without qty - a qty flip would 400 every booking
+    if (isCleaning) qtyBox.checked = false;
+
     syncQtyFields();
   }
 
@@ -204,7 +209,10 @@ async function saveItem() {
           ...base,
           hint_bg: document.getElementById('cf-hint-bg').value.trim() || null,
           hint_en: document.getElementById('cf-hint-en').value.trim() || null,
-          ...serviceQtyColumns(),
+          // Cleaning is auto-added without qty by the wizard/edit page - never
+          // let it carry qty columns regardless of UI state (belt-and-braces
+          // alongside the DB trigger and the disabled checkbox above).
+          ...(editingId === 'cleaning' ? { free_until: null, max_qty: null } : serviceQtyColumns()),
         };
 
     const table = tableFor(activeTab);
