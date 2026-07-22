@@ -25,6 +25,17 @@ UNITS = [
 TOT = dict(wh=2688.16, mezz=664.78, yard=3366.82, ideal=6722.03, price=5268154.00, avg=1571.20)
 AREA_WH_MEZZ = 3352.94
 
+# Sale status per Building-2 unit: "available" | "reserved" | "sold".
+# Flip a unit here and re-run build.py to update the site.
+STATUS = {n: "available" for n in range(1, 9)}
+
+# Clickable regions on assets/plan-sgrada2-et1.png (2400x1766):
+# vertical partition-wall x-coords for units 1..8, and the hall's y-extent.
+SEL_X = [128, 536, 726, 917, 1206, 1496, 1686, 1877, 2319]
+SEL_Y = (465, 1180)
+
+ASSET_V = "2"  # bump when style.css / selector.js change (cache busting)
+
 ADDRESS_BG = "бул. „Ботевградско шосе“ 348, София"
 ADDRESS_EN = "348 Botevgradsko Shose Blvd, Sofia, Bulgaria"
 MAP_Q = "Botevgradsko%20shose%20348%2C%20Sofia%2C%20Bulgaria"
@@ -111,7 +122,7 @@ def page(lang, path, title, desc, body, active):
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/style.css">
+  <link rel="stylesheet" href="/assets/style.css?v={ASSET_V}">
 </head>
 <body>
   <header class="site-header">
@@ -414,6 +425,110 @@ def units_page(lang):
         offer_btn = "Commercial offer (PDF)"
         tbl_k, tbl_h = "Price list", "Units in Building 2"
 
+    # ---- interactive selector data -------------------------------------
+    import json
+    avail = sum(1 for n in STATUS if STATUS[n] == "available")
+    if bg:
+        st_label = {"available": "Свободен", "reserved": "Резервиран", "sold": "Продаден"}
+        sel_k, sel_h = "Изберете склад", "Наличност по сгради"
+        sel_sub = ("Изберете сграда, след което кликнете върху склад от плана, за да видите "
+                   "площ, цена и наличност.")
+        b1_lbl, b2_lbl = "Сграда", "Сграда"
+        b1_cnt, b1_cl = "0", "Няма свободни складове"
+        b2_cnt, b2_cl = str(avail), "свободни склада"
+        hint = "Кликнете върху склад от плана — потъмнените складове са заети."
+        cta_lbl = "Запитване за {n}"
+        tip_mezz = "мецанин"
+        sp = dict(wh="Склад", mezz="Мецанин", yard="Двор", ideal="Идеални части",
+                  avg="Средна цена", total="Обща цена")
+        unit_name = "Склад"
+        vat_note = "Цената е без ДДС · Идеалните части се прехвърлят безплатно"
+    else:
+        st_label = {"available": "Available", "reserved": "Reserved", "sold": "Sold"}
+        sel_k, sel_h = "Choose a unit", "Availability by building"
+        sel_sub = ("Pick a building, then click a unit on the floor plan to see its area, "
+                   "price and availability.")
+        b1_lbl, b2_lbl = "Building", "Building"
+        b1_cnt, b1_cl = "0", "No units available"
+        b2_cnt, b2_cl = str(avail), "units available"
+        hint = "Click a unit on the plan — darkened units are taken."
+        cta_lbl = "Enquire about {n}"
+        tip_mezz = "mezzanine"
+        sp = dict(wh="Warehouse", mezz="Mezzanine", yard="Yard", ideal="Ideal parts",
+                  avg="Average price", total="Total price")
+        unit_name = "Unit"
+        vat_note = "Price excludes VAT · Ideal parts are transferred free of charge"
+
+    units_json = dict(
+        initial=next((n for n in range(1, 9) if STATUS[n] == "available"), 1),
+        contactUrl=NAV[lang][4][0], ctaLabel=cta_lbl, tipMezz=tip_mezz,
+        units=[dict(
+            n=n, name=f"{unit_name} {n}", status=STATUS[n], statusLabel=st_label[STATUS[n]],
+            wh=sqm(wh, lang), mezz=sqm(mz, lang), yard=sqm(yd, lang), ideal=sqm(idp, lang),
+            avg=(num(avg, lang) + " €/м²") if bg else ("€" + num(avg, lang) + "/m²"),
+            total=eur(total, lang),
+        ) for (n, wh, whp, mz, mzp, yd, ydp, idp, total, avg) in UNITS],
+    )
+    y0, y1 = SEL_Y
+    sel_rects = "\n          ".join(
+        f'<rect class="u{" res" if STATUS[n] != "available" else ""}" data-unit="{n}" '
+        f'x="{SEL_X[i]}" y="{y0}" width="{SEL_X[i + 1] - SEL_X[i]}" height="{y1 - y0}"/>'
+        for i, (n, *_rest) in enumerate(UNITS))
+    sp_specs = "\n            ".join(
+        f'<div class="sp-spec"><div class="k">{label}</div><div class="v" id="sp-{key}">—</div></div>'
+        for key, label in (("wh", sp["wh"]), ("mezz", sp["mezz"]), ("yard", sp["yard"]),
+                           ("ideal", sp["ideal"]), ("avg", sp["avg"])))
+
+    selector_html = f"""  <section class="block" id="izbor" style="padding-bottom:30px">
+    <div class="container">
+      <span class="kicker">{sel_k}</span>
+      <h2>{sel_h}</h2>
+      <p class="sub">{sel_sub}</p>
+
+      <div class="bsel">
+        <div class="bsel-card off">
+          <div><div class="bn">1</div><div class="bl">{b1_lbl}</div></div>
+          <div class="bc"><div class="cnt">{b1_cnt}</div><div class="cl">{b1_cl}</div></div>
+        </div>
+        <div class="bsel-card on">
+          <div><div class="bn">2</div><div class="bl">{b2_lbl}</div></div>
+          <div class="bc"><div class="cnt">{b2_cnt}</div><div class="cl">{b2_cl}</div></div>
+        </div>
+      </div>
+
+      <div class="sel-stage" id="sel-stage">
+        <img src="/assets/plan-sgrada2-et1.png" alt="{plan_cap}">
+        <svg id="sel-svg" viewBox="0 0 2400 1766" preserveAspectRatio="none" aria-label="{sel_h}">
+          {sel_rects}
+        </svg>
+        <div class="sel-tip" id="sel-tip"></div>
+      </div>
+      <p class="sel-hint">{hint}</p>
+
+      <div class="sel-panel" id="sel-panel">
+        <div>
+          <div class="sp-head">
+            <h3 id="sp-name">—</h3>
+            <span class="badge badge-sale" id="sp-badge"></span>
+          </div>
+          <div class="sp-specs">
+            {sp_specs}
+          </div>
+        </div>
+        <div class="sp-buy">
+          <div class="t">{sp['total']}</div>
+          <div class="p" id="sp-total">—</div>
+          <a class="btn btn-gold" id="sp-cta" href="{NAV[lang][4][0]}">…</a>
+          <span class="vat">{vat_note}</span>
+        </div>
+      </div>
+
+      <script type="application/json" id="unit-data">{json.dumps(units_json, ensure_ascii=False)}</script>
+      <script src="/assets/selector.js?v={ASSET_V}" defer></script>
+    </div>
+  </section>
+"""
+
     chips_html = "".join(f'<span class="chip">{k}: <b>{v}</b></span>' for k, v in chips)
     tiles_html = "\n        ".join(
         f'<div class="tile"><div class="t">{t}</div><div class="v">{v}</div></div>' for t, v in tiles)
@@ -429,6 +544,7 @@ def units_page(lang):
     </div>
   </section>
 
+{selector_html}
   <section class="block" style="padding-bottom:30px">
     <div class="container">
       <div class="reserved-strip">
@@ -774,6 +890,20 @@ def contact(lang):
           <span class="hint">{hint}</span>
         </div>
       </form>
+
+      <script>
+      (function () {{
+        var u = new URLSearchParams(location.search).get('unit');
+        if (!u) return;
+        var sel = document.getElementById('f-interest');
+        if (!sel) return;
+        var needle = '{unit_word} ' + u;
+        for (var i = 0; i < sel.options.length; i++) {{
+          var t = sel.options[i].text;
+          if (t.slice(-needle.length) === needle) {{ sel.selectedIndex = i; break; }}
+        }}
+      }})();
+      </script>
     </div>
   </section>
 """

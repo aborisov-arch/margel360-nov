@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/style.css">
+  <link rel="stylesheet" href="/assets/style.css?v=2">
 </head>
 <body>
   <header class="site-header">
@@ -34,6 +34,66 @@
       <span class="kicker" style="color:var(--gold-soft)">Площи и цени</span>
       <h1>Търговска оферта — Сграда 2</h1>
       <p>Осем функционални склада с мецанин, прилежащ двор и безплатно прехвърляне на идеалните части. Всички цени са без включен ДДС.</p>
+    </div>
+  </section>
+
+  <section class="block" id="izbor" style="padding-bottom:30px">
+    <div class="container">
+      <span class="kicker">Изберете склад</span>
+      <h2>Наличност по сгради</h2>
+      <p class="sub">Изберете сграда, след което кликнете върху склад от плана, за да видите площ, цена и наличност.</p>
+
+      <div class="bsel">
+        <div class="bsel-card off">
+          <div><div class="bn">1</div><div class="bl">Сграда</div></div>
+          <div class="bc"><div class="cnt">0</div><div class="cl">Няма свободни складове</div></div>
+        </div>
+        <div class="bsel-card on">
+          <div><div class="bn">2</div><div class="bl">Сграда</div></div>
+          <div class="bc"><div class="cnt">8</div><div class="cl">свободни склада</div></div>
+        </div>
+      </div>
+
+      <div class="sel-stage" id="sel-stage">
+        <img src="/assets/plan-sgrada2-et1.png" alt="Сграда 2 · Етаж 1 · Проект: m2A architecture">
+        <svg id="sel-svg" viewBox="0 0 2400 1766" preserveAspectRatio="none" aria-label="Наличност по сгради">
+          <rect class="u" data-unit="1" x="128" y="465" width="408" height="715"/>
+          <rect class="u" data-unit="2" x="536" y="465" width="190" height="715"/>
+          <rect class="u" data-unit="3" x="726" y="465" width="191" height="715"/>
+          <rect class="u" data-unit="4" x="917" y="465" width="289" height="715"/>
+          <rect class="u" data-unit="5" x="1206" y="465" width="290" height="715"/>
+          <rect class="u" data-unit="6" x="1496" y="465" width="190" height="715"/>
+          <rect class="u" data-unit="7" x="1686" y="465" width="191" height="715"/>
+          <rect class="u" data-unit="8" x="1877" y="465" width="442" height="715"/>
+        </svg>
+        <div class="sel-tip" id="sel-tip"></div>
+      </div>
+      <p class="sel-hint">Кликнете върху склад от плана — потъмнените складове са заети.</p>
+
+      <div class="sel-panel" id="sel-panel">
+        <div>
+          <div class="sp-head">
+            <h3 id="sp-name">—</h3>
+            <span class="badge badge-sale" id="sp-badge"></span>
+          </div>
+          <div class="sp-specs">
+            <div class="sp-spec"><div class="k">Склад</div><div class="v" id="sp-wh">—</div></div>
+            <div class="sp-spec"><div class="k">Мецанин</div><div class="v" id="sp-mezz">—</div></div>
+            <div class="sp-spec"><div class="k">Двор</div><div class="v" id="sp-yard">—</div></div>
+            <div class="sp-spec"><div class="k">Идеални части</div><div class="v" id="sp-ideal">—</div></div>
+            <div class="sp-spec"><div class="k">Средна цена</div><div class="v" id="sp-avg">—</div></div>
+          </div>
+        </div>
+        <div class="sp-buy">
+          <div class="t">Обща цена</div>
+          <div class="p" id="sp-total">—</div>
+          <a class="btn btn-gold" id="sp-cta" href="/bg/kontakti/">…</a>
+          <span class="vat">Цената е без ДДС · Идеалните части се прехвърлят безплатно</span>
+        </div>
+      </div>
+
+      <script type="application/json" id="unit-data">{"initial": 1, "contactUrl": "/bg/kontakti/", "ctaLabel": "Запитване за {n}", "tipMezz": "мецанин", "units": [{"n": 1, "name": "Склад 1", "status": "available", "statusLabel": "Свободен", "wh": "509,29 м²", "mezz": "99,71 м²", "yard": "1 041,37 м²", "ideal": "1 220,93 м²", "avg": "1 747,86 €/м²", "total": "1 064 446,10 €"}, {"n": 2, "name": "Склад 2", "status": "available", "statusLabel": "Свободен", "wh": "236,40 м²", "mezz": "66,36 м²", "yard": "212,94 м²", "ideal": "606,98 м²", "avg": "1 498,99 €/м²", "total": "453 832,80 €"}, {"n": 3, "name": "Склад 3", "status": "available", "statusLabel": "Свободен", "wh": "236,40 м²", "mezz": "66,36 м²", "yard": "212,91 м²", "ideal": "606,98 м²", "avg": "1 498,96 €/м²", "total": "453 824,40 €"}, {"n": 4, "name": "Склад 4", "status": "available", "statusLabel": "Свободен", "wh": "354,60 м²", "mezz": "99,96 м²", "yard": "319,30 м²", "ideal": "911,31 м²", "avg": "1 498,51 €/м²", "total": "681 163,60 €"}, {"n": 5, "name": "Склад 5", "status": "available", "statusLabel": "Свободен", "wh": "354,60 м²", "mezz": "99,96 м²", "yard": "319,22 м²", "ideal": "911,31 м²", "avg": "1 498,46 €/м²", "total": "681 141,20 €"}, {"n": 6, "name": "Склад 6", "status": "available", "statusLabel": "Свободен", "wh": "236,40 м²", "mezz": "66,36 м²", "yard": "212,77 м²", "ideal": "606,98 м²", "avg": "1 498,83 €/м²", "total": "453 785,20 €"}, {"n": 7, "name": "Склад 7", "status": "available", "statusLabel": "Свободен", "wh": "236,40 м²", "mezz": "66,36 м²", "yard": "212,74 м²", "ideal": "606,98 м²", "avg": "1 498,80 €/м²", "total": "453 776,80 €"}, {"n": 8, "name": "Склад 8", "status": "available", "statusLabel": "Свободен", "wh": "524,07 м²", "mezz": "99,71 м²", "yard": "835,57 м²", "ideal": "1 250,56 м²", "avg": "1 645,11 €/м²", "total": "1 026 183,90 €"}]}</script>
+      <script src="/assets/selector.js?v=2" defer></script>
     </div>
   </section>
 

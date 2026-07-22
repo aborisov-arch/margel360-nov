@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/style.css">
+  <link rel="stylesheet" href="/assets/style.css?v=2">
 </head>
 <body>
   <header class="site-header">
@@ -34,6 +34,66 @@
       <span class="kicker" style="color:var(--gold-soft)">Units & Prices</span>
       <h1>Commercial offer — Building 2</h1>
       <p>Eight functional warehouse units with mezzanine, private yard and free transfer of the ideal parts. All prices exclude VAT.</p>
+    </div>
+  </section>
+
+  <section class="block" id="izbor" style="padding-bottom:30px">
+    <div class="container">
+      <span class="kicker">Choose a unit</span>
+      <h2>Availability by building</h2>
+      <p class="sub">Pick a building, then click a unit on the floor plan to see its area, price and availability.</p>
+
+      <div class="bsel">
+        <div class="bsel-card off">
+          <div><div class="bn">1</div><div class="bl">Building</div></div>
+          <div class="bc"><div class="cnt">0</div><div class="cl">No units available</div></div>
+        </div>
+        <div class="bsel-card on">
+          <div><div class="bn">2</div><div class="bl">Building</div></div>
+          <div class="bc"><div class="cnt">8</div><div class="cl">units available</div></div>
+        </div>
+      </div>
+
+      <div class="sel-stage" id="sel-stage">
+        <img src="/assets/plan-sgrada2-et1.png" alt="Building 2 · Level 1 · Design: m2A architecture">
+        <svg id="sel-svg" viewBox="0 0 2400 1766" preserveAspectRatio="none" aria-label="Availability by building">
+          <rect class="u" data-unit="1" x="128" y="465" width="408" height="715"/>
+          <rect class="u" data-unit="2" x="536" y="465" width="190" height="715"/>
+          <rect class="u" data-unit="3" x="726" y="465" width="191" height="715"/>
+          <rect class="u" data-unit="4" x="917" y="465" width="289" height="715"/>
+          <rect class="u" data-unit="5" x="1206" y="465" width="290" height="715"/>
+          <rect class="u" data-unit="6" x="1496" y="465" width="190" height="715"/>
+          <rect class="u" data-unit="7" x="1686" y="465" width="191" height="715"/>
+          <rect class="u" data-unit="8" x="1877" y="465" width="442" height="715"/>
+        </svg>
+        <div class="sel-tip" id="sel-tip"></div>
+      </div>
+      <p class="sel-hint">Click a unit on the plan — darkened units are taken.</p>
+
+      <div class="sel-panel" id="sel-panel">
+        <div>
+          <div class="sp-head">
+            <h3 id="sp-name">—</h3>
+            <span class="badge badge-sale" id="sp-badge"></span>
+          </div>
+          <div class="sp-specs">
+            <div class="sp-spec"><div class="k">Warehouse</div><div class="v" id="sp-wh">—</div></div>
+            <div class="sp-spec"><div class="k">Mezzanine</div><div class="v" id="sp-mezz">—</div></div>
+            <div class="sp-spec"><div class="k">Yard</div><div class="v" id="sp-yard">—</div></div>
+            <div class="sp-spec"><div class="k">Ideal parts</div><div class="v" id="sp-ideal">—</div></div>
+            <div class="sp-spec"><div class="k">Average price</div><div class="v" id="sp-avg">—</div></div>
+          </div>
+        </div>
+        <div class="sp-buy">
+          <div class="t">Total price</div>
+          <div class="p" id="sp-total">—</div>
+          <a class="btn btn-gold" id="sp-cta" href="/en/contact/">…</a>
+          <span class="vat">Price excludes VAT · Ideal parts are transferred free of charge</span>
+        </div>
+      </div>
+
+      <script type="application/json" id="unit-data">{"initial": 1, "contactUrl": "/en/contact/", "ctaLabel": "Enquire about {n}", "tipMezz": "mezzanine", "units": [{"n": 1, "name": "Unit 1", "status": "available", "statusLabel": "Available", "wh": "509.29 m²", "mezz": "99.71 m²", "yard": "1,041.37 m²", "ideal": "1,220.93 m²", "avg": "€1,747.86/m²", "total": "€1,064,446.10"}, {"n": 2, "name": "Unit 2", "status": "available", "statusLabel": "Available", "wh": "236.40 m²", "mezz": "66.36 m²", "yard": "212.94 m²", "ideal": "606.98 m²", "avg": "€1,498.99/m²", "total": "€453,832.80"}, {"n": 3, "name": "Unit 3", "status": "available", "statusLabel": "Available", "wh": "236.40 m²", "mezz": "66.36 m²", "yard": "212.91 m²", "ideal": "606.98 m²", "avg": "€1,498.96/m²", "total": "€453,824.40"}, {"n": 4, "name": "Unit 4", "status": "available", "statusLabel": "Available", "wh": "354.60 m²", "mezz": "99.96 m²", "yard": "319.30 m²", "ideal": "911.31 m²", "avg": "€1,498.51/m²", "total": "€681,163.60"}, {"n": 5, "name": "Unit 5", "status": "available", "statusLabel": "Available", "wh": "354.60 m²", "mezz": "99.96 m²", "yard": "319.22 m²", "ideal": "911.31 m²", "avg": "€1,498.46/m²", "total": "€681,141.20"}, {"n": 6, "name": "Unit 6", "status": "available", "statusLabel": "Available", "wh": "236.40 m²", "mezz": "66.36 m²", "yard": "212.77 m²", "ideal": "606.98 m²", "avg": "€1,498.83/m²", "total": "€453,785.20"}, {"n": 7, "name": "Unit 7", "status": "available", "statusLabel": "Available", "wh": "236.40 m²", "mezz": "66.36 m²", "yard": "212.74 m²", "ideal": "606.98 m²", "avg": "€1,498.80/m²", "total": "€453,776.80"}, {"n": 8, "name": "Unit 8", "status": "available", "statusLabel": "Available", "wh": "524.07 m²", "mezz": "99.71 m²", "yard": "835.57 m²", "ideal": "1,250.56 m²", "avg": "€1,645.11/m²", "total": "€1,026,183.90"}]}</script>
+      <script src="/assets/selector.js?v=2" defer></script>
     </div>
   </section>
 

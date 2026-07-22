@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/style.css">
+  <link rel="stylesheet" href="/assets/style.css?v=2">
 </head>
 <body>
   <header class="site-header">
@@ -85,6 +85,20 @@
           <span class="hint">Fields marked with * are required.</span>
         </div>
       </form>
+
+      <script>
+      (function () {
+        var u = new URLSearchParams(location.search).get('unit');
+        if (!u) return;
+        var sel = document.getElementById('f-interest');
+        if (!sel) return;
+        var needle = 'Unit ' + u;
+        for (var i = 0; i < sel.options.length; i++) {
+          var t = sel.options[i].text;
+          if (t.slice(-needle.length) === needle) { sel.selectedIndex = i; break; }
+        }
+      })();
+      </script>
     </div>
   </section>
 
