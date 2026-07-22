@@ -8,6 +8,7 @@
 // `../_shared/*` imports through this project's deploy path.
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
+import { loadCatalog, repriceAddons, repriceDrinks } from "../_shared/catalog.ts";
 
 const SUPABASE_URL    = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -47,14 +48,10 @@ function diffEnquiry(before: Record<string, unknown>, after: Record<string, unkn
 
 const DATE_RE = /^\d{2}\/\d{2}\/\d{4}$/;
 const MAX_NOTES = 2000, MAX_PHONE = 30, MAX_GUESTS = 200, MAX_ADDON_PRICE = 50000, MAX_NAME_LEN = 200;
-// Per-category drink quantity caps: non-alcoholic (soft drinks + water,
-// drinks-data.js cat 3 & 4) up to 200; everything alcoholic up to 100.
-// Keep NON_ALCOHOLIC_DRINK_IDS in sync with website/js/drinks-data.js.
-const NON_ALCOHOLIC_DRINK_IDS = new Set([
-  "granini_a", "granini_o", "tonic_mango", "tonic_cherry", "sanben_tea_lem5", "sanben_tea_lem3", "sanben_tea_peach", "cola", "cola0", "fanta", "redbull",
-  "benedo_spa", "perrier_st", "perrier_spa", "panna25", "panna50", "panna75", "pelegrino75", "pelegrino",
-]);
-function maxDrinkQty(id: string): number { return NON_ALCOHOLIC_DRINK_IDS.has(id) ? 200 : 100; }
+// Absolute drink-qty bound. The real per-category caps (non-alcoholic 200 /
+// alcoholic 100) are enforced against the public.drinks catalog by the
+// callers via _shared/catalog.ts repriceDrinks().
+const MAX_DRINK_QTY = 200;
 type VR = { ok: true; value: unknown } | { ok: false; error: string };
 function validateField(field: string, raw: unknown): VR {
   switch (field) {
@@ -95,7 +92,7 @@ function validateField(field: string, raw: unknown): VR {
         const o = d as Record<string, unknown>;
         if (typeof o.id !== "string" || o.id.length === 0 || o.id.length > 50) return { ok: false, error: "drink.id" };
         if (typeof o.name !== "string" || o.name.length > MAX_NAME_LEN) return { ok: false, error: "drink.name" };
-        if (!Number.isInteger(o.qty) || (o.qty as number) < 0 || (o.qty as number) > maxDrinkQty(o.id as string)) return { ok: false, error: "drink.qty" };
+        if (!Number.isInteger(o.qty) || (o.qty as number) < 0 || (o.qty as number) > MAX_DRINK_QTY) return { ok: false, error: "drink.qty" };
         if (o.price_eur !== null && o.price_eur !== undefined) {
           if (typeof o.price_eur !== "number" || !Number.isFinite(o.price_eur) || o.price_eur < 0) return { ok: false, error: "drink.price_eur" };
         }
@@ -148,6 +145,29 @@ serve(async (req) => {
     patch[f] = r.value;
   }
   if (!Object.keys(patch).length) return json({ error: "no_changes" }, 400);
+
+  // Reprice edited items from the catalog; items removed from the catalog
+  // since booking are grandfathered against the stored enquiry (see
+  // _shared/catalog.ts).
+  if ("addons" in patch || "drinks" in patch) {
+    let catalog;
+    try {
+      catalog = await loadCatalog(sbAdmin);
+    } catch (e) {
+      console.error("catalog load failed:", e);
+      return json({ error: "server_error" }, 500);
+    }
+    if ("addons" in patch) {
+      const r = repriceAddons(patch.addons as never[], catalog, (current.addons ?? []) as never[]);
+      if (!r.ok) return json({ error: "invalid_field", field: "addons", detail: r.error }, 400);
+      patch.addons = r.value;
+    }
+    if ("drinks" in patch) {
+      const r = repriceDrinks(patch.drinks as never[], catalog, (current.drinks ?? []) as never[]);
+      if (!r.ok) return json({ error: "invalid_field", field: "drinks", detail: r.error }, 400);
+      patch.drinks = r.value;
+    }
+  }
 
   const diff = diffEnquiry(current, { ...current, ...patch });
   if (!diff.length) return json({ enquiry: current, diff: [] });
