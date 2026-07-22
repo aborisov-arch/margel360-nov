@@ -60,6 +60,28 @@ Deno.test("repriceAddons: furniture bills only above free_until", () => {
   assertEquals(r, { ok: true, value: [{ id: "bar_stool", name: "Bar stool", price: 10, qty: 42 }] });
 });
 
+Deno.test("repriceAddons: duplicate ids rejected", () => {
+  const items = [{ id: "dj", name: "x", price: 1 }, { id: "dj", name: "x", price: 1 }];
+  assertEquals(repriceAddons(items, cat()).ok, false);
+});
+
+Deno.test("repriceDrinks: negative qty rejected", () => {
+  assertEquals(repriceDrinks([{ id: "cola", name: "x", qty: -1, price_eur: null }], cat()).ok, false);
+});
+
+Deno.test("repriceAddons: stepper addon rejects float qty", () => {
+  assertEquals(repriceAddons([{ id: "heater", name: "x", price: 0, qty: 2.5 }], cat()).ok, false);
+});
+
+Deno.test("repriceAddons: stepper addon rejects missing qty key", () => {
+  assertEquals(repriceAddons([{ id: "heater", name: "x", price: 0 }], cat()).ok, false);
+});
+
+Deno.test("repriceAddons: stepper addon rejects string qty (no coercion)", () => {
+  const item = { id: "heater", name: "x", price: 0, qty: "2" as unknown as number };
+  assertEquals(repriceAddons([item], cat()).ok, false);
+});
+
 Deno.test("repriceAddons: unknown id rejected at submit, grandfathered unchanged on update", () => {
   assertEquals(repriceAddons([{ id: "nope", name: "x", price: 50 }], cat()).ok, false);
   const stored = [{ id: "nope", name: "Old svc", price: 50, qty: 2 }];

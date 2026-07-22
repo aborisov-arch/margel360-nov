@@ -71,15 +71,16 @@ export function repriceAddons(items: AddonItem[], catalog: Catalog, stored: Addo
     if (c && c.active) {
       const isQty = c.free_until != null || c.max_qty != null;
       if (isQty) {
-        const qty = Number(item.qty);
         const max = c.max_qty ?? 999;
-        if (!Number.isInteger(qty) || qty < 1 || qty > max) {
+        // Same strictness as repriceDrinks: raw value must be an integer
+        // number - no coercion of strings like "2".
+        if (typeof item.qty !== "number" || !Number.isInteger(item.qty) || item.qty < 1 || item.qty > max) {
           return { ok: false, error: `addon ${item.id}: qty must be 1..${max}` };
         }
         const line = c.free_until != null
-          ? Math.max(0, qty - c.free_until) * c.price_eur
-          : qty * c.price_eur;
-        out.push({ id: item.id, name: c.name_en, price: round2(line), qty });
+          ? Math.max(0, item.qty - c.free_until) * c.price_eur
+          : item.qty * c.price_eur;
+        out.push({ id: item.id, name: c.name_en, price: round2(line), qty: item.qty });
       } else {
         out.push({ id: item.id, name: c.name_en, price: round2(c.price_eur) });
       }
