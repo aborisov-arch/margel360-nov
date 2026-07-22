@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Каталог - Маргел 360° Админ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/admin.css?v=17">
+  <link rel="icon" href="/favicon.ico" sizes="48x48">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/assets/favicon-192.png">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+</head>
+<body>
+  <header class="admin-header">
+    <a href="dashboard.html" class="admin-logo">МАРГЕЛ <span>360°</span></a>
+    <nav class="admin-nav">
+      <a href="dashboard.html" data-i18n="nav_enquiries">Запитвания</a>
+      <a href="customers.html" data-i18n="nav_customers">Клиенти</a>
+      <a href="calendar.html" data-i18n="nav_calendar">Календар</a>
+      <a href="feedback.html">Впечатления</a>
+      <a href="partners.html" data-i18n="nav_partners">Партньори</a>
+      <a href="catalog.html" class="active" data-i18n="nav_catalog">Каталог</a>
+      <a href="marketing.html" data-i18n="nav_marketing">Маркетинг</a>
+      <a href="financials.html" data-i18n="nav_financials">Финанси</a>
+      <a href="activity.html" class="owner-only" hidden data-i18n="nav_activity">Дневник</a>
+    </nav>
+    <div class="lang-toggle">
+      <button class="lang-btn" data-lang="bg">БГ</button>
+      <button class="lang-btn" data-lang="en">EN</button>
+    </div>
+    <button class="btn btn-outline btn-sm" id="logout-btn" data-i18n="nav_logout">Изход</button>
+  </header>
+
+  <main class="admin-main">
+    <div class="admin-container">
+      <h1 class="page-title" data-i18n="cat_title">Каталог</h1>
+      <p class="page-sub" data-i18n="cat_lead" style="max-width:720px;color:#666">Напитки и допълнителни услуги, показвани на сайта и в резервационната форма. Цените са в EUR; стойността в лева е по фиксирания курс 1.95583. Скрит артикул изчезва от сайта веднага.</p>
+
+      <div style="display:flex;gap:10px;align-items:center;margin:18px 0;flex-wrap:wrap">
+        <div id="catalog-tabs" role="group" aria-label="Catalog section">
+          <button class="btn btn-outline btn-sm cat-tab active" data-tab="drinks" data-i18n="cat_tab_drinks">Напитки</button>
+          <button class="btn btn-outline btn-sm cat-tab" data-tab="services" data-i18n="cat_tab_services">Услуги</button>
+        </div>
+        <button class="btn btn-primary btn-sm" id="cat-add-btn" style="margin-left:auto">Добави напитка</button>
+      </div>
+
+      <div class="marketing-card" id="catalog-form" style="display:none;max-width:760px;margin-bottom:22px">
+        <h3 id="catalog-form-title" style="margin:0 0 16px">Добави</h3>
+        <div class="form-group">
+          <label for="cf-name-bg" data-i18n="cat_f_name_bg">Име (БГ)</label>
+          <input type="text" id="cf-name-bg" maxlength="200">
+        </div>
+        <div class="form-group">
+          <label for="cf-name-en" data-i18n="cat_f_name_en">Име (EN)</label>
+          <input type="text" id="cf-name-en" maxlength="200">
+        </div>
+        <div id="cf-drink-fields">
+          <div class="form-group">
+            <label for="cf-cat" data-i18n="cat_f_category">Категория</label>
+            <select id="cf-cat" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px">
+              <option value="0" data-i18n="cat_cat_0">Шампанско</option>
+              <option value="1" data-i18n="cat_cat_1">Вино</option>
+              <option value="2" data-i18n="cat_cat_2">Алкохол &amp; Уиски</option>
+              <option value="3" data-i18n="cat_cat_3">Безалкохолно</option>
+              <option value="4" data-i18n="cat_cat_4">Вода</option>
+            </select>
+          </div>
+        </div>
+        <div id="cf-service-fields" style="display:none">
+          <div class="form-group">
+            <label for="cf-hint-bg" data-i18n="cat_f_hint_bg">Бележка (БГ, незадължителна)</label>
+            <input type="text" id="cf-hint-bg" maxlength="200" placeholder="За всеки допълнителен час - €60">
+          </div>
+          <div class="form-group">
+            <label for="cf-hint-en" data-i18n="cat_f_hint_en">Бележка (EN, незадължителна)</label>
+            <input type="text" id="cf-hint-en" maxlength="200" placeholder="Each additional hour - €60">
+          </div>
+          <div class="form-group" style="display:flex;gap:8px;align-items:center">
+            <input type="checkbox" id="cf-qty-item" style="width:18px;height:18px">
+            <label for="cf-qty-item" style="margin:0" data-i18n="cat_f_qty_item">Артикул с количество (клиентът избира брой)</label>
+          </div>
+          <div id="cf-qty-detail" style="display:none">
+            <div class="form-group">
+              <label for="cf-max-qty" data-i18n="cat_f_max_qty">Максимално количество (наличност, празно = без лимит)</label>
+              <input type="number" id="cf-max-qty" min="1" max="999" step="1">
+            </div>
+            <div class="form-group">
+              <label for="cf-free-until" data-i18n="cat_f_free_until">Безплатни бройки, включени в наема (мебели)</label>
+              <input type="number" id="cf-free-until" min="0" max="999" step="1">
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="cf-price" data-i18n="cat_f_price">Цена (EUR)</label>
+          <input type="number" id="cf-price" min="0" max="50000" step="0.01">
+          <div id="cf-bgn-view" style="margin-top:6px;color:#777;font-size:0.85rem"></div>
+        </div>
+        <div class="form-group">
+          <label for="cf-sort" data-i18n="cat_f_sort">Ред (по-малко = по-напред)</label>
+          <input type="number" id="cf-sort" value="100" min="0" max="9999" step="1">
+        </div>
+        <div class="form-group">
+          <label for="cf-image" data-i18n="cat_f_image">Снимка</label>
+          <input type="file" id="cf-image" accept="image/jpeg,image/png,image/webp">
+          <div id="cf-image-preview" style="margin-top:10px"></div>
+        </div>
+        <div class="form-group" style="display:flex;gap:8px;align-items:center">
+          <input type="checkbox" id="cf-active" checked style="width:18px;height:18px">
+          <label for="cf-active" style="margin:0" data-i18n="cat_f_active">Видим на сайта</label>
+          <span id="cf-active-note" hidden style="color:#8a6d1a;font-size:0.82rem" data-i18n="cat_mandatory_badge">задължителна услуга — добавя се към всяко събитие</span>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-primary" id="cf-save" data-i18n="cat_save">Запази</button>
+          <button class="btn btn-outline" id="cf-cancel" data-i18n="cat_cancel">Отказ</button>
+        </div>
+      </div>
+
+      <table class="customers-table">
+        <thead>
+          <tr>
+            <th data-i18n="cat_col_image">Снимка</th>
+            <th data-i18n="cat_col_name">Име</th>
+            <th data-i18n="cat_col_details">Детайли</th>
+            <th data-i18n="cat_col_price">Цена</th>
+            <th data-i18n="cat_col_sort">Ред</th>
+            <th data-i18n="cat_col_actions">Действия</th>
+          </tr>
+        </thead>
+        <tbody id="catalog-body"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7" integrity="sha384-tD6X9wDfTRdKpuPoHFZrVW2RXjSYSWjLBPWXxpHprWWl9eaHlwl05aRjHsiKF97n" crossorigin="anonymous" defer></script>
+  <script src="js/supabase-client.js?v=4" defer></script>
+  <script src="js/admin-i18n.js?v=19" defer></script>
+  <script src="js/auth.js?v=5" defer></script>
+  <script src="js/toast.js?v=2" defer></script>
+  <script src="js/catalog.js?v=1" defer></script>
+</body>
+</html>
