@@ -3,7 +3,7 @@
 // Re-renders on language change.
 document.addEventListener('DOMContentLoaded', () => {
   const root = document.getElementById('menu-sections');
-  if (!root || typeof drinks === 'undefined' || typeof drinkCategories === 'undefined') return;
+  if (!root) return;
 
   function render() {
     const lang = localStorage.getItem('margel_lang') || 'bg';
@@ -51,6 +51,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  render();
-  document.addEventListener('langChange', render);
+  window.loadCatalog().then(() => {
+    render();
+    document.addEventListener('langChange', render);
+  }).catch(err => console.warn('catalog load failed - keeping baked menu:', err));
 });
