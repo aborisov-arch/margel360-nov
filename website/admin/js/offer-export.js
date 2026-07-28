@@ -162,7 +162,9 @@ async function buildOfferXLSXBlob(enquiry) {
   const cfg = EVENT_CONFIG[evId];
   if (cfg) {
     ws.getCell('A15').value  = cfg.title;
-    ws.getCell('Q15').value  = cfg.price;
+    // Stamped effective venue price (seasonal calendar) with legacy fallback
+    // for pre-stamp rows (enquiry.venue_price_eur is NULL).
+    ws.getCell('Q15').value  = enquiry.venue_price_eur != null ? Number(enquiry.venue_price_eur) : cfg.price;
     if (cfg.start) ws.getCell('Z8').value  = cfg.start;
     if (cfg.end)   ws.getCell('AF8').value = cfg.end;
     ws.getCell('AA11').value = cfg.label;

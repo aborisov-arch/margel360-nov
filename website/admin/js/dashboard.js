@@ -923,7 +923,9 @@ const VENUE_MIN_GUESTS = 40;
 const EXTRA_GUEST_FEE_EUR = 15;
 
 function computeTotals(e) {
-  const venue = VENUE_BASE_PRICE_EUR[e.event_id] || 0;
+  // Stamped effective venue price (seasonal calendar) with legacy fallback
+  // for pre-stamp rows (e.venue_price_eur is NULL).
+  const venue = e.venue_price_eur != null ? Number(e.venue_price_eur) : (VENUE_BASE_PRICE_EUR[e.event_id] || 0);
   const guests = Number(e.guests) || 0;
   const extraGuests = Math.max(0, guests - VENUE_MIN_GUESTS);
   const extraGuestsCost = extraGuests * EXTRA_GUEST_FEE_EUR;

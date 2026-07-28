@@ -18,6 +18,11 @@ const EVENT_BASE = { evening: 1280, wedding: 1500, corp4: 330, corp8: 440, bday_
 const VENUE_MIN_GUESTS = 40;
 const EXTRA_GUEST_FEE_EUR = 15;
 
+// Stamped effective venue price (seasonal calendar) with legacy fallback.
+function venueBaseOf(e) {
+  return e && e.venue_price_eur != null ? Number(e.venue_price_eur) : (EVENT_BASE[e?.event_id] || 0);
+}
+
 // Legacy addon prices (pre-2026-05-04 the reservation form stored addon
 // prices in BGN). If a stored price exactly matches its old BGN value we
 // convert to EUR — same rule as offer-export.js / offer-pdf.js, so the
@@ -105,7 +110,7 @@ function parsePreferredDate(s) {
 // selection. After that the row owns its numbers and breakdown is
 // derived from fe.income_*.
 function enquiryBreakdown(e) {
-  const base = EVENT_BASE[e.event_id] || 0;
+  const base = venueBaseOf(e);
   const guests = Number(e.guests) || 0;
   const extraGuests = Math.max(0, guests - VENUE_MIN_GUESTS);
   const extraGuestsCost = extraGuests * EXTRA_GUEST_FEE_EUR;
@@ -272,7 +277,7 @@ async function loadAll() {
     { data: exp, error: expErr },
     { data: inc, error: incErr },
   ] = await Promise.all([
-    db.from('enquiries').select('id,enquiry_number,full_name,preferred_date,event_type,event_id,pipeline_status,addons,drinks,applied_discount_percent,guests,payment_method,payment_tracking'),
+    db.from('enquiries').select('id,enquiry_number,full_name,preferred_date,event_type,event_id,pipeline_status,addons,drinks,applied_discount_percent,guests,payment_method,payment_tracking,venue_price_eur'),
     db.from('occupied_dates').select('date'),
     db.from('financial_events').select('*'),
     db.from('financial_expenses').select('*').not('event_id', 'is', null),
@@ -863,7 +868,7 @@ function renderDetail() {
     // enquiry / unknown event type) fall through to the plain € input.
     if (r.discountable) {
       const enq = fe && fe.enquiry_id ? allEnquiries.find(e => e.id === fe.enquiry_id) : null;
-      if (enq && EVENT_BASE[enq.event_id]) {
+      if (enq && venueBaseOf(enq) > 0) {
         const pct = Number(enq.applied_discount_percent || 0);
         return `
         <li class="event-pnl__line event-pnl__line--editable event-pnl__line--discount">
@@ -1580,7 +1585,7 @@ function pillBreakdownFromTarget(pill) {
 // (cleaning rides as a normal addon) − discount (venue base only) → total,
 // deposit 50%, balance, 2-day validity. Read-only: never mutates saved P&L.
 function computeOffer(enq) {
-  const venue = EVENT_BASE[enq.event_id] || 0;
+  const venue = venueBaseOf(enq);
   const guests = Number(enq.guests) || 0;
   const extraGuests = Math.max(0, guests - VENUE_MIN_GUESTS);
   const extraGuestsCost = extraGuests * EXTRA_GUEST_FEE_EUR;
