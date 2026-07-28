@@ -42,7 +42,8 @@ These constants are duplicated across layers. **When one changes, update every f
 
 | Rule | Value | Files |
 |---|---|---|
-| Venue base prices | evening 1280, corp4 330, corp8 440, bday_day 700, bday_eve 970, wedding 1500 | reservation-catalog.js, enquiry-email.ts, dashboard.js, financials.js, customers.js, marketing.js, offer-export.js (EVENT_CONFIG), offer-pdf.js (PDF_EVENT_CONFIG) |
+| Venue base prices | evening 1280, corp4 330, corp8 440, bday_day 700, bday_eve 970, wedding 1500 | **Legacy-NULL fallback only** — the effective venue price is computed by `_shared/seasonal-pricing.ts` and stamped into `enquiries.venue_price_eur` at submit and on preferred_date edits; reservation-catalog.js, enquiry-email.ts, dashboard.js, financials.js, customers.js, marketing.js, offer-export.js (EVENT_CONFIG), offer-pdf.js (PDF_EVENT_CONFIG) keep these maps only to price pre-stamp rows (`venue_price_eur IS NULL`) |
+| Seasonal venue prices | Dec 31 = 4200; Dec 1–30 & May 19–Jun 10 = 1780 Fri/Sat / 1670 Sun–Thu (annual, Europe/Sofia) | `_shared/seasonal-pricing.ts` (authoritative), `js/seasonal-pricing.js` (wizard display mirror — keep in sync) |
 | Venue covers / extra guest | 40 guests, +€15 each above | reservation.js, enquiry-email.ts, dashboard.js, financials.js, customers.js, marketing.js, offer-pdf.js |
 | Mandatory cleaning | €70 auto-added on **every event** (no guest threshold) | reservation.js + edit.js (`autoCleaningAddon` / always-add), offer-export.js (always-on AA85), offer-pdf.js (renders the cleaning addon) |
 | Guests cap | 1..200 | reservation.js, edit.js+edit.html, submit-enquiry, _shared/validate.ts, update-enquiry-admin |
@@ -62,6 +63,7 @@ All senders are `Margel360 <enquiries@margel360.bg>` via Resend. On new booking,
 ## DB facts
 
 - `enquiry_number` from `enquiry_number_seq`, customer-facing, starts at **1001**.
+- `enquiries.venue_price_eur` — the effective venue price stamped by `submit-enquiry` (and re-stamped by `update-enquiry-by-token`/`update-enquiry-admin` on preferred_date edits) from `_shared/seasonal-pricing.ts`. NULL = legacy pre-migration row — consumers fall back to their static per-event maps (see sync map).
 - Edit token valid **14 days from booking creation** (`set_enquiry_token_expiry`, BEFORE INSERT only).
 - `enquiries_auto_block_date_trigger` inserts into `occupied_dates` when pipeline_status → confirmed/completed. `occupied_dates` is keyed by date only (no enquiry link) — dashboard delete/unlock free a date **only** when that enquiry owns it and no other confirmed enquiry shares it (keep that guard).
 - `public.rate_limits` + `rate_limit_hit()` — service-role only.
