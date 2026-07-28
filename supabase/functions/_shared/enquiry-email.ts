@@ -19,6 +19,7 @@ type Enquiry = {
   payment_method: string;
   notes: string | null;
   applied_discount_percent?: number | null;
+  venue_price_eur?: number | string | null;
   edit_token: string;
   token_expires_at: string | null;
   lang?: string | null;   // 'bg' | 'en' — the language the customer used; defaults to 'bg'.
@@ -75,8 +76,9 @@ function localizedEventType(e: { event_id?: string | null; event_type: string },
 }
 
 // Venue base prices (EUR) keyed by event_id, mirroring the public reservation
-// catalog. Kept here so emails can show a single grand total without a network
-// round-trip; update both places if pricing changes.
+// catalog. `enquiries.venue_price_eur` (stamped by submit-enquiry) is the
+// authoritative source for rows created after that stamp shipped; this map is
+// only the legacy fallback for older rows where the column is NULL.
 const VENUE_BASE_PRICE_EUR: Record<string, number> = {
   evening: 1280,
   corp4: 330,
@@ -103,7 +105,9 @@ function computeTotals(e: Enquiry): {
   addons: number; drinks: number;
   discountPercent: number; discount: number; total: number;
 } {
-  const venue = venueBasePrice(e.event_id);
+  const venue = e.venue_price_eur != null
+    ? Number(e.venue_price_eur)
+    : venueBasePrice(e.event_id);
   const guests = Number(e.guests) || 0;
   const extraGuests = Math.max(0, guests - VENUE_MIN_GUESTS);
   const extraGuestsCost = extraGuests * EXTRA_GUEST_FEE_EUR;
