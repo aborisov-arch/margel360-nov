@@ -324,6 +324,22 @@ function setupStep2() {
         // qualifies (Mon-Thu until 2026-08-31).
         const promoHint = document.getElementById('weekday-promo-hint');
         if (promoHint) promoHint.hidden = weekdayPromoPercent(dateStr) === 0;
+        // Seasonal price notice: the venue costs a flat calendar price on
+        // these dates (Dec 1-30, May 19 - Jun 10, Dec 31) - see js/seasonal-pricing.js.
+        const seasonalHint = document.getElementById('seasonal-price-hint');
+        if (seasonalHint) {
+          const sp = window.seasonalVenuePrice(dateStr);
+          if (sp == null) {
+            seasonalHint.hidden = true;
+          } else {
+            const sl = getLang();
+            const isNye = /^31\/12\//.test(dateStr);
+            seasonalHint.textContent = isNye
+              ? (sl === 'bg' ? `Новогодишна вечер — наем на залата €${sp}.` : `New Year's Eve — venue rental €${sp}.`)
+              : (sl === 'bg' ? `Празничен период — наем на залата €${sp} за тази дата.` : `Holiday-season date — venue rental €${sp} for this date.`);
+            seasonalHint.hidden = false;
+          }
+        }
         updatePreview();
       }
     });
@@ -382,7 +398,9 @@ function updatePreview() {
   // Price line - only show when variant is resolved (price_eur available)
   if (!booking.event.variants) {
     const p = document.createElement('p');
-    p.textContent = fmtEvent(booking.event) + (booking.date ? ' · ' + booking.date : '');
+    const previewPrice = window.seasonalVenuePrice(booking.date);
+    p.textContent = (previewPrice != null ? '€' + previewPrice : fmtEvent(booking.event))
+      + (booking.date ? ' · ' + booking.date : '');
     preview.appendChild(p);
   } else if (booking.date) {
     const p = document.createElement('p'); p.textContent = booking.date;
@@ -1001,7 +1019,7 @@ function renderSummary() {
     const autoClean = autoCleaningAddon();
     if (autoClean) addonsTotal += autoClean.price;
     let drinksTotal = 0; drinks.forEach(d => { if (d.price_eur) drinksTotal += (booking.drinkQtys[d.id]||0)*d.price_eur; });
-    const venuePrice = booking.event.price_eur;
+    const venuePrice = window.seasonalVenuePrice(booking.date) ?? booking.event.price_eur;
     const VENUE_MIN_GUESTS = 40;
     const EXTRA_GUEST_FEE_EUR = 15;
     const guests = Number(booking.guests) || 0;
@@ -1255,7 +1273,7 @@ function setupSubmit() {
         if (autoClean) addonsTotal += autoClean.price;
         let drinksTotal = 0;
         drinks.forEach(d => { if (d.price_eur) drinksTotal += (booking.drinkQtys[d.id] || 0) * d.price_eur; });
-        const venuePrice = booking.event?.price_eur || 0;
+        const venuePrice = window.seasonalVenuePrice(booking.date) ?? (booking.event?.price_eur || 0);
         const extraGuestsCost = Math.max(0, (Number(booking.guests) || 0) - 40) * 15;
         const discPct = effectiveDiscount().percent;
         const discount = discPct > 0 ? venuePrice * discPct / 100 : 0;
