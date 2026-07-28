@@ -48,6 +48,18 @@ Deno.test("validateField: drinks rejects non-integer qty", () => {
   assertEquals(validateField("drinks", [{ id: "beer", name: "Beer", qty: 2, price_eur: null }]).ok, true);
 });
 
+Deno.test("validateField: drinks apply a flat 0..200 qty bound regardless of id (real per-category caps enforced downstream by catalog.ts repriceDrinks)", () => {
+  // Shape validation no longer knows about alcoholic vs non-alcoholic ids —
+  // qty 200 passes and 201 fails for ANY id, including a formerly-alcoholic
+  // one like 'moet' that used to cap at 100 here.
+  assertEquals(validateField("drinks", [{ id: "moet", name: "Moet", qty: 100, price_eur: 90 }]).ok, true);
+  assertEquals(validateField("drinks", [{ id: "moet", name: "Moet", qty: 101, price_eur: 90 }]).ok, true);
+  assertEquals(validateField("drinks", [{ id: "moet", name: "Moet", qty: 200, price_eur: 90 }]).ok, true);
+  assertEquals(validateField("drinks", [{ id: "moet", name: "Moet", qty: 201, price_eur: 90 }]).ok, false);
+  assertEquals(validateField("drinks", [{ id: "cola", name: "Cola", qty: 200, price_eur: 3 }]).ok, true);
+  assertEquals(validateField("drinks", [{ id: "cola", name: "Cola", qty: 201, price_eur: 3 }]).ok, false);
+});
+
 Deno.test("validateField: phone length", () => {
   assertEquals(validateField("phone", "+359 888 100 042").ok, true);
   assertEquals(validateField("phone", "").ok, false);

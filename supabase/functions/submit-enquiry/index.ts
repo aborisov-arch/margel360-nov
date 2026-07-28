@@ -9,13 +9,15 @@
 // edit_token = full takeover of every booking). Routing through a
 // service-role insert removes the SELECT path entirely.
 //
-// This file inlines validate / cors / rate-limit because the Supabase
-// edge-function bundler can't follow ../_shared imports for this
-// project's deploy path. Keep in sync with the canonical copies under
-// supabase/functions/_shared/*.ts.
+// validate / cors / rate-limit stay inlined here for historical reasons
+// (kept in sync with the canonical copies under supabase/functions/_shared/*.ts).
+// ../_shared imports do work — this file already pulls in weekday-promo.ts
+// and catalog.ts below — as long as deploys use `--use-api`, which bundles
+// _shared/ correctly (see CLAUDE.md's verify_jwt map for the deploy command).
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import { weekdayPromoPercent } from "../_shared/weekday-promo.ts";
+import { loadCatalog, repriceAddons, repriceDrinks } from "../_shared/catalog.ts";
 
 const SUPABASE_URL    = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -92,14 +94,6 @@ async function turnstileOk(token: unknown, ip: string): Promise<boolean> {
 
 // ── Validation ───────────────────────────────────────────────────────
 const MAX_NAME = 200, MAX_NOTES = 2000, MAX_PHONE = 30, MAX_GUESTS = 200, MAX_ADDON_PRICE = 50000;
-// Per-category drink quantity caps: non-alcoholic (soft drinks + water,
-// drinks-data.js cat 3 & 4) up to 200; everything alcoholic up to 100.
-// Keep NON_ALCOHOLIC_DRINK_IDS in sync with website/js/drinks-data.js.
-const NON_ALCOHOLIC_DRINK_IDS = new Set([
-  "granini_a","granini_o","tonic_mango","tonic_cherry","sanben_tea_lem5","sanben_tea_lem3","sanben_tea_peach","cola","cola0","fanta","redbull",
-  "benedo_spa","perrier_st","perrier_spa","panna25","panna50","panna75","pelegrino75","pelegrino",
-]);
-function maxDrinkQty(id: string): number { return NON_ALCOHOLIC_DRINK_IDS.has(id) ? 200 : 100; }
 const DATE_RE = /^\d{2}\/\d{2}\/\d{4}$/;
 const EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 const EVENT_IDS = ["evening","wedding","corp4","corp8","bday_day","bday_eve"];
@@ -156,7 +150,10 @@ function validateDrinks(raw: unknown): { id: string; name: string; qty: number; 
     const name = safeStr(d.name, MAX_NAME);
     if (!id || !name) return null;
     const qty = Number(d.qty);
-    if (!Number.isInteger(qty) || qty < 0 || qty > maxDrinkQty(id)) return null;
+    // Absolute bound only - the real per-category caps (non-alcoholic 200 /
+    // alcoholic 100) are enforced against the public.drinks catalog by
+    // repriceDrinks() below via _shared/catalog.ts.
+    if (!Number.isInteger(qty) || qty < 0 || qty > 200) return null;
     let price_eur: number | null = null;
     if (d.price_eur != null) {
       const p = Number(d.price_eur);
@@ -282,6 +279,23 @@ serve(async (req) => {
     }
   }
 
+  // Reprice every item from the catalog tables - client-sent prices are
+  // never trusted. Unknown/hidden items 400 (the shopper refreshes).
+  // Placed after the rate-limit + idempotency checks (cheap, no DB catalog
+  // read) so an already-rejected/deduped request never pays for the
+  // catalog fetch.
+  let catalog;
+  try {
+    catalog = await loadCatalog(sb);
+  } catch (e) {
+    console.error("catalog load failed:", e);
+    return json({ error: "server_error" }, 500);
+  }
+  const repricedAddons = repriceAddons(addons, catalog);
+  if (!repricedAddons.ok) return json({ error: "invalid_field", field: "addons", detail: repricedAddons.error }, 400);
+  const repricedDrinks = repriceDrinks(drinks, catalog);
+  if (!repricedDrinks.ok) return json({ error: "invalid_field", field: "drinks", detail: repricedDrinks.error }, 400);
+
   // Snapshot partner interest server-side: names/categories come from the
   // DB, not the client. Preserves the customer's selection order.
   let partner_interest: { id: string; name: string; category: string }[] = [];
@@ -306,7 +320,7 @@ serve(async (req) => {
     full_name, email: email_raw, phone,
     event_type, event_id,
     preferred_date, time_of_day, arrival_time,
-    guests, addons, drinks,
+    guests, addons: repricedAddons.value, drinks: repricedDrinks.value,
     payment_method, notes: notes_raw,
     marketing_consent, lang,
     partner_interest,

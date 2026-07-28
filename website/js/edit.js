@@ -14,19 +14,19 @@ const FN_ADMIN_UPDATE = `${SUPABASE_URL}/functions/v1/update-enquiry-admin`;
 let adminMode = false;
 let adminToken = null;  // Supabase access token of the logged-in admin
 
-// Catalogs loaded via reservation-catalog.js + drinks-data.js (window globals):
-//   addonServices, drinks, drinkCategories
+// Catalog loaded via js/catalog-db.js (window globals): addonServices, drinks,
+// drinkCategories. Keep this file ordered AFTER it in edit.html.
 
 // addonQtys: id -> integer count. Furniture addons (freeUntil) and inventory
 // qty addons (heater etc.) get a stepper; everything else keeps the checkbox
 // UI and stores qty:1 when selected.
 const state = { token: null, enquiry: null, occupiedDates: [], activeDrinkCat: 0, drinkQtys: {}, addonQtys: {} };
 
-// Keep in sync with reservation.js: physical inventory caps for the
-// stepper addons (2 gas patio heaters, 1 gas heating table, 10 glow tables).
-const ADDON_MAX_QTY = { heater: 2, heater_tbl: 1, glow_table: 10 };
-function isQtyAddon(svc) { return svc.freeUntil != null || ADDON_MAX_QTY[svc.id] != null; }
-function addonMaxQty(svc) { return ADDON_MAX_QTY[svc.id] ?? 999; }
+// Addons that use a +/- typeable qty input instead of an on/off toggle.
+// Inventory caps come from the catalog's max_qty column (admin-editable);
+// furniture uses freeUntil. Everything else is an on/off checkbox.
+function isQtyAddon(svc) { return svc.freeUntil != null || svc.maxQty != null; }
+function addonMaxQty(svc) { return svc.maxQty ?? 999; }
 // Same line-price model as the wizard: furniture bills only above the included
 // baseline; everything else is qty × unit price (checkbox items have qty 1).
 function addonLinePrice(svc, qty) {
@@ -59,6 +59,13 @@ function esc(s) {
 // ── Entry ───────────────────────────────────────────────────
 
 async function main() {
+  try {
+    await window.loadCatalog();   // populates addonServices/drinks globals
+  } catch (err) {
+    console.error('catalog load failed:', err);
+    show('state-catalog-error');
+    return;
+  }
   const params = new URLSearchParams(window.location.search);
   const id = params.get('id');
   const isAdmin = params.get('admin') === '1' && id;
@@ -339,6 +346,34 @@ function renderAddons() {
     li.appendChild(label);
     grid.appendChild(li);
   });
+
+  // Grandfathered addons: saved on the enquiry but no longer in the catalog
+  // (deleted/hidden by the manager). Rendered from the payload snapshot as
+  // keep-or-remove cards - the server accepts them only unchanged.
+  const knownAddonIds = new Set(addonServices.map(s => s.id));
+  (state.enquiry.addons ?? []).filter(a => !knownAddonIds.has(a.id)).forEach(a => {
+    const qty = state.addonQtys[a.id] || 0;
+    const li = document.createElement('li');
+    const label = document.createElement('label');
+    label.className = 'addon-card' + (qty > 0 ? ' is-selected' : '');
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.checked = qty > 0;
+    const info = document.createElement('span');
+    info.className = 'addon-card__info';
+    info.innerHTML = `
+      <span class="addon-card__name">${esc(a.name)}</span>
+      <span class="addon-card__price">€${Math.round(Number(a.price) || 0)}</span>
+      <span class="addon-card__hint">Вече не се предлага - може да я запазите или премахнете</span>
+    `;
+    label.append(input, info);
+    input.addEventListener('change', () => {
+      state.addonQtys[a.id] = input.checked ? (Number(a.qty) > 0 ? Number(a.qty) : 1) : 0;
+      label.classList.toggle('is-selected', input.checked);
+    });
+    li.appendChild(label);
+    grid.appendChild(li);
+  });
 }
 
 // Seed the drink quantities from the saved enquiry at FORM LOAD, not when
@@ -350,7 +385,9 @@ function seedDrinkQtys() {
   const pool = typeof drinks !== 'undefined' ? drinks : [];
   (state.enquiry.drinks ?? []).forEach(d => {
     const cat = pool.find(x => x.id === d.id)?.cat;
-    const max = cat >= 3 ? 200 : 100; // same caps as the steppers + server
+    // Unknown id = removed from the catalog: keep the stored qty untouched
+    // (the server only allows decreases for grandfathered drinks).
+    const max = cat == null ? (Number(d.qty) || 0) : (cat >= 3 ? 200 : 100);
     state.drinkQtys[d.id] = Math.min(Number(d.qty) || 0, max);
   });
 }
@@ -358,6 +395,59 @@ function seedDrinkQtys() {
 function renderDrinks() {
   renderDrinkTabs();
   renderDrinkTiles();
+  renderLegacyDrinks();
+}
+
+// Saved drinks that are no longer in the catalog: shown above the picker so
+// the customer can keep, reduce or remove them (qty can only go down - the
+// stored quantity is the cap the server enforces).
+function renderLegacyDrinks() {
+  const grid = $('drinks-legacy');
+  if (!grid) return;
+  grid.innerHTML = '';
+  const pool = typeof drinks !== 'undefined' ? drinks : [];
+  const known = new Set(pool.map(d => d.id));
+  const legacy = (Array.isArray(state.enquiry.drinks) ? state.enquiry.drinks : [])
+    .filter(d => !known.has(d.id));
+  grid.hidden = legacy.length === 0;
+  legacy.forEach(d => {
+    const savedQty = Number(d.qty) || 0;
+    const qty = state.drinkQtys[d.id] ?? 0;
+    const li = document.createElement('li');
+    li.className = 'drink-tile' + (qty > 0 ? ' has-qty' : '');
+    const body = document.createElement('span');
+    body.className = 'drink-tile__body';
+    const name = document.createElement('span');
+    name.className = 'drink-tile__name';
+    name.textContent = `${d.name} (вече не се предлага)`;
+    const price = document.createElement('span');
+    price.className = 'drink-tile__price';
+    price.textContent = d.price_eur != null ? `€${Number(d.price_eur).toFixed(2)}` : 'По запитване';
+    const qtyWrap = document.createElement('span');
+    qtyWrap.className = 'drink-qty';
+    const minus = document.createElement('button');
+    minus.type = 'button'; minus.textContent = '−'; minus.setAttribute('aria-label', 'Намали');
+    const num = document.createElement('input');
+    num.type = 'number'; num.min = '0'; num.max = String(savedQty); num.step = '1';
+    num.inputMode = 'numeric'; num.value = qty;
+    num.setAttribute('aria-label', 'Количество');
+    const plus = document.createElement('button');
+    plus.type = 'button'; plus.textContent = '+'; plus.setAttribute('aria-label', 'Увеличи');
+    qtyWrap.append(minus, num, plus);
+    body.append(name, price, qtyWrap);
+    li.appendChild(body);
+    grid.appendChild(li);
+    function setQty(next) {
+      const n = Math.max(0, Math.min(savedQty, Math.floor(Number(next) || 0)));
+      state.drinkQtys[d.id] = n;
+      num.value = n;
+      li.classList.toggle('has-qty', n > 0);
+    }
+    minus.addEventListener('click', () => setQty((state.drinkQtys[d.id] || 0) - 1));
+    plus.addEventListener('click',  () => setQty((state.drinkQtys[d.id] || 0) + 1));
+    num.addEventListener('input', () => setQty(num.value));
+    num.addEventListener('blur',  () => { if (num.value === '' || isNaN(Number(num.value))) setQty(0); });
+  });
 }
 
 function renderDrinkTabs() {
@@ -499,6 +589,15 @@ async function onSave(evt) {
     addons.push(entry);
   });
 
+  // Grandfathered addons - send the stored line unchanged; the server
+  // rejects any modification to items no longer in the catalog.
+  const knownAddonIds = new Set(addonServices.map(s => s.id));
+  (state.enquiry.addons ?? []).forEach(a => {
+    if (knownAddonIds.has(a.id)) return;
+    if ((state.addonQtys[a.id] || 0) <= 0) return;   // customer removed it
+    addons.push({ ...a });
+  });
+
   // Mandatory hall cleaning - added on every event, same rule the wizard
   // applies at booking time; ensures an edit never drops the obligatory fee.
   if (!addons.some(a => a.id === 'cleaning')) {
@@ -547,3 +646,6 @@ async function onSave(evt) {
 }
 
 document.addEventListener('DOMContentLoaded', main);
+document.addEventListener('click', (e) => {
+  if (e.target && e.target.id === 'btn-catalog-retry') window.location.reload();
+});

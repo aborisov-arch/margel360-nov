@@ -5,6 +5,7 @@ import { getIp, rateLimitHit } from "../_shared/rate-limit.ts";
 import { diffEnquiry, EDITABLE_FIELDS } from "../_shared/diff.ts";
 import { validateField } from "../_shared/validate.ts";
 import { weekdayPromoPercent } from "../_shared/weekday-promo.ts";
+import { loadCatalog, repriceAddons, repriceDrinks } from "../_shared/catalog.ts";
 
 const SUPABASE_URL    = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -81,6 +82,29 @@ serve(async (req) => {
   if (!picked.ok) return json({ error: "invalid_field", field: picked.field, detail: picked.error }, 400);
   const patch = picked.value;
   if (!Object.keys(patch).length) return json({ error: "no_changes" }, 400);
+
+  // Reprice edited items from the catalog; items removed from the catalog
+  // since booking are grandfathered against the stored enquiry (see
+  // _shared/catalog.ts).
+  if ("addons" in patch || "drinks" in patch) {
+    let catalog;
+    try {
+      catalog = await loadCatalog(sb);
+    } catch (e) {
+      console.error("catalog load failed:", e);
+      return json({ error: "server_error" }, 500);
+    }
+    if ("addons" in patch) {
+      const r = repriceAddons(patch.addons as never[], catalog, (current.addons ?? []) as never[]);
+      if (!r.ok) return json({ error: "invalid_field", field: "addons", detail: r.error }, 400);
+      patch.addons = r.value;
+    }
+    if ("drinks" in patch) {
+      const r = repriceDrinks(patch.drinks as never[], catalog, (current.drinks ?? []) as never[]);
+      if (!r.ok) return json({ error: "invalid_field", field: "drinks", detail: r.error }, 400);
+      patch.drinks = r.value;
+    }
+  }
 
   // Compute diff
   const diff = diffEnquiry(current, { ...current, ...patch });

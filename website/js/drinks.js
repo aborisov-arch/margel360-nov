@@ -45,6 +45,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  render();
-  document.addEventListener('langChange', render);
+  window.loadCatalog().then(() => {
+    render();
+    document.addEventListener('langChange', render);
+  }).catch(err => {
+    console.warn('catalog load failed:', err);
+    const lang = localStorage.getItem('margel_lang') || 'bg';
+    grid.textContent = lang === 'bg'
+      ? 'Менюто не можа да се зареди. Моля, презаредете страницата.'
+      : 'The menu could not be loaded. Please reload the page.';
+  });
 });

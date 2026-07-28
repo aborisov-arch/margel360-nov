@@ -39,11 +39,11 @@ function offerAddonPriceEur(id, price) {
 const OFFER_DEPOSIT_RATE = 0.5;
 const OFFER_VALID_DAYS = 2;
 
-// Live drinks catalog (drinks-data.js is loaded before this script). Used to
+// Drinks catalog is now DB-backed (public.drinks table). Used to
 // price P&L drink lines by id so website price changes flow straight through.
-const drinkCatalogById = (typeof drinks !== 'undefined' && Array.isArray(drinks))
-  ? new Map(drinks.map(d => [d.id, d]))
-  : new Map();
+// Populated from the DB catalog during page init (see the DOMContentLoaded
+// handler below) - empty until window.loadCatalog() resolves.
+let drinkCatalogById = new Map();
 
 // Income additional-service buckets (the 7 grouped categories the
 // bookkeeper picks per service line). Kept in sync with the CHECK
@@ -1826,6 +1826,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   const session = await requireAuth();
   if (!session) return;
   userEmail = session.user?.email || null;
+
+  // Drink catalog from the DB (public.drinks) - prices the P&L drink
+  // drilldown. Best-effort: a failed load degrades to payload prices.
+  try {
+    await window.loadCatalog();
+    if (typeof drinks !== 'undefined' && Array.isArray(drinks)) {
+      drinkCatalogById = new Map(drinks.map(d => [d.id, d]));
+    }
+  } catch (e) {
+    console.warn('drink catalog load failed - P&L drink pricing falls back to payload prices:', e);
+  }
 
   await loadAll();
   const now = new Date();

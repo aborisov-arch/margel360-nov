@@ -41,6 +41,7 @@ function renderStatusTabCounts() {
 document.addEventListener('DOMContentLoaded', async () => {
   const session = await requireAuth();
   if (!session) return;
+  loadDrinkCats();   // fire-and-forget; caps fall back to 100 until loaded
 
   const loadingEl = document.getElementById('loading');
   const wrapEl    = document.getElementById('enquiries-wrap');
@@ -892,16 +893,16 @@ function bindTableHandlers() {
   });
 }
 
-// Per-category drink quantity caps: non-alcoholic (soft drinks + water,
-// drinks-data.js cat 3 & 4) up to 200; everything alcoholic up to 100.
-// Keep NON_ALCOHOLIC_DRINK_IDS in sync with website/js/drinks-data.js and
-// the server-side validators (submit-enquiry, _shared/validate.ts,
-// update-enquiry-admin).
-const NON_ALCOHOLIC_DRINK_IDS = new Set([
-  'granini_a', 'granini_o', 'tonic_mango', 'tonic_cherry', 'sanben_tea_lem5', 'sanben_tea_lem3', 'sanben_tea_peach', 'cola', 'cola0', 'fanta', 'redbull',
-  'benedo_spa', 'perrier_st', 'perrier_spa', 'panna25', 'panna50', 'panna75', 'pelegrino75', 'pelegrino',
-]);
-function maxDrinkQty(id) { return NON_ALCOHOLIC_DRINK_IDS.has(id) ? 200 : 100; }
+// Drink categories come from the public.drinks catalog now (admin
+// Каталог page). cat 3-4 (soft drinks + water) cap at 200, everything
+// else 100; ids removed from the catalog get the conservative 100.
+let drinkCatById = new Map();
+async function loadDrinkCats() {
+  const { data, error } = await db.from('drinks').select('id, cat');
+  if (error) { console.error('drink catalog load failed:', error); return; }
+  drinkCatById = new Map((data || []).map(r => [r.id, Number(r.cat)]));
+}
+function maxDrinkQty(id) { return (drinkCatById.get(id) ?? 0) >= 3 ? 200 : 100; }
 
 // Venue base prices (EUR) keyed by event_id, mirroring the public reservation
 // catalog and the send-enquiry-summary edge function. Update all three places

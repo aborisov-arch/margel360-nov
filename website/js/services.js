@@ -269,6 +269,7 @@ function renderServices(currentLang) {
   });
 }
 
-const lang = localStorage.getItem('margel_lang') || 'bg';
-renderServices(lang);
+window.loadCatalog().then(() => {
+  renderServices(localStorage.getItem('margel_lang') || 'bg');
+}).catch(err => console.warn('catalog load failed - keeping baked services grid:', err));
 document.addEventListener('langChange', e => renderServices(e.detail.lang));
