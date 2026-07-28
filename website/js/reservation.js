@@ -296,6 +296,21 @@ async function loadOccupiedDates() {
 }
 
 // ── Step 2: Datetime ──
+// Seasonal price notice under the date field. Text embeds the computed
+// price, so it can't use data-i18n - re-run on language change too.
+function updateSeasonalHint() {
+  const seasonalHint = document.getElementById('seasonal-price-hint');
+  if (!seasonalHint) return;
+  const sp = window.seasonalVenuePrice(booking.date);
+  if (sp == null) { seasonalHint.hidden = true; return; }
+  const sl = getLang();
+  const isNye = /^31\/12\//.test(booking.date);
+  seasonalHint.textContent = isNye
+    ? (sl === 'bg' ? `Новогодишна вечер — наем на залата €${sp}.` : `New Year's Eve — venue rental €${sp}.`)
+    : (sl === 'bg' ? `Празничен период — наем на залата €${sp} за тази дата.` : `Holiday-season date — venue rental €${sp} for this date.`);
+  seasonalHint.hidden = false;
+}
+
 function setupStep2() {
   const dateEl = document.getElementById('res-date');
   if (dateEl && typeof flatpickr !== 'undefined') {
@@ -324,22 +339,7 @@ function setupStep2() {
         // qualifies (Mon-Thu until 2026-08-31).
         const promoHint = document.getElementById('weekday-promo-hint');
         if (promoHint) promoHint.hidden = weekdayPromoPercent(dateStr) === 0;
-        // Seasonal price notice: the venue costs a flat calendar price on
-        // these dates (Dec 1-30, May 19 - Jun 10, Dec 31) - see js/seasonal-pricing.js.
-        const seasonalHint = document.getElementById('seasonal-price-hint');
-        if (seasonalHint) {
-          const sp = window.seasonalVenuePrice(dateStr);
-          if (sp == null) {
-            seasonalHint.hidden = true;
-          } else {
-            const sl = getLang();
-            const isNye = /^31\/12\//.test(dateStr);
-            seasonalHint.textContent = isNye
-              ? (sl === 'bg' ? `Новогодишна вечер — наем на залата €${sp}.` : `New Year's Eve — venue rental €${sp}.`)
-              : (sl === 'bg' ? `Празничен период — наем на залата €${sp} за тази дата.` : `Holiday-season date — venue rental €${sp} for this date.`);
-            seasonalHint.hidden = false;
-          }
-        }
+        updateSeasonalHint();
         updatePreview();
       }
     });
@@ -1312,6 +1312,7 @@ document.addEventListener('langChange', () => {
   if (currentStep === 3) renderDrinks();
   if (currentStep === 4) renderPartners();
   if (currentStep === 6) renderSummary();
+  updateSeasonalHint();
   updatePreview();
   updateAddonsTotal();
   updateDrinksTotal();
