@@ -1123,7 +1123,24 @@ function setupSubmit() {
   const btn = document.getElementById('btn-submit');
   if (!btn) return;
 
+  // Clear the privacy error as soon as the box is ticked, ahead of any
+  // re-submit attempt - a checkbox reads as "fixed" immediately, unlike
+  // text fields where partial typing shouldn't clear the error early.
+  document.getElementById('res-privacy-accept')?.addEventListener('change', (e) => {
+    if (e.target.checked) document.getElementById('fg-privacy')?.classList.remove('has-error');
+  });
+
   btn.addEventListener('click', async () => {
+    // Privacy policy acceptance is mandatory (server enforces it too).
+    const privacyBox = document.getElementById('res-privacy-accept');
+    const privacyFg = document.getElementById('fg-privacy');
+    if (!privacyBox?.checked) {
+      privacyFg?.classList.add('has-error');
+      privacyFg?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    privacyFg?.classList.remove('has-error');
+
     booking.payment = document.querySelector('input[name="payment"]:checked')?.value || 'cash';
 
     btn.disabled = true;
@@ -1181,6 +1198,7 @@ function setupSubmit() {
       payment_method: booking.payment,
       notes: booking.notes || null,
       marketing_consent: !!document.getElementById('res-marketing-consent')?.checked,
+      privacy_accepted: !!document.getElementById('res-privacy-accept')?.checked,
       lang: getLang(),
       discount_code: booking.discountCode || null,
       turnstile_token: (() => {
