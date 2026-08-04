@@ -71,6 +71,38 @@ try {
         infoEl.textContent = 'Ако има акаунт с този имейл, изпратихме линк за смяна на паролата.';
         infoEl.style.display = 'block';
       });
+
+      // Google OAuth - links to the EXISTING admin user with the same
+      // @margel.info email (signups are disabled, so unknown Google
+      // accounts are rejected by Supabase). Authorization stays is_admin().
+      document.getElementById('google-login-btn')?.addEventListener('click', async () => {
+        const errEl = document.getElementById('login-error');
+        errEl.style.display = 'none';
+        const { error } = await db.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: window.location.origin + '/admin/dashboard.html',
+            queryParams: { hd: 'margel.info', prompt: 'select_account' },
+          },
+        });
+        if (error) {
+          errEl.textContent = t('login_google_error');
+          errEl.style.display = 'block';
+        }
+      });
+      // Surface OAuth/bounce errors carried back in the URL.
+      {
+        const qs = new URLSearchParams(window.location.search);
+        const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+        const errEl = document.getElementById('login-error');
+        if (qs.get('error') === 'not_admin') {
+          errEl.textContent = t('login_not_admin');
+          errEl.style.display = 'block';
+        } else if (qs.get('error') || hash.get('error')) {
+          errEl.textContent = t('login_google_error');
+          errEl.style.display = 'block';
+        }
+      }
     } catch (err) {
       console.error('Admin login init error:', err);
     }
