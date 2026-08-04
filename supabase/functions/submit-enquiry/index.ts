@@ -233,6 +233,12 @@ serve(async (req) => {
   if (!time_of_day || !TIME_OF_DAY.includes(time_of_day)) return json({ error: "invalid_field", field: "time_of_day" }, 400);
   if (!payment_method || !PAYMENT_METHODS.includes(payment_method)) return json({ error: "invalid_field", field: "payment_method" }, 400);
 
+  // Mandatory privacy-policy acceptance (GDPR record). The form blocks
+  // submission client-side; this is the server guarantee + timestamp proof.
+  if (payload.privacy_accepted !== true) {
+    return json({ error: "invalid_field", field: "privacy_accepted" }, 400);
+  }
+
   let guests: number | null = null;
   if (payload.guests != null) {
     const g = Number(payload.guests);
@@ -324,6 +330,7 @@ serve(async (req) => {
     payment_method, notes: notes_raw,
     marketing_consent, lang,
     partner_interest,
+    privacy_accepted_at: new Date().toISOString(),
   };
 
   const { data: inserted, error: insErr } = await sb
