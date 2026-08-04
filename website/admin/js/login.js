@@ -73,8 +73,10 @@ try {
       });
 
       // Google OAuth - links to the EXISTING admin user with the same
-      // @margel.info email (signups are disabled, so unknown Google
-      // accounts are rejected by Supabase). Authorization stays is_admin().
+      // @margel.info email. Signups MUST be disabled in Supabase Auth (PR
+      // runbook step 0) so unknown Google accounts are rejected; until
+      // then RLS + the requireAuth is_admin bounce still block them.
+      // Authorization stays is_admin().
       document.getElementById('google-login-btn')?.addEventListener('click', async () => {
         const errEl = document.getElementById('login-error');
         errEl.style.display = 'none';
