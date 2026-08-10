@@ -317,24 +317,25 @@ async function loadAll() {
   });
 }
 
-// Find or create the financial_events row for an enquiry. First-time
-// creation prefills the income breakdown from the enquiry so the admin
-// starts with sane numbers instead of zero.
-async function ensureFinancialEvent(enquiry) {
-  let row = financialEventByEnquiryId.get(enquiry.id);
-  if (row) return row;
-  const b = enquiryBreakdown(enquiry);
-  const iso = parsePreferredDate(enquiry.preferred_date);
+// Pure: computes the enquiry-derived seed values for a financial_events row
+// (column values) plus the one income item to create if the enquiry has
+// add-ons. Never writes to the DB — safe to call speculatively. Shared by
+// ensureFinancialEvent (first-open create) and the enquiry-refresh action
+// (Task 2) so both paths compute byte-identical numbers from the same
+// enquiry snapshot.
+function seedFromEnquiry(enq) {
+  const b = enquiryBreakdown(enq);
+  const iso = parsePreferredDate(enq.preferred_date);
   const month = iso ? iso.slice(0, 7) : null;
   // Paid-by-customer prefill: the Bank/Cash/Card amounts marked on the enquiry
   // (Enquiries section). They go into the deposit buckets - the enquiry has no
   // deposit/balance split, and the bookkeeper can reclassify before saving.
-  const pt = enquiry.payment_tracking || {};
+  const pt = enq.payment_tracking || {};
   const ptAmt = (k) => { const n = parseFloat(pt[k]); return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : 0; };
-  const insertRow = {
+  const fields = {
     month,
     event_date: iso,
-    customer_name: enquiry.full_name || '',
+    customer_name: enq.full_name || '',
     offer_total_eur: b.rent + b.drinks + b.addons,
     income_rent_eur:   b.rent,
     income_drinks_eur: b.drinks,
@@ -342,22 +343,40 @@ async function ensureFinancialEvent(enquiry) {
     deposit_cash_eur: ptAmt('cash'),
     deposit_bank_eur: ptAmt('bank'),
     deposit_card_eur: ptAmt('card'),
+  };
+  // Seed one "Други" service line from the enquiry's add-on total so the
+  // prefilled add-on income is visible (income now derives from items).
+  // The bookkeeper can then split/recategorize it. null when there's
+  // nothing to seed (addons total is 0).
+  const incomeItem = b.addons > 0
+    ? { month, category: 'other', amount_eur: b.addons, notes: 'Пренесено от офертата' }
+    : null;
+  return { fields, incomeItem };
+}
+
+// Find or create the financial_events row for an enquiry. First-time
+// creation prefills the income breakdown from the enquiry so the admin
+// starts with sane numbers instead of zero.
+async function ensureFinancialEvent(enquiry) {
+  let row = financialEventByEnquiryId.get(enquiry.id);
+  if (row) return row;
+  const { fields, incomeItem } = seedFromEnquiry(enquiry);
+  const now = new Date().toISOString();
+  const insertRow = {
+    ...fields,
     enquiry_id: enquiry.id,
     confirmed_by: userEmail,
-    confirmed_at: new Date().toISOString(),
+    confirmed_at: now,
+    enquiry_synced_at: now,
   };
   const { data, error } = await db.from('financial_events').insert(insertRow).select().single();
   if (error) { console.error('ensureFinancialEvent insert failed', error); return null; }
   financialEventsById.set(data.id, data);
   financialEventByEnquiryId.set(enquiry.id, data);
 
-  // Seed one "Други" service line from the enquiry's add-on total so the
-  // prefilled add-on income is visible (income now derives from items).
-  // The bookkeeper can then split/recategorize it.
-  if (b.addons > 0) {
+  if (incomeItem) {
     const { data: item, error: itemErr } = await db.from('financial_income_items').insert({
-      event_id: data.id, month, category: 'other', amount_eur: b.addons,
-      notes: 'Пренесено от офертата',
+      event_id: data.id, ...incomeItem,
     }).select().single();
     if (itemErr) console.error('seed income item failed', itemErr);
     else incomeItemsByEvent.set(data.id, [item]);
