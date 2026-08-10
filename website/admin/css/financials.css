@@ -597,6 +597,20 @@
 .event-pnl__hero-val.is-positive { color: #15803d; }
 .event-pnl__hero-val.is-negative { color: #b91c1c; }
 
+/* Drift banner - shown when the linked enquiry was edited after this P&L's
+   last enquiry-sync (financials.js renderDetail). Amber, not red: this is a
+   heads-up to review/refresh, not an error state. */
+.fin-drift-banner {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
+  margin: 0 0 var(--fin-gap);
+  padding: 12px 16px;
+  background: #fef3c7;
+  border: 1px solid #f2cd7a;
+  border-radius: var(--fin-radius);
+  color: #7a5b0a;
+  font-size: 0.88rem;
+}
+.fin-drift-banner__text { flex: 1 1 260px; font-weight: 600; }
 .event-pnl__cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 @media (max-width: 720px) { .event-pnl__cols { grid-template-columns: 1fr; } }
 .event-pnl__col { background: var(--fin-bg-muted-50); border: 1px solid var(--fin-border-soft); border-radius: 10px; padding: 16px; }

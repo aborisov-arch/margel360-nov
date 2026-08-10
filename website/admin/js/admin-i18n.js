@@ -264,6 +264,11 @@ const ADMIN_LANG = {
     activity_item_one:     'item',
     activity_item_many:    'items',
     activity_data:         '(data)',
+    fin_drift_warn:        '⚠ The enquiry was edited after the last bookkeeping sync.',
+    fin_drift_refresh:     'Refresh from enquiry',
+    fin_drift_confirm:     'Rent, extra guests, services and drinks will be reloaded from the enquiry. Payments, expenses and manually added lines are kept. Manual rent adjustments (e.g. a discount) will be overwritten. Continue?',
+    fin_drift_done:        'Refreshed from the enquiry.',
+    fin_drift_failed:      'Refresh failed.',
   },
   bg: {
     nav_enquiries:    'Запитвания',
@@ -530,6 +535,11 @@ const ADMIN_LANG = {
     activity_item_one:     'елемент',
     activity_item_many:    'елемента',
     activity_data:         '(данни)',
+    fin_drift_warn:        '⚠ Заявката е променена след последното осчетоводяване.',
+    fin_drift_refresh:     'Опресни от заявката',
+    fin_drift_confirm:     'Наемът, допълнителните гости, услугите и напитките ще се презаредят от заявката. Плащанията, разходите и ръчно добавените редове се запазват. Ръчни корекции по наема (напр. отстъпка) ще бъдат презаписани. Продължаваме ли?',
+    fin_drift_done:        'Опреснено от заявката.',
+    fin_drift_failed:      'Опресняването не успя.',
   }
 };
 
