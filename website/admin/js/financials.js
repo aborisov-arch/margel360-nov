@@ -1157,17 +1157,21 @@ async function applyRentDiscount(inp) {
   showToast(value ? `Отстъпка ${value}% върху офертата.` : 'Отстъпката е премахната.', 'success');
 }
 
-// The system-seeded add-on income line is identified by this fixed
-// (category, notes) marker - both ensureFinancialEvent and seedFromEnquiry
-// always create it with exactly these values. It is the only reliable
-// seeded-vs-manual signal financial_income_items carries (there is no
-// dedicated flag column, unlike pnl_drinks' per-line `manual` bool) - a
-// bookkeeper item that happens to share both values would be
-// indistinguishable and get replaced too. See task-2-report.md.
-const SEEDED_INCOME_ITEM_CATEGORY = 'other';
+// The system-seeded add-on income line is identified by this fixed notes
+// marker - both ensureFinancialEvent and seedFromEnquiry always create it
+// with exactly this text. Matching on notes ALONE (not category+notes) so
+// a bookkeeper who recategorizes the seeded row (e.g. away from "other")
+// is still recognized and updated in place by refreshFromEnquiry - matching
+// on both fields would make a recategorized copy invisible to the matcher,
+// causing a duplicate full-total row to be inserted alongside it (addons
+// income double-counted). It is the only reliable seeded-vs-manual signal
+// financial_income_items carries (there is no dedicated flag column, unlike
+// pnl_drinks' per-line `manual` bool) - a bookkeeper item that happens to
+// share this exact notes text would be indistinguishable and get replaced
+// too. See task-2-report.md.
 const SEEDED_INCOME_ITEM_NOTES = 'Пренесено от офертата';
 function isSeededIncomeItem(item) {
-  return item.category === SEEDED_INCOME_ITEM_CATEGORY && item.notes === SEEDED_INCOME_ITEM_NOTES;
+  return item.notes === SEEDED_INCOME_ITEM_NOTES;
 }
 
 // „Опресни от заявката" - re-pulls the enquiry-derived numbers into an
@@ -1186,6 +1190,10 @@ async function refreshFromEnquiry() {
   if (!sel || sel.kind !== 'enquiry' || !sel.fe || !sel.enquiry) return;
   const fe = sel.fe;
   const enqId = sel.enquiry.id;
+
+  if (isDirty()) {
+    if (!confirm('Имате незапазени промени. Да ги отхвърля ли?')) return;
+  }
 
   if (!confirm(t('fin_drift_confirm'))) return;
 
