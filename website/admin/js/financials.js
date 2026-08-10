@@ -1193,6 +1193,12 @@ async function refreshFromEnquiry() {
 
   if (isDirty()) {
     if (!confirm('Имате незапазени промени. Да ги отхвърля ли?')) return;
+    // User confirmed the discard - actually discard, or a stale staged
+    // value (e.g. a not-yet-saved deposit/rent edit) survives the refresh
+    // and gets written over the freshly synced row on the next save.
+    dirtyFe = {};
+    dirtyExpenses = new Map();
+    dirtyIncomeItems = new Map();
   }
 
   if (!confirm(t('fin_drift_confirm'))) return;
