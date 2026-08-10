@@ -1235,26 +1235,59 @@ async function refreshFromEnquiry() {
     if (feErr) throw feErr;
     Object.assign(fe, updated);
 
-    // Income items: insert the fresh seeded line FIRST, then remove the old
-    // seeded line(s) - if the delete fails, the failure mode is a harmless
-    // duplicate "Пренесено от офертата" row an admin can spot and clean up,
-    // rather than silently losing the seeded income if insert failed after
-    // an eager delete.
-    const existingItems = incomeItemsByEvent.get(fe.id) || [];
-    const oldSeeded = existingItems.filter(isSeededIncomeItem);
-    const kept = existingItems.filter(x => !isSeededIncomeItem(x));
+    // Income items: re-fetch this event's items FRESH from the DB (never
+    // the page-load cache) so a retry after an earlier partial failure is
+    // self-healing instead of compounding it. The atomic path below never
+    // pairs an insert with a delete for the common (0-or-1-seeded-row)
+    // case, so there is no window where a duplicate or a gap can exist:
+    //  - 0 old seeded rows -> plain insert.
+    //  - 1 old seeded row  -> UPDATE it in place (no insert+delete at all).
+    //  - 2+ old seeded rows (itself evidence of a prior partial failure) ->
+    //    delete the extras FIRST, then update the survivor. Failure order
+    //    is delete-before-update, so a failure here can only ever leave
+    //    the seeded row missing (the next refresh recreates it) or still
+    //    duplicated (the next refresh retries the same cleanup) - never
+    //    MORE duplicated than what was already on disk.
+    const { data: freshItems, error: itemsFetchErr } = await db
+      .from('financial_income_items').select('*').eq('event_id', fe.id);
+    if (itemsFetchErr) throw itemsFetchErr;
+    const oldSeeded = (freshItems || []).filter(isSeededIncomeItem);
+    const kept = (freshItems || []).filter(x => !isSeededIncomeItem(x));
+
+    let survivor = null;
+    if (oldSeeded.length > 1) {
+      const [keep, ...extras] = oldSeeded;
+      const { error: delExtraErr } = await db.from('financial_income_items')
+        .delete().in('id', extras.map(x => x.id));
+      if (delExtraErr) throw delExtraErr;
+      extras.forEach(x => dirtyIncomeItems.delete(x.id));
+      survivor = keep;
+    } else if (oldSeeded.length === 1) {
+      survivor = oldSeeded[0];
+    }
+
     let newSeededItem = null;
     if (incomeItem) {
-      const { data, error: insErr } = await db.from('financial_income_items')
-        .insert({ event_id: fe.id, ...incomeItem }).select().single();
-      if (insErr) throw insErr;
-      newSeededItem = data;
-    }
-    if (oldSeeded.length) {
+      if (survivor) {
+        const { data, error: updErr } = await db.from('financial_income_items')
+          .update({ month: incomeItem.month, category: incomeItem.category, amount_eur: incomeItem.amount_eur, notes: incomeItem.notes })
+          .eq('id', survivor.id).select().single();
+        if (updErr) throw updErr;
+        dirtyIncomeItems.delete(survivor.id);
+        newSeededItem = data;
+      } else {
+        const { data, error: insErr } = await db.from('financial_income_items')
+          .insert({ event_id: fe.id, ...incomeItem }).select().single();
+        if (insErr) throw insErr;
+        newSeededItem = data;
+      }
+    } else if (survivor) {
+      // Live addons total is now 0 (customer removed them) - nothing to
+      // seed. Remove the stale seeded row instead of leaving it behind.
       const { error: delErr } = await db.from('financial_income_items')
-        .delete().in('id', oldSeeded.map(x => x.id));
+        .delete().eq('id', survivor.id);
       if (delErr) throw delErr;
-      oldSeeded.forEach(x => dirtyIncomeItems.delete(x.id));
+      dirtyIncomeItems.delete(survivor.id);
     }
     incomeItemsByEvent.set(fe.id, newSeededItem ? [...kept, newSeededItem] : kept);
 
