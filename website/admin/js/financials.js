@@ -277,7 +277,7 @@ async function loadAll() {
     { data: exp, error: expErr },
     { data: inc, error: incErr },
   ] = await Promise.all([
-    db.from('enquiries').select('id,enquiry_number,full_name,preferred_date,event_type,event_id,pipeline_status,addons,drinks,applied_discount_percent,guests,payment_method,payment_tracking,venue_price_eur'),
+    db.from('enquiries').select('id,enquiry_number,full_name,preferred_date,event_type,event_id,pipeline_status,addons,drinks,applied_discount_percent,guests,payment_method,payment_tracking,venue_price_eur,last_edited_at'),
     db.from('occupied_dates').select('date'),
     db.from('financial_events').select('*'),
     db.from('financial_expenses').select('*').not('event_id', 'is', null),
@@ -322,24 +322,25 @@ async function loadAll() {
   });
 }
 
-// Find or create the financial_events row for an enquiry. First-time
-// creation prefills the income breakdown from the enquiry so the admin
-// starts with sane numbers instead of zero.
-async function ensureFinancialEvent(enquiry) {
-  let row = financialEventByEnquiryId.get(enquiry.id);
-  if (row) return row;
-  const b = enquiryBreakdown(enquiry);
-  const iso = parsePreferredDate(enquiry.preferred_date);
+// Pure: computes the enquiry-derived seed values for a financial_events row
+// (column values) plus the one income item to create if the enquiry has
+// add-ons. Never writes to the DB — safe to call speculatively. Shared by
+// ensureFinancialEvent (first-open create) and the enquiry-refresh action
+// (Task 2) so both paths compute byte-identical numbers from the same
+// enquiry snapshot.
+function seedFromEnquiry(enq) {
+  const b = enquiryBreakdown(enq);
+  const iso = parsePreferredDate(enq.preferred_date);
   const month = iso ? iso.slice(0, 7) : null;
   // Paid-by-customer prefill: the Bank/Cash/Card amounts marked on the enquiry
   // (Enquiries section). They go into the deposit buckets - the enquiry has no
   // deposit/balance split, and the bookkeeper can reclassify before saving.
-  const pt = enquiry.payment_tracking || {};
+  const pt = enq.payment_tracking || {};
   const ptAmt = (k) => { const n = parseFloat(pt[k]); return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : 0; };
-  const insertRow = {
+  const fields = {
     month,
     event_date: iso,
-    customer_name: enquiry.full_name || '',
+    customer_name: enq.full_name || '',
     offer_total_eur: b.rent + b.drinks + b.addons,
     income_rent_eur:   b.rent,
     income_drinks_eur: b.drinks,
@@ -347,22 +348,40 @@ async function ensureFinancialEvent(enquiry) {
     deposit_cash_eur: ptAmt('cash'),
     deposit_bank_eur: ptAmt('bank'),
     deposit_card_eur: ptAmt('card'),
+  };
+  // Seed one "Други" service line from the enquiry's add-on total so the
+  // prefilled add-on income is visible (income now derives from items).
+  // The bookkeeper can then split/recategorize it. null when there's
+  // nothing to seed (addons total is 0).
+  const incomeItem = b.addons > 0
+    ? { month, category: 'other', amount_eur: b.addons, notes: 'Пренесено от офертата' }
+    : null;
+  return { fields, incomeItem };
+}
+
+// Find or create the financial_events row for an enquiry. First-time
+// creation prefills the income breakdown from the enquiry so the admin
+// starts with sane numbers instead of zero.
+async function ensureFinancialEvent(enquiry) {
+  let row = financialEventByEnquiryId.get(enquiry.id);
+  if (row) return row;
+  const { fields, incomeItem } = seedFromEnquiry(enquiry);
+  const now = new Date().toISOString();
+  const insertRow = {
+    ...fields,
     enquiry_id: enquiry.id,
     confirmed_by: userEmail,
-    confirmed_at: new Date().toISOString(),
+    confirmed_at: now,
+    enquiry_synced_at: now,
   };
   const { data, error } = await db.from('financial_events').insert(insertRow).select().single();
   if (error) { console.error('ensureFinancialEvent insert failed', error); return null; }
   financialEventsById.set(data.id, data);
   financialEventByEnquiryId.set(enquiry.id, data);
 
-  // Seed one "Други" service line from the enquiry's add-on total so the
-  // prefilled add-on income is visible (income now derives from items).
-  // The bookkeeper can then split/recategorize it.
-  if (b.addons > 0) {
+  if (incomeItem) {
     const { data: item, error: itemErr } = await db.from('financial_income_items').insert({
-      event_id: data.id, month, category: 'other', amount_eur: b.addons,
-      notes: 'Пренесено от офертата',
+      event_id: data.id, ...incomeItem,
     }).select().single();
     if (itemErr) console.error('seed income item failed', itemErr);
     else incomeItemsByEvent.set(data.id, [item]);
@@ -805,6 +824,27 @@ function renderDetail() {
     document.getElementById('pnl-guests').textContent   = '-';
   }
 
+  // Drift banner - the enquiry was edited (customer or admin) after this
+  // P&L's numbers were last synced from it. Only applies to enquiry-linked
+  // rows; manual events have no `enquiry` to drift from. NULL
+  // enquiry_synced_at (legacy rows, pre-dating this column) falls back to
+  // created_at so an old never-synced row is still comparable.
+  const driftBanner = document.getElementById('pnl-drift-banner');
+  if (driftBanner) {
+    const isDrifted = !!(fe && enquiry && enquiry.last_edited_at &&
+      new Date(enquiry.last_edited_at) > new Date(fe.enquiry_synced_at ?? fe.created_at));
+    if (isDrifted) {
+      driftBanner.hidden = false;
+      driftBanner.innerHTML = `
+        <span class="fin-drift-banner__text">${esc(t('fin_drift_warn'))}</span>
+        <button type="button" class="btn btn-outline btn-sm" id="btn-drift-refresh">${esc(t('fin_drift_refresh'))}</button>
+      `;
+    } else {
+      driftBanner.hidden = true;
+      driftBanner.innerHTML = '';
+    }
+  }
+
   // Fixed income lines - editable. Prefilled by ensureFinancialEvent from
   // the enquiry breakdown; admin can refine before saving. Drinks are an
   // itemized list below (#pnl-drinks-lines); additional services are itemized
@@ -1120,6 +1160,194 @@ async function applyRentDiscount(inp) {
   if (rentInput) rentInput.value = rent;
   updateDetailTotals();
   showToast(value ? `Отстъпка ${value}% върху офертата.` : 'Отстъпката е премахната.', 'success');
+}
+
+// The system-seeded add-on income line is identified by this fixed notes
+// marker - both ensureFinancialEvent and seedFromEnquiry always create it
+// with exactly this text. Matching on notes ALONE (not category+notes) so
+// a bookkeeper who recategorizes the seeded row (e.g. away from "other")
+// is still recognized and updated in place by refreshFromEnquiry - matching
+// on both fields would make a recategorized copy invisible to the matcher,
+// causing a duplicate full-total row to be inserted alongside it (addons
+// income double-counted). It is the only reliable seeded-vs-manual signal
+// financial_income_items carries (there is no dedicated flag column, unlike
+// pnl_drinks' per-line `manual` bool) - a bookkeeper item that happens to
+// share this exact notes text would be indistinguishable and get replaced
+// too. See task-2-report.md.
+const SEEDED_INCOME_ITEM_NOTES = 'Пренесено от офертата';
+function isSeededIncomeItem(item) {
+  return item.notes === SEEDED_INCOME_ITEM_NOTES;
+}
+
+// „Опресни от заявката" - re-pulls the enquiry-derived numbers into an
+// EXISTING financial_events row (the drift banner's action). Unlike
+// ensureFinancialEvent (first-open create), this must preserve everything
+// the bookkeeper independently owns: payments, expenses, notes,
+// manually-typed drink lines and bookkeeper-added income items - see the
+// Global Constraints in the task brief and the confirm-dialog copy itself
+// (fin_drift_confirm), which promises exactly this. deposit_*_eur (money
+// marked received) is therefore deliberately EXCLUDED from the patch even
+// though seedFromEnquiry's `fields` includes it - that field only makes
+// sense as a one-time prefill at creation, not on a refresh of a row the
+// bookkeeper has been reconciling payments against.
+async function refreshFromEnquiry() {
+  const sel = currentSelection();
+  if (!sel || sel.kind !== 'enquiry' || !sel.fe || !sel.enquiry) return;
+  const fe = sel.fe;
+  const enqId = sel.enquiry.id;
+
+  if (isDirty()) {
+    if (!confirm('Имате незапазени промени. Да ги отхвърля ли?')) return;
+    // User confirmed the discard - actually discard, or a stale staged
+    // value (e.g. a not-yet-saved deposit/rent edit) survives the refresh
+    // and gets written over the freshly synced row on the next save.
+    dirtyFe = {};
+    dirtyExpenses = new Map();
+    dirtyIncomeItems = new Map();
+  }
+
+  if (!confirm(t('fin_drift_confirm'))) return;
+
+  const btn = document.getElementById('btn-drift-refresh');
+  if (btn) btn.disabled = true;
+
+  try {
+    // Re-fetch the enquiry fresh rather than trust the page's load-time
+    // cache - the whole point of this action is that it may have changed
+    // since this admin session loaded.
+    const { data: liveEnquiry, error: enqErr } = await db.from('enquiries')
+      // venue_price_eur: seasonal stamp - keep in every enquiry select feeding enquiryBreakdown
+      .select('id,enquiry_number,full_name,preferred_date,event_type,event_id,pipeline_status,addons,drinks,applied_discount_percent,guests,payment_method,payment_tracking,last_edited_at,venue_price_eur')
+      .eq('id', enqId).single();
+    if (enqErr) throw enqErr;
+    if (!liveEnquiry) throw new Error('enquiry not found');
+
+    const { fields, incomeItem } = seedFromEnquiry(liveEnquiry);
+
+    // Drinks: if pnl_drinks is still null the row is untouched/live-tracking
+    // already (savedDrinksTotal reads straight from enquiry.drinks in that
+    // case) - nothing to write. Once frozen (non-null), re-derive the
+    // catalog-linked lines from the live order and keep every manual:true
+    // line byte-for-byte. LIMITATION: a catalog drink the bookkeeper picked
+    // by hand inside the P&L (+ Добави напитка) is also stored as
+    // manual:false with no back-reference to the enquiry, so it is
+    // indistinguishable from an enquiry-seeded line and gets replaced too -
+    // see task-2-report.md.
+    let drinksPatch = {};
+    if (fe.pnl_drinks != null) {
+      const preservedManual = fe.pnl_drinks.filter(l => l && l.manual === true);
+      const freshFromOrder = seedDrinksFromOrder(liveEnquiry);
+      const nextDrinks = [...freshFromOrder, ...preservedManual];
+      drinksPatch = { pnl_drinks: nextDrinks, income_drinks_eur: drinksTotalOf(nextDrinks) };
+    }
+
+    const patch = {
+      month: fields.month,
+      event_date: fields.event_date,
+      customer_name: fields.customer_name,
+      offer_total_eur: fields.offer_total_eur,
+      income_rent_eur: fields.income_rent_eur,
+      ...drinksPatch,
+      updated_at: new Date().toISOString(),
+    };
+    const { data: updated, error: feErr } = await db.from('financial_events')
+      .update(patch).eq('id', fe.id).select().single();
+    if (feErr) throw feErr;
+    Object.assign(fe, updated);
+
+    // Income items: re-fetch this event's items FRESH from the DB (never
+    // the page-load cache) so a retry after an earlier partial failure is
+    // self-healing instead of compounding it. The atomic path below never
+    // pairs an insert with a delete for the common (0-or-1-seeded-row)
+    // case, so there is no window where a duplicate or a gap can exist:
+    //  - 0 old seeded rows -> plain insert.
+    //  - 1 old seeded row  -> UPDATE it in place (no insert+delete at all).
+    //  - 2+ old seeded rows (itself evidence of a prior partial failure) ->
+    //    delete the extras FIRST, then update the survivor. Failure order
+    //    is delete-before-update, so a failure here can only ever leave
+    //    the seeded row missing (the next refresh recreates it) or still
+    //    duplicated (the next refresh retries the same cleanup) - never
+    //    MORE duplicated than what was already on disk.
+    const { data: freshItems, error: itemsFetchErr } = await db
+      .from('financial_income_items').select('*').eq('event_id', fe.id);
+    if (itemsFetchErr) throw itemsFetchErr;
+    const oldSeeded = (freshItems || []).filter(isSeededIncomeItem);
+    const kept = (freshItems || []).filter(x => !isSeededIncomeItem(x));
+
+    let survivor = null;
+    if (oldSeeded.length > 1) {
+      const [keep, ...extras] = oldSeeded;
+      const { error: delExtraErr } = await db.from('financial_income_items')
+        .delete().in('id', extras.map(x => x.id));
+      if (delExtraErr) throw delExtraErr;
+      extras.forEach(x => dirtyIncomeItems.delete(x.id));
+      survivor = keep;
+    } else if (oldSeeded.length === 1) {
+      survivor = oldSeeded[0];
+    }
+
+    let newSeededItem = null;
+    if (incomeItem) {
+      if (survivor) {
+        const { data, error: updErr } = await db.from('financial_income_items')
+          .update({ month: incomeItem.month, category: incomeItem.category, amount_eur: incomeItem.amount_eur, notes: incomeItem.notes })
+          .eq('id', survivor.id).select().single();
+        if (updErr) throw updErr;
+        dirtyIncomeItems.delete(survivor.id);
+        newSeededItem = data;
+      } else {
+        const { data, error: insErr } = await db.from('financial_income_items')
+          .insert({ event_id: fe.id, ...incomeItem }).select().single();
+        if (insErr) throw insErr;
+        newSeededItem = data;
+      }
+    } else if (survivor) {
+      // Live addons total is now 0 (customer removed them) - nothing to
+      // seed. Remove the stale seeded row instead of leaving it behind.
+      const { error: delErr } = await db.from('financial_income_items')
+        .delete().eq('id', survivor.id);
+      if (delErr) throw delErr;
+      dirtyIncomeItems.delete(survivor.id);
+    }
+    incomeItemsByEvent.set(fe.id, newSeededItem ? [...kept, newSeededItem] : kept);
+
+    // income_addons_eur is a cached mirror of the item rows (see
+    // syncAddonsColumn) - recompute it from the just-updated items rather
+    // than writing seedFromEnquiry's addons figure directly, so a
+    // bookkeeper-added service line's contribution is never lost.
+    await syncAddonsColumn(fe);
+
+    // Stamp LAST: only reached if every write above succeeded, so a
+    // failure never leaves a stale enquiry_synced_at pointing past data
+    // that didn't actually get refreshed.
+    const stampedAt = new Date().toISOString();
+    const { error: stampErr } = await db.from('financial_events')
+      .update({ enquiry_synced_at: stampedAt }).eq('id', fe.id);
+    if (stampErr) throw stampErr;
+    fe.enquiry_synced_at = stampedAt;
+
+    // Drop any unsaved draft on the fields this refresh just overwrote in
+    // the DB directly, so a stale typed value can't shadow (and later
+    // overwrite on Save) what was just synced.
+    delete dirtyFe.income_rent_eur;
+    delete dirtyFe.pnl_drinks;
+    delete dirtyFe.income_drinks_eur;
+
+    // Keep the page's enquiry cache in step so the hero/guest-count/
+    // "customer added to the offer" hint reflect the live data too.
+    Object.assign(sel.enquiry, liveEnquiry);
+
+    showToast(t('fin_drift_done'), 'success');
+    renderEventsList(document.getElementById('events-search').value);
+    renderMonthSummary();
+    renderDetail();
+  } catch (err) {
+    console.error('refreshFromEnquiry failed', err);
+    showToast(t('fin_drift_failed'), 'error');
+  } finally {
+    const btnAfter = document.getElementById('btn-drift-refresh');
+    if (btnAfter) btnAfter.disabled = false;
+  }
 }
 
 function setExpenseDirty(id, field, raw) {
@@ -1724,6 +1952,7 @@ document.addEventListener('click', evt => {
   if (evt.target.closest('#btn-save-pnl'))          { saveDraft(); return; }
   if (evt.target.closest('#btn-cancel-pnl'))        { cancelDraft(); return; }
   if (evt.target.closest('#btn-delete-pnl'))        { deletePnl(); return; }
+  if (evt.target.closest('#btn-drift-refresh'))     { refreshFromEnquiry(); return; }
 
   // Summary drill-downs: KPI boxes open the per-event metric breakdown,
   // category pills open the per-category breakdown in the same modal.

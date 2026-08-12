@@ -367,7 +367,8 @@ function bindTableHandlers() {
     inp.disabled = true;
     const { error } = await db
       .from('enquiries')
-      .update({ drinks: updatedDrinks })
+      // stamp so financials' drift banner sees dashboard money edits
+      .update({ drinks: updatedDrinks, last_edited_at: new Date().toISOString() })
       .eq('id', id);
     inp.disabled = false;
 
@@ -414,7 +415,8 @@ function bindTableHandlers() {
     btn.disabled = true;
     const value = num > 0 ? num : null;
     const { error } = await db.from('enquiries')
-      .update({ applied_discount_percent: value })
+      // stamp so financials' drift banner sees dashboard money edits
+      .update({ applied_discount_percent: value, last_edited_at: new Date().toISOString() })
       .eq('id', id);
     btn.disabled = false;
     if (error) {
