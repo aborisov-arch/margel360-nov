@@ -35,6 +35,7 @@ const translations = {
     footer_nav: 'Навигация',
     footer_contact: 'Контакти',
     footer_address: 'бул. Околовръстен път 155, ет.4, София',
+    footer_privacy: 'Политика за поверителност',
     footer_copy: '© 2026 Маргел 360°. Всички права запазени.',
   },
   en: {
@@ -72,6 +73,7 @@ const translations = {
     footer_nav: 'Navigation',
     footer_contact: 'Contact',
     footer_address: 'Okolovrsten pat 155, 4th floor, Sofia',
+    footer_privacy: 'Privacy Policy',
     footer_copy: '© 2026 Margel 360°. All rights reserved.',
   }
 };

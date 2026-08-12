@@ -307,6 +307,15 @@
               </label>
             </div>
           </div>
+          <!-- Privacy policy acceptance - REQUIRED (blocks submission). The
+               marketing consent below stays optional (GDPR: freely given). -->
+          <div class="form-group" id="fg-privacy" style="margin-bottom:0">
+            <label class="consent-check" for="res-privacy-accept" style="display:flex;gap:10px;align-items:flex-start;margin:18px 0 0;font-size:0.9rem;line-height:1.45;cursor:pointer">
+              <input type="checkbox" id="res-privacy-accept" name="privacy_accepted" aria-describedby="err-privacy-msg" style="margin-top:3px;flex:0 0 auto;width:18px;height:18px;cursor:pointer">
+              <span><span data-i18n="res_privacy_accept">Запознах се и приемам</span> <a href="privacy.html" target="_blank" rel="noopener" data-i18n="res_privacy_link">Политиката за поверителност</a> <span aria-hidden="true">*</span></span>
+            </label>
+            <span class="form-error" id="err-privacy-msg" role="alert" data-i18n="res_privacy_error">Моля, приемете Политиката за поверителност, за да продължите.</span>
+          </div>
           <!-- Marketing consent - optional opt-in (GDPR: freely given, never
                blocks submission). Stored as enquiries.marketing_consent. -->
           <label class="consent-check" for="res-marketing-consent" style="display:flex;gap:10px;align-items:flex-start;margin:18px 0 4px;font-size:0.9rem;line-height:1.45;cursor:pointer">
@@ -373,6 +382,7 @@
       </div>
       <div class="footer-bottom">
         <p data-i18n="footer_copy">© 2026 Маргел 360°. Всички права запазени.</p>
+        <p style="margin-top:6px"><a href="privacy.html" data-i18n="footer_privacy" style="color:inherit">Политика за поверителност</a></p>
       </div>
     </div>
   </footer>
@@ -380,7 +390,7 @@
   <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js" integrity="sha384-5JqMv4L/Xa0hfvtF06qboNdhvuYXUku9ZrhZh3bSk8VXF0A/RuSLHpLsSV9Zqhl6" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/bg.js" integrity="sha384-4dvnw6wSzzDwWKeBuSYv0lc+miJSG1UXHYaASiAhbfJuy2n2I3uhjJWda30hRKYX" crossorigin="anonymous"></script>
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-  <script src="js/translations-reservation.js?v=7"></script>
+  <script src="js/translations-reservation.js?v=8"></script>
   <script src="js/main.js?v=5"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7" integrity="sha384-tD6X9wDfTRdKpuPoHFZrVW2RXjSYSWjLBPWXxpHprWWl9eaHlwl05aRjHsiKF97n" crossorigin="anonymous"></script>
   <script src="js/reservation-supabase.js?v=2"></script>
