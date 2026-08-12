@@ -519,13 +519,40 @@ function renderDrinksNav() {
   const tabs = document.getElementById('drinks-tabs');
   if (!tabs) return;
   tabs.innerHTML = '';
+  tabs.setAttribute('aria-label', l === 'bg' ? 'Категории напитки' : 'Drink categories');
   drinkCategories[l].forEach((cat, i) => {
     const btn = document.createElement('button');
-    btn.className = 'drinks-tab' + (i === activeDrinkCat ? ' active' : '');
-    btn.textContent = cat; btn.setAttribute('role', 'tab');
+    const active = i === activeDrinkCat;
+    btn.type = 'button';
+    btn.className = 'drinks-tab' + (active ? ' active' : '');
+    btn.textContent = cat;
+    btn.id = 'drinks-tab-' + i;
+    btn.setAttribute('role', 'tab');
+    btn.setAttribute('aria-selected', active ? 'true' : 'false');
+    btn.setAttribute('aria-controls', 'drinks-grid');
+    btn.tabIndex = active ? 0 : -1;
     btn.addEventListener('click', () => { activeDrinkCat = i; renderDrinks(); });
     tabs.appendChild(btn);
   });
+  if (!tabs._kbBound) {
+    tabs._kbBound = true;
+    // Roving tabindex: arrows/Home/End move focus AND activate (the panel
+    // re-render is local and cheap).
+    tabs.addEventListener('keydown', (e) => {
+      const count = drinkCategories[getLang()].length;
+      let next = null;
+      if (e.key === 'ArrowRight') next = (activeDrinkCat + 1) % count;
+      else if (e.key === 'ArrowLeft') next = (activeDrinkCat - 1 + count) % count;
+      else if (e.key === 'Home') next = 0;
+      else if (e.key === 'End') next = count - 1;
+      if (next === null) return;
+      e.preventDefault();
+      activeDrinkCat = next;
+      renderDrinks();
+      const focusBtn = document.getElementById('drinks-tab-' + next);
+      if (focusBtn) focusBtn.focus();
+    });
+  }
 }
 
 function renderDrinks() {
@@ -533,6 +560,8 @@ function renderDrinks() {
   renderDrinksNav();
   const grid = document.getElementById('drinks-grid');
   if (!grid) return;
+  grid.setAttribute('role', 'tabpanel');
+  grid.setAttribute('aria-labelledby', 'drinks-tab-' + activeDrinkCat);
   grid.innerHTML = '';
   drinks.filter(d => d.cat === activeDrinkCat).forEach(drink => {
     const qty = booking.drinkQtys[drink.id] || 0;
@@ -1076,6 +1105,10 @@ function setupPromo() {
         status.style.color = '#2F8F4F';
         input.disabled = true;
         apply.textContent = getLang() === 'bg' ? 'Приложен' : 'Applied';
+        // Keep the applied state across language toggles - applyTranslations
+        // re-labels [data-i18n] elements, so point the button at the
+        // "applied" key instead of the default "apply" one.
+        apply.setAttribute('data-i18n', 'promo_applied');
       } else {
         const bg = {
           not_found: 'Кодът не е намерен.',

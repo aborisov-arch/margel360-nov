@@ -1,7 +1,16 @@
-// ── Hero video mobile autoplay fix ──
+// ── Hero video: load + play only when appropriate ──
+// index.html ships the <video> without autoplay and with preload="none",
+// so nothing downloads until this block decides. Data-saver, 2G and
+// reduced-motion visitors keep the poster image.
 (function() {
   const vid = document.querySelector('.hero-video');
   if (!vid) return;
+  const conn = navigator.connection || {};
+  const skipVideo = conn.saveData === true ||
+    /(^|-)2g$/.test(conn.effectiveType || '') ||
+    (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  if (skipVideo) return;
+  vid.preload = 'auto';
 
   // Try to play immediately (may fail on mobile)
   const tryPlay = vid.play();
@@ -46,10 +55,50 @@ if (hamburger && navDrawer) {
 }
 
 // ── Language toggle ──
+// ?lang=en|bg deep links (the hreflang alternates point here) beat the
+// stored preference and persist it for the rest of the visit.
 const LANG_KEY = 'margel_lang';
-let currentLang = localStorage.getItem(LANG_KEY) || 'bg';
+const urlLang = (function () {
+  try {
+    const v = new URLSearchParams(window.location.search).get('lang');
+    return v === 'en' || v === 'bg' ? v : null;
+  } catch (e) { return null; }
+})();
+if (urlLang) { try { localStorage.setItem(LANG_KEY, urlLang); } catch (e) {} }
+let currentLang = urlLang || localStorage.getItem(LANG_KEY) || 'bg';
+
+// Keep URL + head metadata in agreement with the active language: the
+// ?lang=en variant self-identifies (canonical, og:locale) so crawlers can
+// index the EN rendering; bg stays the bare canonical URL.
+function syncLangHead(lang) {
+  try {
+    const url = new URL(window.location.href);
+    if (lang === 'en') url.searchParams.set('lang', 'en');
+    else url.searchParams.delete('lang');
+    const qs = url.searchParams.toString();
+    history.replaceState(null, '', url.pathname + (qs ? '?' + qs : '') + url.hash);
+  } catch (e) { /* URL/History quirks must never break the page */ }
+  try {
+    const canonical = document.querySelector('link[rel="canonical"]');
+    if (canonical) {
+      const cu = new URL(canonical.getAttribute('href'), window.location.origin);
+      if (lang === 'en') cu.searchParams.set('lang', 'en');
+      else cu.searchParams.delete('lang');
+      canonical.setAttribute('href', cu.toString());
+    }
+    const ogLocale = document.querySelector('meta[property="og:locale"]');
+    if (ogLocale) ogLocale.setAttribute('content', lang === 'en' ? 'en_US' : 'bg_BG');
+  } catch (e) { /* best-effort */ }
+}
 
 function applyTranslations(lang) {
+  document.documentElement.lang = lang;
+  syncLangHead(lang);
+  // Skip links exist on every public page but not in the per-page
+  // dictionaries - label them here (same approach as the toggle buttons).
+  document.querySelectorAll('.skip-link').forEach(el => {
+    el.textContent = lang === 'bg' ? 'Към съдържанието' : 'Skip to content';
+  });
   if (typeof translations === 'undefined') return;
   const t = translations[lang];
   if (!t) return;

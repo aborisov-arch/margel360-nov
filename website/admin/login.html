@@ -31,6 +31,10 @@
           <label for="password" data-i18n="login_password">Парола</label>
           <input type="password" id="password" name="password" autocomplete="current-password" required>
         </div>
+        <!-- Cloudflare Turnstile (managed mode - invisible for most). When
+             Supabase Auth CAPTCHA protection is enabled, the token is
+             required server-side; until then it's accepted and ignored. -->
+        <div class="cf-turnstile" data-sitekey="0x4AAAAAADjSB9200ZicBIRp" data-language="auto" style="margin:14px 0 4px"></div>
         <p class="login-error" id="login-error" role="alert" style="display:none"></p>
         <p id="login-info" role="status" style="display:none;color:#2E7D32;text-align:center;font-size:0.88rem;margin:0 0 4px"></p>
         <button type="submit" class="btn btn-primary btn-full" id="login-btn" data-i18n="login_btn">Вход</button>
@@ -41,6 +45,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7" integrity="sha384-tD6X9wDfTRdKpuPoHFZrVW2RXjSYSWjLBPWXxpHprWWl9eaHlwl05aRjHsiKF97n" crossorigin="anonymous"></script>
   <script src="js/supabase-client.js?v=2"></script>
   <script src="js/admin-i18n.js?v=19"></script>
-  <script src="js/login.js?v=2"></script>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  <script src="js/login.js?v=3"></script>
 </body>
 </html>

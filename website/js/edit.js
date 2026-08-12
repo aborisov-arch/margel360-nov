@@ -453,13 +453,19 @@ function renderLegacyDrinks() {
 function renderDrinkTabs() {
   const tabs = $('drinks-tabs');
   tabs.innerHTML = '';
+  tabs.setAttribute('aria-label', 'Категории напитки');
   const cats = (typeof drinkCategories !== 'undefined' ? drinkCategories.bg : []) || [];
   cats.forEach((name, i) => {
     const btn = document.createElement('button');
+    const active = i === state.activeDrinkCat;
     btn.type = 'button';
-    btn.className = 'drinks-nav__tab' + (i === state.activeDrinkCat ? ' is-active' : '');
+    btn.className = 'drinks-nav__tab' + (active ? ' is-active' : '');
     btn.textContent = name;
+    btn.id = 'drinks-tab-' + i;
     btn.setAttribute('role', 'tab');
+    btn.setAttribute('aria-selected', active ? 'true' : 'false');
+    btn.setAttribute('aria-controls', 'drinks-grid');
+    btn.tabIndex = active ? 0 : -1;
     btn.addEventListener('click', () => {
       state.activeDrinkCat = i;
       renderDrinkTabs();
@@ -467,10 +473,32 @@ function renderDrinkTabs() {
     });
     tabs.appendChild(btn);
   });
+  if (!tabs._kbBound) {
+    tabs._kbBound = true;
+    // Roving tabindex: arrows/Home/End move focus AND activate.
+    tabs.addEventListener('keydown', (e) => {
+      const count = ((typeof drinkCategories !== 'undefined' ? drinkCategories.bg : []) || []).length;
+      if (!count) return;
+      let next = null;
+      if (e.key === 'ArrowRight') next = (state.activeDrinkCat + 1) % count;
+      else if (e.key === 'ArrowLeft') next = (state.activeDrinkCat - 1 + count) % count;
+      else if (e.key === 'Home') next = 0;
+      else if (e.key === 'End') next = count - 1;
+      if (next === null) return;
+      e.preventDefault();
+      state.activeDrinkCat = next;
+      renderDrinkTabs();
+      renderDrinkTiles();
+      const focusBtn = document.getElementById('drinks-tab-' + next);
+      if (focusBtn) focusBtn.focus();
+    });
+  }
 }
 
 function renderDrinkTiles() {
   const grid = $('drinks-grid');
+  grid.setAttribute('role', 'tabpanel');
+  grid.setAttribute('aria-labelledby', 'drinks-tab-' + state.activeDrinkCat);
   grid.innerHTML = '';
   const pool = typeof drinks !== 'undefined' ? drinks : [];
   pool.filter(d => d.cat === state.activeDrinkCat).forEach(drink => {
