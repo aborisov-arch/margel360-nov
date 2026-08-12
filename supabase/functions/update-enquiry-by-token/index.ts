@@ -6,6 +6,7 @@ import { diffEnquiry, EDITABLE_FIELDS } from "../_shared/diff.ts";
 import { validateField } from "../_shared/validate.ts";
 import { weekdayPromoPercent } from "../_shared/weekday-promo.ts";
 import { loadCatalog, repriceAddons, repriceDrinks } from "../_shared/catalog.ts";
+import { effectiveVenuePrice } from "../_shared/seasonal-pricing.ts";
 
 const SUPABASE_URL    = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -122,6 +123,14 @@ serve(async (req) => {
     last_edited_at: new Date().toISOString(),
     edit_locked: willLock,
   };
+
+  // The venue price follows the DATE (seasonal calendar) - re-stamp it
+  // whenever the date changes. Event type is not editable, so current.event_id
+  // is authoritative.
+  // Only on a real date change - the edit page sends preferred_date on every save, and an unchanged date must never re-price a legacy (NULL-stamp) booking.
+  if ("preferred_date" in patch && String(patch.preferred_date) !== String(current.preferred_date ?? "")) {
+    updateRow.venue_price_eur = effectiveVenuePrice(String(current.event_id ?? ""), String(patch.preferred_date));
+  }
 
   // Weekday promo follows the DATE. When the customer moves the event to a
   // different date, recompute the campaign discount - otherwise booking a

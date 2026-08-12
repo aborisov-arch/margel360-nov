@@ -10,6 +10,7 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import { loadCatalog, repriceAddons, repriceDrinks } from "../_shared/catalog.ts";
+import { effectiveVenuePrice } from "../_shared/seasonal-pricing.ts";
 
 const SUPABASE_URL    = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -173,11 +174,20 @@ serve(async (req) => {
   const diff = diffEnquiry(current, { ...current, ...patch });
   if (!diff.length) return json({ enquiry: current, diff: [] });
 
-  const updateRow = {
+  const updateRow: Record<string, unknown> = {
     ...patch,
     last_edited_at: new Date().toISOString(),
     edited_by_admin: user.email ?? user.id,
   };
+
+  // The venue price follows the DATE (seasonal calendar) - re-stamp it
+  // whenever the date changes. Event type is not editable, so current.event_id
+  // is authoritative.
+  // Only on a real date change - the edit page sends preferred_date on every save, and an unchanged date must never re-price a legacy (NULL-stamp) booking.
+  if ("preferred_date" in patch && String(patch.preferred_date) !== String(current.preferred_date ?? "")) {
+    updateRow.venue_price_eur = effectiveVenuePrice(String(current.event_id ?? ""), String(patch.preferred_date));
+  }
+
   const { data: updated, error: upErr } = await sbAdmin
     .from("enquiries").update(updateRow).eq("id", id).select("*").single();
   if (upErr) { console.error(upErr); return json({ error: "server_error" }, 500); }

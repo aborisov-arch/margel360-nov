@@ -114,7 +114,9 @@ function loadPdfMake() {
 // Compute the priced line items + totals from the enquiry.
 function computeOfferBreakdown(enquiry) {
   const cfg = PDF_EVENT_CONFIG[enquiry.event_id] || null;
-  const venue = cfg ? cfg.price : 0;
+  // Stamped effective venue price (seasonal calendar) with legacy fallback
+  // for pre-stamp rows (enquiry.venue_price_eur is NULL).
+  const venue = enquiry.venue_price_eur != null ? Number(enquiry.venue_price_eur) : (cfg ? cfg.price : 0);
   const guests = Number(enquiry.guests) || 0;
   const extraGuests = Math.max(0, guests - PDF_VENUE_MIN_GUESTS);
   const extraGuestsCost = extraGuests * PDF_EXTRA_GUEST_FEE_EUR;

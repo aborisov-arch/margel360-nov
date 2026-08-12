@@ -18,6 +18,7 @@ import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import { weekdayPromoPercent } from "../_shared/weekday-promo.ts";
 import { loadCatalog, repriceAddons, repriceDrinks } from "../_shared/catalog.ts";
+import { effectiveVenuePrice } from "../_shared/seasonal-pricing.ts";
 
 const SUPABASE_URL    = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -324,6 +325,8 @@ serve(async (req) => {
     payment_method, notes: notes_raw,
     marketing_consent, lang,
     partner_interest,
+    // Server-authoritative venue price for the chosen date (seasonal calendar).
+    venue_price_eur: effectiveVenuePrice(event_id, preferred_date),
   };
 
   const { data: inserted, error: insErr } = await sb

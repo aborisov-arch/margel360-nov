@@ -32,7 +32,9 @@ function estimateTotal(e) {
   // Mirrors the reservation wizard / email math: addons store the LINE price
   // (qty already folded in), drinks store unit price_eur × qty, venue covers
   // 40 guests (+€15 each above), discount applies to the venue base only.
-  const base = EVENT_BASE[e.event_id] || 0;
+  // Stamped effective venue price (seasonal calendar) with legacy fallback
+  // for pre-stamp rows (e.venue_price_eur is NULL).
+  const base = e.venue_price_eur != null ? Number(e.venue_price_eur) : (EVENT_BASE[e.event_id] || 0);
   const extraGuests = Math.max(0, (Number(e.guests) || 0) - 40);
   const addons = Array.isArray(e.addons) ? e.addons.reduce((s, a) => s + (Number(a.price) || 0), 0) : 0;
   const drinks = Array.isArray(e.drinks) ? e.drinks.reduce((s, d) => s + (Number(d.price_eur) || 0) * (Number(d.qty) || 0), 0) : 0;
