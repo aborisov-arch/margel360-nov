@@ -183,11 +183,16 @@ function renderStep2VariantPicker() {
   const l = getLang();
   const wrap = document.getElementById('step2-variant-wrap');
   const errMsg = document.getElementById('err-variant-msg');
+  // The side panel of the step-2 scheduler card: shown only when there is a
+  // variant/arrival picker to put in it, so the calendar can take the full
+  // card width otherwise.
+  const side = document.getElementById('scheduler-side');
   if (!wrap) return;
 
   const ev = booking.event;
   if (!ev) {
     wrap.setAttribute('style', 'display:none');
+    if (side) side.hidden = true;
     if (errMsg) errMsg.setAttribute('style', 'display:none');
     return;
   }
@@ -196,6 +201,7 @@ function renderStep2VariantPicker() {
   // a chip picker instead of the variant grid.
   if (ev.id === 'evening') {
     wrap.setAttribute('style', 'display:block');
+    if (side) side.hidden = false;
     wrap.innerHTML = '';
 
     const lbl = document.createElement('p'); lbl.className = 'variant-label';
@@ -224,11 +230,13 @@ function renderStep2VariantPicker() {
 
   if (!ev.variants) {
     wrap.setAttribute('style', 'display:none');
+    if (side) side.hidden = true;
     if (errMsg) errMsg.setAttribute('style', 'display:none');
     return;
   }
 
   wrap.setAttribute('style', 'display:block');
+  if (side) side.hidden = false;
   wrap.innerHTML = '';
 
   const lbl = document.createElement('p'); lbl.className = 'variant-label';
@@ -320,6 +328,7 @@ function setupStep2() {
       dateFormat: 'd/m/Y',
       minDate: 'today',
       disableMobile: true,
+      inline: true,
       disable: _occupiedDates,
       onDayCreate(_dObj, _dStr, _fp, dayElem) {
         // Tag occupied days so the CSS tooltip "Заета Дата" shows on hover
@@ -330,7 +339,23 @@ function setupStep2() {
           od.getMonth()    === d.getMonth() &&
           od.getDate()     === d.getDate()
         );
-        if (isOccupied) dayElem.classList.add('occupied-date');
+        if (isOccupied) { dayElem.classList.add('occupied-date'); return; }
+        if (dayElem.classList.contains('flatpickr-disabled')) return;
+        // Weekday promo badge: mark bookable Mon-Thu days up to 31 Aug with
+        // the discount right on the calendar (weekdayPromoPercent already
+        // returns 0 for past dates and after the promo ends).
+        const dmy = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+        const pct = weekdayPromoPercent(dmy);
+        if (pct > 0) {
+          dayElem.classList.add('promo-day');
+          const badge = document.createElement('span');
+          badge.className = 'promo-day-badge';
+          badge.textContent = `-${pct}%`;
+          badge.setAttribute('aria-hidden', 'true');
+          dayElem.appendChild(badge);
+          const promoTxt = lang === 'bg' ? ` — −${pct}% отстъпка от наема` : ` — −${pct}% off venue hire`;
+          dayElem.setAttribute('aria-label', (dayElem.getAttribute('aria-label') || dmy) + promoTxt);
+        }
       },
       onChange(_selectedDates, dateStr) {
         booking.date = dateStr;

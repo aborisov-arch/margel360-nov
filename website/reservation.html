@@ -26,8 +26,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css?v=8">
-  <link rel="stylesheet" href="css/reservation.css?v=8">
+  <!-- flatpickr css must load BEFORE reservation.css so the calendar re-theme
+       (equal-specificity selectors) wins by source order -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" integrity="sha384-RkASv+6KfBMW9eknReJIJ6b3UnjKOKC5bOUaNgIY778NFbQ8MtWq9Lr/khUgqtTt" crossorigin="anonymous">
+  <link rel="stylesheet" href="css/reservation.css?v=9">
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -160,15 +162,19 @@
         <div class="wizard-step" id="step-1">
           <h2 class="step-heading" data-i18n="s2_title">Изберете дата и час</h2>
           <div class="datetime-wrap">
-            <div class="form-group">
-              <label for="res-date" data-i18n="res_date">Предпочитана дата</label>
-              <input type="text" id="res-date" name="date" readonly placeholder="дд/мм/гггг" aria-describedby="err-date-msg">
-              <span class="form-error" id="err-date-msg" role="alert" data-i18n="err_date">Моля изберете дата.</span>
-              <p class="weekday-promo-hint" id="weekday-promo-hint" hidden data-i18n="promo_date_hint">✓ Тази дата е с −20% отстъпка от наема на залата — делнична промоция до 31 август.</p>
-              <p class="weekday-promo-hint" id="seasonal-price-hint" hidden></p>
+            <div class="scheduler-card">
+              <div class="scheduler-panel scheduler-panel--cal form-group">
+                <label for="res-date" data-i18n="res_date">Предпочитана дата</label>
+                <input type="text" id="res-date" name="date" readonly placeholder="дд/мм/гггг" aria-describedby="err-date-msg">
+                <span class="form-error" id="err-date-msg" role="alert" data-i18n="err_date">Моля изберете дата.</span>
+                <p class="weekday-promo-hint" id="weekday-promo-hint" hidden data-i18n="promo_date_hint">✓ Тази дата е с −20% отстъпка от наема на залата — делнична промоция до 31 август.</p>
+                <p class="weekday-promo-hint" id="seasonal-price-hint" hidden></p>
+              </div>
+              <div class="scheduler-panel scheduler-panel--side" id="scheduler-side" hidden>
+                <div id="step2-variant-wrap" class="step2-variant-wrap" style="display:none"></div>
+                <span class="form-error" id="err-variant-msg" role="alert" style="display:none" data-i18n="err_variant">Моля изберете опция.</span>
+              </div>
             </div>
-            <div id="step2-variant-wrap" class="step2-variant-wrap" style="display:none"></div>
-            <span class="form-error" id="err-variant-msg" role="alert" style="display:none" data-i18n="err_variant">Моля изберете опция.</span>
             <div class="selected-event-preview" id="event-preview"></div>
           </div>
           <div class="wizard-nav">
@@ -397,7 +403,7 @@
   <script src="js/reservation-catalog.js?v=5"></script>
   <script src="js/catalog-db.js?v=1"></script>
   <script src="js/seasonal-pricing.js?v=1"></script>
-  <script src="js/reservation.js?v=27"></script>
+  <script src="js/reservation.js?v=28"></script>
   <a href="tel:+359888100042" class="fab-phone" aria-label="Обадете се"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg></a>
   <script src="js/cookie-consent.js?v=4" defer></script>
 </body>
