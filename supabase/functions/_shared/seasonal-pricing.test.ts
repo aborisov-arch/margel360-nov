@@ -28,7 +28,7 @@ Deno.test("outside seasons: null override, base price applies", () => {
   assertEquals(seasonalVenuePrice("30/11/2026"), null);
   assertEquals(seasonalVenuePrice("01/01/2027"), null);
   assertEquals(seasonalVenuePrice("15/07/2027"), null);
-  assertEquals(effectiveVenuePrice("evening", "15/07/2027"), 1280);
+  assertEquals(effectiveVenuePrice("evening", "15/07/2027"), 1350);
   assertEquals(effectiveVenuePrice("corp4", "30/11/2026"), 330);
   assertEquals(effectiveVenuePrice("corp8", "30/11/2026"), 440);
   assertEquals(effectiveVenuePrice("bday_day", "30/11/2026"), 700);
@@ -39,8 +39,8 @@ Deno.test("outside seasons: null override, base price applies", () => {
 Deno.test("malformed input degrades to base / 0", () => {
   assertEquals(seasonalVenuePrice("2026-12-05"), null);
   assertEquals(seasonalVenuePrice(""), null);
-  assertEquals(effectiveVenuePrice("evening", null), 1280);
-  assertEquals(effectiveVenuePrice("evening", "bogus"), 1280);
+  assertEquals(effectiveVenuePrice("evening", null), 1350);
+  assertEquals(effectiveVenuePrice("evening", "bogus"), 1350);
   assertEquals(effectiveVenuePrice("unknown_event", "15/07/2027"), 0);
   assertEquals(effectiveVenuePrice(null, "15/07/2027"), 0);
 });

@@ -9,7 +9,7 @@
 // EFFECTIVE price this module returns.
 
 export const VENUE_BASE_EUR: Record<string, number> = {
-  evening: 1280,
+  evening: 1350,
   corp4: 330,
   corp8: 440,
   bday_day: 700,

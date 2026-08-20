@@ -3,7 +3,7 @@
 // picker page, plus a `detailUrl` pointing to its dedicated sub-page. The
 // sub-page has a "Резервирай" CTA that links back to /reservation?event=ID.
 const eventTypes = [
-  { id:'evening',   title_bg:'Вечерно събитие',       title_en:'Evening Event',      desc_bg:'За приятели, рождени дни и специален повод.', desc_en:'For friends, birthdays and special occasions.',           duration_bg:'след 19:00',    duration_en:'after 7:00 PM',   price_eur:1280, img:'assets/images/event-evening.jpg',   included:['sound','lighting','bar','fridge','parking','wc','elevator','furniture','dance','terrace'] },
+  { id:'evening',   title_bg:'Вечерно събитие',       title_en:'Evening Event',      desc_bg:'За приятели, рождени дни и специален повод.', desc_en:'For friends, birthdays and special occasions.',           duration_bg:'след 19:00',    duration_en:'after 7:00 PM',   price_eur:1350, img:'assets/images/event-evening.jpg',   included:['sound','lighting','bar','fridge','parking','wc','elevator','furniture','dance','terrace'] },
   {
     id:'corporate', title_bg:'Корпоративно събитие',  title_en:'Corporate Event',    desc_bg:'Тиймбилдинг, презентации и работни срещи.',     desc_en:'Team-building, presentations and corporate meetings.', img:'assets/images/event-corporate.jpg',
     variants: [

@@ -33,8 +33,8 @@ const faqs = [
     a_bg: 'Да. Разгледайте нашата галерия на margel360.bg/gallery.html или Facebook страницата ни facebook.com/margel360 за снимки от сватби, рождени дни и корпоративни събития.',
     a_en: 'Yes! Browse the gallery at margel360.bg/gallery.html or our Facebook page facebook.com/margel360/ for photos of weddings, birthdays and corporate events.' },
   { q_bg: 'Какви са цените за наем на залата?', q_en: 'What are the rental prices?',
-    a_bg: 'Цените за наем са: корпоративно събитие 4 часа - €330; корпоративно 8 часа - €440; детски рожден ден (дневен) - €700; детски рожден ден (вечерен) - €970; вечерно тържество - €1280; сватба - €1500. Цените са ориентировъчни - за индивидуална оферта се свържете с нас.',
-    a_en: 'Margel 360° pricing: corporate 4h - €330, corporate 8h - €440, children\'s birthday daytime - €700, evening - €970, evening event - €1280, wedding - €1500.' },
+    a_bg: 'Цените за наем са: корпоративно събитие 4 часа - €330; корпоративно 8 часа - €440; детски рожден ден (дневен) - €700; детски рожден ден (вечерен) - €970; вечерно тържество - €1350; сватба - €1500. Цените са ориентировъчни - за индивидуална оферта се свържете с нас.',
+    a_en: 'Margel 360° pricing: corporate 4h - €330, corporate 8h - €440, children\'s birthday daytime - €700, evening - €970, evening event - €1350, wedding - €1500.' },
 ];
 
 const lang = localStorage.getItem('margel_lang') || 'bg';

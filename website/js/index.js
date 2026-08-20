@@ -12,8 +12,8 @@ const events = [
     desc_en: 'Evening celebration from 19:00 at Margel 360° - an unforgettable night with friends and family.',
     hours_bg: '5 часа',
     hours_en: '5 hours',
-    price_bg: '€1280',
-    price_en: '€1280',
+    price_bg: '€1350',
+    price_en: '€1350',
     img: 'assets/images/event-evening.jpg',
   },
   {
