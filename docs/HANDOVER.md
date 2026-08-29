@@ -40,7 +40,7 @@ Two more seasonal jobs POST to `send-team-digest` (daily morning team digest), r
 - `send-team-digest-summer` — `0 6 * 4-10 *` (06:00 UTC = 09:00 Sofia, Apr–Oct)
 - `send-team-digest-winter` — `0 7 * 1-3,11-12 *` (07:00 UTC = 09:00 Sofia, Nov–Mar)
 
-Two more seasonal jobs POST to `send-event-reminders` (day-before + deposit-due customer emails), reusing `team_digest_cron_secret`:
+Two more seasonal jobs POST to `send-event-reminders` (day-before + deposit-due customer emails + the **add-on reminder drip** — every 3 days after a confirmed booking, max 5, never in the last 2 days; extends `token_expires_at` to the event day so the edit link works), reusing `team_digest_cron_secret`:
 - `send-event-reminders-summer` — `0 7 * 4-10 *` (07:00 UTC = 10:00 Sofia, Apr–Oct)
 - `send-event-reminders-winter` — `0 8 * 1-3,11-12 *` (08:00 UTC = 10:00 Sofia, Nov–Mar)
 
@@ -48,7 +48,7 @@ Three non-seasonal jobs:
 - `archive-stale-enquiries` — `0 5 * * 1` (Mondays): pure-SQL `public.archive_stale_enquiries()` — moves `lost` >90 days old and `completed` >90 days past event date to `archived`.
 - `send-weekly-kpi` — `0 7 * * 1` (Mondays): POSTs to `send-weekly-kpi` (reuses `team_digest_cron_secret`) — past-7-days numbers (new enquiries by type, offers sent, events held, feedback averages) + live pipeline snapshot to the owners.
 - `send-marketing-export-monthly` — `0 6 1 * *` (1st of month): POSTs to `send-marketing-export` (reuses `team_digest_cron_secret`) — emails owners a CSV of marketing-consenting customers; skips silently when there are none.
-- `send-ops-lifecycle` — `0 6 * * *` (daily, ~08:00–09:00 Sofia): POSTs to `send-ops-lifecycle` (reuses `team_digest_cron_secret`) — team run sheet for today's events + pre-event upsell (confirmed, 10–14 days out, thin extras) + ~1-year anniversary win-back to consenting past customers. `dry_run` supported.
+- `send-ops-lifecycle` — `0 6 * * *` (daily, ~08:00–09:00 Sofia): POSTs to `send-ops-lifecycle` (reuses `team_digest_cron_secret`) — team run sheet for today's events + ~1-year anniversary win-back to consenting past customers. (The 10–14-day pre-event upsell was retired 2026-08-29 in favour of the add-on drip in `send-event-reminders`; `upsell_sent_at` stays in the table unused.) `dry_run` supported.
 
 Note: the feedback cron's function also does a **one-time re-ask** — if the first feedback email is 3–10 days old, nothing was submitted, and `feedback_resent_at` is null, it sends one reminder and stamps the flag.
 
@@ -75,7 +75,7 @@ Inspect with `select jobname, schedule from cron.job;`. These live only in the d
 | notify-enquiry (v10) | no | plain-text team email (requires X-Internal-Secret) |
 | send-feedback-request (v6) | no | cron-driven feedback emails (requires x-cron-secret) |
 | send-team-digest (v1) | no | cron-driven daily team digest to OWNER_EMAILS/TEAM_EMAIL (requires x-cron-secret = TEAM_DIGEST_CRON_SECRET) |
-| send-event-reminders (v1) | no | cron-driven customer reminders: day-before + deposit-due (reuses x-cron-secret = TEAM_DIGEST_CRON_SECRET; POST {"dry_run":true} to preview) |
+| send-event-reminders (v2) | no | cron-driven customer reminders: day-before + deposit-due + add-on drip every 3 days after a confirmed booking (`_shared/addon-reminder.ts`, stamps `addons_reminder_count` / `addons_reminder_last_sent_at`, cap 5). Reuses x-cron-secret = TEAM_DIGEST_CRON_SECRET; POST {"dry_run":true} to preview; POST {"preview":{"enquiry_id":"…","to":"you@margel.info"}} emails one rendered add-on reminder to `to` without stamping |
 | send-offer (v1) | **yes** | admin one-click offer: emails the customer a branded cover note + the client-built offer PDF, stamps offer_sent_at. Own email-allowlist check on top of JWT |
 | send-marketing-export (v1) | no | monthly cron: CSV of marketing-consenting customers emailed to owners (x-cron-secret = TEAM_DIGEST_CRON_SECRET; skips when empty) |
 | send-weekly-kpi (v1) | no | Monday cron: weekly KPI report (funnel, NPS trend, testimonials, sources) to owners (x-cron-secret = TEAM_DIGEST_CRON_SECRET) |

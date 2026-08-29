@@ -2,14 +2,14 @@ import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import { json, preflight } from "../_shared/cors.ts";
 
-// Cron-triggered each morning (Europe/Sofia). Three operations/retention
+// Cron-triggered each morning (Europe/Sofia). Two operations/retention
 // passes, each guarded by its own one-shot stamp:
 //   A) Run sheet      — TEAM email the morning of each event (full detail).
-//   B) Pre-event upsell — customer with a confirmed event 10-14 days out and
-//      thin extras (no drinks / ≤1 paid addon) gets a "complete your event"
-//      nudge to the site.
 //   C) Anniversary win-back — past customer ~1 year on, with marketing
 //      consent, invited back.
+// (B, the 10–14-day "complete your event" upsell, was retired 2026-08-29 in
+// favour of the add-on drip in send-event-reminders. The upsell_sent_at
+// column stays in the table, unused.)
 // Manual testing: POST {"dry_run": true} to preview without sending/stamping.
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -23,7 +23,6 @@ const TEAM_EMAIL   = Deno.env.get("TEAM_EMAIL") ?? "";
 // Shared internal cron secret (Vault: team_digest_cron_secret).
 const CRON_SECRET  = Deno.env.get("TEAM_DIGEST_CRON_SECRET") ?? "";
 
-const UPSELL_MIN_DAYS = 10, UPSELL_MAX_DAYS = 14;
 // Anniversary window: fire once when the event is ~1 year ago (±7 days).
 const ANNIV_MIN_DAYS = 358, ANNIV_MAX_DAYS = 372;
 
@@ -78,7 +77,7 @@ type Enquiry = {
   preferred_date: string | null; arrival_time: string | null; guests: number | null;
   pipeline_status: string | null; marketing_consent: boolean | null;
   addons: { id: string; name?: string }[] | null; drinks: { id: string; qty?: number }[] | null;
-  run_sheet_sent_at: string | null; upsell_sent_at: string | null; winback_sent_at: string | null;
+  run_sheet_sent_at: string | null; winback_sent_at: string | null;
 };
 
 function runSheetHtml(e: Enquiry): string {
@@ -108,9 +107,9 @@ serve(async (req) => {
   if (req.method === "POST") { try { dryRun = !!(await req.json())?.dry_run; } catch { /* empty ok */ } }
 
   const today = sofiaToday();
-  const COLS = "id, full_name, email, event_type, preferred_date, arrival_time, guests, pipeline_status, marketing_consent, addons, drinks, run_sheet_sent_at, upsell_sent_at, winback_sent_at";
+  const COLS = "id, full_name, email, event_type, preferred_date, arrival_time, guests, pipeline_status, marketing_consent, addons, drinks, run_sheet_sent_at, winback_sent_at";
 
-  // Pull confirmed/completed (run sheet + upsell + anniversary all live here).
+  // Pull confirmed/completed (run sheet + anniversary both live here).
   const { data, error } = await sb.from("enquiries")
     .select(COLS).in("pipeline_status", ["confirmed", "completed"]).limit(2000);
   if (error) { console.error("query failed:", error); return json({ error: "query_failed" }, 500); }
@@ -121,18 +120,6 @@ serve(async (req) => {
     if (e.run_sheet_sent_at || !e.preferred_date) return false;
     const d = parsePreferredDate(e.preferred_date);
     return !!d && daysBetween(d, today) === 0;
-  });
-
-  // B) Upsell — confirmed, 10-14 days out, thin extras, not yet upsold, email present.
-  const upsell = all.filter(e => {
-    if (e.upsell_sent_at || (e.pipeline_status ?? "") !== "confirmed" || !e.email) return false;
-    const d = parsePreferredDate(e.preferred_date ?? "");
-    if (!d) return false;
-    const diff = daysBetween(d, today);
-    if (diff < UPSELL_MIN_DAYS || diff > UPSELL_MAX_DAYS) return false;
-    const paidAddons = (Array.isArray(e.addons) ? e.addons : []).filter(a => a.id !== "cleaning").length;
-    const drinkCount = (Array.isArray(e.drinks) ? e.drinks : []).length;
-    return drinkCount === 0 || paidAddons <= 1;
   });
 
   // C) Anniversary win-back — ~1 year on, marketing consent, not yet sent.
@@ -148,7 +135,6 @@ serve(async (req) => {
     return json({
       dry_run: true, scanned: all.length,
       run_sheet: runSheet.map(e => ({ id: e.id, name: e.full_name, date: e.preferred_date })),
-      upsell: upsell.map(e => ({ id: e.id, name: e.full_name, date: e.preferred_date, email: e.email })),
       winback: winback.map(e => ({ id: e.id, name: e.full_name, date: e.preferred_date, email: e.email })),
     });
   }
@@ -167,26 +153,6 @@ serve(async (req) => {
         await sb.from("enquiries").update({ run_sheet_sent_at: new Date().toISOString() }).in("id", runSheet.map(e => e.id));
         runSheetSent = runSheet.length;
       } catch (err) { console.error("run-sheet send failed:", err); }
-    }
-  }
-
-  // B) Upsell (stamp-first, roll back on failure).
-  let upsellSent = 0;
-  for (const e of upsell) {
-    const { error: stampErr } = await sb.from("enquiries").update({ upsell_sent_at: new Date().toISOString() }).eq("id", e.id);
-    if (stampErr) { console.error(`upsell stamp failed for ${e.id}:`, stampErr); continue; }
-    try {
-      const first = (e.full_name || "").split(" ")[0] || e.full_name || "";
-      const subject = `Допълнете събитието си · Маргел 360°`;
-      const body = `<h1 style="margin:0 0 12px;font:400 32px/1.15 ${SERIF}">Нека го направим <em style="font-style:italic;color:#B9894A">още по-добро</em></h1>
-        <p style="margin:0 0 20px;font:16px/1.55 ${SANS};color:#2A2620">Здравейте, ${esc(first)}. Вашето събитие наближава! Ако желаете да добавите напитки, украса, DJ или фотограф, разгледайте опциите ни:</p>
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px"><tr><td><a href="${SITE_URL}/services.html" style="display:inline-block;padding:14px 28px;background:#1A1815;color:#F6F1E8;font:600 12px/1 ${SANS};letter-spacing:0.14em;text-transform:uppercase;text-decoration:none">Вижте услугите</a></td></tr></table>
-        <p style="margin:0;font:13px/1.6 ${SANS};color:#7A7568">Просто отговорете на този имейл или ни пишете на <a href="mailto:360@margel.info" style="color:#B9894A">360@margel.info</a>, за да добавим нещо.</p>`;
-      await sendResend(e.email!, subject, shell(subject, body));
-      upsellSent++;
-    } catch (err) {
-      console.error(`upsell send failed for ${e.id}, rolling back:`, err);
-      await sb.from("enquiries").update({ upsell_sent_at: null }).eq("id", e.id);
     }
   }
 
@@ -213,7 +179,6 @@ serve(async (req) => {
   return json({
     scanned: all.length,
     run_sheet: { eligible: runSheet.length, sent: runSheetSent },
-    upsell: { eligible: upsell.length, sent: upsellSent },
     winback: { eligible: winback.length, sent: winbackSent },
   });
 });

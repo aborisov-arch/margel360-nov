@@ -1,15 +1,24 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import { json, preflight } from "../_shared/cors.ts";
+import { ADDON_DRIP, addonDripDecision, bookingAddonLines, daysBetween, isInternalRecipient, missingAddons, parsePreferredDate, sofiaDay, tokenExpiryFor, type ReminderAddon } from "../_shared/addon-reminder.ts";
+import { renderAddonReminder } from "../_shared/addon-reminder-email.ts";
 
-// Cron-triggered each morning (Europe/Sofia). Sends two customer-facing
-// reminders, each guarded by its own idempotency flag so it goes out once:
+// Cron-triggered each morning (Europe/Sofia). Sends customer-facing reminders,
+// each guarded by its own idempotency stamp:
 //   A) Day-before reminder   — confirmed/completed events happening tomorrow.
 //   B) Deposit-due reminder  — confirmed events 2–14 days out with no deposit
 //      recorded in financial_events.
+//   C) Add-on drip           — every ADDON_DRIP.intervalDays days after a
+//      confirmed booking (max ADDON_DRIP.maxSends, never in the last 2 days):
+//      "did you miss anything?" with the add-ons they have / haven't picked
+//      and a working edit link (token_expires_at is extended to the event day).
+//      Spec: docs/superpowers/specs/2026-08-29-addon-reminder-drip-design.md
 //
 // Manual testing: POST {"dry_run": true} to see who WOULD be emailed without
-// sending or marking anything.
+// sending or marking anything. POST {"preview": {"enquiry_id": "...", "to":
+// "you@margel.info"}} renders the add-on reminder for that enquiry and sends
+// it only to `to` — no stamps, no token change.
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -42,23 +51,8 @@ function esc(s: unknown): string {
 function fmtDateBg(stored: string): string {
   return String(stored ?? "").replaceAll("/", ".");
 }
-function parsePreferredDate(s: string): Date | null {
-  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(s ?? "");
-  if (!m) return null;
-  const [, d, mo, y] = m;
-  return new Date(`${y}-${mo}-${d}T00:00:00+02:00`);
-}
-function sofiaToday(): Date {
-  const fmt = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Sofia", year: "numeric", month: "2-digit", day: "2-digit" });
-  const parts = fmt.formatToParts(new Date());
-  const y = parts.find(p => p.type === "year")!.value;
-  const mo = parts.find(p => p.type === "month")!.value;
-  const d = parts.find(p => p.type === "day")!.value;
-  return new Date(`${y}-${mo}-${d}T00:00:00+02:00`);
-}
-function daysBetween(a: Date, b: Date): number {
-  return Math.round((a.getTime() - b.getTime()) / 86_400_000);
-}
+// Sofia calendar-day helpers live in _shared/addon-reminder.ts (tested there).
+const sofiaToday = (): Date => sofiaDay(new Date());
 
 async function sendResend(to: string, subject: string, html: string) {
   const r = await fetch("https://api.resend.com/emails", {
@@ -83,7 +77,45 @@ type Enquiry = {
   pipeline_status: string | null;
   reminder_sent_at: string | null;
   deposit_reminder_sent_at: string | null;
+  // add-on drip (pass C)
+  created_at: string;
+  lang: string | null;
+  addons: { id: string; name?: string | null; price: number; qty?: number }[] | null;
+  drinks: { id: string; qty?: number }[] | null;
+  edit_token: string | null;
+  token_expires_at: string | null;
+  edit_locked: boolean | null;
+  addons_reminder_count: number | null;
+  addons_reminder_last_sent_at: string | null;
 };
+
+const ENQUIRY_COLS = "id, full_name, email, event_type, preferred_date, arrival_time, time_of_day, pipeline_status, reminder_sent_at, deposit_reminder_sent_at, created_at, lang, addons, drinks, edit_token, token_expires_at, edit_locked, addons_reminder_count, addons_reminder_last_sent_at";
+
+async function loadReminderCatalog(): Promise<ReminderAddon[]> {
+  const { data, error } = await sb.from("addon_services")
+    .select("id, name_bg, name_en, price_eur, hint_bg, hint_en, free_until, max_qty, active, sort_order");
+  if (error) throw new Error(`addon catalog load failed: ${error.message}`);
+  return (data ?? []).map((r: ReminderAddon) => ({ ...r, price_eur: Number(r.price_eur), sort_order: Number(r.sort_order) }));
+}
+
+function buildAddonReminder(e: Enquiry, catalog: ReminderAddon[], daysToEvent: number) {
+  const lang: "bg" | "en" = e.lang === "en" ? "en" : "bg";
+  const addons = Array.isArray(e.addons) ? e.addons : [];
+  const drinks = Array.isArray(e.drinks) ? e.drinks : [];
+  const missing = missingAddons(addons, catalog);
+  const rendered = renderAddonReminder({
+    firstName: (e.full_name || "").split(" ")[0] || e.full_name || "",
+    preferredDate: e.preferred_date ?? "",
+    daysToEvent,
+    lang,
+    siteUrl: SITE_URL,
+    editToken: !e.edit_locked && e.edit_token ? e.edit_token : null,
+    have: bookingAddonLines(addons, catalog, lang),
+    drinkCount: drinks.length,
+    missing,
+  });
+  return { ...rendered, missingCount: missing.length };
+}
 
 const SERIF = "Fraunces,Georgia,'Times New Roman',serif";
 const SANS  = "Manrope,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
@@ -156,14 +188,42 @@ serve(async (req) => {
   }
   if ((req.headers.get("x-cron-secret") ?? "") !== CRON_SECRET) return json({ error: "unauthorized" }, 401);
 
-  let dryRun = false;
+  // deno-lint-ignore no-explicit-any
+  let body: any = {};
   if (req.method === "POST") {
-    try { dryRun = !!(await req.json())?.dry_run; } catch { /* empty body ok */ }
+    try { body = (await req.json()) ?? {}; } catch { /* empty body ok */ }
+  }
+  const dryRun = !!body?.dry_run;
+
+  // Preview: render the add-on reminder for one enquiry and send it to `to`
+  // only. Nothing is stamped and the token is untouched. The email carries the
+  // customer's live edit link, so `to` must be a venue mailbox (fail closed)
+  // and every preview is logged.
+  if (body?.preview && typeof body.preview === "object") {
+    const { enquiry_id, to } = body.preview as { enquiry_id?: unknown; to?: unknown };
+    if (typeof enquiry_id !== "string" || typeof to !== "string") return json({ error: "bad_preview" }, 400);
+    if (!isInternalRecipient(to)) return json({ error: "preview_recipient_not_allowed" }, 403);
+    const { data: one, error: oneErr } = await sb.from("enquiries").select(ENQUIRY_COLS).eq("id", enquiry_id).maybeSingle();
+    if (oneErr) { console.error("preview query failed:", oneErr); return json({ error: "query_failed" }, 500); }
+    if (!one) return json({ error: "not_found" }, 404);
+    const e = one as Enquiry;
+    const decision = addonDripDecision(e, sofiaToday());
+    const eventDate = parsePreferredDate(e.preferred_date ?? "");
+    const daysToEvent = eventDate ? daysBetween(eventDate, sofiaToday()) : 0;
+    try {
+      const { subject, html, missingCount } = buildAddonReminder(e, await loadReminderCatalog(), daysToEvent);
+      await sendResend(to, `[PREVIEW] ${subject}`, html);
+      console.log(`addon-drip preview for enquiry ${enquiry_id} sent to ${to}`);
+      return json({ preview: true, sent_to: to, subject, missing: missingCount, decision });
+    } catch (err) {
+      console.error("preview failed:", err);
+      return json({ error: "preview_failed" }, 500);
+    }
   }
 
   const { data, error } = await sb
     .from("enquiries")
-    .select("id, full_name, email, event_type, preferred_date, arrival_time, time_of_day, pipeline_status, reminder_sent_at, deposit_reminder_sent_at")
+    .select(ENQUIRY_COLS)
     .in("pipeline_status", ["confirmed", "completed"])
     .order("created_at", { ascending: false })
     .limit(500);
@@ -210,6 +270,16 @@ serve(async (req) => {
       }
       depositDue = depositCandidates.filter(e => (depositByEnquiry.get(e.id) ?? 0) <= 0);
     }
+  }
+
+  // C) Add-on drip — see _shared/addon-reminder.ts for the rules.
+  const addonDrip = all
+    .map(e => ({ e, d: addonDripDecision(e, today) }))
+    .filter(x => x.d.send) as { e: Enquiry; d: { reminderNo: number; daysToEvent: number } }[];
+  let reminderCatalog: ReminderAddon[] = [];
+  if (addonDrip.length) {
+    try { reminderCatalog = await loadReminderCatalog(); }
+    catch (err) { console.error("addon catalog load failed (skipping add-on drip):", err); addonDrip.length = 0; }
   }
 
   // Expiring discount-code nudge — unredeemed codes lapsing within 7 days,
@@ -274,6 +344,11 @@ serve(async (req) => {
       scanned: all.length,
       day_before: dayBefore.map(e => ({ id: e.id, name: e.full_name, date: e.preferred_date, email: e.email })),
       deposit_due: depositDue.map(e => ({ id: e.id, name: e.full_name, date: e.preferred_date, email: e.email })),
+      addon_drip: addonDrip.map(({ e, d }) => ({
+        id: e.id, name: e.full_name, date: e.preferred_date, email: e.email, lang: e.lang,
+        reminder_no: d.reminderNo, of_max: ADDON_DRIP.maxSends, days_to_event: d.daysToEvent,
+        missing: missingAddons(Array.isArray(e.addons) ? e.addons : [], reminderCatalog).length,
+      })),
       expiring_codes: expiringCodes.map(c => ({ code: c.code, email: c.email, expires_at: c.expires_at })),
       offer_nudge: offerNudge.map(o => ({ id: o.id, name: o.full_name, date: o.preferred_date })),
       offer_expire: offerExpire.map(o => ({ id: o.id, name: o.full_name, date: o.preferred_date })),
@@ -312,6 +387,37 @@ serve(async (req) => {
     } catch (err) {
       console.error(`deposit-due send failed for ${e.id}, rolling back stamp:`, err);
       await sb.from("enquiries").update({ deposit_reminder_sent_at: null }).eq("id", e.id);
+    }
+  }
+
+  // C) Add-on drip. Stamp-first with an optimistic guard on the previous
+  // count (a concurrent run can't double-send), extend the edit token to the
+  // event day in the same update, roll the stamp back on send failure (the
+  // token extension is kept — harmless).
+  let sentAddonDrip = 0;
+  for (const { e, d } of addonDrip) {
+    const prevCount = e.addons_reminder_count ?? 0;
+    const prevLast = e.addons_reminder_last_sent_at;
+    const eventDate = parsePreferredDate(e.preferred_date ?? "")!;
+    const { data: stamped, error: stampErr } = await sb.from("enquiries")
+      .update({
+        addons_reminder_count: prevCount + 1,
+        addons_reminder_last_sent_at: new Date().toISOString(),
+        token_expires_at: tokenExpiryFor(e.token_expires_at, eventDate),
+      })
+      .eq("id", e.id).eq("addons_reminder_count", prevCount)
+      .select("id").maybeSingle();
+    if (stampErr) { console.error(`addon-drip stamp failed for ${e.id}:`, stampErr); continue; }
+    if (!stamped) continue; // another run got there first
+    try {
+      const { subject, html } = buildAddonReminder(e, reminderCatalog, d.daysToEvent);
+      await sendResend(e.email!, subject, html);
+      sentAddonDrip++;
+    } catch (err) {
+      console.error(`addon-drip send failed for ${e.id}, rolling back stamp:`, err);
+      await sb.from("enquiries")
+        .update({ addons_reminder_count: prevCount, addons_reminder_last_sent_at: prevLast })
+        .eq("id", e.id);
     }
   }
 
@@ -368,6 +474,7 @@ serve(async (req) => {
     scanned: all.length,
     day_before: { eligible: dayBefore.length, sent: sentDayBefore },
     deposit_due: { eligible: depositDue.length, sent: sentDeposit },
+    addon_drip: { eligible: addonDrip.length, sent: sentAddonDrip },
     code_nudge: { eligible: expiringCodes.length, sent: sentCodes },
     offer_nudge: { eligible: offerNudge.length, sent: sentOfferNudge },
     offer_expire: { eligible: offerExpire.length, flipped: flippedLost },

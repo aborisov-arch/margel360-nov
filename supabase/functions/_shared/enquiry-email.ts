@@ -145,7 +145,7 @@ const ADDON_BGN_PRICES: Record<string, number> = {
   carpet_l: 148, candles_h: 100, numbers: 68,
 };
 
-function addonPriceEur(id: string | undefined, price: number): number {
+export function addonPriceEur(id: string | undefined, price: number): number {
   const oldBgn = id ? ADDON_BGN_PRICES[id] : undefined;
   return oldBgn != null && price === oldBgn ? price / 1.95583 : price;
 }
