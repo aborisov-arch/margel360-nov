@@ -152,6 +152,7 @@ Deno.test("render (bg): subject, current items, missing items with prices, edit 
   assertStringIncludes(html, "Професионален фотограф");
   assertStringIncludes(html, "€5.00 / бр.");
   assertStringIncludes(html, "https://margel360.bg/edit.html?token=abc-123");
+  assertStringIncludes(html, "Добави или премахни услуги");
 });
 
 Deno.test("render (en): english copy and catalog names", () => {
@@ -160,6 +161,7 @@ Deno.test("render (en): english copy and catalog names", () => {
   assertStringIncludes(html, "Hello, Maria");
   assertStringIncludes(html, "Photographer 2h");
   assertStringIncludes(html, "€5.00 / pc");
+  assertStringIncludes(html, "Add or remove services");
   assert(!html.includes("Здравейте"));
 });
 
@@ -191,4 +193,12 @@ Deno.test("isInternalRecipient: only @margel.info mailboxes may receive previews
   assertEquals(isInternalRecipient("x@margel.info.evil.com"), false);
   assertEquals(isInternalRecipient("margel.info"), false);
   assertEquals(isInternalRecipient(""), false);
+});
+
+Deno.test("render: manager phone is a tap-to-call link in both languages, also when locked", () => {
+  for (const over of [{}, { lang: "en" as const }, { editToken: null }]) {
+    const { html } = renderAddonReminder(renderInput(over));
+    assertStringIncludes(html, 'href="tel:+359888100042"');
+    assertStringIncludes(html, "+359 888 100 042");
+  }
 });

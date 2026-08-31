@@ -15,6 +15,10 @@ export type ReminderInput = {
   missing: ReminderAddon[];
 };
 
+const MANAGER_PHONE_TEL = "+359888100042";
+const MANAGER_PHONE_DISPLAY = "+359 888 100 042";
+const PHONE_LINK = `<a href="tel:${MANAGER_PHONE_TEL}" style="color:#B9894A;text-decoration:none;white-space:nowrap">${MANAGER_PHONE_DISPLAY}</a>`;
+
 const SERIF = "Fraunces,Georgia,'Times New Roman',serif";
 const SANS  = "Manrope,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
 
@@ -29,8 +33,8 @@ const T = {
     drinks: (n: number) => n > 0 ? `Напитки: ${n} ${n === 1 ? "позиция" : "позиции"}` : "Няма добавени напитки",
     missing: "Още не сте добавили",
     perPiece: " / бр.",
-    cta: "Прегледай и допълни резервацията",
-    footer: `Просто отговорете на този имейл или ни пишете на <a href="mailto:360@margel.info" style="color:#B9894A">360@margel.info</a> — ще добавим желаното вместо вас.`,
+    cta: "Добави или премахни услуги",
+    footer: `Отговорете на този имейл, пишете на <a href="mailto:360@margel.info" style="color:#B9894A">360@margel.info</a> или се обадете на управителя: ${PHONE_LINK} — ще добавим желаното вместо вас.`,
     address: "бул. Околовръстен път 155 · ет. 4 · София",
   },
   en: {
@@ -43,8 +47,8 @@ const T = {
     drinks: (n: number) => n > 0 ? `Drinks: ${n} ${n === 1 ? "item" : "items"}` : "No drinks added yet",
     missing: "Not added yet",
     perPiece: " / pc",
-    cta: "Review and complete your booking",
-    footer: `Simply reply to this email or write to <a href="mailto:360@margel.info" style="color:#B9894A">360@margel.info</a> and we will add it for you.`,
+    cta: "Add or remove services",
+    footer: `Reply to this email, write to <a href="mailto:360@margel.info" style="color:#B9894A">360@margel.info</a> or call our manager: ${PHONE_LINK} — and we will add it for you.`,
     address: "155 Okolovrasten Pat Blvd · floor 4 · Sofia",
   },
 } as const;
