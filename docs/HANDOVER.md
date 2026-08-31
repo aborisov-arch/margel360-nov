@@ -69,7 +69,7 @@ Inspect with `select jobname, schedule from cron.job;`. These live only in the d
 |---|---|---|
 | submit-enquiry (v11) | no | public booking: Turnstile + rate limits + validation + dedup + service-role insert + fires both emails |
 | get-enquiry-by-token (v10) | no | edit page load; scrubs internal fields |
-| update-enquiry-by-token (v14) | no | customer edits; validation via `_shared/validate.ts`, diff email, edit_count cap 10 |
+| update-enquiry-by-token (v14+) | no | customer edits; validation via `_shared/validate.ts`, diff email, edit_count cap 10. Admin-locked (confirmed) bookings are items-only: changes to date/guests → 403 `locked_field`; addons/drinks/phone/notes still save (`LOCKED_FROZEN_FIELDS` in `_shared/diff.ts`) |
 | update-enquiry-admin (v7) | **yes** | admin edits from edit.html?admin=1; own email-allowlist check on top |
 | send-enquiry-summary (v19) | no | owner plain-text + customer branded HTML (requires X-Internal-Secret) |
 | notify-enquiry (v10) | no | plain-text team email (requires X-Internal-Secret) |

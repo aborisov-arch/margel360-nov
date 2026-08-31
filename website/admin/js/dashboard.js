@@ -798,9 +798,11 @@ function bindTableHandlers() {
       const summaryRow = detailRow?.previousElementSibling;
 
       lockBtn.disabled = true;
-      // "Потвърди резервация" now means: lock customer edits AND flip the
+      // "Потвърди резервация" now means: lock the date + guest count AND flip the
       // pipeline stage to 'confirmed' (so the auto-block-date trigger
-      // marks the calendar). Undoing rolls the stage back to 'new' - we
+      // marks the calendar; customer can still edit addons/drinks/phone/notes
+      // - the edit page opens in items-only mode, see _shared/diff.ts).
+      // Undoing rolls the stage back to 'new' - we
       // don't try to remember the previous stage, since the explicit
       // pipeline dropdown above is the place to set anything finer.
       const patch = newLocked

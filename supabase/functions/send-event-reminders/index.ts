@@ -109,7 +109,9 @@ function buildAddonReminder(e: Enquiry, catalog: ReminderAddon[], daysToEvent: n
     daysToEvent,
     lang,
     siteUrl: SITE_URL,
-    editToken: !e.edit_locked && e.edit_token ? e.edit_token : null,
+    // Locked (confirmed) bookings open the edit page in items-only mode, so
+    // the button is valid for every booking with a token.
+    editToken: e.edit_token ?? null,
     have: bookingAddonLines(addons, catalog, lang),
     drinkCount: drinks.length,
     missing,

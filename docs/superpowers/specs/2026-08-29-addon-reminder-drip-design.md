@@ -109,3 +109,22 @@ BG vs EN, prices present). `deno check` on both edge functions.
    (upsell pass removed)
 4. `dry_run` → review who would be emailed; `preview` to Angel's inbox.
 5. Docs: HANDOVER.md §3 + function table, CLAUDE.md email pipeline.
+
+## Addendum (2026-08-31): items-only edit for locked bookings
+
+Go-live revealed every confirmed booking is `edit_locked = true` — the admin's
+„Потвърди резервация" button sets the lock together with `pipeline_status =
+'confirmed'` (dashboard.js). Under the original design the drip's button never
+rendered and the edit page refused the whole audience.
+
+Per Angel (asked for a working add/remove button for drip recipients):
+
+- `edit_locked` now means **items-only**, not closed: `get-enquiry-by-token`
+  returns the booking with `edit_scope: "items"`; `update-enquiry-by-token`
+  rejects real changes to `LOCKED_FROZEN_FIELDS` (`preferred_date`, `guests`)
+  with 403 `locked_field` and accepts addon/drink/phone/notes changes. A save
+  never clears an admin lock (`edit_locked: current || willLock`).
+- The lifetime `EDIT_COUNT_CAP` (10) still closes a booking completely
+  (403 `locked` on both endpoints, „Заключена резервация" page).
+- edit.js renders items-only mode: date + guests disabled with a notice and
+  the manager's phone; the reminder email now always includes the button.

@@ -1,5 +1,5 @@
 import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
-import { diffEnquiry } from "./diff.ts";
+import { diffEnquiry, EDIT_COUNT_CAP, lockedFieldChanges } from "./diff.ts";
 
 Deno.test("diffEnquiry: scalar change", () => {
   const before = { guests: 30, phone: "0888100042", notes: null };
@@ -37,4 +37,20 @@ Deno.test("diffEnquiry: preferred_date is whitelisted", () => {
   const d = diffEnquiry(before, after);
   assertEquals(d.length, 1);
   assertEquals(d[0].field, "preferred_date");
+});
+
+Deno.test("lockedFieldChanges: flags only real changes to frozen fields", () => {
+  const current = { preferred_date: "05/09/2026", guests: 40, phone: "+359881", notes: "", addons: [{ id: "dj" }], drinks: [] };
+  // items + notes + phone changes are fine; unchanged frozen fields sent along are fine
+  assertEquals(lockedFieldChanges({ preferred_date: "05/09/2026", guests: 40, phone: "+359999", notes: "hi", addons: [], drinks: [{ id: "cola", qty: 2 }] }, current), []);
+  // real changes to frozen fields are flagged
+  assertEquals(lockedFieldChanges({ preferred_date: "06/09/2026", guests: 40 }, current), ["preferred_date"]);
+  assertEquals(lockedFieldChanges({ guests: 45 }, current), ["guests"]);
+  assertEquals(lockedFieldChanges({ preferred_date: "06/09/2026", guests: 45 }, current), ["preferred_date", "guests"]);
+  // absent frozen fields are never flagged
+  assertEquals(lockedFieldChanges({ addons: [] }, current), []);
+});
+
+Deno.test("EDIT_COUNT_CAP stays 10 (edit.js copy + HANDOVER mention it)", () => {
+  assertEquals(EDIT_COUNT_CAP, 10);
 });

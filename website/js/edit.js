@@ -92,6 +92,7 @@ async function main() {
     if (!res.ok) { show('state-not-found'); return; }
 
     state.enquiry = body.enquiry;
+    state.editScope = body.edit_scope === 'items' ? 'items' : 'full';
     state.occupiedDates = await loadOccupiedDates();
     renderForm();
   } catch (err) {
@@ -173,7 +174,16 @@ function renderForm() {
   $('field-notes').value = e.notes ?? '';
   $('saved-email').textContent = e.email || 'вашия имейл';
 
-  initDatePicker();
+  if (state.editScope === 'items') {
+    // Confirmed booking: date + guests are team-only. No date picker - the
+    // stored value is shown in a disabled input and sent back unchanged.
+    $('field-date').value = e.preferred_date || '';
+    $('field-date').disabled = true;
+    $('field-guests').disabled = true;
+    $('form-sub').innerHTML = 'Датата и броят гости са потвърдени и се променят само чрез екипа — обадете се на <a href="tel:+359888100042">+359&nbsp;888&nbsp;100&nbsp;042</a>. Услугите и напитките може да променяте свободно.';
+  } else {
+    initDatePicker();
+  }
   renderAddons();
   seedDrinkQtys();
   setupDrinksToggle();
@@ -666,7 +676,9 @@ async function onSave(evt) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch (err) {
     console.error(err);
-    errEl.textContent = 'Нещо се обърка при запазването. Моля опитайте отново или се свържете с нас на 360@margel.info.';
+    errEl.textContent = String(err && err.message) === 'locked_field'
+      ? 'Датата и броят гости са потвърдени и се променят само чрез екипа — обадете се на +359 888 100 042.'
+      : 'Нещо се обърка при запазването. Моля опитайте отново или се свържете с нас на 360@margel.info.';
     errEl.classList.remove('hidden');
     btn.disabled = false;
     btn.textContent = 'Запазете промените';

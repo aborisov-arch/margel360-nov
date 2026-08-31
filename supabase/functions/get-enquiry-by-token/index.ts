@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import { json, preflight } from "../_shared/cors.ts";
 import { getIp, rateLimitHit } from "../_shared/rate-limit.ts";
+import { EDIT_COUNT_CAP } from "../_shared/diff.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -53,7 +54,10 @@ serve(async (req) => {
     return json({ error: "not_found" }, 404);
   }
 
-  if (data.edit_locked) {
+  // Fully closed only once the lifetime edit cap is burned. An admin-locked
+  // (confirmed) booking still opens - in items-only mode: the edit page
+  // freezes date + guests and update-enquiry-by-token enforces the same.
+  if ((data.edit_count ?? 0) >= EDIT_COUNT_CAP) {
     await logAccess(data.id, tokenHash, ip, ua, "view", false);
     return json({ error: "locked" }, 403);
   }
@@ -75,5 +79,5 @@ serve(async (req) => {
   } = data;
 
   await logAccess(data.id, tokenHash, ip, ua, "view", true);
-  return json({ enquiry: publicFields });
+  return json({ enquiry: publicFields, edit_scope: data.edit_locked ? "items" : "full" });
 });

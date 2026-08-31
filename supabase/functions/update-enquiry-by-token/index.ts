@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import { json, preflight } from "../_shared/cors.ts";
 import { getIp, rateLimitHit } from "../_shared/rate-limit.ts";
-import { diffEnquiry, EDITABLE_FIELDS } from "../_shared/diff.ts";
+import { diffEnquiry, EDITABLE_FIELDS, EDIT_COUNT_CAP, lockedFieldChanges } from "../_shared/diff.ts";
 import { validateField } from "../_shared/validate.ts";
 import { weekdayPromoPercent } from "../_shared/weekday-promo.ts";
 import { loadCatalog, repriceAddons, repriceDrinks } from "../_shared/catalog.ts";
@@ -11,7 +11,6 @@ import { effectiveVenuePrice } from "../_shared/seasonal-pricing.ts";
 const SUPABASE_URL    = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const INTERNAL_SECRET = Deno.env.get("INTERNAL_SHARED_SECRET") ?? "";
-const EDIT_COUNT_CAP  = 10;
 
 const sb = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
 
@@ -68,7 +67,8 @@ serve(async (req) => {
     await logAccess(null, tokenHash, ip, ua, "update", false);
     return json({ error: "not_found" }, 404);
   }
-  if (current.edit_locked) {
+  // Lifetime edit cap: a booking that burned all its edits is fully closed.
+  if ((current.edit_count ?? 0) >= EDIT_COUNT_CAP) {
     await logAccess(current.id, tokenHash, ip, ua, "update", false);
     return json({ error: "locked" }, 403);
   }
@@ -83,6 +83,17 @@ serve(async (req) => {
   if (!picked.ok) return json({ error: "invalid_field", field: picked.field, detail: picked.error }, 400);
   const patch = picked.value;
   if (!Object.keys(patch).length) return json({ error: "no_changes" }, 400);
+
+  // Admin-locked (confirmed) booking: items-only mode. The lock protects the
+  // date and guest count; add-ons/drinks/phone/notes stay editable (see
+  // LOCKED_FROZEN_FIELDS in _shared/diff.ts).
+  if (current.edit_locked) {
+    const frozen = lockedFieldChanges(patch, current);
+    if (frozen.length) {
+      await logAccess(current.id, tokenHash, ip, ua, "locked", false);
+      return json({ error: "locked_field", fields: frozen }, 403);
+    }
+  }
 
   // Reprice edited items from the catalog; items removed from the catalog
   // since booking are grandfathered against the stored enquiry (see
@@ -121,7 +132,7 @@ serve(async (req) => {
     ...patch,
     edit_count: nextCount,
     last_edited_at: new Date().toISOString(),
-    edit_locked: willLock,
+    edit_locked: current.edit_locked || willLock, // never silently unlock an admin-locked booking
   };
 
   // The venue price follows the DATE (seasonal calendar) - re-stamp it
