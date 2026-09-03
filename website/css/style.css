@@ -893,7 +893,7 @@ main img { height: auto; }
 /* ── SEO/GEO content blocks (admin-managed, js/content-blocks.js) ───────── */
 .content-blocks { max-width: 760px; margin: 0 auto; display: grid; gap: 44px; }
 .content-block h2 { margin: 0 0 14px; font-size: clamp(1.3rem, 2.6vw, 1.6rem); }
-.content-block p { margin: 0 0 14px; line-height: 1.8; }
+.content-block p { margin: 0 0 14px; line-height: 1.8; color: var(--text); } /* >=4.5:1 (a11y audit) */
 .content-block p:last-child { margin-bottom: 0; }
 
 /* ── Blog (blog.html listing + /blog/<slug> posts) ──────────────────────── */
