@@ -18,12 +18,20 @@ async function requireAuth() {
       return null;
     }
   } catch (_) { /* fail open - RLS still protects the data */ }
-  // Reveal owner-only UI (e.g. the Activity-log nav link) for the two owners.
-  // Non-fatal: a failure just leaves owner-only elements hidden.
+  // Reveal tiered UI and guard tiered pages (UX layer - RLS is the boundary):
+  // owner-only = audit log (Дневник), finance-only = Финанси. The blog editor
+  // (gogov) is a plain admin: both stay hidden and both pages bounce him.
   try {
-    const { data: isOwner } = await db.rpc('is_owner');
-    if (isOwner) document.querySelectorAll('.owner-only').forEach(el => { el.hidden = false; });
-  } catch (_) { /* ignore */ }
+    const [ownerRes, finRes] = await Promise.all([db.rpc('is_owner'), db.rpc('is_finance_admin')]);
+    if (ownerRes.data) document.querySelectorAll('.owner-only').forEach(el => { el.hidden = false; });
+    if (finRes.data) document.querySelectorAll('.finance-only').forEach(el => { el.hidden = false; });
+    const page = (window.location.pathname.split('/').pop() || '').toLowerCase();
+    if ((page === 'financials.html' && finRes.data === false) ||
+        (page === 'activity.html' && ownerRes.data === false)) {
+      window.location.href = 'dashboard.html';
+      return null;
+    }
+  } catch (_) { /* ignore - RLS still protects the data */ }
   return session;
 }
 
