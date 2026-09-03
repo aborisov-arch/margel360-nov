@@ -12,7 +12,7 @@ function customerKey(e) {
   return '';
 }
 
-const EVENT_BASE = { evening: 1280, wedding: 1500, corp4: 330, corp8: 440, bday_day: 700, bday_eve: 970 };
+const EVENT_BASE = { evening: 1350, wedding: 1500, corp4: 330, corp8: 440, bday_day: 700, bday_eve: 970 };
 function estimateTotal(e) {
   // Mirrors the reservation wizard / email math: addons store the LINE price
   // (qty already folded in), drinks store unit price_eur × qty, venue covers

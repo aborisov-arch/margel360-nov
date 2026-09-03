@@ -14,7 +14,7 @@
 // the dual EUR/BGN display required for customers).
 
 // Same EVENT_BASE + guest fee constants used by reservation.js etc.
-const EVENT_BASE = { evening: 1280, wedding: 1500, corp4: 330, corp8: 440, bday_day: 700, bday_eve: 970 };
+const EVENT_BASE = { evening: 1350, wedding: 1500, corp4: 330, corp8: 440, bday_day: 700, bday_eve: 970 };
 const VENUE_MIN_GUESTS = 40;
 const EXTRA_GUEST_FEE_EUR = 15;
 

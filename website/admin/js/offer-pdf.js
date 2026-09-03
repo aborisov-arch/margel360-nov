@@ -10,7 +10,7 @@
 
 // Venue base config by event_id. Mirrors offer-export.js EVENT_CONFIG.
 const PDF_EVENT_CONFIG = {
-  evening:  { price: 1280, label: 'Вечерно парти',                 slot: '19:00-24:00' },
+  evening:  { price: 1350, label: 'Вечерно парти',                 slot: '19:00-24:00' },
   corp4:    { price: 330,  label: 'Корпоративно събитие - 4 часа', slot: '08:00-12:00' },
   corp8:    { price: 440,  label: 'Корпоративно събитие - 8 часа', slot: '08:00-17:30' },
   bday_day: { price: 700,  label: 'Детски рожден ден - Дневно',    slot: '12:00-17:30' },

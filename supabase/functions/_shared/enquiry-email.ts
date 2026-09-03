@@ -80,7 +80,7 @@ function localizedEventType(e: { event_id?: string | null; event_type: string },
 // authoritative source for rows created after that stamp shipped; this map is
 // only the legacy fallback for older rows where the column is NULL.
 const VENUE_BASE_PRICE_EUR: Record<string, number> = {
-  evening: 1280,
+  evening: 1350,
   corp4: 330,
   corp8: 440,
   bday_day: 700,

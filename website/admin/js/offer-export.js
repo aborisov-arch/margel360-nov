@@ -31,7 +31,7 @@ const ADDON_TO_CELL = {
 // Base party config by event id. `title` rewrites A15 so the offer reads
 // correctly for non-Evening events; `start`/`end` populate Z8/AF8.
 const EVENT_CONFIG = {
-  evening:  { price:1280, title:'Парти /19:00-24:00/ за 5 часа до 40 човека -',           start:'19:00', end:'24:00', label:'Вечерно парти' },
+  evening:  { price:1350, title:'Парти /19:00-24:00/ за 5 часа до 40 човека -',           start:'19:00', end:'24:00', label:'Вечерно парти' },
   corp4:    { price:330,  title:'Корпоративно събитие /4 часа, 08:00-12:00/ до 40 човека -', start:'08:00', end:'12:00', label:'Корпоративно - 4 часа' },
   corp8:    { price:440,  title:'Корпоративно събитие /8 часа, 08:00-17:30/ до 40 човека -', start:'08:00', end:'17:30', label:'Корпоративно - 8 часа' },
   bday_day: { price:700,  title:'Детски рожден ден /дневно, до 17:30, 5 часа/ до 40 човека -', start:'12:00', end:'17:30', label:'Детски рожден ден - Дневно' },

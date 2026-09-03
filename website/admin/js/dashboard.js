@@ -912,7 +912,7 @@ function maxDrinkQty(id) { return (drinkCatById.get(id) ?? 0) >= 3 ? 200 : 100; 
 // catalog and the send-enquiry-summary edge function. Update all three places
 // together if pricing changes.
 const VENUE_BASE_PRICE_EUR = {
-  evening: 1280,
+  evening: 1350,
   corp4: 330,
   corp8: 440,
   bday_day: 700,
