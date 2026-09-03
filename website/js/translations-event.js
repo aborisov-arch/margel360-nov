@@ -1,7 +1,7 @@
 const translations = {
   bg: {
     nav_home: 'Начало', nav_gallery: 'Галерия', nav_faq: 'Често задавани въпроси',
-    nav_services: 'Услуги', nav_drinks: 'Меню', nav_partners: 'Партньори', nav_contact: 'Контакти', nav_reserve: 'Запитване',
+    nav_services: 'Услуги', nav_drinks: 'Меню', nav_partners: 'Партньори', nav_contact: 'Контакти', nav_blog: 'Блог', nav_reserve: 'Запитване',
     fact_price_l: 'Наем:', fact_cap_l: 'Капацитет:', fact_terrace_l: 'Тераса:',
     fact_parking_l: 'Паркинг:', fact_tech_l: 'Техника:', fact_booking_l: 'Резервация:',
     fact_cap: 'до 140 гости (до 180 през лятото с терасата); цената включва до 40 гости, всеки следващ е €15',
@@ -73,7 +73,7 @@ const translations = {
   },
   en: {
     nav_home: 'Home', nav_gallery: 'Gallery', nav_faq: 'FAQ',
-    nav_services: 'Services', nav_drinks: 'Menu', nav_partners: 'Partners', nav_contact: 'Contacts', nav_reserve: 'Enquiry',
+    nav_services: 'Services', nav_drinks: 'Menu', nav_partners: 'Partners', nav_contact: 'Contacts', nav_blog: 'Blog', nav_reserve: 'Enquiry',
     fact_price_l: 'Rent:', fact_cap_l: 'Capacity:', fact_terrace_l: 'Terrace:',
     fact_parking_l: 'Parking:', fact_tech_l: 'Equipment:', fact_booking_l: 'Booking:',
     fact_cap: 'up to 140 guests (180 in summer with the terrace); the price covers 40 guests, each extra guest is €15',

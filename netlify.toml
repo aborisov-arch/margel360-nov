@@ -38,6 +38,15 @@
   to = "/"
   status = 301
 
+# Blog posts: pretty /blog/<slug> URLs. Served by the client-side renderer
+# (blog-post.html reads the slug + post from public.blog_posts) until
+# scripts/bake-blog.mjs generates a static /blog/<slug>/index.html - static
+# files take precedence over this rewrite, so baked pages win automatically.
+[[redirects]]
+  from = "/blog/*"
+  to = "/blog-post.html"
+  status = 200
+
 # Caching for static assets (SEO audit: everything was max-age=0 and every
 # visit re-validated every file). css/js get 7 days, NOT immutable/1y: the
 # ?v= bump rule guards freshness, but version drift has happened before

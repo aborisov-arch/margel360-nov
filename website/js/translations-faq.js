@@ -1,7 +1,7 @@
 const translations = {
   bg: {
     nav_home: 'Начало', nav_gallery: 'Галерия', nav_faq: 'FAQ',
-    nav_services: 'Услуги', nav_drinks: 'Меню', nav_partners: 'Партньори', nav_contact: 'Контакти', nav_reserve: 'Запитване',
+    nav_services: 'Услуги', nav_drinks: 'Меню', nav_partners: 'Партньори', nav_contact: 'Контакти', nav_blog: 'Блог', nav_reserve: 'Запитване',
     nav_ev_wedding: 'Сватбена зала', nav_ev_birthday: 'Детски рожден ден',
     nav_ev_corporate: 'Корпоративни събития', nav_ev_evening: 'Вечерни тържества',
     promo_bar_text: '−20% за събития понеделник – четвъртък до 31 август', promo_bar_cta: 'Виж повече →',
@@ -15,7 +15,7 @@ const translations = {
   },
   en: {
     nav_home: 'Home', nav_gallery: 'Gallery', nav_faq: 'FAQ',
-    nav_services: 'Services', nav_drinks: 'Menu', nav_partners: 'Partners', nav_contact: 'Contacts', nav_reserve: 'Enquiry',
+    nav_services: 'Services', nav_drinks: 'Menu', nav_partners: 'Partners', nav_contact: 'Contacts', nav_blog: 'Blog', nav_reserve: 'Enquiry',
     nav_ev_wedding: 'Wedding venue', nav_ev_birthday: "Children's birthday",
     nav_ev_corporate: 'Corporate events', nav_ev_evening: 'Evening celebrations',
     promo_bar_text: '−20% for events Monday – Thursday until 31 August', promo_bar_cta: 'Learn more →',
