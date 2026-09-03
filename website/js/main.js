@@ -107,7 +107,9 @@ function applyTranslations(lang) {
     if (t[key] !== undefined) el.textContent = t[key];
   });
   document.querySelectorAll('.lang-toggle').forEach(btn => {
+    // The accessible name must contain the visible text (WCAG 2.5.3).
     btn.textContent = lang === 'bg' ? 'EN' : 'BG';
+    btn.setAttribute('aria-label', lang === 'bg' ? 'EN – switch to English' : 'БГ – превключване на български');
   });
   document.dispatchEvent(new CustomEvent('langChange', { detail: { lang } }));
 }
@@ -203,35 +205,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initGlowBorders();
 });
 
-// ── Weekday-promo bar ──
-// Visible until 2026-08-31 incl. (campaign end - keep in sync with the
-// weekday promo in reservation.js / submit-enquiry), dismissible per
-// browser. Self-expires: after the date it simply never shows.
-(function () {
-  const bar = document.getElementById('promo-bar');
-  if (!bar) return;
-  const PROMO_BAR_LAST_DATE = '2026-08-31';
-  let dismissed = false;
-  try { dismissed = localStorage.getItem('margel_promo_bar') === 'dismissed'; } catch (e) {}
-  const todayISO = new Date().toLocaleDateString('en-CA');
-  if (dismissed || todayISO > PROMO_BAR_LAST_DATE) return;
-  bar.hidden = false;
-  document.body.classList.add('has-promo-bar');
-  // The bar can wrap to two lines on narrow phones - measure it and expose
-  // the real height so the fixed nav shifts by the right amount.
-  const setBarHeight = () => document.documentElement.style.setProperty('--promo-bar-h', bar.offsetHeight + 'px');
-  setBarHeight();
-  window.addEventListener('resize', setBarHeight);
-  const closeBtn = document.getElementById('promo-bar-close');
-  const labelClose = () => { if (closeBtn) closeBtn.setAttribute('aria-label', (localStorage.getItem('margel_lang') || 'bg') === 'bg' ? 'Затвори' : 'Close'); };
-  try { labelClose(); } catch (e) {}
-  document.addEventListener('langChange', () => { try { labelClose(); } catch (e) {} });
-  closeBtn?.addEventListener('click', () => {
-    bar.hidden = true;
-    document.body.classList.remove('has-promo-bar');
-    try { localStorage.setItem('margel_promo_bar', 'dismissed'); } catch (e) {}
-  });
-})();
 
 // ── Title/description language swap ──
 // Crawlers always see the BG defaults (this runs client-side only); for

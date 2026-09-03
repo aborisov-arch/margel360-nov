@@ -38,6 +38,13 @@
   to = "/"
   status = 301
 
+# Weekday-promo campaign ended 2026-08-31; page retired (SEO audit 2026-09-03).
+[[redirects]]
+  from = "/promo.html"
+  to = "/"
+  status = 301
+  force = true
+
 # Blog posts: pretty /blog/<slug> URLs. Served by the client-side renderer
 # (blog-post.html reads the slug + post from public.blog_posts) until
 # scripts/bake-blog.mjs generates a static /blog/<slug>/index.html - static

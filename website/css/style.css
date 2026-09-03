@@ -859,8 +859,8 @@ p { color: var(--text-muted); }
 .reviews-stars { color: var(--gold-text); letter-spacing: 3px; }
 .reviews-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; margin-top: 36px; }
 .review-card { margin: 0; padding: 24px; background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-lg); display: flex; flex-direction: column; gap: 14px; }
-.review-card p { margin: 0; font-style: italic; line-height: 1.6; flex: 1; }
-.review-card footer { font-size: 0.88rem; color: var(--text-muted); }
+.review-card p { margin: 0; font-style: italic; line-height: 1.6; flex: 1; color: var(--text); }
+.review-card footer { font-size: 0.88rem; color: #5f5b50; } /* >=4.5:1 on --bg-2 (a11y audit 2026-09-03) */
 .review-card footer strong { color: var(--text); font-weight: 600; }
 .reviews-cta { text-align: center; margin-top: 36px; display: flex; gap: 18px; justify-content: center; flex-wrap: wrap; align-items: center; }
 

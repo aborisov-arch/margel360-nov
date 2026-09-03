@@ -1,29 +1,25 @@
-# Маргел 360° (Margel 360° Event Hall)
+# Маргел 360° (Margel 360°) — event venue in Sofia, Bulgaria
 
-> Зала под наем за събития в София, България — сватби, детски рождени дни, корпоративни събития и вечерни тържества. Event venue for rent in Sofia, Bulgaria — weddings, children's birthdays, corporate events and evening celebrations. Site content is in Bulgarian.
+> Зала за събития под наем в София: сватби, рождени дни, корпоративни и вечерни
+> тържества. Панорамна тераса 360 м², капацитет 140–180 гости (лято) / 100–120
+> (зима), 70+ безплатни паркоместа, професионално озвучение (12 EV/YAMAHA,
+> конфигурация 360°), без задължителен краен час.
+> Event venue for rent in Sofia: weddings, birthdays, corporate and evening
+> events. 360 m² panoramic terrace, 140–180 guests (summer) / 100–120 (winter),
+> 70+ free parking spaces, professional sound, no mandatory end time.
 
-Основни факти / Key facts:
+Address: бул. Околовръстен път 155, ет. 4, София 1618 / 155 Okolovrasten Pat Blvd, floor 4, Sofia, Bulgaria
+Phone: +359 888 100 042 · Email: 360@margel.info
+Languages: Bulgarian (default), English (?lang=en)
 
-- Адрес / Address: бул. „Околовръстен път" 155, ет. 4, 1618 София / 155 Okolovrasten Pat Blvd, floor 4, Sofia, Bulgaria
-- Капацитет / Capacity: до 140 гости на закрито; до 180 през лятото с терасата / up to 140 guests indoors; up to 180 in summer with the terrace
-- Тераса / Terrace: 360 м² панорамна тераса с изглед към Витоша / 360 m² panoramic terrace with a view of Vitosha mountain
-- Наем / Rent (EUR): вечерно тържество €1350 за 5 часа (от 19:00); сватба €1500 за 6 часа; детски рожден ден €700 дневно или €970 вечерно; корпоративно събитие €330 за 4 часа или €440 за 8 часа. Цените включват до 40 гости; всеки допълнителен гост е €15.
-- Резервация / Booking: 50% депозит; офертата е валидна 2 дни / 50% deposit; offers are valid for 2 days
-- Оборудване / Equipment: 360° озвучаване (12 колони EV/Yamaha), професионално осветление, LED екран, проектор, бар с ледогенератори, асансьор, климатизация
-- Паркинг / Parking: 70+ безплатни места / 70+ free parking spaces
-- Телефон / Phone: +359 888 100 042 · Email: 360@margel.info
-- Google Maps: https://maps.google.com/?cid=13648537617196737168 (Margel360 Event Hall, рейтинг 5.0)
-
-## Страници / Pages
-
-- [Начало / Home](https://margel360.bg/): обзор на залата, събития и оборудване
-- [Сватбена зала в София](https://margel360.bg/wedding.html)
-- [Зала за детски рожден ден](https://margel360.bg/birthday.html)
-- [Зала за корпоративни събития](https://margel360.bg/corporate.html)
-- [Зала за вечерни тържества](https://margel360.bg/evening.html)
-- [Често задавани въпроси](https://margel360.bg/faq.html): 12 отговора — цени, капацитет, кетъринг, музика, паркинг, работно време
-- [Допълнителни услуги и цени](https://margel360.bg/services.html): DJ, фотограф, фото будка, декорация и 20+ услуги с цени в EUR
-- [Меню с напитки](https://margel360.bg/menu.html)
-- [Галерия](https://margel360.bg/gallery.html)
-- [Запитване и резервация](https://margel360.bg/reservation.html)
-- [Контакти](https://margel360.bg/contact.html)
+## Key pages
+- [Начало / Home](https://margel360.bg/): venue overview, capacity, reviews
+- [Услуги и цени / Services & prices](https://margel360.bg/services.html): add-on services with live prices
+- [Меню напитки / Drinks menu](https://margel360.bg/menu.html)
+- [Сватби / Weddings](https://margel360.bg/wedding.html)
+- [Корпоративни събития / Corporate](https://margel360.bg/corporate.html)
+- [Детски рождени дни / Children's birthdays](https://margel360.bg/birthday.html)
+- [Вечерни тържества / Evening events](https://margel360.bg/evening.html)
+- [Въпроси и отговори / FAQ](https://margel360.bg/faq.html)
+- [Блог / Blog](https://margel360.bg/blog.html): practical event-planning guides
+- [Запитване / Enquiry](https://margel360.bg/reservation.html): online booking form

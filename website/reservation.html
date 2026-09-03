@@ -25,7 +25,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=8">
+  <link rel="stylesheet" href="css/style.css?v=9">
   <!-- flatpickr css must load BEFORE reservation.css so the calendar re-theme
        (equal-specificity selectors) wins by source order -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" integrity="sha384-RkASv+6KfBMW9eknReJIJ6b3UnjKOKC5bOUaNgIY778NFbQ8MtWq9Lr/khUgqtTt" crossorigin="anonymous">
@@ -58,11 +58,6 @@
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5FFZHPPP"
   height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <!-- End Google Tag Manager (noscript) -->
-  <!-- Weekday-promo bar (campaign until 2026-08-31; shown/expired by main.js). -->
-  <div class="promo-bar" id="promo-bar" hidden>
-    <a href="promo.html"><span data-i18n="promo_bar_text">−20% за събития понеделник – четвъртък до 31 август</span> <span class="promo-bar-cta" data-i18n="promo_bar_cta">Виж повече →</span></a>
-    <button type="button" class="promo-bar-close" id="promo-bar-close" aria-label="Затвори">✕</button>
-  </div>
 
   <nav class="nav scrolled" aria-label="Main navigation">
     <div class="container">
@@ -81,7 +76,7 @@
         <li><a href="contact.html" data-i18n="nav_contact">Контакти</a></li>
         <li><a href="reservation.html" class="btn btn-primary active" style="padding:8px 20px" data-i18n="nav_reserve">Запитване</a></li>
       </ul>
-      <button class="lang-toggle" aria-label="Switch language">EN</button>
+      <button class="lang-toggle" aria-label="EN – switch to English">EN</button>
       <button class="hamburger" aria-label="Toggle navigation" aria-expanded="false" aria-controls="nav-drawer">
         <span></span><span></span><span></span>
       </button>
@@ -100,7 +95,7 @@
         <li><a href="contact.html" data-i18n="nav_contact">Контакти</a></li>
       <li><a href="reservation.html" class="active" data-i18n="nav_reserve">Запитване</a></li>
     </ul>
-    <button class="lang-toggle" aria-label="Switch language">EN</button>
+    <button class="lang-toggle" aria-label="EN – switch to English">EN</button>
   </nav>
 
   <main id="main-content" tabindex="-1">
@@ -400,7 +395,7 @@
   <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/bg.js" integrity="sha384-4dvnw6wSzzDwWKeBuSYv0lc+miJSG1UXHYaASiAhbfJuy2n2I3uhjJWda30hRKYX" crossorigin="anonymous"></script>
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <script src="js/translations-reservation.js?v=10"></script>
-  <script src="js/main.js?v=5"></script>
+  <script src="js/main.js?v=6"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7" integrity="sha384-tD6X9wDfTRdKpuPoHFZrVW2RXjSYSWjLBPWXxpHprWWl9eaHlwl05aRjHsiKF97n" crossorigin="anonymous"></script>
   <script src="js/reservation-supabase.js?v=2"></script>
   <script src="js/reservation-catalog.js?v=5"></script>
