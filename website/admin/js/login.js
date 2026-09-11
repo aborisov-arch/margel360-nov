@@ -93,28 +93,6 @@ try {
         infoEl.style.display = 'block';
       });
 
-      // Google OAuth - links to the EXISTING admin user with the same
-      // verified email. Two admins use gmail.com, so no `hd` domain hint:
-      // it would hide their accounts in Google's chooser and reject them.
-      // Signups MUST be disabled in Supabase Auth (PR
-      // runbook step 0) so unknown Google accounts are rejected; until
-      // then RLS + the requireAuth is_admin bounce still block them.
-      // Authorization stays is_admin().
-      document.getElementById('google-login-btn')?.addEventListener('click', async () => {
-        const errEl = document.getElementById('login-error');
-        errEl.style.display = 'none';
-        const { error } = await db.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: window.location.origin + '/admin/dashboard.html',
-            queryParams: { prompt: 'select_account' },
-          },
-        });
-        if (error) {
-          errEl.textContent = t('login_google_error');
-          errEl.style.display = 'block';
-        }
-      });
       // Surface OAuth/bounce errors carried back in the URL.
       {
         const qs = new URLSearchParams(window.location.search);

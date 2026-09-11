@@ -145,8 +145,8 @@ body {
 
 .nav-ico { width: 18px; height: 18px; flex: none; }
 
-#logout-btn { display: inline-flex; align-items: center; gap: 7px; }
-#logout-btn .nav-ico { width: 15px; height: 15px; }
+#logout-btn, #password-btn { display: inline-flex; align-items: center; gap: 7px; text-decoration: none; }
+#logout-btn .nav-ico, #password-btn .nav-ico { width: 15px; height: 15px; }
 
 /* ── Language toggle ── */
 .lang-toggle {
@@ -202,7 +202,9 @@ body {
   .lang-toggle { padding-top: 18px; }
   .lang-btn { flex: 1; padding: 6px 9px; }
 
-  #logout-btn { margin-top: 10px; justify-content: center; padding: 8px 12px; }
+  #password-btn, #logout-btn { justify-content: center; padding: 8px 12px; }
+  #password-btn { margin-top: 10px; }
+  #logout-btn { margin-top: 6px; }
 
   .admin-main { margin-left: 224px; }
 }
