@@ -10,12 +10,14 @@ const TABLE_LABELS = {
     financial_expenses:     'Разход',
     financial_income_items: 'Доп. услуга',
     enquiries:              'Запитване',
+    'auth.users':           'Потребител (парола)',
   },
   en: {
     financial_events:       'Financial event (P&L)',
     financial_expenses:     'Expense',
     financial_income_items: 'Add-on service',
     enquiries:              'Enquiry',
+    'auth.users':           'User (password)',
   },
 };
 const ACTION_LABELS = {
@@ -46,6 +48,7 @@ const FIELD_LABELS = {
     applied_discount_percent: 'Отстъпка %', addons: 'Доп. услуги (списък)', drinks: 'Напитки (списък)',
     next_followup_at: 'Следващ контакт', payment_tracking: 'Плащания (отбелязани)',
     partner_interest: 'Партньори (интерес)',
+    password: 'Парола',
   },
   en: {
     // financial_events - income
@@ -68,6 +71,7 @@ const FIELD_LABELS = {
     applied_discount_percent: 'Discount %', addons: 'Add-on services (list)', drinks: 'Drinks (list)',
     next_followup_at: 'Next follow-up', payment_tracking: 'Payments (marked)',
     partner_interest: 'Partners (interest)',
+    password: 'Password',
   },
 };
 

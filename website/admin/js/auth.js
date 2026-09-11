@@ -27,7 +27,7 @@ async function requireAuth() {
     if (finRes.data) document.querySelectorAll('.finance-only').forEach(el => { el.hidden = false; });
     const page = (window.location.pathname.split('/').pop() || '').toLowerCase();
     if ((page === 'financials.html' && finRes.data === false) ||
-        (page === 'activity.html' && ownerRes.data === false)) {
+        ((page === 'activity.html' || page === 'users.html') && ownerRes.data === false)) {
       window.location.href = 'dashboard.html';
       return null;
     }

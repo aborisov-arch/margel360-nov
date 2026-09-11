@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title>Съдържание - Маргел 360° Админ</title>
+  <title>Потребители - Маргел 360° Админ</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/admin.css?v=20">
@@ -41,7 +41,7 @@
         <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
         <span data-i18n="nav_catalog">Каталог</span>
       </a>
-      <a href="content.html" class="active">
+      <a href="content.html">
         <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></svg>
         <span data-i18n="nav_content">Съдържание</span>
       </a>
@@ -61,7 +61,7 @@
         <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
         <span data-i18n="nav_activity">Дневник</span>
       </a>
-      <a href="users.html" class="owner-only" hidden>
+      <a href="users.html" class="owner-only active" hidden>
         <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M19 8h3"/><path d="M20.5 6.5v3"/></svg>
         <span data-i18n="nav_users">Потребители</span>
       </a>
@@ -82,84 +82,23 @@
 
   <main class="admin-main">
     <div class="admin-container">
-      <h1 class="page-title" data-i18n="cnt_title">Съдържание на сайта</h1>
-      <p class="page-sub" data-i18n="cnt_lead" style="max-width:720px;color:#666">SEO текстови блокове на публичните страници. Двата езика са задължителни; скрит блок изчезва от сайта веднага. Празен ред = нов абзац.</p>
-
-      <div style="display:flex;gap:10px;align-items:center;margin:18px 0;flex-wrap:wrap">
-        <select id="cnt-filter" style="padding:10px;border:1px solid var(--border);border-radius:8px">
-          <option value="all" data-i18n="cnt_filter_all">Всички страници</option>
-          <option value="index" data-i18n="cnt_page_index">Начало</option>
-          <option value="services" data-i18n="cnt_page_services">Услуги</option>
-          <option value="menu" data-i18n="cnt_page_menu">Меню</option>
-          <option value="gallery" data-i18n="cnt_page_gallery">Галерия</option>
-          <option value="evening" data-i18n="cnt_page_evening">Вечерни събития</option>
-          <option value="corporate" data-i18n="cnt_page_corporate">Корпоративни</option>
-          <option value="birthday" data-i18n="cnt_page_birthday">Рожден ден</option>
-          <option value="wedding" data-i18n="cnt_page_wedding">Сватба</option>
-          <option value="faq" data-i18n="cnt_page_faq">Въпроси</option>
-          <option value="contact" data-i18n="cnt_page_contact">Контакти</option>
-        </select>
-        <button class="btn btn-primary btn-sm" id="cnt-add-btn" style="margin-left:auto" data-i18n="cnt_add">Добави блок</button>
+      <h1 class="page-title" data-i18n="usr_title">Потребители</h1>
+      <p class="page-subtitle" style="color:#777;margin:-8px 0 18px;font-size:0.92rem;max-width:720px" data-i18n="usr_sub">Акаунтите с достъп до панела. Като собственик можете да зададете нова парола на всеки: предайте я лично, а той да я смени от „Парола“. Старите му сесии се прекратяват.</p>
+      <div id="loading" class="loading-state" data-i18n="usr_loading">Зареждане…</div>
+      <div id="no-access" class="no-access" style="display:none" data-i18n="usr_no_access">Тази страница е достъпна само за собственици.</div>
+      <div id="content" style="display:none">
+        <table class="customers-table users-table" id="usr-table">
+          <thead>
+            <tr>
+              <th data-i18n="usr_col_email">Имейл</th>
+              <th data-i18n="usr_col_created">Създаден</th>
+              <th data-i18n="usr_col_last">Последен вход</th>
+              <th data-i18n="usr_col_actions">Парола</th>
+            </tr>
+          </thead>
+          <tbody id="usr-body"></tbody>
+        </table>
       </div>
-
-      <div class="marketing-card" id="cnt-form" style="display:none;max-width:760px;margin-bottom:22px">
-        <h3 id="cnt-form-title" style="margin:0 0 16px">Добави блок</h3>
-        <div class="form-group">
-          <label for="cnt-page" data-i18n="cnt_f_page">Страница</label>
-          <select id="cnt-page" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font:inherit">
-          <option value="index" data-i18n="cnt_page_index">Начало</option>
-          <option value="services" data-i18n="cnt_page_services">Услуги</option>
-          <option value="menu" data-i18n="cnt_page_menu">Меню</option>
-          <option value="gallery" data-i18n="cnt_page_gallery">Галерия</option>
-          <option value="evening" data-i18n="cnt_page_evening">Вечерни събития</option>
-          <option value="corporate" data-i18n="cnt_page_corporate">Корпоративни</option>
-          <option value="birthday" data-i18n="cnt_page_birthday">Рожден ден</option>
-          <option value="wedding" data-i18n="cnt_page_wedding">Сватба</option>
-          <option value="faq" data-i18n="cnt_page_faq">Въпроси</option>
-          <option value="contact" data-i18n="cnt_page_contact">Контакти</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="cnt-title-bg" data-i18n="cnt_f_title_bg">Заглавие (БГ)</label>
-          <input type="text" id="cnt-title-bg" maxlength="200">
-        </div>
-        <div class="form-group">
-          <label for="cnt-title-en" data-i18n="cnt_f_title_en">Заглавие (EN)</label>
-          <input type="text" id="cnt-title-en" maxlength="200">
-        </div>
-        <div class="form-group">
-          <label for="cnt-body-bg" data-i18n="cnt_f_body_bg">Текст (БГ)</label>
-          <textarea id="cnt-body-bg" rows="7" maxlength="4000" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font:inherit"></textarea>
-        </div>
-        <div class="form-group">
-          <label for="cnt-body-en" data-i18n="cnt_f_body_en">Текст (EN)</label>
-          <textarea id="cnt-body-en" rows="7" maxlength="4000" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font:inherit"></textarea>
-        </div>
-        <div class="form-group">
-          <label for="cnt-sort" data-i18n="cnt_f_sort">Ред (по-малко = по-напред)</label>
-          <input type="number" id="cnt-sort" value="100" min="0" max="9999" step="1">
-        </div>
-        <div class="form-group" style="display:flex;gap:8px;align-items:center">
-          <input type="checkbox" id="cnt-active" checked style="width:18px;height:18px">
-          <label for="cnt-active" style="margin:0" data-i18n="cnt_f_active">Видим на сайта</label>
-        </div>
-        <div style="display:flex;gap:10px">
-          <button class="btn btn-primary" id="cnt-save" data-i18n="cnt_save">Запази</button>
-          <button class="btn btn-outline" id="cnt-cancel" data-i18n="cnt_cancel">Отказ</button>
-        </div>
-      </div>
-
-      <table class="customers-table">
-        <thead>
-          <tr>
-            <th data-i18n="cnt_col_page">Страница</th>
-            <th data-i18n="cnt_col_title">Заглавие</th>
-            <th data-i18n="cnt_col_sort">Ред</th>
-            <th data-i18n="cnt_col_actions">Действия</th>
-          </tr>
-        </thead>
-        <tbody id="cnt-body"></tbody>
-      </table>
     </div>
   </main>
 
@@ -168,6 +107,6 @@
   <script src="js/admin-i18n.js?v=26" defer></script>
   <script src="js/auth.js?v=8" defer></script>
   <script src="js/toast.js?v=2" defer></script>
-  <script src="js/content.js?v=1" defer></script>
+  <script src="js/users.js?v=1" defer></script>
 </body>
 </html>
