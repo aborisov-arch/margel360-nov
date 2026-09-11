@@ -94,7 +94,9 @@ try {
       });
 
       // Google OAuth - links to the EXISTING admin user with the same
-      // @margel.info email. Signups MUST be disabled in Supabase Auth (PR
+      // verified email. Two admins use gmail.com, so no `hd` domain hint:
+      // it would hide their accounts in Google's chooser and reject them.
+      // Signups MUST be disabled in Supabase Auth (PR
       // runbook step 0) so unknown Google accounts are rejected; until
       // then RLS + the requireAuth is_admin bounce still block them.
       // Authorization stays is_admin().
@@ -105,7 +107,7 @@ try {
           provider: 'google',
           options: {
             redirectTo: window.location.origin + '/admin/dashboard.html',
-            queryParams: { hd: 'margel.info', prompt: 'select_account' },
+            queryParams: { prompt: 'select_account' },
           },
         });
         if (error) {
