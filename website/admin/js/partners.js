@@ -1,6 +1,9 @@
-// Partners CRUD - catering companies + artists shown on the public site and
-// in the reservation wizard's mark-interest step. Rows live in
-// public.partners (RLS: admin ALL via is_admin(), anon SELECT active only).
+// Partners CRUD - the vendors the venue works with (catering, decoration,
+// singers, bands, DJs) shown on the public site and in the reservation
+// wizard's mark-interest step. Rows live in public.partners (RLS: admin ALL
+// via is_admin(), anon SELECT active only). The financials page reads the
+// same table live for its per-partner commission cards, so nothing here
+// needs to be copied anywhere - add/rename/hide and Финанси follows.
 // Images upload to the public 'partner-images' bucket; partners.image_path
 // stores the object path '<row-uuid>/<epoch-millis>.<ext>'.
 
@@ -11,8 +14,15 @@ const BUCKET = 'partner-images';
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const IMAGE_EXT = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
 
+// Category vocabulary - mirrors the CHECK on partners.category (migration
+// 20260914120000_partner_categories_and_commissions.sql). Labels come from
+// admin-i18n (partners_cat_<id>); the icon is the no-image placeholder.
+// 'artist' is the pre-2026-09 catch-all kept for the existing rows.
+const PARTNER_CATEGORIES = ['catering', 'decoration', 'singer', 'band', 'dj', 'artist'];
+const CATEGORY_ICONS = { catering: '🍽️', decoration: '🎈', singer: '🎤', band: '🎸', dj: '🎧', artist: '🎭' };
+
 let partners = [];
-let filterCat = '';        // '' | 'catering' | 'artist'
+let filterCat = '';        // '' (all) | one of PARTNER_CATEGORIES
 let editingId = null;      // null = create mode
 let editingImagePath = null;
 let pendingFile = null;
@@ -27,7 +37,12 @@ function imgUrl(path) {
 }
 
 function catLabel(cat) {
-  return t(cat === 'catering' ? 'partners_cat_catering' : 'partners_cat_artist');
+  const key = 'partners_cat_' + cat;
+  const label = t(key);
+  return label === key ? (cat || '-') : label;   // t() echoes the key when unknown
+}
+function catIcon(cat) {
+  return CATEGORY_ICONS[cat] || '🤝';
 }
 
 // Render-time guard: only ever emit an <a href> for http(s) URLs. A
@@ -66,7 +81,7 @@ function renderTable() {
     <tr data-id="${esc(p.id)}"${p.active ? '' : ' style="opacity:0.55"'}>
       <td>${p.image_path
         ? `<img src="${esc(imgUrl(p.image_path))}" alt="" style="width:56px;height:40px;object-fit:cover;border-radius:6px">`
-        : `<span style="display:inline-flex;width:56px;height:40px;border-radius:6px;background:#eee;align-items:center;justify-content:center" aria-hidden="true">${p.category === 'catering' ? '🍽️' : '🎤'}</span>`}</td>
+        : `<span style="display:inline-flex;width:56px;height:40px;border-radius:6px;background:#eee;align-items:center;justify-content:center" aria-hidden="true">${catIcon(p.category)}</span>`}</td>
       <td><strong>${esc(p.name)}</strong>${p.active ? '' : ` <span style="color:#c62828;font-size:0.78rem">(${esc(t('partners_hidden'))})</span>`}</td>
       <td>${esc(catLabel(p.category))}</td>
       <td style="font-size:0.84rem">${[websiteCell(p.website_url), esc([p.contact_name, p.phone].filter(Boolean).join(' '))].filter(Boolean).join(' · ')}</td>
@@ -191,7 +206,11 @@ async function deletePartner(id) {
   const { error } = await db.from('partners').delete().eq('id', id);
   if (error) {
     console.error('partner delete failed:', error);
-    showToast(`${t('partners_save_failed')} - ${error.message}`, 'error');
+    // 23503 = foreign_key_violation: partner_commissions.partner_id is ON
+    // DELETE RESTRICT, so a partner with recorded commissions cannot be
+    // deleted - finance history must not vanish with it. Hide it instead.
+    if (error.code === '23503') showToast(t('partners_has_commissions'), 'error');
+    else showToast(`${t('partners_save_failed')} - ${error.message}`, 'error');
     return;
   }
   if (p.image_path) {

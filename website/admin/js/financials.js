@@ -91,6 +91,21 @@ const INCOME_LABELS = [
   { id: 'overtime', label: 'Извънреден час' },
 ];
 
+// Partner categories - the vocabulary of public.partners.category (CHECK in
+// 20260914120000_partner_categories_and_commissions.sql) in the display
+// order of the commission groups. Labels are BG like the rest of this page.
+const PARTNER_CATS = [
+  { id: 'catering',   label: 'Кетъринг',       icon: '🍽️' },
+  { id: 'decoration', label: 'Декорация',      icon: '🎈' },
+  { id: 'singer',     label: 'Певци',          icon: '🎤' },
+  { id: 'band',       label: 'Групи',          icon: '🎸' },
+  { id: 'dj',         label: 'DJ',             icon: '🎧' },
+  { id: 'artist',     label: 'Артисти (общо)', icon: '🎭' },
+];
+// The venue's cut from a partner unless a per-partner rate is set
+// (partner_commission_rates) or the bookkeeper overrides it on the entry.
+const DEFAULT_COMMISSION_PCT = 10;
+
 const fmtEur = n => '€' + (Number(n) || 0).toFixed(2);
 function esc(s) {
   if (s == null) return '';
@@ -154,6 +169,14 @@ let monthFilter = '';
 let dirtyFe = {};
 let dirtyExpenses = new Map();
 let dirtyIncomeItems = new Map();
+
+// Partner commissions - the live partner list (public.partners, hidden rows
+// included so a retired partner's history stays visible), per-partner default
+// rates and the entries themselves. Loaded in loadAll, drawn by
+// renderPartnerCommissions. Entries autosave on change - no draft state.
+let partnersAll = [];
+let commissionRateByPartner = new Map();
+let commissions = [];
 
 const MONTH_NAMES_BG = ['януари','февруари','март','април','май','юни','юли','август','септември','октомври','ноември','декември'];
 function monthLabel(ym) {
@@ -276,18 +299,31 @@ async function loadAll() {
     { data: fev, error: fevErr },
     { data: exp, error: expErr },
     { data: inc, error: incErr },
+    { data: prt, error: prtErr },
+    { data: rates, error: ratesErr },
+    { data: comm, error: commErr },
   ] = await Promise.all([
     db.from('enquiries').select('id,enquiry_number,full_name,preferred_date,event_type,event_id,pipeline_status,addons,drinks,applied_discount_percent,guests,payment_method,payment_tracking,venue_price_eur,last_edited_at'),
     db.from('occupied_dates').select('date'),
     db.from('financial_events').select('*'),
     db.from('financial_expenses').select('*').not('event_id', 'is', null),
     db.from('financial_income_items').select('*').not('event_id', 'is', null),
+    // Partner commissions: the live partner list (hidden rows too, so past
+    // commissions of a retired partner stay reachable), per-partner default
+    // rates and the entries. RLS: partners via is_admin(), the other two
+    // finance-only (is_finance_admin()).
+    db.from('partners').select('id,name,category,active,sort_order,contact_name,phone'),
+    db.from('partner_commission_rates').select('partner_id,percent'),
+    db.from('partner_commissions').select('*'),
   ]);
   if (enqErr) console.error(enqErr);
   if (occErr) console.error(occErr);
   if (fevErr) console.error(fevErr);
   if (expErr) console.error(expErr);
   if (incErr) console.error(incErr);
+  if (prtErr) console.error(prtErr);
+  if (ratesErr) console.error(ratesErr);
+  if (commErr) console.error(commErr);
 
   allEnquiries = enq || [];
   occupiedDateSet = new Set((occ || []).map(r => r.date));
@@ -310,6 +346,10 @@ async function loadAll() {
     if (!incomeItemsByEvent.has(x.event_id)) incomeItemsByEvent.set(x.event_id, []);
     incomeItemsByEvent.get(x.event_id).push(x);
   });
+
+  partnersAll = prt || [];
+  commissionRateByPartner = new Map((rates || []).map(r => [r.partner_id, Number(r.percent)]));
+  commissions = comm || [];
 
   bookableEvents = allEnquiries.filter(e => {
     if (!['confirmed', 'completed'].includes(e.pipeline_status)) return false;
@@ -454,6 +494,15 @@ function renderMonthSummary() {
   set('sum-profit-eur',  fmtEur(profit));
   const profitEl = document.getElementById('sum-profit-eur');
   if (profitEl) profitEl.className = 'kpi__value ' + (profit >= 0 ? 'is-positive' : 'is-negative');
+
+  // Partner commissions KPI - a separate figure, NOT folded into income or
+  // profit: those two are the event P&L the bookkeeper reconciles; the
+  // commissions come in from partners on their own schedule. Same month scope.
+  const comm = commissionTotals(commissionsInScope());
+  set('sum-commission-eur', fmtEur(comm.total));
+  set('sum-commission-sub', comm.count
+    ? `${comm.count} ${comm.count === 1 ? 'запис' : 'записа'} · получени ${fmtEur(comm.received)}`
+    : 'няма записи');
 
   const incomeCats = { rent, drinks, addons, overtime, dj, employees };
   const incomeBreak = document.getElementById('income-cat-breakdown');
@@ -1655,6 +1704,365 @@ async function deleteIncomeItem(id) {
 }
 
 // ────────────────────────────────────────────────────────────────
+// Partner commissions
+// The partner list is read live from public.partners, so whatever the
+// manager does on admin/partners.html (add, rename, recategorise, hide)
+// shows up here on the next load - nothing is copied. Each partner gets
+// its own card; entries are typed in by hand and autosave on change.
+// ────────────────────────────────────────────────────────────────
+
+function partnerCat(id) {
+  return PARTNER_CATS.find(c => c.id === id) || { id, label: id || '-', icon: '🤝' };
+}
+function partnerRate(partnerId) {
+  const r = commissionRateByPartner.get(partnerId);
+  return r != null && Number.isFinite(r) ? r : DEFAULT_COMMISSION_PCT;
+}
+function commissionsInScope() {
+  return monthFilter ? commissions.filter(c => c.month === monthFilter) : commissions;
+}
+function commissionTotals(rows) {
+  let total = 0, received = 0;
+  rows.forEach(c => {
+    const amt = Number(c.commission_eur || 0);
+    total += amt;
+    if (c.received) received += amt;
+  });
+  return { total: Math.round(total * 100) / 100, received: Math.round(received * 100) / 100, count: rows.length };
+}
+// base × % rounded to cents.
+function calcCommission(base, pct) {
+  return Math.round((Number(base) || 0) * (Number(pct) || 0)) / 100;
+}
+function pluralEntries(n) { return `${n} ${n === 1 ? 'запис' : 'записа'}`; }
+
+// Event picker for an entry: every P&L row in the entry's month (enquiry-
+// linked and manual), plus the currently linked one even if its month
+// differs, so a stored link is never silently dropped by the <select>.
+function commissionEventOptions(c) {
+  const rows = [];
+  for (const fe of financialEventsById.values()) {
+    if (fe.month === c.month || fe.id === c.event_id) rows.push(fe);
+  }
+  rows.sort((a, b) => (a.event_date || '').localeCompare(b.event_date || ''));
+  const opts = rows.map(fe => {
+    const enq = fe.enquiry_id ? allEnquiries.find(e => e.id === fe.enquiry_id) : null;
+    const badge = enq ? `#${enq.enquiry_number ?? '-'}` : 'M';
+    const name = enq ? (enq.full_name || '-') : (fe.customer_name || '-');
+    return `<option value="${esc(fe.id)}"${fe.id === c.event_id ? ' selected' : ''}>${esc(badge)} ${esc(name)} · ${esc(fmtDateBg(fe.event_date))}</option>`;
+  });
+  return `<option value=""${c.event_id ? '' : ' selected'}>— без събитие —</option>` + opts.join('');
+}
+
+function commissionRowHtml(c) {
+  return `
+    <tr data-pc-id="${esc(c.id)}"${c.received ? ' class="pc-row--received"' : ''}>
+      <td><input type="date" data-pc-f="commission_date" value="${esc(c.commission_date || '')}" aria-label="Дата"></td>
+      <td><select data-pc-f="event_id" aria-label="Събитие">${commissionEventOptions(c)}</select></td>
+      <td><input type="number" step="0.01" min="0" data-pc-f="base_amount_eur" value="${c.base_amount_eur ?? ''}" placeholder="€" aria-label="Основа - сметка на партньора €" title="Сумата, която партньорът е фактурирал на клиента"></td>
+      <td><input type="number" step="0.5" min="0" max="100" class="pc-pct" data-pc-f="commission_percent" value="${c.commission_percent ?? ''}" placeholder="%" aria-label="Комисион %"></td>
+      <td><input type="number" step="0.01" min="0" class="pc-comm" data-pc-f="commission_eur" value="${c.commission_eur ?? ''}" placeholder="€" aria-label="Комисион €" title="Изчислява се от основа × %, но може да се въведе и директно"></td>
+      <td class="pc-td-check"><input type="checkbox" data-pc-f="received"${c.received ? ' checked' : ''} aria-label="Получен"></td>
+      <td><input type="text" maxlength="500" data-pc-f="notes" value="${esc(c.notes || '')}" placeholder="Бележка (напр. клиент, фактура №)"></td>
+      <td><button type="button" class="del-btn" data-pc-del="${esc(c.id)}" title="Изтрий">×</button></td>
+    </tr>`;
+}
+
+function partnerTotalsHtml(tot) {
+  if (!tot.count) return '<span>без записи</span>';
+  return `<span>${pluralEntries(tot.count)}</span> · <strong>${fmtEur(tot.total)}</strong>`
+    + (tot.received > 0 ? ` <span class="pc-card__recv">получени ${fmtEur(tot.received)}</span>` : '');
+}
+
+function partnerCardHtml(p, rows) {
+  const cat = partnerCat(p.category);
+  const tot = commissionTotals(rows);
+  const table = rows.length ? `
+    <div class="pc-table-wrap">
+      <table class="pc-table">
+        <thead><tr>
+          <th>Дата</th><th>Събитие</th><th>Основа €</th><th>%</th><th>Комисион €</th><th>Получен</th><th>Бележка</th><th></th>
+        </tr></thead>
+        <tbody>${rows.map(commissionRowHtml).join('')}</tbody>
+      </table>
+    </div>` : '<div class="empty-state pc-empty">Няма записани комисиони за този период.</div>';
+  const contact = [p.contact_name, p.phone].filter(Boolean).join(' · ');
+  return `
+    <div class="pc-card${p.active ? '' : ' pc-card--hidden'}" data-pc-partner="${esc(p.id)}">
+      <div class="pc-card__head">
+        <span class="pc-card__icon" aria-hidden="true">${cat.icon}</span>
+        <div class="pc-card__title">
+          <strong>${esc(p.name)}</strong>
+          <span class="pc-card__cat">${esc(cat.label)}</span>
+          ${p.active ? '' : '<span class="pc-card__badge">скрит на сайта</span>'}
+          ${contact ? `<div class="pc-card__contact">${esc(contact)}</div>` : ''}
+        </div>
+        <label class="pc-card__rate" title="Ставка по подразбиране за НОВИ записи на този партньор. Вече въведените записи не се променят.">
+          Ставка
+          <input type="number" step="0.5" min="0" max="100" data-pc-rate="${esc(p.id)}" value="${partnerRate(p.id)}">
+          %
+        </label>
+        <div class="pc-card__totals" id="pc-totals-${esc(p.id)}">${partnerTotalsHtml(tot)}</div>
+      </div>
+      ${table}
+      <button type="button" class="btn-add btn-sm" data-pc-add="${esc(p.id)}">+ Добави комисион</button>
+    </div>`;
+}
+
+function commissionsByPartner(rows) {
+  const map = new Map();
+  rows.forEach(c => {
+    if (!map.has(c.partner_id)) map.set(c.partner_id, []);
+    map.get(c.partner_id).push(c);
+  });
+  for (const list of map.values()) {
+    list.sort((a, b) => (a.commission_date || '').localeCompare(b.commission_date || '')
+      || (a.created_at || '').localeCompare(b.created_at || ''));
+  }
+  return map;
+}
+
+function renderPartnerCommissions() {
+  const wrap = document.getElementById('pc-groups');
+  if (!wrap) return;
+  const scope = commissionsInScope();
+  const byPartner = commissionsByPartner(scope);
+  const tot = commissionTotals(scope);
+  const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+  set('pc-month-label', monthLabel(monthFilter));
+  set('pc-count', `${pluralEntries(tot.count)} · ${fmtEur(tot.total)}${tot.received ? ` · получени ${fmtEur(tot.received)}` : ''}`);
+
+  if (!partnersAll.length) {
+    wrap.innerHTML = '<div class="empty-state">Няма партньори. Добавете ги от раздел „Партньори“ - ще се появят тук автоматично.</div>';
+    return;
+  }
+  // Hidden (inactive) partners stay listed only while they have entries in
+  // the current scope: history must stay reachable, but a partner the
+  // manager retired should not clutter the page in months it earned nothing.
+  const visible = partnersAll.filter(p => p.active || byPartner.has(p.id));
+  // Known categories first, in order; an unknown value from the DB trails so
+  // a partner never disappears because this page has not caught up yet.
+  const cats = [...new Set([...PARTNER_CATS.map(c => c.id), ...visible.map(p => p.category)])];
+  const html = cats.map(catId => {
+    const inCat = visible
+      .filter(p => p.category === catId)
+      .sort((a, b) => ((Number(a.sort_order) || 0) - (Number(b.sort_order) || 0)) || String(a.name).localeCompare(String(b.name), 'bg'));
+    if (!inCat.length) return '';
+    const cat = partnerCat(catId);
+    return `
+      <div class="pc-group">
+        <div class="pc-group__title">${esc(cat.label)} <span class="pc-group__count">${inCat.length}</span></div>
+        ${inCat.map(p => partnerCardHtml(p, byPartner.get(p.id) || [])).join('')}
+      </div>`;
+  }).join('');
+  wrap.innerHTML = html || '<div class="empty-state">Няма активни партньори.</div>';
+}
+
+// Refresh only the DERIVED figures (card totals, section head, KPI tile)
+// after an autosave - touches no <input>, same focus-safety rule as
+// updateDetailTotals.
+function refreshCommissionTotals() {
+  const scope = commissionsInScope();
+  const byPartner = commissionsByPartner(scope);
+  document.querySelectorAll('[data-pc-partner]').forEach(card => {
+    const pid = card.getAttribute('data-pc-partner');
+    const el = document.getElementById('pc-totals-' + pid);
+    if (el) el.innerHTML = partnerTotalsHtml(commissionTotals(byPartner.get(pid) || []));
+  });
+  const tot = commissionTotals(scope);
+  const cnt = document.getElementById('pc-count');
+  if (cnt) cnt.textContent = `${pluralEntries(tot.count)} · ${fmtEur(tot.total)}${tot.received ? ` · получени ${fmtEur(tot.received)}` : ''}`;
+  renderMonthSummary();
+}
+
+async function addCommission(partnerId) {
+  const p = partnersAll.find(x => x.id === partnerId);
+  if (!p) return;
+  // Land the entry in the month being looked at (or the current one), dated
+  // today when today is inside that month, else on its 1st.
+  const todayISO = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Sofia' });
+  const month = monthFilter || todayISO.slice(0, 7);
+  const commission_date = todayISO.slice(0, 7) === month ? todayISO : `${month}-01`;
+  const row = {
+    partner_id: partnerId,
+    month,
+    commission_date,
+    event_id: null,
+    base_amount_eur: 0,
+    commission_percent: partnerRate(partnerId),
+    commission_eur: 0,
+    received: false,
+    notes: null,
+    created_by: userEmail,
+  };
+  const { data, error } = await db.from('partner_commissions').insert(row).select().single();
+  if (error) {
+    console.error('addCommission failed', error);
+    showToast('Грешка при добавяне на комисион: ' + (error.message || ''), 'error');
+    return;
+  }
+  commissions.push(data);
+  renderPartnerCommissions();
+  renderMonthSummary();
+  const inp = document.querySelector(`[data-pc-id="${data.id}"] [data-pc-f="base_amount_eur"]`);
+  if (inp) inp.focus();
+}
+
+async function deleteCommission(id) {
+  const c = commissions.find(x => x.id === id);
+  if (!c) return;
+  if (!confirm('Изтриване на този запис за комисион?')) return;
+  const { error } = await db.from('partner_commissions').delete().eq('id', id);
+  if (error) { console.error('deleteCommission failed', error); showToast('Грешка при изтриване.', 'error'); return; }
+  commissions = commissions.filter(x => x.id !== id);
+  renderPartnerCommissions();
+  renderMonthSummary();
+}
+
+// Autosave one field of an entry (fired on 'change' = blur/Enter, not per
+// keystroke). base × % re-derives the commission € unless the € itself was
+// the field edited - the same "computed but still editable" rule as the
+// overtime line in the P&L.
+async function setCommissionField(id, field, raw, inputEl) {
+  const c = commissions.find(x => x.id === id);
+  if (!c) return;
+  const revert = (key) => { if (inputEl) inputEl.value = c[key] ?? ''; };
+  const patch = {};
+  if (field === 'received') {
+    patch.received = !!raw;
+  } else if (field === 'event_id') {
+    patch.event_id = raw || null;
+  } else if (field === 'notes') {
+    patch.notes = String(raw).trim() || null;
+  } else if (field === 'commission_date') {
+    const v = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : null;
+    patch.commission_date = v;
+    if (v) patch.month = v.slice(0, 7);   // the entry follows its date into that month
+  } else if (field === 'commission_percent') {
+    const n = raw === '' ? 0 : Number(raw);
+    if (!Number.isFinite(n) || n < 0 || n > 100) { showToast('Процентът трябва да е между 0 и 100.', 'error'); revert('commission_percent'); return; }
+    patch.commission_percent = n;
+    patch.commission_eur = calcCommission(c.base_amount_eur, n);
+  } else if (field === 'base_amount_eur') {
+    const n = raw === '' ? 0 : Number(raw);
+    if (!Number.isFinite(n) || n < 0) { showToast('Въведете валидна сума.', 'error'); revert('base_amount_eur'); return; }
+    patch.base_amount_eur = Math.round(n * 100) / 100;
+    patch.commission_eur = calcCommission(patch.base_amount_eur, c.commission_percent);
+  } else if (field === 'commission_eur') {
+    const n = raw === '' ? 0 : Number(raw);
+    if (!Number.isFinite(n) || n < 0) { showToast('Въведете валидна сума.', 'error'); revert('commission_eur'); return; }
+    patch.commission_eur = Math.round(n * 100) / 100;
+  } else {
+    return;
+  }
+
+  const { error } = await db.from('partner_commissions')
+    .update({ ...patch, updated_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) {
+    console.error('setCommissionField failed', error);
+    showToast('Промяната не се записа: ' + (error.message || ''), 'error');
+    renderPartnerCommissions();   // drop the unsaved edit from the inputs
+    return;
+  }
+  Object.assign(c, patch);
+  // Reflect a recomputed € in its input without rebuilding the row.
+  if ('commission_eur' in patch && field !== 'commission_eur') {
+    const eurInp = document.querySelector(`[data-pc-id="${id}"] [data-pc-f="commission_eur"]`);
+    if (eurInp) eurInp.value = patch.commission_eur;
+  }
+  const tr = document.querySelector(`[data-pc-id="${id}"]`);
+  if (tr) tr.classList.toggle('pc-row--received', !!c.received);
+  // A date edit that moves the entry out of the filtered month: re-render so
+  // the row leaves this month's card (it is still there under its new month).
+  if ('month' in patch && monthFilter && patch.month !== monthFilter) {
+    showToast(`Записът е преместен в ${monthLabel(patch.month)}.`, 'success');
+    renderPartnerCommissions();
+    renderMonthSummary();
+    return;
+  }
+  refreshCommissionTotals();
+}
+
+// Live preview while typing base / %: the € input follows as you type;
+// nothing is saved until the field is left (change).
+function previewCommission(id, field, raw) {
+  const c = commissions.find(x => x.id === id);
+  if (!c) return;
+  const base = field === 'base_amount_eur'   ? (Number(raw) || 0) : (Number(c.base_amount_eur) || 0);
+  const pct  = field === 'commission_percent' ? (Number(raw) || 0) : (Number(c.commission_percent) || 0);
+  const eurInp = document.querySelector(`[data-pc-id="${id}"] [data-pc-f="commission_eur"]`);
+  if (eurInp) eurInp.value = calcCommission(base, pct);
+}
+
+// Per-partner default rate (partner_commission_rates). Applies to NEW entries
+// only - existing rows keep the % they were saved with.
+async function setPartnerRate(partnerId, raw, inputEl) {
+  const n = raw === '' ? DEFAULT_COMMISSION_PCT : Number(raw);
+  if (!Number.isFinite(n) || n < 0 || n > 100) {
+    showToast('Ставката трябва да е между 0 и 100.', 'error');
+    if (inputEl) inputEl.value = partnerRate(partnerId);
+    return;
+  }
+  const { error } = await db.from('partner_commission_rates')
+    .upsert({ partner_id: partnerId, percent: n, updated_by: userEmail, updated_at: new Date().toISOString() }, { onConflict: 'partner_id' });
+  if (error) {
+    console.error('setPartnerRate failed', error);
+    showToast('Ставката не се записа: ' + (error.message || ''), 'error');
+    if (inputEl) inputEl.value = partnerRate(partnerId);
+    return;
+  }
+  commissionRateByPartner.set(partnerId, n);
+  if (inputEl) inputEl.value = n;
+  showToast(`Ставка ${n}% за новите записи на партньора.`, 'success');
+}
+
+// KPI tile drill-down: one row per entry in the month scope, partner first.
+// Clicking a row scrolls to that partner's card.
+function openCommissionBreakdown() {
+  lastDrill = { kind: 'metric', metric: 'commissions' };
+  const rows = commissionsInScope()
+    .map(c => ({ c, amt: Number(c.commission_eur || 0) }))
+    .filter(r => r.amt > 0)
+    .sort((a, b) => b.amt - a.amt);
+  const total = rows.reduce((s, r) => s + r.amt, 0);
+  const title = document.getElementById('drill-title');
+  if (title) title.textContent = `Комисиони от партньори · ${monthLabel(monthFilter)}`;
+  const body = document.getElementById('drill-body');
+  if (body) {
+    body.innerHTML = rows.length
+      ? `<div class="link-modal__list">${rows.map(r => {
+          const p = partnersAll.find(x => x.id === r.c.partner_id);
+          const fe = r.c.event_id ? financialEventsById.get(r.c.event_id) : null;
+          const enq = fe?.enquiry_id ? allEnquiries.find(e => e.id === fe.enquiry_id) : null;
+          const detail = fe
+            ? ` · ${enq ? `#${enq.enquiry_number ?? '-'} ${enq.full_name || '-'}` : (fe.customer_name || '-')}`
+            : (r.c.notes ? ` · ${r.c.notes}` : '');
+          return `<button type="button" class="drill-row" data-pc-jump="${esc(r.c.partner_id)}"
+              style="display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;text-align:left;padding:10px 12px;border:1px solid var(--fin-border,#e6e1d6);border-radius:8px;background:var(--fin-bg,#fff);cursor:pointer;font:inherit;color:inherit">
+              <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><strong>${esc(p ? p.name : '-')}</strong><span style="opacity:.75">${esc(detail)}</span></span>
+              <span style="opacity:.7;font-size:.85em;white-space:nowrap">${esc(fmtDateBg(r.c.commission_date))}${r.c.received ? ' · получен' : ''}</span>
+              <span style="font-weight:700;white-space:nowrap">${fmtEur(r.amt)}</span>
+            </button>`;
+        }).join('')}</div>
+         <div style="display:flex;justify-content:space-between;margin-top:14px;padding-top:10px;border-top:2px solid var(--fin-border,#e6e1d6);font-weight:800">
+           <span>Общо · ${pluralEntries(rows.length)}</span><span>${fmtEur(total)}</span>
+         </div>`
+      : '<div class="empty-state">Няма комисиони в този период.</div>';
+  }
+  const m = document.getElementById('drill-modal');
+  if (m) m.removeAttribute('hidden');
+}
+function jumpToPartnerCard(partnerId) {
+  closeDrill();
+  const card = document.querySelector(`[data-pc-partner="${partnerId}"]`);
+  if (!card) return;
+  card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  card.classList.add('is-flash');
+  setTimeout(() => card.classList.remove('is-flash'), 1600);
+}
+
+// ────────────────────────────────────────────────────────────────
 // Summary → event-list drill-down
 // ────────────────────────────────────────────────────────────────
 
@@ -1696,6 +2104,7 @@ function drillRowHtml(fe, amt, signed) {
     </button>`;
 }
 function openMetricBreakdown(metric) {
+  if (metric === 'commissions') { openCommissionBreakdown(); return; }
   lastDrill = { kind: 'metric', metric };
   const TITLES = { income: 'Приходи (реализирани)', upcoming: 'Очаквани (предстоящи)', paid: 'Платено от клиенти', expense: 'Разходи', profit: 'Печалба' };
   const scopeFes = [];
@@ -1927,6 +2336,14 @@ document.addEventListener('keydown', evt => {
 document.addEventListener('click', evt => {
   if (evt.target.closest('[data-drill-close]')) { closeDrill(); return; }
 
+  // Partner commissions: add / delete an entry, jump from the KPI drill-down.
+  const pcJump = evt.target.closest('[data-pc-jump]');
+  if (pcJump) { jumpToPartnerCard(pcJump.getAttribute('data-pc-jump')); return; }
+  const pcAdd = evt.target.closest('[data-pc-add]');
+  if (pcAdd) { addCommission(pcAdd.getAttribute('data-pc-add')); return; }
+  const pcDel = evt.target.closest('[data-pc-del]');
+  if (pcDel) { deleteCommission(pcDel.getAttribute('data-pc-del')); return; }
+
   // Inside the drill modal: enquiry rows open the read-only offer view
   // in-place; manual rows have no customer offer, so drop straight into
   // their P&L (scrolled). "← back" restores the list; the offer's
@@ -1978,6 +2395,7 @@ document.addEventListener('click', evt => {
     if (inp) inp.value = '';
     renderEventsList(document.getElementById('events-search').value);
     renderMonthSummary();
+    renderPartnerCommissions();
     return;
   }
   const delInc = evt.target.closest('[data-del-income]');
@@ -2004,6 +2422,15 @@ document.addEventListener('click', evt => {
 // nothing is persisted until Save.
 document.addEventListener('input', evt => {
   if (evt.target.id === 'events-search') { renderEventsList(evt.target.value); return; }
+
+  // Commission entry: base / % typed -> preview the € live; saved on change.
+  const pcInp = evt.target.closest('[data-pc-f]');
+  if (pcInp) {
+    const tr = pcInp.closest('[data-pc-id]');
+    const f = pcInp.dataset.pcF;
+    if (tr && (f === 'base_amount_eur' || f === 'commission_percent')) previewCommission(tr.dataset.pcId, f, pcInp.value);
+    return;
+  }
 
   // Drink line field draft (qty / manual name / manual price). The catalog
   // <select> also carries data-drink-f but is handled in 'change'.
@@ -2036,6 +2463,20 @@ document.addEventListener('input', evt => {
 });
 
 document.addEventListener('change', evt => {
+  // Partner commissions - every field autosaves on change (blur / Enter /
+  // pick); the per-partner default rate likewise.
+  const pcInp = evt.target.closest('[data-pc-f]');
+  if (pcInp) {
+    const tr = pcInp.closest('[data-pc-id]');
+    if (tr) {
+      const f = pcInp.dataset.pcF;
+      setCommissionField(tr.dataset.pcId, f, f === 'received' ? pcInp.checked : pcInp.value, pcInp);
+    }
+    return;
+  }
+  const rateInp = evt.target.closest('[data-pc-rate]');
+  if (rateInp) { setPartnerRate(rateInp.dataset.pcRate, rateInp.value, rateInp); return; }
+
   // Оферта discount (%) - applies on blur/Enter, not per keystroke.
   const pctInp = evt.target.closest('#pnl-discount-pct');
   if (pctInp) { applyRentDiscount(pctInp); return; }
@@ -2049,6 +2490,7 @@ document.addEventListener('change', evt => {
     monthFilter = evt.target.value || '';
     renderEventsList(document.getElementById('events-search').value);
     renderMonthSummary();
+    renderPartnerCommissions();
   }
 });
 
@@ -2081,10 +2523,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderEventsList('');
   renderMonthSummary();
   renderDetail();
+  renderPartnerCommissions();
 });
 
 function rerenderPage() {
   renderEventsList(document.getElementById('events-search').value);
   renderMonthSummary();
   renderDetail();
+  renderPartnerCommissions();
 }

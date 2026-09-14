@@ -9,6 +9,8 @@ const TABLE_LABELS = {
     financial_events:       'Финансово събитие (P&L)',
     financial_expenses:     'Разход',
     financial_income_items: 'Доп. услуга',
+    partner_commissions:    'Комисион от партньор',
+    partner_commission_rates: 'Ставка комисион (партньор)',
     enquiries:              'Запитване',
     'auth.users':           'Потребител (парола)',
   },
@@ -16,6 +18,8 @@ const TABLE_LABELS = {
     financial_events:       'Financial event (P&L)',
     financial_expenses:     'Expense',
     financial_income_items: 'Add-on service',
+    partner_commissions:    'Partner commission',
+    partner_commission_rates: 'Partner commission rate',
     enquiries:              'Enquiry',
     'auth.users':           'User (password)',
   },
@@ -42,6 +46,10 @@ const FIELD_LABELS = {
     customer_name: 'Клиент', event_date: 'Дата събитие', event_type: 'Тип', notes: 'Бележки',
     // expenses / income items
     category: 'Категория', amount_eur: 'Сума', description: 'Описание',
+    // partner_commissions / partner_commission_rates
+    partner_id: 'Партньор', commission_date: 'Дата', event_id: 'Събитие', month: 'Месец',
+    base_amount_eur: 'Основа', commission_percent: 'Комисион %', commission_eur: 'Комисион',
+    received: 'Получен', percent: 'Ставка %', created_by: 'Създал',
     // enquiries
     pipeline_status: 'Статус', full_name: 'Име', email: 'Имейл', phone: 'Телефон',
     preferred_date: 'Дата', guests: 'Гости', payment_method: 'Плащане',
@@ -65,6 +73,10 @@ const FIELD_LABELS = {
     customer_name: 'Customer', event_date: 'Event date', event_type: 'Type', notes: 'Notes',
     // expenses / income items
     category: 'Category', amount_eur: 'Amount', description: 'Description',
+    // partner_commissions / partner_commission_rates
+    partner_id: 'Partner', commission_date: 'Date', event_id: 'Event', month: 'Month',
+    base_amount_eur: 'Base amount', commission_percent: 'Commission %', commission_eur: 'Commission',
+    received: 'Received', percent: 'Rate %', created_by: 'Created by',
     // enquiries
     pipeline_status: 'Status', full_name: 'Name', email: 'Email', phone: 'Phone',
     preferred_date: 'Date', guests: 'Guests', payment_method: 'Payment',

@@ -1,9 +1,14 @@
 // Public partners page - reads public.partners with the anon key (RLS
-// exposes active rows only) and renders the Catering + Artists sections.
+// exposes active rows only) and renders one section per category.
 // A partner added in the admin panel appears here automatically.
 // Depends on: reservation-supabase.js (reservationDb), main.js (langChange).
 
 const PARTNERS_BUCKET = 'partner-images';
+// Section order - mirrors partners.category (CHECK in migration
+// 20260914120000). Headings come from translations-partners.js
+// (partners_cat_<id>); a category with no active partners renders nothing.
+const PARTNER_CATEGORY_ORDER = ['catering', 'decoration', 'singer', 'band', 'dj', 'artist'];
+const PARTNER_CATEGORY_ICONS = { catering: '🍽️', decoration: '🎈', singer: '🎤', band: '🎸', dj: '🎧', artist: '🎭' };
 let _partnersData = null; // null until fetched; [] on error/empty
 
 function partnerImgUrl(path) {
@@ -24,7 +29,7 @@ function partnerCard(p, lang) {
     imgWrap.appendChild(img);
   } else {
     imgWrap.style.cssText = 'display:flex;align-items:center;justify-content:center;font-size:2.6rem;background:#F6F1E8;height:220px';
-    imgWrap.textContent = p.category === 'catering' ? '🍽️' : '🎤';
+    imgWrap.textContent = PARTNER_CATEGORY_ICONS[p.category] || '🤝';
     imgWrap.setAttribute('aria-hidden', 'true');
   }
 
@@ -80,19 +85,26 @@ function renderPartnersPage(lang) {
   const errEl = document.getElementById('partners-error');
   const noneEl = document.getElementById('partners-none');
 
-  const sections = [
-    { cat: 'catering', section: 'partners-catering-section', grid: 'partners-catering-grid' },
-    { cat: 'artist',   section: 'partners-artists-section',  grid: 'partners-artists-grid' },
-  ];
+  const wrap = document.getElementById('partners-sections');
+  const tr = (typeof translations !== 'undefined' && translations[lang]) || {};
+  // Known categories first, in order; anything new in the DB trails so a
+  // partner never disappears because the site copy has not caught up yet.
+  const cats = [...new Set([...PARTNER_CATEGORY_ORDER, ..._partnersData.map(p => p.category)])];
+  wrap.innerHTML = '';
   let shown = 0;
-  sections.forEach(({ cat, section, grid }) => {
-    const sec = document.getElementById(section);
-    const g = document.getElementById(grid);
+  cats.forEach(cat => {
     const inCat = _partnersData.filter(p => p.category === cat);
-    g.innerHTML = '';
-    if (!inCat.length) { sec.style.display = 'none'; return; }
+    if (!inCat.length) return;
+    const sec = document.createElement('div');
+    const h2 = document.createElement('h2');
+    h2.style.margin = shown ? '48px 0 20px' : '36px 0 20px';
+    h2.textContent = tr['partners_cat_' + cat] || cat;
+    const g = document.createElement('div');
+    g.className = 'services-grid';
     inCat.forEach(p => g.appendChild(partnerCard(p, lang)));
-    sec.style.display = 'block';
+    sec.appendChild(h2);
+    sec.appendChild(g);
+    wrap.appendChild(sec);
     shown += inCat.length;
   });
   noneEl.style.display = (!shown && errEl.style.display === 'none') ? 'block' : 'none';
