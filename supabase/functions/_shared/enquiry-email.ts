@@ -70,6 +70,22 @@ const EVENT_TITLES: Record<string, { bg: string; en: string }> = {
   bday_eve:  { bg: "Детски рожден ден",    en: "Children's Birthday" },
   wedding:   { bg: "Сватба",               en: "Wedding" },
 };
+// Partner categories (public.partners.category - CHECK in migration
+// 20260914120000). Unknown values fall back to the raw slug so a category
+// added later still renders something sensible instead of "Артист".
+const PARTNER_CATEGORY_LABELS: Record<string, { bg: string; en: string }> = {
+  catering:   { bg: "Кетъринг",  en: "Catering" },
+  decoration: { bg: "Декорация", en: "Decoration" },
+  singer:     { bg: "Певец",     en: "Singer" },
+  band:       { bg: "Група",     en: "Band" },
+  dj:         { bg: "DJ",        en: "DJ" },
+  artist:     { bg: "Артист",    en: "Artist" },
+};
+export function partnerCategoryLabel(category: string, lang: "bg" | "en"): string {
+  const entry = PARTNER_CATEGORY_LABELS[category];
+  return entry ? entry[lang] : category;
+}
+
 function localizedEventType(e: { event_id?: string | null; event_type: string }, lang: "bg" | "en"): string {
   const entry = e.event_id ? EVENT_TITLES[e.event_id] : undefined;
   return entry ? entry[lang] : e.event_type;
@@ -208,7 +224,7 @@ export function renderCustomerEmail(e: Enquiry, siteUrl: string): { subject: str
   }).join("");
 
   const partnerRows = (e.partner_interest ?? []).map(p =>
-    `<tr><td style="${rowCell}">${esc(p.name)}</td><td style="${rowPrice}">${p.category === "catering" ? "Кетъринг" : "Артист"}</td></tr>`
+    `<tr><td style="${rowCell}">${esc(p.name)}</td><td style="${rowPrice}">${esc(partnerCategoryLabel(p.category, lang))}</td></tr>`
   ).join("");
 
   const totals = computeTotals(e);
@@ -461,7 +477,7 @@ export function renderOwnerEmail(
       : `  - ${d.name} × ${d.qty}`;
   }).join("\n");
   const partnersText = (e.partner_interest ?? []).map(p =>
-    `  - ${p.name} (${p.category === "catering" ? "catering" : "artist"})`
+    `  - ${p.name} (${p.category})`
   ).join("\n");
   const timeLabel = e.arrival_time
     ? `Evening · arrival ${e.arrival_time}`

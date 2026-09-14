@@ -694,15 +694,27 @@ function renderPartners() {
     return;
   }
 
-  const CAT_LABELS = { catering: { bg: 'Кетъринг', en: 'Catering' }, artist: { bg: 'Артисти', en: 'Artists' } };
-  ['catering', 'artist'].forEach(cat => {
+  // Mirrors partners.category (CHECK in migration 20260914120000). Known
+  // categories first, in order; an unknown value still renders (raw slug) so
+  // a partner never vanishes from the step because the copy lags behind.
+  const CAT_LABELS = {
+    catering:   { bg: 'Кетъринг',  en: 'Catering' },
+    decoration: { bg: 'Декорация', en: 'Decoration' },
+    singer:     { bg: 'Певци',     en: 'Singers' },
+    band:       { bg: 'Групи',     en: 'Bands' },
+    dj:         { bg: 'DJ',        en: 'DJs' },
+    artist:     { bg: 'Артисти',   en: 'Artists' },
+  };
+  const CAT_ICONS = { catering: '🍽️', decoration: '🎈', singer: '🎤', band: '🎸', dj: '🎧', artist: '🎭' };
+  const cats = [...new Set([...Object.keys(CAT_LABELS), ..._partnersList.map(p => p.category)])];
+  cats.forEach(cat => {
     const inCat = _partnersList.filter(p => p.category === cat);
     if (!inCat.length) return;
 
     const h = document.createElement('h3');
     h.className = 'free-included__title';
     h.style.marginTop = '18px';
-    h.textContent = CAT_LABELS[cat][l];
+    h.textContent = (CAT_LABELS[cat] || {})[l] || cat;
     wrap.appendChild(h);
 
     const grid = document.createElement('div');
@@ -721,7 +733,7 @@ function renderPartners() {
         visual.appendChild(i);
       } else {
         visual.className = 'addon-emoji';
-        visual.textContent = cat === 'catering' ? '🍽️' : '🎤';
+        visual.textContent = CAT_ICONS[cat] || '🤝';
         visual.setAttribute('aria-hidden', 'true');
       }
 

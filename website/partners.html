@@ -87,7 +87,7 @@
     <div class="page-header-img" style="background-image:url(assets/images/venue-17.jpg)">
       <div class="container">
         <h1 id="partners-heading" data-i18n="partners_title">Нашите партньори</h1>
-        <p data-i18n="partners_sub">Кетъринг и артисти, с които работим</p>
+        <p data-i18n="partners_sub">Кетъринг, декорация, певци, групи и DJ, с които работим</p>
       </div>
     </div>
     <section class="section" aria-labelledby="partners-heading">
@@ -95,14 +95,9 @@
         <p data-i18n="partners_lead" style="max-width:760px;margin:0 auto 8px;text-align:center;color:#5A5648">Подбрани фирми и изпълнители, доказали се на събития в Маргел 360°. Отбележете интерес в стъпката „Партньори" на запитването - ще ви свържем с тях безплатно и необвързващо.</p>
         <p id="partners-error" role="alert" style="display:none;text-align:center;color:#7A7568;padding:24px" data-i18n="partners_error">Списъкът с партньори не може да се зареди в момента. Моля, опитайте отново по-късно.</p>
         <p id="partners-none" style="display:none;text-align:center;color:#7A7568;padding:24px" data-i18n="partners_none">Очаквайте скоро - подготвяме списъка с партньори.</p>
-        <div id="partners-catering-section" style="display:none">
-          <h2 data-i18n="partners_catering" style="margin:36px 0 20px">Кетъринг</h2>
-          <div class="services-grid" id="partners-catering-grid"></div>
-        </div>
-        <div id="partners-artists-section" style="display:none">
-          <h2 data-i18n="partners_artists" style="margin:48px 0 20px">Артисти</h2>
-          <div class="services-grid" id="partners-artists-grid"></div>
-        </div>
+        <!-- One <h2> + grid per partner category, built by js/partners.js in
+             PARTNER_CATEGORY_ORDER; headings come from translations-partners.js. -->
+        <div id="partners-sections"></div>
       </div>
     </section>
   </main>
@@ -148,11 +143,11 @@
     </div>
   </footer>
 
-  <script src="js/translations-partners.js?v=6"></script>
+  <script src="js/translations-partners.js?v=7"></script>
   <script src="js/main.js?v=6"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7" integrity="sha384-tD6X9wDfTRdKpuPoHFZrVW2RXjSYSWjLBPWXxpHprWWl9eaHlwl05aRjHsiKF97n" crossorigin="anonymous"></script>
   <script src="js/reservation-supabase.js?v=2"></script>
-  <script src="js/partners.js?v=3"></script>
+  <script src="js/partners.js?v=4"></script>
   <script src="js/cookie-consent.js?v=4" defer></script>
   <a href="tel:+359888100042" class="fab-phone" aria-label="Обадете се"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg></a>
 </body>

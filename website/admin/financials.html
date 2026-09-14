@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/admin.css?v=20">
-  <link rel="stylesheet" href="css/financials.css?v=19">
+  <link rel="stylesheet" href="css/financials.css?v=20">
   <link rel="icon" href="/favicon.ico" sizes="48x48">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link rel="icon" type="image/png" sizes="192x192" href="/assets/favicon-192.png">
@@ -84,7 +84,7 @@
   <main class="admin-main fin">
     <div class="admin-container">
       <h1 class="page-title">Финанси · P&amp;L по събитие</h1>
-      <p class="fin-page-sub">Изберете събитие за да видите оферираните приходи (авто-генерирани от запитването), плащанията от клиента и разходите към доставчиците.</p>
+      <p class="fin-page-sub">Изберете събитие за да видите оферираните приходи (авто-генерирани от запитването), плащанията от клиента и разходите към доставчиците. Комисионите от партньорите (кетъринг, декорация, певци, групи, DJ) са в отделния раздел най-долу.</p>
 
       <!-- Month filter - restricts the event list AND the summary block below.
            "all" shows every booking ever. -->
@@ -123,6 +123,14 @@
           <div class="kpi kpi--highlight" data-metric="profit" role="button" tabindex="0" style="cursor:pointer" title="Вижте кои събития формират тази сума">
             <div class="kpi__label">Печалба</div>
             <div class="kpi__value" id="sum-profit-eur">€0.00</div>
+          </div>
+          <!-- Partner commissions - a separate figure, deliberately NOT folded
+               into Приходи/Печалба (those are the event P&L the bookkeeper
+               reconciles). Same month scope; click = per-entry breakdown. -->
+          <div class="kpi" data-metric="commissions" role="button" tabindex="0" style="cursor:pointer" title="Вижте кои комисиони формират тази сума">
+            <div class="kpi__label">Комисиони от партньори</div>
+            <div class="kpi__value" id="sum-commission-eur">€0.00</div>
+            <div class="kpi__sub" id="sum-commission-sub"></div>
           </div>
         </div>
 
@@ -245,15 +253,31 @@
           </div>
         </section>
       </div>
+
+      <!-- Partner commissions - the venue's cut (default 10 %) from the
+           partners it refers clients to. The partner list is read LIVE from
+           public.partners (admin/partners.html), so a partner added,
+           renamed, recategorised or hidden there shows up here on the next
+           load with no copying. One card per partner, grouped by category;
+           entries are typed in by hand and autosave on change
+           (financials.js renderPartnerCommissions). -->
+      <section class="fin-section partner-comm" id="partner-commissions">
+        <div class="fin-section__head">
+          <h2>Комисиони от партньори · <span id="pc-month-label">всички месеци</span></h2>
+          <span class="count" id="pc-count">0 записа</span>
+        </div>
+        <p class="fin-page-sub">Списъкът с партньори идва автоматично от раздел „Партньори“ - добавен, преименуван или скрит партньор се отразява тук веднага. Комисионът се въвежда ръчно за всеки партньор: основа (сметката на партньора към клиента) × ставка = комисион; ставката по подразбиране е 10 %, като може да се промени за партньора (за новите записи) или за отделен запис. Промените се записват при излизане от полето.</p>
+        <div id="pc-groups"><div class="empty-state">Зареждане…</div></div>
+      </section>
     </div>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7" integrity="sha384-tD6X9wDfTRdKpuPoHFZrVW2RXjSYSWjLBPWXxpHprWWl9eaHlwl05aRjHsiKF97n" crossorigin="anonymous" defer></script>
   <script src="js/supabase-client.js?v=4" defer></script>
-  <script src="js/admin-i18n.js?v=26" defer></script>
+  <script src="js/admin-i18n.js?v=27" defer></script>
   <script src="js/auth.js?v=8" defer></script>
   <script src="js/toast.js?v=2" defer></script>
   <script src="../js/catalog-db.js?v=1" defer></script>
-  <script src="js/financials.js?v=46" defer></script>
+  <script src="js/financials.js?v=47" defer></script>
 </body>
 </html>

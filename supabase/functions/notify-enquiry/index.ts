@@ -52,7 +52,7 @@ serve(async (req) => {
 
     const partnersText = Array.isArray(record.partner_interest) && record.partner_interest.length
       ? record.partner_interest.map((p: { name: string; category: string }) =>
-          `  - ${p.name} (${p.category === "catering" ? "catering" : "artist"})`
+          `  - ${p.name} (${p.category})`
         ).join("\n")
       : null;
 

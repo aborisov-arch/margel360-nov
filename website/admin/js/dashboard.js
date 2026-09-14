@@ -1078,7 +1078,10 @@ function fmtDrinks(drinks, enquiryId) {
 function fmtPartners(list) {
   if (!Array.isArray(list) || !list.length) return '';
   const items = list.map(p => {
-    const cat = p?.category === 'catering' ? t('partners_cat_catering') : t('partners_cat_artist');
+    // Category label via admin-i18n (partners_cat_<id>); t() echoes the key
+    // for a value the dictionary does not know, so fall back to the raw slug.
+    const key = 'partners_cat_' + (p?.category || '');
+    const cat = t(key) === key ? (p?.category || '-') : t(key);
     return `<li>${esc(p?.name)} <span style="color:#7A7568">(${esc(cat)})</span></li>`;
   }).join('');
   return `<div class="detail-section"><strong>${t('detail_partners')}:</strong><ul>${items}</ul></div>`;
