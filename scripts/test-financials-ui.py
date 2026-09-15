@@ -127,11 +127,7 @@ with sync_playwright() as p:
  page.locator('#finance-charts [data-chart-cat="drinks"][data-chart-kind="expense"]').click()
  page.locator('[data-bottle-event]').click()
  assert page.locator('#pnl-drinks-lines.finance-focus').count()==1
- page.evaluate("const fe=financialEventsById.get('11111111-1111-4111-8111-111111111111');fe.pnl_drinks[0].manual=false;fe.pnl_drinks[0].id='qa-bottle';drinkCatalogById.set('qa-bottle',{id:'qa-bottle',name_bg:'QA bottle',price_eur:50});renderDrinkPurchasePrices()")
- page.locator('details:has(#drink-purchase-body) summary').click()
- page.locator('#drink-purchase-form select').select_option('qa-bottle')
- page.locator('#drink-purchase-form [name="cost_eur"]').fill('30')
- page.locator('#drink-purchase-form button').click()
+ page.evaluate("const fe=financialEventsById.get('11111111-1111-4111-8111-111111111111');fe.pnl_drinks[0].manual=false;fe.pnl_drinks[0].id='qa-bottle';drinkCatalogById.set('qa-bottle',{id:'qa-bottle',name_bg:'QA bottle',price_eur:50});drinkPurchasePrices.set('qa-bottle',30)")
  page.wait_for_function("drinkPurchasePrices.get('qa-bottle')===30")
  assert page.evaluate("eventBottleCost(currentSelection().fe).cost") == 60
  assert page.evaluate("savedDrinksTotal(currentSelection().fe)") == 120

@@ -8,6 +8,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/admin.css?v=20">
+  <style>
+    .catalog-cost-entry { display:flex; gap:8px; align-items:center; min-width:200px; }
+    .catalog-cost-entry input { width:110px; padding:9px; border:1px solid var(--border); border-radius:6px; font:inherit; }
+    [data-purchase-status] { display:block; margin-top:6px; color:#666; font-size:11px; }
+    [data-purchase-profit], [data-purchase-margin] { font-weight:600; white-space:nowrap; font-variant-numeric:tabular-nums; }
+    #catalog-cost-note { color:#666; font-size:13px; line-height:1.6; margin-top:16px; }
+  </style>
   <link rel="icon" href="/favicon.ico" sizes="48x48">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link rel="icon" type="image/png" sizes="192x192" href="/assets/favicon-192.png">
@@ -164,6 +171,7 @@
         </div>
       </div>
 
+      <div style="overflow-x:auto">
       <table class="customers-table">
         <thead>
           <tr>
@@ -171,20 +179,26 @@
             <th data-i18n="cat_col_name">Име</th>
             <th data-i18n="cat_col_details">Детайли</th>
             <th data-i18n="cat_col_price">Цена</th>
+            <th data-purchase-header hidden>Покупна цена / бутилка</th>
+            <th data-purchase-header hidden>Печалба / бутилка</th>
+            <th data-purchase-header hidden title="(Продажна − покупна цена) ÷ продажна цена × 100">Марж</th>
             <th data-i18n="cat_col_sort">Ред</th>
             <th data-i18n="cat_col_actions">Действия</th>
           </tr>
         </thead>
         <tbody id="catalog-body"></tbody>
       </table>
+      </div>
     </div>
+    <p id="catalog-cost-note" hidden style="color:#68645c;font-size:13px;line-height:1.6">Покупните цени са видими само за финансовия екип. Марж = (продажна − покупна цена) ÷ продажна цена × 100, преди останалите разходи. Въвеждайте покупната и продажната цена на една и съща ДДС основа. Изчислението се обновява при въвеждане; натиснете „Запази“, за да се използва цената за нови бутилки в събитията. Старите събития запазват своите цени.</p>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7" integrity="sha384-tD6X9wDfTRdKpuPoHFZrVW2RXjSYSWjLBPWXxpHprWWl9eaHlwl05aRjHsiKF97n" crossorigin="anonymous" defer></script>
   <script src="js/supabase-client.js?v=4" defer></script>
-  <script src="js/admin-i18n.js?v=28" defer></script>
+  <script src="js/admin-i18n.js?v=29" defer></script>
   <script src="js/auth.js?v=8" defer></script>
   <script src="js/toast.js?v=2" defer></script>
-  <script src="js/catalog.js?v=2" defer></script>
+  <script src="js/catalog-purchase.js?v=1" defer></script>
+  <script src="js/catalog.js?v=3" defer></script>
 </body>
 </html>

@@ -60,12 +60,13 @@ function detailsCell(r) {
 }
 
 function renderTable() {
+  syncCatalogCostHeaders();
   document.querySelectorAll('.cat-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === activeTab));
   document.getElementById('cat-add-btn').textContent = t(activeTab === 'drinks' ? 'cat_add_drink' : 'cat_add_service');
   const tbody = document.getElementById('catalog-body');
   const list = rows[activeTab];
   if (!list.length) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#777;padding:28px">${esc(t('cat_empty'))}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="${catalogCosts.allowed && activeTab === 'drinks' ? 9 : 6}" style="text-align:center;color:#777;padding:28px">${esc(t('cat_empty'))}</td></tr>`;
     return;
   }
   tbody.innerHTML = list.map(r => `
@@ -76,6 +77,7 @@ function renderTable() {
       <td><strong>${esc(r.name_bg)}</strong><br><span style="color:#777;font-size:0.82rem">${esc(r.name_en)}</span>${r.active ? '' : ` <span style="color:#c62828;font-size:0.78rem">(${esc(t('cat_hidden'))})</span>`}</td>
       <td>${detailsCell(r)}</td>
       <td style="white-space:nowrap">€${Number(r.price_eur).toFixed(2)}<br><span style="color:#777;font-size:0.8rem">${bgn(r.price_eur)} лв.</span></td>
+      ${catalogPurchaseCells(r)}
       <td>${Number(r.sort_order) || 0}</td>
       <td style="white-space:nowrap">
         ${r.id === 'cleaning' ? '' : `<button class="btn btn-outline btn-sm btn-toggle" data-id="${esc(r.id)}">${esc(r.active ? t('cat_deactivate') : t('cat_activate'))}</button>`}
@@ -279,6 +281,7 @@ async function toggleActive(id) {
 document.addEventListener('DOMContentLoaded', async () => {
   const session = await requireAuth();
   if (!session) return;
+  await loadCatalogCosts();
 
   document.getElementById('cat-add-btn').addEventListener('click', () => openForm(null));
   document.getElementById('cf-cancel').addEventListener('click', closeForm);
