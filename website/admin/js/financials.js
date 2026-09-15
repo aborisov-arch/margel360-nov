@@ -2168,7 +2168,7 @@ function openCategoryBreakdown(kind, catId) {
     label = (INCOME_LABELS.find(c => c.id === catId) || {}).label || catId;
     const rows = scopeFes
       .map(fe => ({ fe, amt: feIncome(fe)[catId] || 0 }))
-      .filter(r => r.amt > 0)
+      .filter(r => r.amt !== 0)
       .sort((a, b) => b.amt - a.amt);
     rows.forEach(r => { total += r.amt; eventIds.add(r.fe.id); });
     lineCount = rows.length;
@@ -2179,7 +2179,7 @@ function openCategoryBreakdown(kind, catId) {
     scopeFes.forEach(fe => {
       (expensesByEvent.get(fe.id) || []).forEach(x => {
         const amt = Number(x.amount_eur || 0);
-        if ((x.category || 'other') === catId && amt > 0) rows.push({ fe, x, amt });
+        if ((x.category || 'other') === catId && amt !== 0) rows.push({ fe, x, amt });
       });
     });
     rows.sort((a, b) => b.amt - a.amt);

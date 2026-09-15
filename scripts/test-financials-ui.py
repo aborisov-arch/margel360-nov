@@ -25,6 +25,12 @@ with sync_playwright() as p:
  page.locator('#fin-month').fill('2026-09');page.locator('#fin-month').dispatch_event('change')
  assert page.locator('.finance-pie').count()==2
  assert page.locator('#sum-income-eur').inner_text()=='€1300.00'
+ assert page.locator('[data-chart-total="income"]').inner_text()=='€1300.00'
+ assert page.locator('[data-chart-total="expense"]').inner_text()=='€50.00'
+ page.locator('#finance-charts').screenshot(path='/tmp/m360-donut-desktop.png')
+ page.locator('[data-chart-cat="overtime"]').click()
+ page.locator('#drill-modal [data-manual-fe]').click()
+ assert page.locator('.finance-focus [data-fe-field="income_overtime_hours"]').input_value()=='3'
  page.locator('#income-cat-breakdown [data-cat="overtime"]').click()
  page.locator('#drill-modal [data-manual-fe]').click()
  assert page.locator('.finance-focus [data-fe-field="income_overtime_hours"]').input_value()=='3'
@@ -53,7 +59,18 @@ with sync_playwright() as p:
  page.wait_for_timeout(300)
  assert page.evaluate('document.documentElement.scrollWidth <= 390'), page.evaluate('document.documentElement.scrollWidth')
  page.screenshot(path='/tmp/m360-finance-mobile.png',full_page=True)
+ page.locator('#finance-charts').screenshot(path='/tmp/m360-donut-mobile.png')
+ page.locator('#fin-month').fill('2099-02');page.locator('#fin-month').dispatch_event('change')
+ assert page.locator('[data-chart-total="income"]').inner_text()=='€0.00'
+ assert page.locator('.finance-chart-empty').count()==2
+ assert page.locator('#finance-charts svg circle').count()==2
+ page.evaluate('renderFinanceCharts({rent:100,overtime:-20},{other:10})')
+ assert page.locator('[data-chart-total="income"]').inner_text()=='€80.00'
+ assert 'корекция' in page.locator('[data-chart-cat="overtime"]').inner_text()
+ assert page.locator('#finance-charts svg circle').count()==4
+ page.evaluate("monthFilter='2026-09'; expensesByEvent.get('11111111-1111-4111-8111-111111111111').push({id:'correction',category:'other',amount_eur:-20});renderMonthSummary();openCategoryBreakdown('expense','other')")
+ assert page.locator('[data-chart-total="expense"]').inner_text()=='€30.00'
+ assert page.locator('#drill-modal [data-expense-id]').count()==2
  assert not errors,errors
  print('PASS charts, income/expense drilldowns, highlighted lines, payroll save/total, overtime match/mismatch, mobile render; no JS exceptions')
  browser.close()
-

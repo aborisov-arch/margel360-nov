@@ -48,13 +48,23 @@ function renderEventOvertime(fe) {
 function renderFinanceCharts(income, expense) {
   let host=document.getElementById('finance-charts');
   if(!host){host=document.createElement('div');host.id='finance-charts';host.className='finance-charts';document.querySelector('#month-summary .kpi-grid').after(host);}
-  const colors=['#aa7d3b','#315c61','#748668','#c27c60','#655b7b','#b1a284','#5d7792','#925d56'];
-  host.innerHTML=[['Приходи',income,INCOME_LABELS],['Разходи',expense,EXPENSE_CATS]].map(([title,values,labels])=>{
-    const rows=Object.entries(values).filter(([,v])=>v>0),total=rows.reduce((s,[,v])=>s+v,0);let offset=0;
-    const stops=rows.map(([,v],i)=>{const start=offset;offset+=v/total*100;return `${colors[i%colors.length]} ${start}% ${offset}%`;});
-    return `<div class="finance-chart"><div class="finance-pie" role="img" aria-label="${title} по категории: ${fmtEur(total)}" style="background:${total?'conic-gradient('+stops.join(',')+')':'#eee9e0'}"></div><div><h3>${title} по категории</h3><ul>${rows.map(([id,v],i)=>`<li><span style="color:${colors[i%colors.length]}">●</span> ${esc(labels.find(c=>c.id===id)?.label||id)} · ${Math.round(v/total*100)}%</li>`).join('')||'<li>Няма данни за периода.</li>'}</ul></div></div>`;
+  const colors=['#2e57bc','#4e9e61','#e2b73f','#8b78ba','#8b919a','#ce765b','#3b929b','#a55c80'];
+  host.innerHTML=[['Приходи',income,INCOME_LABELS,'income'],['Разходи',expense,EXPENSE_CATS,'expense']].map(([title,values,labels,kind])=>{
+    // Stable category colors, even when another category has no values this month.
+    const rows=labels.map((c,i)=>({...c,value:Number(values[c.id]||0),color:colors[i%colors.length]})).filter(r=>r.value!==0);
+    const total=rows.reduce((s,r)=>s+r.value,0),positiveTotal=rows.reduce((s,r)=>s+Math.max(0,r.value),0);
+    let offset=0;
+    const arcs=rows.filter(r=>r.value>0).map(r=>{
+      const share=r.value/positiveTotal*100,start=offset;offset+=share;
+      return `<circle cx="120" cy="120" r="98" pathLength="100" fill="none" stroke="${r.color}" stroke-width="25" stroke-dasharray="${share} ${100-share}" stroke-dashoffset="${-start}" transform="rotate(-90 120 120)"><title>${esc(r.label)}: ${fmtEur(r.value)}</title></circle>`;
+    }).join('');
+    return `<section class="finance-chart" aria-labelledby="chart-${kind}-title"><header><h3 id="chart-${kind}-title">${title} по категории</h3><p>Реализирани · ${esc(monthFilter||'всички месеци')}</p></header>
+      <div class="finance-pie"><svg viewBox="0 0 240 240" role="img" aria-label="${title}: ${fmtEur(total)}. Разбивка в списъка отдолу."><circle cx="120" cy="120" r="98" fill="none" stroke="#eceef2" stroke-width="25"/>${arcs}</svg><div class="finance-donut-total"><span>Общо ${title.toLowerCase()}</span><strong data-chart-total="${kind}">${fmtEur(total)}</strong></div></div>
+      <ul class="finance-chart-legend">${rows.map(r=>`<li><button type="button" data-chart-kind="${kind}" data-chart-cat="${esc(r.id)}"><span class="finance-chart-dot" style="background:${r.color}"></span><span class="finance-chart-label">${esc(r.label)}</span><strong>${fmtEur(r.value)}</strong><small>${r.value>0?new Intl.NumberFormat('bg-BG',{maximumFractionDigits:1}).format(r.value/positiveTotal*100)+'%':'корекция'}</small></button></li>`).join('')||'<li class="finance-chart-empty">Няма данни за периода.</li>'}</ul>
+      <p class="finance-chart-foot">${rows.some(r=>r.value<0)?'Сумата включва корекциите. Пръстенът показва само положителните стойности.':'Изберете категория, за да видите събитията.'}</p></section>`;
   }).join('');
 }
+document.addEventListener('click',event=>{const button=event.target.closest('[data-chart-cat]');if(button)openCategoryBreakdown(button.dataset.chartKind,button.dataset.chartCat);});
 async function openCategoryEvent(enquiryId,feId,expenseId) {
   const context={...lastDrill};
   if(enquiryId)await openPnlFromOffer(enquiryId);else await openManualPnlFromDrill(feId);
