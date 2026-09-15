@@ -82,6 +82,8 @@ Quantities go in column AA (see `ADDON_TO_CELL`); furniture exports ordered-qty-
 
 ## Gotchas
 
+- Finance save integrity: `saveDraft` snapshots submitted values, waits all writes, and clears only unchanged saved fields. Keep the in-flight selection/edit lock; never assign mutable global drafts inside async save callbacks. Monthly expenses groups Ivan/Eli/electricity, preserving other payroll records in a collapsed subsection. Expense metric drilldowns include signed corrections.
+
 - Bottle cost/profit: finance-only `drink_purchase_prices` stores default cost per bottle; never add cost to public `drinks`. Event `pnl_drinks[].unit_cost_eur` and `unit_price_eur` are snapshots. New catalog selections copy defaults; existing lines can fill missing costs explicitly or enter them manually. Automatic COGS is included once in event/month expense totals and drinks drilldowns. Missing costs suppress profit. `drinks_cost_in_expenses=true` uses existing manual drinks expenses instead of adding automatic COGS. Do not assume missing means zero. Quantities are whole bottles. Customer offers remain independent.
 
 - Named staff expenses: `ivan_fee`, `ivan_overtime`, `eli_fee`, `eli_overtime` are regular event expense categories. Six-row staff overview adds these four, Ivan fixed salary (explicitly unset, no charge until owner provides amount/start month), and monthly electricity. Preserve legacy staff/payroll records; do not infer their identity or duplicate them during reclassification.

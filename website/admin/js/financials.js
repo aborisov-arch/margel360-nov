@@ -1450,21 +1450,31 @@ function setIncomeItemDirty(id, field, raw) {
 // Save / cancel
 // ────────────────────────────────────────────────────────────────
 
+let pnlSaving = false;
+function removeSavedFields(draft, saved) {
+  for(const [key,value] of Object.entries(saved))if(JSON.stringify(draft[key])===JSON.stringify(value))delete draft[key];
+}
+function removeSavedMapFields(drafts,saved) {
+  for(const [id,fields] of saved){const current=drafts.get(id);if(!current)continue;removeSavedFields(current,fields);if(!Object.keys(current).length)drafts.delete(id);}
+}
 async function saveDraft() {
+  if(pnlSaving)return;
   if(dirtyFe.pnl_drinks?.some(l=>!Number.isInteger(Number(l.qty))||Number(l.qty)<0||(l.unit_cost_eur!=null&&(!Number.isFinite(Number(l.unit_cost_eur))||Number(l.unit_cost_eur)<0||Number(l.unit_cost_eur)>=1000000)))){showToast('Проверете бутилките: количеството трябва да е цяло и неотрицателно, а покупната цена — валидна положителна сума или 0.','error');return;}
   const sel = currentSelection();
   if (!sel || !sel.fe) return;
   const fe = sel.fe;
-
+  const savedFe=structuredClone(dirtyFe),savedExpenses=structuredClone(dirtyExpenses),savedIncome=structuredClone(dirtyIncomeItems);
+  pnlSaving=true;
+  const panel=document.querySelector('.event-pnl');if(panel)panel.inert=true;
   const ops = [];
-  if (Object.keys(dirtyFe).length) {
-    const patch = { ...dirtyFe, updated_at: new Date().toISOString() };
+  if (Object.keys(savedFe).length) {
+    const patch = { ...savedFe, updated_at: new Date().toISOString() };
     ops.push(db.from('financial_events').update(patch).eq('id', fe.id).then(({ error }) => {
       if (error) throw error;
-      Object.assign(fe, dirtyFe);
+      Object.assign(fe, savedFe);
     }));
   }
-  for (const [id, patchFields] of dirtyExpenses) {
+  for (const [id, patchFields] of savedExpenses) {
     const patch = { ...patchFields, updated_at: new Date().toISOString() };
     ops.push(db.from('financial_expenses').update(patch).eq('id', id).then(({ error }) => {
       if (error) throw error;
@@ -1474,7 +1484,7 @@ async function saveDraft() {
       }
     }));
   }
-  for (const [id, patchFields] of dirtyIncomeItems) {
+  for (const [id, patchFields] of savedIncome) {
     const patch = { ...patchFields, updated_at: new Date().toISOString() };
     ops.push(db.from('financial_income_items').update(patch).eq('id', id).then(({ error }) => {
       if (error) throw error;
@@ -1487,12 +1497,11 @@ async function saveDraft() {
   const btn = document.getElementById('btn-save-pnl');
   if (btn) { btn.disabled = true; btn.textContent = 'Запазване…'; }
   try {
-    await Promise.all(ops);
+    const results=await Promise.allSettled(ops);
+    const failure=results.find(r=>r.status==='rejected');if(failure)throw failure.reason;
     // Item edits are now applied in memory - refresh the cached column.
     await syncAddonsColumn(fe);
-    dirtyFe = {};
-    dirtyExpenses = new Map();
-    dirtyIncomeItems = new Map();
+    if(currentSelection()?.fe?.id===fe.id){removeSavedFields(dirtyFe,savedFe);removeSavedMapFields(dirtyExpenses,savedExpenses);removeSavedMapFields(dirtyIncomeItems,savedIncome);}
     renderEventsList(document.getElementById('events-search').value);
     renderMonthSummary();
     renderDetail();
@@ -1500,10 +1509,13 @@ async function saveDraft() {
     console.error('saveDraft failed', err);
     alert('Грешка при запис: ' + (err?.message || err));
     if (btn) { btn.disabled = false; btn.textContent = 'Запази промените'; }
+  } finally {
+    pnlSaving=false;if(panel)panel.inert=false;
   }
 }
 
 function cancelDraft() {
+  if(pnlSaving)return;
   dirtyFe = {};
   dirtyExpenses = new Map();
   dirtyIncomeItems = new Map();
@@ -1516,6 +1528,7 @@ function cancelDraft() {
 // clean slate next time it's clicked (ensureFinancialEvent will create
 // a fresh row prefilled from the enquiry).
 async function deletePnl() {
+  if(pnlSaving)return;
   const sel = currentSelection();
   if (!sel || !sel.fe) return;
   const { kind, enquiry, fe } = sel;
@@ -1546,6 +1559,7 @@ async function deletePnl() {
 // ────────────────────────────────────────────────────────────────
 
 async function selectEnquiry(enquiryId) {
+  if(pnlSaving){showToast('Изчакайте записът да приключи.');return;}
   if (isDirty()) {
     if (!confirm('Имате незапазени промени. Да ги отхвърля ли?')) return;
   }
@@ -1563,6 +1577,7 @@ async function selectEnquiry(enquiryId) {
 // Open a manual (no-enquiry) financial_event. Used when the bookkeeper
 // clicks one in the "Ръчни събития" section of the left rail.
 async function selectManual(feId) {
+  if(pnlSaving){showToast('Изчакайте записът да приключи.');return;}
   if (isDirty()) {
     if (!confirm('Имате незапазени промени. Да ги отхвърля ли?')) return;
   }
@@ -1627,6 +1642,7 @@ async function addManualEvent() {
 }
 
 async function addEventExpense(category = 'other') {
+  if(pnlSaving)return;
   const sel = currentSelection();
   if (!sel) return;
   // Enquiry selection might not have its fe created yet - lazily create.
@@ -2146,7 +2162,7 @@ function openMetricBreakdown(metric) {
   };
   const rows = scopeFes
     .map(fe => ({ fe, amt: amountOf(fe) }))
-    .filter(r => r.amt != null && (metric === 'profit' ? r.amt !== 0 : r.amt > 0))
+    .filter(r => r.amt != null && (['profit','expense'].includes(metric) ? r.amt !== 0 : r.amt > 0))
     .sort((a, b) => b.amt - a.amt);
   const overhead = metric === 'expense' ? electricityTotal() : metric === 'profit' ? -electricityTotal() : 0;
   const overheadRows = ['expense','profit'].includes(metric) ? electricityDrillRows(metric==='profit'?-1:1) : '';
