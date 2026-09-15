@@ -108,6 +108,43 @@ with sync_playwright() as p:
  page.evaluate('closeDrill()')
  page.locator('#staff-allocations').screenshot(path='/tmp/m360-staff-allocations.png')
  assert page.evaluate('document.documentElement.scrollWidth <= 390')
+ page.locator('#btn-add-drink-manual').click()
+ page.locator('[data-drink-f="name"]').fill('QA bottle')
+ page.locator('[data-drink-f="unit_price_eur"]').fill('40')
+ page.locator('[data-drink-f="qty"]').fill('3')
+ assert page.locator('#pnl-net-eur').inner_text()=='Непълни данни'
+ page.locator('[data-bottle-cost="0"]').fill('20')
+ assert '€60.00' in page.locator('#bottle-cost-summary').inner_text()
+ page.locator('#btn-save-pnl').click()
+ page.wait_for_function("financialEventsById.get('11111111-1111-4111-8111-111111111111').pnl_drinks.length===1")
+ assert page.locator('#sum-expense-eur').inner_text()=='€370.00'
+ assert page.locator('#sum-profit-eur').inner_text()=='€1050.00'
+ page.locator('#finance-charts [data-chart-cat="drinks"][data-chart-kind="expense"]').click()
+ page.locator('[data-bottle-event]').click()
+ assert page.locator('#pnl-drinks-lines.finance-focus').count()==1
+ page.evaluate("const fe=financialEventsById.get('11111111-1111-4111-8111-111111111111');fe.pnl_drinks[0].manual=false;fe.pnl_drinks[0].id='qa-bottle';drinkCatalogById.set('qa-bottle',{id:'qa-bottle',name_bg:'QA bottle',price_eur:50});renderDrinkPurchasePrices()")
+ page.locator('details:has(#drink-purchase-body) summary').click()
+ page.locator('#drink-purchase-form select').select_option('qa-bottle')
+ page.locator('#drink-purchase-form [name="cost_eur"]').fill('30')
+ page.locator('#drink-purchase-form button').click()
+ page.wait_for_function("drinkPurchasePrices.get('qa-bottle')===30")
+ assert page.evaluate("eventBottleCost(currentSelection().fe).cost") == 60
+ assert page.evaluate("savedDrinksTotal(currentSelection().fe)") == 120
+ page.locator('[data-bottle-cost="0"]').fill('')
+ page.locator('#btn-save-pnl').click()
+ page.wait_for_function("eventBottleCost(currentSelection().fe).missing===1")
+ assert page.locator('#sum-profit-eur').inner_text()=='Непълни данни'
+ page.locator('[data-bottle-cost="0"]').fill('0')
+ page.locator('#btn-save-pnl').click()
+ page.wait_for_function("eventBottleCost(currentSelection().fe).missing===0")
+ assert page.locator('#sum-profit-eur').inner_text()=='€1110.00'
+ page.evaluate("expensesByEvent.get(currentSelection().fe.id).push({id:'bottle-manual-cost',category:'drinks',amount_eur:60});renderDetail()")
+ page.locator('#bottle-cost-manual').check()
+ page.locator('#btn-save-pnl').click()
+ page.wait_for_function("currentSelection().fe.drinks_cost_in_expenses===true")
+ assert page.locator('#sum-expense-eur').inner_text()=='€370.00'
+ assert page.locator('#sum-profit-eur').inner_text()=='€1050.00'
  assert not errors,errors
+ page.locator('#bottle-cost-summary').screenshot(path='/tmp/m360-bottle-profit.png')
  print('PASS charts, income/expense drilldowns, highlighted lines, payroll save/total, overtime match/mismatch, mobile render; no JS exceptions')
  browser.close()

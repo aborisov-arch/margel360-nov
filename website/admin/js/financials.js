@@ -289,7 +289,7 @@ function fePaid(fe) {
 function feExpenseTotal(fe) {
   if (!fe) return 0;
   const rows = expensesByEvent.get(fe.id) || [];
-  return rows.reduce((s, x) => s + Number(x.amount_eur || 0), 0);
+  return rows.reduce((s, x) => s + Number(x.amount_eur || 0), 0) + eventBottleCost(fe).auto;
 }
 
 // ────────────────────────────────────────────────────────────────
@@ -470,6 +470,9 @@ function renderMonthSummary() {
       overtime += inc.overtime;
       dj += inc.dj;
       employees += inc.employees;
+      const bottleCost=eventBottleCost(fe);
+      expense+=bottleCost.auto;
+      expByCat.drinks+=bottleCost.auto;
       // Expenses count only once the event has happened too, so profit is
       // a realized figure (realized income − realized expense).
       const rows = expensesByEvent.get(fe.id) || [];
@@ -513,7 +516,7 @@ function renderMonthSummary() {
 
   const incomeCats = { rent, drinks, addons, overtime, dj, employees };
   renderFinanceCharts(incomeCats, expByCat);
-  if(electricityError){set('sum-expense-eur','Непълни данни');set('sum-profit-eur','Непълни данни');document.querySelector('[data-chart-total="expense"]').textContent='Непълни данни';}
+  if(electricityError || incompleteBottleCostsInMonth()){set('sum-expense-eur','Непълни данни');set('sum-profit-eur','Непълни данни');document.querySelector('[data-chart-total="expense"]').textContent='Непълни данни';}
   renderManagerPay();
   renderStaffAllocations(expByCat);
   const incomeBreak = document.getElementById('income-cat-breakdown');
@@ -567,7 +570,7 @@ function renderEventsList(filter = '') {
     const inc = fe ? feIncome(fe).total : null;
     const exp = fe ? feExpenseTotal(fe) : 0;
     const net = inc != null ? (inc - exp) : null;
-    const margin = (inc != null && inc > 0) ? Math.round((net / inc) * 100) : null;
+    const margin = (inc != null && inc > 0 && !eventBottleCost(fe).missing) ? Math.round((net / inc) * 100) : null;
     const selected = e.id === selectedEnquiryId ? ' is-selected' : '';
     const marginClass = margin == null ? '' : (margin >= 0 ? ' is-positive' : ' is-negative');
     const iso = parsePreferredDate(e.preferred_date);
@@ -584,7 +587,7 @@ function renderEventsList(filter = '') {
     const inc = feIncome(fe).total;
     const exp = feExpenseTotal(fe);
     const net = inc - exp;
-    const margin = inc > 0 ? Math.round((net / inc) * 100) : null;
+    const margin = inc > 0 && !eventBottleCost(fe).missing ? Math.round((net / inc) * 100) : null;
     const selected = fe.id === selectedManualFeId ? ' is-selected' : '';
     const marginClass = margin == null ? '' : (margin >= 0 ? ' is-positive' : ' is-negative');
     return `
@@ -675,7 +678,7 @@ function livePaid(fe) {
 function liveExpenseTotal(fe) {
   if (!fe) return 0;
   const rows = expensesByEvent.get(fe.id) || [];
-  return rows.reduce((s, r) => s + Number(expFieldValue(r, 'amount_eur') || 0), 0);
+  return rows.reduce((s, r) => s + Number(expFieldValue(r, 'amount_eur') || 0), 0) + eventBottleCost(fe,true).auto;
 }
 
 // ────────────────────────────────────────────────────────────────
@@ -713,6 +716,8 @@ function ensureDrinksDraft() {
   return dirtyFe.pnl_drinks;
 }
 function drinkUnitPrice(line) {
+  // Keep the sale price actually used for this event, not today's catalog price.
+  if(line.unit_price_eur!=null)return Number(line.unit_price_eur)||0;
   if (line.manual) return Number(line.unit_price_eur) || 0;
   const c = drinkCatalogById.get(line.id);
   if (c) return Number(c.price_eur) || 0;
@@ -726,6 +731,7 @@ function drinksTotalOf(arr) {
 
 // Stage the draft array + recomputed cached total into dirtyFe.
 function stageDrinks(arr) {
+  arr.forEach(l=>{if(l.unit_price_eur==null)l.unit_price_eur=drinkUnitPrice(l);});
   dirtyFe.pnl_drinks = arr;
   dirtyFe.income_drinks_eur = drinksTotalOf(arr);
 }
@@ -756,6 +762,7 @@ function setDrinkSelect(index, drinkId) {
   const c = drinkCatalogById.get(drinkId);
   arr[index].id = drinkId;
   arr[index].manual = false;
+  arr[index].unit_cost_eur = drinkPurchasePrices.get(drinkId) ?? null;
   if (c) { arr[index].name = c.name_bg; arr[index].unit_price_eur = Number(c.price_eur); }
   stageDrinks(arr);
   renderDrinks();
@@ -774,7 +781,7 @@ function addCatalogDrink() {
   const arr = ensureDrinksDraft();
   const first = (typeof drinks !== 'undefined' && Array.isArray(drinks) && drinks[0]) ? drinks[0] : null;
   arr.push(first
-    ? { id: first.id, name: first.name_bg, qty: 1, unit_price_eur: Number(first.price_eur), manual: false }
+    ? { id: first.id, name: first.name_bg, qty: 1, unit_price_eur: Number(first.price_eur), unit_cost_eur:drinkPurchasePrices.get(first.id)??null, manual: false }
     : { id: null, name: '', qty: 1, unit_price_eur: 0, manual: true });
   stageDrinks(arr);
   renderDrinks();
@@ -821,6 +828,7 @@ function renderDrinks() {
   }
   wrap.innerHTML = arr.map((l, i) => {
     const lineEur = fmtEur(drinkLineTotal(l));
+    const costInput=`<label class="pay-note">Покупна цена · €/бутилка <input type="number" min="0" step="0.01" data-bottle-cost="${i}" value="${esc(l.unit_cost_eur??'')}" placeholder="Не е зададена" aria-label="Покупна цена за бутилка"></label>`;
     // Keep the <select>, the priced unit, and the stored id in agreement even
     // for a drink that has since left the catalog - otherwise the browser
     // silently auto-selects the first option while pricing the stored fallback.
@@ -840,6 +848,7 @@ function renderDrinks() {
             <span class="event-pnl__drink-eur" id="pnl-drink-eur-${i}">${lineEur}</span>
             <button type="button" class="del-btn" data-del-drink="${i}" title="Изтрий">×</button>
           </div>
+          ${costInput}
         </li>`;
     }
     return `
@@ -853,6 +862,7 @@ function renderDrinks() {
           <span class="event-pnl__drink-eur" id="pnl-drink-eur-${i}">${lineEur}</span>
           <button type="button" class="del-btn" data-del-drink="${i}" title="Изтрий">×</button>
         </div>
+        ${costInput}
       </li>`;
   }).join('');
 }
@@ -1132,7 +1142,8 @@ function updateDetailTotals() {
   const paid = livePaid(fe);
   const balance = inc.total - paid;
   const net = inc.total - expense;
-  const margin = inc.total > 0 ? Math.round((net / inc.total) * 100) : null;
+  const costMissing=eventBottleCost(fe,true).missing;
+  const margin = inc.total > 0 && !costMissing ? Math.round((net / inc.total) * 100) : null;
 
   const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
   set('pnl-income-total',  fmtEur(inc.total));
@@ -1142,6 +1153,10 @@ function updateDetailTotals() {
   set('pnl-paid-total',    fmtEur(paid));
   set('pnl-balance',       fmtEur(balance));
   set('pnl-net-eur',       fmtEur(net));
+  if(costMissing){set('pnl-expense-total','Непълни данни');set('pnl-net-eur','Непълни данни');}
+  renderBottleCostSummary(fe);
+  const staffHost=document.getElementById('event-staff-taken');
+  if(staffHost){const staff=(prefix)=>(expensesByEvent.get(fe?.id)||[]).filter(r=>[prefix+'_fee',prefix+'_overtime'].includes(expFieldValue(r,'category'))).reduce((s,r)=>s+Number(expFieldValue(r,'amount_eur')||0),0);staffHost.textContent=`Получено за вечерта — Иван: ${fmtEur(staff('ivan'))} · Ели: ${fmtEur(staff('eli'))}. Сумите са включени в разходите по-долу.`;}
   const marginEl = document.getElementById('pnl-margin');
   if (marginEl) {
     marginEl.textContent = margin == null ? '-' : margin + '%';
@@ -1298,6 +1313,7 @@ async function refreshFromEnquiry() {
     if (fe.pnl_drinks != null) {
       const preservedManual = fe.pnl_drinks.filter(l => l && l.manual === true);
       const freshFromOrder = seedDrinksFromOrder(liveEnquiry);
+      freshFromOrder.forEach(line=>{const previous=fe.pnl_drinks.find(l=>!l.manual&&l.id===line.id);if(previous?.unit_cost_eur!=null)line.unit_cost_eur=previous.unit_cost_eur;});
       const nextDrinks = [...freshFromOrder, ...preservedManual];
       drinksPatch = { pnl_drinks: nextDrinks, income_drinks_eur: drinksTotalOf(nextDrinks) };
     }
@@ -1435,6 +1451,7 @@ function setIncomeItemDirty(id, field, raw) {
 // ────────────────────────────────────────────────────────────────
 
 async function saveDraft() {
+  if(dirtyFe.pnl_drinks?.some(l=>!Number.isInteger(Number(l.qty))||Number(l.qty)<0||(l.unit_cost_eur!=null&&(!Number.isFinite(Number(l.unit_cost_eur))||Number(l.unit_cost_eur)<0||Number(l.unit_cost_eur)>=1000000)))){showToast('Проверете бутилките: количеството трябва да е цяло и неотрицателно, а покупната цена — валидна положителна сума или 0.','error');return;}
   const sel = currentSelection();
   if (!sel || !sel.fe) return;
   const fe = sel.fe;
@@ -2107,6 +2124,7 @@ function drillRowHtml(fe, amt, signed) {
     </button>`;
 }
 function openMetricBreakdown(metric) {
+  if(incompleteBottleCostsInMonth() && ['expense','profit'].includes(metric)){showToast('Липсват покупни цени за бутилки. Попълнете ги по събития.','error');return;}
   if(electricityError && ['expense','profit'].includes(metric)){showToast('Непълни данни за електроенергията. Презаредете страницата.','error');return;}
   if (metric === 'commissions') { openCommissionBreakdown(); return; }
   lastDrill = { kind: 'metric', metric };
@@ -2168,6 +2186,7 @@ function expenseDrillRowHtml(fe, x, amt) {
     </button>`;
 }
 function openCategoryBreakdown(kind, catId) {
+  if(kind==='expense' && catId==='drinks' && incompleteBottleCostsInMonth()){showToast('Липсват покупни цени за бутилки. Попълнете ги по събития.','error');return;}
   if(electricityError && kind==='expense' && catId==='utilities'){showToast('Непълни данни за електроенергията. Презаредете страницата.','error');return;}
   lastDrill = { kind: 'cat', catKind: kind, catId };
   const scopeFes = [];
@@ -2202,6 +2221,7 @@ function openCategoryBreakdown(kind, catId) {
   }
   const title = document.getElementById('drill-title');
   if (title) title.textContent = `${label} · ${monthLabel(monthFilter)}`;
+  if(kind==='expense'&&catId==='drinks'){scopeFes.forEach(fe=>{const cost=eventBottleCost(fe);if(cost.auto){rowsHtml+=bottleCostDrillRow(fe);total+=cost.auto;lineCount++;eventIds.add(fe.id);}});}
   if(kind==='expense' && catId==='utilities'){rowsHtml+=electricityDrillRows();total+=electricityTotal();lineCount+=electricityScope().filter(r=>Number(r.amount_eur)!==0).length;}
   const body = document.getElementById('drill-body');
   if (body) {
@@ -2526,6 +2546,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadAll();
   await loadManagerPay();
   await loadElectricity();
+  await loadDrinkPurchasePrices();
   const now = new Date();
   monthFilter = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   const monthInp = document.getElementById('fin-month');

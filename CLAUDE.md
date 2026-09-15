@@ -82,6 +82,8 @@ Quantities go in column AA (see `ADDON_TO_CELL`); furniture exports ordered-qty-
 
 ## Gotchas
 
+- Bottle cost/profit: finance-only `drink_purchase_prices` stores default cost per bottle; never add cost to public `drinks`. Event `pnl_drinks[].unit_cost_eur` and `unit_price_eur` are snapshots. New catalog selections copy defaults; existing lines can fill missing costs explicitly or enter them manually. Automatic COGS is included once in event/month expense totals and drinks drilldowns. Missing costs suppress profit. `drinks_cost_in_expenses=true` uses existing manual drinks expenses instead of adding automatic COGS. Do not assume missing means zero. Quantities are whole bottles. Customer offers remain independent.
+
 - Named staff expenses: `ivan_fee`, `ivan_overtime`, `eli_fee`, `eli_overtime` are regular event expense categories. Six-row staff overview adds these four, Ivan fixed salary (explicitly unset, no charge until owner provides amount/start month), and monthly electricity. Preserve legacy staff/payroll records; do not infer their identity or duplicate them during reclassification.
 
 - Monthly electricity (`monthly_electricity`, finance-only, audited, unique month) is venue overhead. `electricityTotal()` is included once in summary expense/profit and utilities drilldowns, never in individual event P&L. Do not also enter the same invoice against an event. Public Services and booking summary disclose venue overtime after hour five (€160/hour), plus a cleaner when present (€20/hour), separately from the fixed cleaning addon. Actual overtime remains entered after usage; existing offers are not repriced.

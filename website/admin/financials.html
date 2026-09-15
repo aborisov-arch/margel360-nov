@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/admin.css?v=20">
   <link rel="stylesheet" href="css/financials.css?v=20">
-  <link rel="stylesheet" href="css/financials-analysis.css?v=3">
+  <link rel="stylesheet" href="css/financials-analysis.css?v=4">
   <link rel="icon" href="/favicon.ico" sizes="48x48">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link rel="icon" type="image/png" sizes="192x192" href="/assets/favicon-192.png">
@@ -158,6 +158,7 @@
       </section>
 
       <section class="fin-section" id="staff-allocations"><h2>Иван, Ели и ток · месечни разходи</h2><div id="staff-allocations-body"></div></section>
+      <details class="fin-section"><summary>Напитки / алкохол · покупни цени за бутилка</summary><div id="drink-purchase-body">Зареждане…</div></details>
       <section class="fin-section" id="monthly-electricity"><h2>Ток · месечна сметка за електроенергия</h2><div id="electricity-body">Зареждане…</div></section>
       <p class="pay-note"><strong>Услуги / извънредно време:</strong> След 5-ия час: €160/час за залата. При присъствие на хигиенист: допълнително €20/час за хигиениста. Отделно от стандартната такса за почистване; начислява се според реалното ползване.</p>
       <section class="fin-section" id="manager-pay"><h2>Възнаграждение на управителя</h2><div id="manager-pay-body">Зареждане…</div></section>
@@ -205,6 +206,7 @@
                   <span class="event-pnl__subtotal" id="pnl-drinks-total">€0.00</span>
                 </div>
                 <ul class="event-pnl__lines" id="pnl-drinks-lines"></ul>
+                <div id="bottle-cost-summary"></div>
                 <div class="event-pnl__drinks-add">
                   <button type="button" class="btn-add btn-sm" id="btn-add-drink">+ Добави напитка</button>
                   <button type="button" class="btn-add btn-sm" id="btn-add-drink-manual">+ Ръчна напитка</button>
@@ -231,10 +233,13 @@
               <!-- EXPENSES - per-vendor cost (DJ, cleaner, catering, etc.) -->
               <div class="event-pnl__col event-pnl__col--expense">
                 <div class="event-pnl__col-head">
-                  <h3>Разходи · доставчици</h3>
+                  <h3>Получено от екипа и всички разходи за вечерта</h3>
                   <span class="event-pnl__col-total" id="pnl-expense-total">€0.00</span>
                 </div>
                 <ul class="event-pnl__lines" id="pnl-expense-lines"></ul>
+                <p id="event-staff-taken" class="pay-note"></p>
+                <p id="event-bottle-expense" class="pay-note"></p>
+                <div class="pay-form"><button type="button" class="btn btn-outline btn-sm" data-staff-quick="ivan_fee">+ Иван хонорар</button><button type="button" class="btn btn-outline btn-sm" data-staff-quick="ivan_overtime">+ Иван овъртайм</button><button type="button" class="btn btn-outline btn-sm" data-staff-quick="eli_fee">+ Ели хонорар</button><button type="button" class="btn btn-outline btn-sm" data-staff-quick="eli_overtime">+ Ели овъртайм</button></div>
                 <button type="button" class="btn-add btn-sm" id="btn-add-event-expense">+ Добави разход</button>
               </div>
             </div>
@@ -284,6 +289,7 @@
   <script src="js/toast.js?v=2" defer></script>
   <script src="../js/catalog-db.js?v=1" defer></script>
   <script src="js/financials-analysis.js?v=4" defer></script>
-  <script src="js/financials.js?v=51" defer></script>
+  <script src="js/drink-costs.js?v=1" defer></script>
+  <script src="js/financials.js?v=52" defer></script>
 </body>
 </html>
