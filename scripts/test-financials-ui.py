@@ -71,6 +71,24 @@ with sync_playwright() as p:
  page.evaluate("monthFilter='2026-09'; expensesByEvent.get('11111111-1111-4111-8111-111111111111').push({id:'correction',category:'other',amount_eur:-20});renderMonthSummary();openCategoryBreakdown('expense','other')")
  assert page.locator('[data-chart-total="expense"]').inner_text()=='€30.00'
  assert page.locator('#drill-modal [data-expense-id]').count()==2
+ page.evaluate('closeDrill();renderMonthSummary()')
+ page.locator('#electricity-form [name="amount_eur"]').fill('200')
+ page.locator('#electricity-form [name="reference"]').fill('QA invoice')
+ page.locator('#electricity-form button').click()
+ page.wait_for_function('electricityRows.length===1')
+ assert page.locator('#sum-expense-eur').inner_text()=='€230.00'
+ assert page.locator('#sum-profit-eur').inner_text()=='€1070.00'
+ assert page.locator('[data-chart-total="expense"]').inner_text()=='€230.00'
+ page.locator('[data-chart-cat="utilities"]').click()
+ assert page.locator('[data-electricity-month]').count()==1
+ page.locator('[data-electricity-month]').click()
+ assert page.locator('#monthly-electricity.finance-focus').count()==1
+ page.evaluate("openMetricBreakdown('profit')")
+ assert '€1070.00' in page.locator('#drill-body').inner_text()
+ page.evaluate("closeDrill();electricityError=true;openMetricBreakdown('expense')")
+ assert page.locator('#drill-modal').is_hidden()
+ page.evaluate("openCategoryBreakdown('expense','utilities')")
+ assert page.locator('#drill-modal').is_hidden()
  assert not errors,errors
  print('PASS charts, income/expense drilldowns, highlighted lines, payroll save/total, overtime match/mismatch, mobile render; no JS exceptions')
  browser.close()

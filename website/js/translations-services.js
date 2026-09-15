@@ -1,5 +1,6 @@
 const translations = {
   bg: {
+    overtime_terms: 'След 5-ия час се начисляват €160/час за залата. При присъствие на хигиенист се начисляват допълнително €20/час за хигиениста. Това е отделно от стандартната такса за почистване и се заплаща според реалното ползване.',
     nav_home: 'Начало', nav_gallery: 'Галерия', nav_faq: 'FAQ',
     nav_services: 'Услуги', nav_drinks: 'Меню', nav_partners: 'Партньори', nav_contact: 'Контакти', nav_blog: 'Блог', nav_reserve: 'Запитване',
     nav_ev_wedding: 'Сватбена зала', nav_ev_birthday: 'Детски рожден ден',
@@ -13,6 +14,7 @@ const translations = {
     footer_copy: '© 2026 Маргел 360°. Всички права запазени.',
   },
   en: {
+    overtime_terms: 'After the fifth hour, venue overtime costs €160/hour. If a cleaner is present, an additional €20/hour applies for the cleaner. This is separate from the standard cleaning fee and is charged according to actual usage.',
     nav_home: 'Home', nav_gallery: 'Gallery', nav_faq: 'FAQ',
     nav_services: 'Services', nav_drinks: 'Menu', nav_partners: 'Partners', nav_contact: 'Contacts', nav_blog: 'Blog', nav_reserve: 'Enquiry',
     nav_ev_wedding: 'Wedding venue', nav_ev_birthday: "Children's birthday",

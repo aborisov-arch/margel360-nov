@@ -1069,6 +1069,10 @@ function renderSummary() {
       if (row.sub) { div.style.fontSize = '0.85em'; div.style.color = '#7A7568'; div.style.paddingLeft = '14px'; }
       div.appendChild(lbl); div.appendChild(val); priceSummary.appendChild(div);
     });
+    const overtimeNote=document.createElement('p');
+    overtimeNote.className='overtime-terms';overtimeNote.style.cssText='font-size:0.85rem;line-height:1.6;margin-top:16px';
+    overtimeNote.textContent=l==='bg'?'След 5-ия час: €160/час за залата + €20/час при присъствие на хигиенист. Отделно от стандартната такса за почистване. Не е включено в горната сума; начислява се според реалното ползване.':'After the fifth hour: €160/hour for the venue + €20/hour if a cleaner is present. Separate from the standard cleaning fee. Not included in the total above; charged according to actual usage.';
+    priceSummary.appendChild(overtimeNote);
   }
 }
 

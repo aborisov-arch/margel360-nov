@@ -481,6 +481,9 @@ function renderMonthSummary() {
     paid   += fePaid(fe);
   });
 
+  expense += electricityTotal();
+  expByCat.utilities += electricityTotal();
+  renderElectricity();
   const income = rent + drinks + addons + overtime + dj + employees;
   const profit = income - expense;
   const realizedCount = scopeFes.length - upcomingCount;
@@ -506,6 +509,7 @@ function renderMonthSummary() {
 
   const incomeCats = { rent, drinks, addons, overtime, dj, employees };
   renderFinanceCharts(incomeCats, expByCat);
+  if(electricityError){set('sum-expense-eur','Непълни данни');set('sum-profit-eur','Непълни данни');document.querySelector('[data-chart-total="expense"]').textContent='Непълни данни';}
   renderManagerPay();
   const incomeBreak = document.getElementById('income-cat-breakdown');
   if (incomeBreak) {
@@ -2098,6 +2102,7 @@ function drillRowHtml(fe, amt, signed) {
     </button>`;
 }
 function openMetricBreakdown(metric) {
+  if(electricityError && ['expense','profit'].includes(metric)){showToast('Непълни данни за електроенергията. Презаредете страницата.','error');return;}
   if (metric === 'commissions') { openCommissionBreakdown(); return; }
   lastDrill = { kind: 'metric', metric };
   const TITLES = { income: 'Приходи (реализирани)', upcoming: 'Очаквани (предстоящи)', paid: 'Платено от клиенти', expense: 'Разходи', profit: 'Печалба' };
@@ -2120,15 +2125,17 @@ function openMetricBreakdown(metric) {
     .map(fe => ({ fe, amt: amountOf(fe) }))
     .filter(r => r.amt != null && (metric === 'profit' ? r.amt !== 0 : r.amt > 0))
     .sort((a, b) => b.amt - a.amt);
-  const total = rows.reduce((s, r) => s + r.amt, 0);
+  const overhead = metric === 'expense' ? electricityTotal() : metric === 'profit' ? -electricityTotal() : 0;
+  const overheadRows = ['expense','profit'].includes(metric) ? electricityDrillRows(metric==='profit'?-1:1) : '';
+  const total = rows.reduce((s, r) => s + r.amt, 0) + overhead;
   const title = document.getElementById('drill-title');
   if (title) title.textContent = `${TITLES[metric] || 'Разбивка'} · ${monthLabel(monthFilter)}`;
   const body = document.getElementById('drill-body');
   if (body) {
-    body.innerHTML = rows.length
-      ? `<div class="link-modal__list">${rows.map(r => drillRowHtml(r.fe, r.amt, metric === 'profit')).join('')}</div>
+    body.innerHTML = rows.length || overheadRows
+      ? `<div class="link-modal__list">${rows.map(r => drillRowHtml(r.fe, r.amt, metric === 'profit')).join('')}${overheadRows}</div>
          <div style="display:flex;justify-content:space-between;margin-top:14px;padding-top:10px;border-top:2px solid var(--fin-border,#e6e1d6);font-weight:800">
-           <span>Общо · ${rows.length} ${rows.length === 1 ? 'събитие' : 'събития'}</span><span>${fmtEur(total)}</span>
+           <span>Общо · ${rows.length} събития${overheadRows?' + ток':''}</span><span>${fmtEur(total)}</span>
          </div>`
       : '<div class="empty-state">Няма събития в този период.</div>';
   }
@@ -2156,6 +2163,7 @@ function expenseDrillRowHtml(fe, x, amt) {
     </button>`;
 }
 function openCategoryBreakdown(kind, catId) {
+  if(electricityError && kind==='expense' && catId==='utilities'){showToast('Непълни данни за електроенергията. Презаредете страницата.','error');return;}
   lastDrill = { kind: 'cat', catKind: kind, catId };
   const scopeFes = [];
   for (const fe of financialEventsById.values()) {
@@ -2189,6 +2197,7 @@ function openCategoryBreakdown(kind, catId) {
   }
   const title = document.getElementById('drill-title');
   if (title) title.textContent = `${label} · ${monthLabel(monthFilter)}`;
+  if(kind==='expense' && catId==='utilities'){rowsHtml+=electricityDrillRows();total+=electricityTotal();lineCount+=electricityScope().filter(r=>Number(r.amount_eur)!==0).length;}
   const body = document.getElementById('drill-body');
   if (body) {
     const n = eventIds.size;
@@ -2282,6 +2291,7 @@ function offerViewHtml(enq, o) {
     <div style="${rowCss};opacity:.85"><span>Депозит (50%)</span><span style="white-space:nowrap">${fmtEur(o.deposit)}</span></div>
     <div style="${rowCss};opacity:.85"><span>Остатък</span><span style="white-space:nowrap">${fmtEur(o.balance)}</span></div>
     <div style="${rowCss};opacity:.7;font-size:.9em"><span>Валидна</span><span>${OFFER_VALID_DAYS} дни</span></div>
+    <p class="pay-note">След 5-ия час: €160/час за залата + €20/час при присъствие на хигиенист. Отделно от стандартната такса за почистване. Не е включено в офертата; начислява се според реалното ползване.</p>
     <button type="button" class="btn btn-primary btn-sm" data-offer-open-pnl="${esc(enq.id)}" style="margin-top:16px;width:100%">Отвори пълния P&amp;L</button>
   `;
 }
@@ -2510,6 +2520,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   await loadAll();
   await loadManagerPay();
+  await loadElectricity();
   const now = new Date();
   monthFilter = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   const monthInp = document.getElementById('fin-month');

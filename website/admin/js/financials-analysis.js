@@ -1,6 +1,29 @@
 // Finance analysis uses saved event values. Payroll is separate from venue
 // overtime revenue: a client's charged hours are not the manager's wage.
 let managerPayRows = [], managerOvertimeRows = [], managerPayError = '';
+let electricityRows = [], electricityError = false;
+const electricityDrafts = new Map();
+async function loadElectricity() {
+  const {data,error}=await db.from('monthly_electricity').select('*');
+  electricityRows=data||[];electricityError=!!error;
+}
+function electricityScope(){return electricityRows.filter(r=>!monthFilter||r.month.slice(0,7)===monthFilter);}
+function electricityTotal(){return electricityScope().reduce((s,r)=>s+Number(r.amount_eur),0);}
+function electricityDrillRows(sign=1){return electricityScope().filter(r=>Number(r.amount_eur)!==0).map(r=>`<button type="button" class="drill-row" data-electricity-month="${esc(r.month.slice(0,7))}">Електроенергия · ${esc(r.month.slice(0,7))} · ${esc(r.reference)} <strong>${fmtEur(sign*Number(r.amount_eur))}</strong></button>`).join('');}
+function renderElectricity(){
+ const host=document.getElementById('electricity-body');if(!host)return;
+ if(electricityError){host.innerHTML='<p class="pay-error">Сметките за ток не могат да се заредят. Презаредете преди работа с общите разходи.</p>';return;}
+ const r={...(electricityRows.find(r=>r.month===monthFilter+'-01')||{}),...(electricityDrafts.get(monthFilter)||{})};
+ host.innerHTML=`<p class="pay-note">Месечен разход за залата, включен веднъж в разходите, печалбата и категория „Сметки / комунални“. Не го добавяйте повторно към събитие.</p>${monthFilter?`<form id="electricity-form" data-month="${esc(monthFilter)}" class="pay-form">${payInput('amount_eur','Месечна сметка · €',r.amount_eur??0)}${payInput('reference','Фактура / бележка',r.reference,'text')}<button class="btn btn-primary" type="submit">Запази сметката</button></form>`:'<p>Изберете месец, за да въведете сметка.</p>'}<div class="pay-scroll"><table class="pay-table"><thead><tr><th>Месец</th><th>Фактура / бележка</th><th>Разход</th></tr></thead><tbody>${electricityScope().map(r=>`<tr><td>${esc(r.month.slice(0,7))}</td><td>${esc(r.reference)}</td><td><strong>${fmtEur(r.amount_eur)}</strong></td></tr>`).join('')||'<tr><td colspan="3">Няма въведена сметка.</td></tr>'}</tbody></table></div>`;
+}
+document.addEventListener('input',event=>{const f=event.target.closest('#electricity-form');if(f)electricityDrafts.set(f.dataset.month,Object.fromEntries(new FormData(f)));});
+window.addEventListener('beforeunload',event=>{if(electricityDrafts.size){event.preventDefault();event.returnValue='';}});
+document.addEventListener('submit',async event=>{
+ const f=event.target;if(f.id!=='electricity-form')return;event.preventDefault();const b=f.querySelector('button');b.disabled=true;
+ const v=Object.fromEntries(new FormData(f));
+ try{const {error}=await db.from('monthly_electricity').upsert({month:f.dataset.month+'-01',amount_eur:Number(v.amount_eur),reference:v.reference},{onConflict:'month'});if(error)throw error;electricityDrafts.delete(f.dataset.month);await loadElectricity();renderMonthSummary();showToast('Сметката е запазена.');}catch(e){b.disabled=false;showToast('Сметката не беше запазена. Проверете връзката и стойностите.','error');}
+});
+document.addEventListener('click',event=>{const b=event.target.closest('[data-electricity-month]');if(!b)return;monthFilter=b.dataset.electricityMonth;document.getElementById('fin-month').value=monthFilter;document.getElementById('fin-month').dispatchEvent(new Event('change'));closeDrill();const el=document.getElementById('monthly-electricity');el.classList.add('finance-focus');el.scrollIntoView({behavior:'smooth',block:'center'});});
 const payrollDrafts = new Map();
 window.addEventListener('beforeunload', event => { if(payrollDrafts.size){event.preventDefault();event.returnValue='';} });
 function payrollDraftKey(form) { return form.id==='monthly-pay-form' ? 'month:'+monthFilter : 'event:'+form.dataset.event; }
