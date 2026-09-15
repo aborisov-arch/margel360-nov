@@ -8,11 +8,11 @@ Last verified against live infrastructure: **2026-06-12**. Companion to [CLAUDE.
 |---|---|---|
 | **GitHub** | This repo — the single source of truth for all code, migrations and docs | `aborisov-arch/margel360-nov` |
 | **Netlify** | Hosting + domain margel360.bg, auto-deploys `main`, security headers/CSP via `netlify.toml` | site `margell360.netlify.app` |
-| **Supabase** | Postgres, Auth (admin logins), 17 Edge Functions, Storage (`partner-images` bucket), secrets, pg_cron | project ref `wlxutsufrobzovdsiecb`, org `osfsbjycyufbpvhxkvxr`, eu-central-1 |
+| **Supabase** | Postgres, Auth (admin logins), 19 Edge Functions, Storage (`partner-images`, `catalog-images`, `blog-images`), secrets, pg_cron | project ref `wlxutsufrobzovdsiecb`, org `osfsbjycyufbpvhxkvxr`, eu-central-1 |
 | **Cloudflare** | Turnstile CAPTCHA widget (account only — DNS is NOT on Cloudflare) | widget for margel360.bg / www / margell360.netlify.app, Managed mode |
 | **Resend** | Transactional email, sender domain margel360.bg | sender `Margel360 <enquiries@margel360.bg>` |
 
-Admin allowlist (Supabase Auth logins + `is_admin()` + `update-enquiry-admin`): aborisov@, 360@, borisov@, office@, vitosha@, dimov@ — all `@margel.info`.
+Admin allowlist source of truth: `is_admin()` and `reject_non_admin_signup` in the latest migration. Do not maintain a duplicate email list in this runbook; see `CLAUDE.md` for the owner, finance-admin, and blog-editor tiers.
 
 ## 2. Secrets — names, where they live, how to restore
 
@@ -63,7 +63,9 @@ Inspect with `select jobname, schedule from cron.job;`. These live only in the d
 5. Netlify/Supabase/Cloudflare/Resend need nothing — they are cloud-side and keyed to their own logins, not to the machine.
 6. Optional, for Claude Code continuity: copy `~/.claude/projects/` from the old machine to carry over assistant memory. Not required — this file + CLAUDE.md contain everything needed to work cold.
 
-## 5. Edge functions snapshot (2026-06-12)
+## 5. Edge functions code inventory (2026-09-15)
+
+Version labels below are the last recorded live versions where known; verify the Supabase dashboard before relying on a version number.
 
 | Function | verify_jwt | Purpose |
 |---|---|---|
@@ -71,12 +73,14 @@ Inspect with `select jobname, schedule from cron.job;`. These live only in the d
 | get-enquiry-by-token (v10) | no | edit page load; scrubs internal fields |
 | update-enquiry-by-token (v14+) | no | customer edits; validation via `_shared/validate.ts`, diff email, edit_count cap 10. Admin-locked (confirmed) bookings are items-only: changes to date/guests → 403 `locked_field`; addons/drinks/phone/notes still save (`LOCKED_FROZEN_FIELDS` in `_shared/diff.ts`) |
 | update-enquiry-admin (v7) | **yes** | admin edits from edit.html?admin=1; own email-allowlist check on top |
+| admin-users | **yes** | owner-only admin account listing and password reset; revokes target sessions and writes an audit entry |
 | send-enquiry-summary (v19) | no | owner plain-text + customer branded HTML (requires X-Internal-Secret) |
 | notify-enquiry (v10) | no | plain-text team email (requires X-Internal-Secret) |
 | send-feedback-request (v6) | no | cron-driven feedback emails (requires x-cron-secret) |
 | send-team-digest (v1) | no | cron-driven daily team digest to OWNER_EMAILS/TEAM_EMAIL (requires x-cron-secret = TEAM_DIGEST_CRON_SECRET) |
 | send-event-reminders (v2) | no | cron-driven customer reminders: day-before + deposit-due + add-on drip every 3 days after a confirmed booking (`_shared/addon-reminder.ts`, stamps `addons_reminder_count` / `addons_reminder_last_sent_at`, cap 5). Reuses x-cron-secret = TEAM_DIGEST_CRON_SECRET; POST {"dry_run":true} to preview; POST {"preview":{"enquiry_id":"…","to":"you@margel.info"}} emails one rendered add-on reminder to `to` without stamping |
 | send-offer (v1) | **yes** | admin one-click offer: emails the customer a branded cover note + the client-built offer PDF, stamps offer_sent_at. Own email-allowlist check on top of JWT |
+| send-admin-invite | no | sends the branded admin invitation email through an internally authenticated workflow |
 | send-marketing-export (v1) | no | monthly cron: CSV of marketing-consenting customers emailed to owners (x-cron-secret = TEAM_DIGEST_CRON_SECRET; skips when empty) |
 | send-weekly-kpi (v1) | no | Monday cron: weekly KPI report (funnel, NPS trend, testimonials, sources) to owners (x-cron-secret = TEAM_DIGEST_CRON_SECRET) |
 | send-ops-lifecycle (v1) | no | daily cron: team run sheet + pre-event upsell + 1-year win-back (x-cron-secret = TEAM_DIGEST_CRON_SECRET; dry_run supported) |
@@ -90,7 +94,7 @@ Deploy command and the verify_jwt rule: see CLAUDE.md → Deploying.
 
 - Tables: `enquiries` (+ `enquiry_number_seq` starting 1001; `partner_interest` jsonb holds the wizard's mark-interest snapshot), `enquiry_notes`, `enquiry_edit_log`, `enquiry_status_log` (pipeline transition history — feeds the weekly KPI won/lost), `event_feedback`, `discount_codes`, `financial_events`, `financial_expenses`, `financial_income_items`, `partner_commissions` + `partner_commission_rates` (the venue's commission from partners — one card per partner on admin/financials.html, entered by hand; default 10 %), `occupied_dates`, `partners` (partner catalog: catering / decoration / singer / band / dj, plus legacy `artist` — drives partners.html, the wizard step, admin/partners.html and the commission cards), `rate_limits`.
 - RLS: everything admin-facing behind `is_admin()`, the money tables (`financial_*`, `partner_commissions`, `partner_commission_rates`) behind `is_finance_admin()`; anon may only SELECT `occupied_dates` and **active** `partners` rows; `rate_limits` service-role only.
-- Storage: bucket `partner-images` (public read via CDN URL; writes gated on `is_admin()`; 5 MB cap, jpeg/png/webp) — partner card images uploaded from admin/partners.html; `partners.image_path` stores the object path.
+- Storage: `partner-images`, `catalog-images`, and `blog-images` use public-read asset URLs with authenticated admin writes. Partner uploads are capped at 5 MB and restricted to jpeg/png/webp; each table stores the corresponding object path.
 - Triggers on `enquiries`: `enquiries_auto_block_date_trigger` (confirmed/completed → block date), `trg_set_enquiry_token_expiry` (token = created + 14 days), `enquiries_log_status_change_trigger` (every pipeline_status change → row in `enquiry_status_log`; SECURITY DEFINER so admin dashboard updates can write it).
 - Trigger on `enquiry_notes`: `enquiry_notes_advance_status_trigger` → `advance_on_first_admin_note()` advances a `new` enquiry to `contacted` when an admin (non-`system` author) writes the first note. SECURITY DEFINER.
 - Offer-conversion loop lives in **send-event-reminders** (daily): `quoted` enquiries with `offer_sent_at` get a "still valid" nudge ~24h in (`offer_followup_sent_at`), then auto-flip to `lost` + system note once validity+grace lapses (`offer_expiry_handled_at`). Also nudges discount codes expiring within 7 days (`discount_codes.nudge_sent_at`).

@@ -39,7 +39,7 @@ export function seasonalVenuePrice(dateStr: string): number | null {
   const inSeason = SEASONAL_PRICING.seasons.some(s => mmdd >= s.from && mmdd <= s.to);
   if (!inSeason) return null;
   // Day-of-week of the calendar date itself; noon-UTC avoids TZ skew
-  // (same technique as weekday-promo.ts). 5=Fri, 6=Sat.
+  // Noon UTC avoids crossing a date boundary in supported client time zones. 5=Fri, 6=Sat.
   const day = new Date(`${m[3]}-${m[2]}-${m[1]}T12:00:00Z`).getUTCDay();
   return day === 5 || day === 6 ? SEASONAL_PRICING.weekendPrice : SEASONAL_PRICING.weekdayPrice;
 }

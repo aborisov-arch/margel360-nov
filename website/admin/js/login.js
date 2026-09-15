@@ -78,7 +78,7 @@ try {
         errEl.style.display = 'none';
         infoEl.style.display = 'none';
         if (!email) {
-          errEl.textContent = 'Въведете имейла си, после натиснете „Забравена парола?".';
+          errEl.textContent = t('login_forgot_email');
           errEl.style.display = 'block';
           return;
         }
@@ -89,20 +89,17 @@ try {
           });
         } catch (_) { /* neutral message either way */ }
         resetCaptcha();
-        infoEl.textContent = 'Ако има акаунт с този имейл, изпратихме линк за смяна на паролата.';
+        infoEl.textContent = t('login_forgot_sent');
         infoEl.style.display = 'block';
       });
 
-      // Surface OAuth/bounce errors carried back in the URL.
+      // Surface authorization bounces. Password-recovery links establish
+      // their session on reset.html and do not use this branch.
       {
         const qs = new URLSearchParams(window.location.search);
-        const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
         const errEl = document.getElementById('login-error');
         if (qs.get('error') === 'not_admin') {
           errEl.textContent = t('login_not_admin');
-          errEl.style.display = 'block';
-        } else if (qs.get('error') || hash.get('error')) {
-          errEl.textContent = t('login_google_error');
           errEl.style.display = 'block';
         }
       }

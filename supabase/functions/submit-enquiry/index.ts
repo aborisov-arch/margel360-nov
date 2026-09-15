@@ -11,28 +11,22 @@
 //
 // validate / cors / rate-limit stay inlined here for historical reasons
 // (kept in sync with the canonical copies under supabase/functions/_shared/*.ts).
-// ../_shared imports do work — this file already pulls in weekday-promo.ts
-// and catalog.ts below — as long as deploys use `--use-api`, which bundles
+// ../_shared imports do work — this file already pulls in catalog.ts below —
+// as long as deploys use `--use-api`, which bundles
 // _shared/ correctly (see CLAUDE.md's verify_jwt map for the deploy command).
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
-import { weekdayPromoPercent } from "../_shared/weekday-promo.ts";
 import { loadCatalog, repriceAddons, repriceDrinks } from "../_shared/catalog.ts";
 import { effectiveVenuePrice } from "../_shared/seasonal-pricing.ts";
 
 const SUPABASE_URL    = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const INTERNAL_SECRET = Deno.env.get("INTERNAL_SHARED_SECRET") ?? "";
-// Cloudflare Turnstile secret. When set, every submit must carry a valid
-// turnstile_token; when unset the check is skipped (so a missing secret
-// degrades to "no captcha" instead of blocking all bookings).
+// Cloudflare Turnstile secret. Every submit must carry a valid token.
+// A missing secret is a deployment error and fails closed below.
 const TURNSTILE_SECRET = Deno.env.get("TURNSTILE_SECRET_KEY") ?? "";
-// Make the degraded state observable: if the secret is missing (rotation
-// mistake / mis-deploy) the captcha check is skipped and only rate limiting
-// protects the form. Warn loudly on cold start rather than throwing (which
-// would block deploys before the secret is set).
 if (!TURNSTILE_SECRET) {
-  console.warn("[submit-enquiry] TURNSTILE_SECRET_KEY is unset — Turnstile verification is DISABLED; only rate limiting protects this endpoint.");
+  console.error("[submit-enquiry] TURNSTILE_SECRET_KEY is unset — submissions will fail closed.");
 }
 const sb = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
 
@@ -200,7 +194,10 @@ serve(async (req) => {
   let payload: Record<string, unknown>;
   try { payload = await req.json(); } catch { return json({ error: "bad_json" }, 400); }
 
-  if (TURNSTILE_SECRET && !await turnstileOk(payload.turnstile_token, ip)) {
+  if (!TURNSTILE_SECRET) {
+    return json({ error: "service_unavailable" }, 503);
+  }
+  if (!await turnstileOk(payload.turnstile_token, ip)) {
     return json({ error: "turnstile_failed" }, 403);
   }
 
@@ -374,14 +371,9 @@ serve(async (req) => {
     console.error("duplicate-check note failed (non-fatal):", e);
   }
 
-  // Weekday promo vs discount code: the HIGHER percent wins (see
-  // _shared/weekday-promo.ts - the authoritative campaign rule). We peek at
-  // the code's percent WITHOUT claiming it first, so that when the weekday
-  // promo wins the customer keeps their code for a future booking. The
-  // claim itself stays atomic (redeemed_at IS NULL guard) - if someone
-  // else claims the code between the peek and the claim, the claim just
-  // returns nothing and the booking proceeds without the code discount.
-  const weekday_percent = weekdayPromoPercent(preferred_date);
+  // Claim a valid discount code atomically. If another request claims it
+  // between the lookup and update, the update returns no row and this
+  // booking proceeds without a discount.
   let code_percent = 0;
   if (discount_code) {
     const { data: codeRow } = await sb
@@ -395,16 +387,7 @@ serve(async (req) => {
   }
 
   let discount_percent: number | null = null;
-  if (weekday_percent > 0 && weekday_percent >= code_percent) {
-    discount_percent = weekday_percent;
-    const { error: promoErr } = await sb.from("enquiries").update({
-      applied_discount_percent: weekday_percent,
-    }).eq("id", inserted.id);
-    if (promoErr) {
-      console.error("weekday promo update failed:", promoErr);
-      discount_percent = null;
-    }
-  } else if (discount_code && code_percent > 0) {
+  if (discount_code && code_percent > 0) {
     const { data: claimed } = await sb
       .from("discount_codes")
       .update({

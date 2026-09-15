@@ -4,7 +4,6 @@ import { json, preflight } from "../_shared/cors.ts";
 import { getIp, rateLimitHit } from "../_shared/rate-limit.ts";
 import { diffEnquiry, EDITABLE_FIELDS, EDIT_COUNT_CAP, lockedFieldChanges } from "../_shared/diff.ts";
 import { validateField } from "../_shared/validate.ts";
-import { weekdayPromoPercent } from "../_shared/weekday-promo.ts";
 import { loadCatalog, repriceAddons, repriceDrinks } from "../_shared/catalog.ts";
 import { effectiveVenuePrice } from "../_shared/seasonal-pricing.ts";
 
@@ -141,17 +140,6 @@ serve(async (req) => {
   // Only on a real date change - the edit page sends preferred_date on every save, and an unchanged date must never re-price a legacy (NULL-stamp) booking.
   if ("preferred_date" in patch && String(patch.preferred_date) !== String(current.preferred_date ?? "")) {
     updateRow.venue_price_eur = effectiveVenuePrice(String(current.event_id ?? ""), String(patch.preferred_date));
-  }
-
-  // Weekday promo follows the DATE. When the customer moves the event to a
-  // different date, recompute the campaign discount - otherwise booking a
-  // Monday and editing to a Saturday would keep the 20% (and vice versa a
-  // legit move Tue->Wed would lose it). Only weekday-sourced discounts are
-  // touched: a code-sourced discount (applied_discount_code set) is the
-  // customer's own claimed code and stays as-is.
-  if ("preferred_date" in patch && !current.applied_discount_code) {
-    const pct = weekdayPromoPercent(String(patch.preferred_date));
-    updateRow.applied_discount_percent = pct > 0 ? pct : null;
   }
 
   const { data: updated, error: upErr } = await sb

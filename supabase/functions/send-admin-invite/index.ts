@@ -5,7 +5,7 @@ import { json, preflight } from "../_shared/cors.ts";
 // (same cream/Fraunces/Manrope shell as the customer emails). Guarded by the
 // shared internal cron secret; POST { "to": "...", "name": "...", "role":
 // "blog" } - role currently only "blog" (editor: everything except Финанси
-// and Дневник, signs in with Google).
+// and Дневник, signs in with email and password).
 
 const RESEND_KEY  = Deno.env.get("RESEND_API_KEY")!;
 const FROM_ADDR   = Deno.env.get("EVENT_HALL_FROM_EMAIL") ?? "enquiries@margel360.bg";
@@ -38,13 +38,14 @@ function renderBlogInvite(to: string, name: string): { subject: string; html: st
   const body = `
     <h1 style="margin:0 0 12px;font:400 34px/1.12 ${SERIF};color:#1A1815">Добре дошли в <em style="font-style:italic;color:#B9894A">екипа</em></h1>
     <p style="margin:0 0 20px;font:16px/1.55 ${SANS};color:#2A2620">
-      ${hello} Каним ви в администраторския панел на Маргел 360° като <strong>редактор на блога</strong>. Акаунтът ви е готов — без парола, влизате директно с Google.
+      ${hello} Каним ви в администраторския панел на Маргел 360° като <strong>редактор на блога</strong>. Акаунтът ви е готов. Първо създайте своя лична парола чрез защитения линк за възстановяване.
     </p>
     <p style="margin:0 0 8px;font:600 11px/1.2 ${SANS};letter-spacing:0.18em;text-transform:uppercase;color:#7A7568">Как да влезете</p>
     <p style="margin:0 0 20px;font:14px/1.7 ${SANS};color:#2A2620">
       1. Отворете панела от бутона по-долу.<br>
-      2. Натиснете <strong>„Вход с Google"</strong> и изберете <strong>${esc(to)}</strong>.<br>
-      3. В менюто отворете <strong>„Блог"</strong> → <strong>„Нова статия"</strong>.
+      2. Въведете <strong>${esc(to)}</strong> и натиснете <strong>„Забравена парола?"</strong>.<br>
+      3. Отворете получения защитен линк и задайте своя парола.<br>
+      4. Влезте с имейла и новата парола, после отворете <strong>„Блог"</strong> → <strong>„Нова статия"</strong>.
     </p>
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 24px"><tr><td>
       <a href="${SITE_URL}/admin/login.html" style="display:inline-block;padding:14px 28px;background:#1A1815;color:#F6F1E8;font:600 12px/1 ${SANS};letter-spacing:0.14em;text-transform:uppercase;text-decoration:none">Вход в панела</a>
