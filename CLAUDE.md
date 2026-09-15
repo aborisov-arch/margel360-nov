@@ -82,6 +82,8 @@ Quantities go in column AA (see `ADDON_TO_CELL`); furniture exports ordered-qty-
 
 ## Gotchas
 
+- Named staff expenses: `ivan_fee`, `ivan_overtime`, `eli_fee`, `eli_overtime` are regular event expense categories. Six-row staff overview adds these four, Ivan fixed salary (explicitly unset, no charge until owner provides amount/start month), and monthly electricity. Preserve legacy staff/payroll records; do not infer their identity or duplicate them during reclassification.
+
 - Monthly electricity (`monthly_electricity`, finance-only, audited, unique month) is venue overhead. `electricityTotal()` is included once in summary expense/profit and utilities drilldowns, never in individual event P&L. Do not also enter the same invoice against an event. Public Services and booking summary disclose venue overtime after hour five (€160/hour), plus a cleaner when present (€20/hour), separately from the fixed cleaning addon. Actual overtime remains entered after usage; existing offers are not repriced.
 
 - Finance analysis (`financials-analysis.js/css`): row categories, pie charts and exact-entry highlighting. `manager_monthly_pay` stores wage/commission per month and manager; `manager_event_overtime` stores manager hours/rate, manually entered cash-register hours/reference and optional HTTPS camera link per event. These are separate from customer overtime revenue and are not deducted again from event P&L. Finance users read payroll; only the record's manager or an owner can write. Both tables are audited. Use atomic `delete_financial_pnl` RPC; overtime history blocks event deletion. Migration `20260915133012` is applied remotely.

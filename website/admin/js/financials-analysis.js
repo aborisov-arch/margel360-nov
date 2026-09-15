@@ -3,6 +3,18 @@
 let managerPayRows = [], managerOvertimeRows = [], managerPayError = '';
 let electricityRows = [], electricityError = false;
 const electricityDrafts = new Map();
+function renderStaffAllocations(totals) {
+ const host=document.getElementById('staff-allocations-body');if(!host)return;
+ const categories=[['ivan_fee','Иван хонорар'],['ivan_salary','Иван твърда'],['ivan_overtime','Иван овъртайм'],['eli_fee','Ели хонорар'],['eli_overtime','Ели овъртайм'],['electricity','Ток']];
+ const events=Array.from(financialEventsById.values()).filter(fe=>!monthFilter||fe.month===monthFilter).sort((a,b)=>(b.event_date||'').localeCompare(a.event_date||''));
+ host.innerHTML=`<p class="pay-note">Хонорари и овъртайм: по събитие. Ток: по месец. Сумите за събитията влизат в реализираните разходи след провеждането им. Твърдата заплата на Иван още не е зададена и не се начислява.</p><div class="pay-scroll"><table class="pay-table"><thead><tr><th>Разход</th><th>Сума за периода</th><th>Разбивка</th></tr></thead><tbody>${categories.map(([id,label])=>`<tr data-staff-category="${id}"><td>${label}</td><td><strong>${id==='ivan_salary'?'Не е зададена':id==='electricity'?(electricityError?'Непълни данни':fmtEur(electricityTotal())):fmtEur(totals[id]||0)}</strong></td><td>${id==='ivan_salary'?'Очаква сума':id==='electricity'?'<button type="button" data-staff-electricity>Месечна сметка</button>':`<button type="button" data-chart-kind="expense" data-chart-cat="${id}">Виж събитията</button>`}</td></tr>`).join('')}</tbody></table></div><form id="staff-allocation-form" class="pay-form"><label>Разход<select name="category">${categories.filter(([id])=>!['ivan_salary','electricity'].includes(id)).map(([id,label])=>`<option value="${id}">${label}</option>`).join('')}</select></label><label>Събитие<select name="event" required><option value="">Изберете събитие</option>${events.map(fe=>`<option value="${esc(fe.id)}">${esc(fmtDateBg(fe.event_date))} · ${esc(fe.customer_name||allEnquiries.find(e=>e.id===fe.enquiry_id)?.full_name||'Събитие')}</option>`).join('')}</select></label><button class="btn btn-primary" type="submit" ${events.length?'':'disabled'}>Добави разход към събитието</button></form><p class="pay-note">След добавяне въведете сумата и бележка в маркирания ред и натиснете „Запази промените“. За овъртайм запишете часовете и периода в бележката. Старите общи разходи и записите за възнаграждения не са разпределени автоматично; при прехвърляне променете категорията на съществуващия разход, без да го дублирате.</p>`;
+}
+document.addEventListener('click',event=>{if(event.target.closest('[data-staff-electricity]'))document.getElementById('monthly-electricity').scrollIntoView({behavior:'smooth',block:'center'});});
+document.addEventListener('submit',async event=>{
+ const f=event.target;if(f.id!=='staff-allocation-form')return;event.preventDefault();const v=Object.fromEntries(new FormData(f));if(!v.event)return;
+ const b=f.querySelector('button');b.disabled=true;
+ try{const fe=financialEventsById.get(v.event);if(fe?.enquiry_id)await openPnlFromOffer(fe.enquiry_id);else await openManualPnlFromDrill(v.event);if(currentSelection()?.fe?.id!==v.event)return;await addEventExpense(v.category);const line=document.querySelector('#pnl-expense-lines li:last-child');if(line){line.classList.add('finance-focus');line.scrollIntoView({behavior:'smooth',block:'center'});}}finally{b.disabled=false;}
+});
 async function loadElectricity() {
   const {data,error}=await db.from('monthly_electricity').select('*');
   electricityRows=data||[];electricityError=!!error;

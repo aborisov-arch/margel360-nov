@@ -12,7 +12,7 @@ fixture = {
  'manager_monthly_pay':[], 'manager_event_overtime':[]
 }
 stub = 'const fixtures='+json.dumps(fixture)+';'+'''
-const db={auth:{getSession:async()=>({data:{session:{user:{email:'qa@example.test'}}}}),signOut:async()=>({})},rpc:async()=>({data:true}),from(table){const q={select(){return q},not(){return q},eq(){return q},order(){return q},upsert(value){fixtures[table]=[value];return Promise.resolve({error:null})},then(resolve){return Promise.resolve({data:fixtures[table]||[],error:null}).then(resolve)}};return q}};
+const db={auth:{getSession:async()=>({data:{session:{user:{email:'qa@example.test'}}}}),signOut:async()=>({})},rpc:async()=>({data:true}),from(table){const q={select(){return q},not(){return q},eq(key,value){q.key=key;q.value=value;return q},order(){return q},insert(value){q.inserted={id:crypto.randomUUID(),...value};fixtures[table].push(q.inserted);return q},single(){return Promise.resolve({data:q.inserted,error:null})},update(value){q.patch=value;return q},upsert(value){fixtures[table]=[value];return Promise.resolve({error:null})},then(resolve){if(q.patch)(fixtures[table]||[]).filter(r=>r[q.key]===q.value).forEach(r=>Object.assign(r,q.patch));return Promise.resolve({data:fixtures[table]||[],error:null}).then(resolve)}};return q}};
 '''
 with sync_playwright() as p:
  browser=p.chromium.launch(headless=True)
@@ -89,6 +89,25 @@ with sync_playwright() as p:
  assert page.locator('#drill-modal').is_hidden()
  page.evaluate("openCategoryBreakdown('expense','utilities')")
  assert page.locator('#drill-modal').is_hidden()
+ page.evaluate('electricityError=false;renderMonthSummary()')
+ assert page.locator('[data-staff-category]').count()==6
+ assert 'Не е зададена' in page.locator('[data-staff-category="ivan_salary"]').inner_text()
+ page.locator('#staff-allocation-form [name="category"]').select_option('ivan_fee')
+ page.locator('#staff-allocation-form [name="event"]').select_option('11111111-1111-4111-8111-111111111111')
+ page.locator('#staff-allocation-form button').click()
+ page.wait_for_function("fixtures.financial_expenses.some(r=>r.category==='ivan_fee')")
+ assert page.locator('#pnl-expense-lines li:last-child select').input_value()=='ivan_fee'
+ page.locator('#pnl-expense-lines li:last-child [data-f="amount_eur"]').fill('80')
+ page.locator('#pnl-expense-lines li:last-child [data-f="amount_eur"]').dispatch_event('change')
+ page.locator('#btn-save-pnl').click()
+ page.wait_for_function("fixtures.financial_expenses.some(r=>r.category==='ivan_fee' && Number(r.amount_eur)===80)")
+ assert '€80.00' in page.locator('[data-staff-category="ivan_fee"]').inner_text()
+ assert page.locator('#sum-expense-eur').inner_text()=='€310.00'
+ page.locator('[data-staff-category="ivan_fee"] button').click()
+ assert '€80.00' in page.locator('#drill-body').inner_text()
+ page.evaluate('closeDrill()')
+ page.locator('#staff-allocations').screenshot(path='/tmp/m360-staff-allocations.png')
+ assert page.evaluate('document.documentElement.scrollWidth <= 390')
  assert not errors,errors
  print('PASS charts, income/expense drilldowns, highlighted lines, payroll save/total, overtime match/mismatch, mobile render; no JS exceptions')
  browser.close()

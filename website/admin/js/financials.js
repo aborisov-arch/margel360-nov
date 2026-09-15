@@ -66,6 +66,10 @@ const INCOME_SERVICE_CATS = [
 // Expense categories - the 7 income buckets plus running-cost essentials.
 // Kept in sync with the CHECK constraint on financial_expenses.category.
 const EXPENSE_CATS = [
+  { id: 'ivan_fee', label: 'Иван хонорар' },
+  { id: 'ivan_overtime', label: 'Иван овъртайм' },
+  { id: 'eli_fee', label: 'Ели хонорар' },
+  { id: 'eli_overtime', label: 'Ели овъртайм' },
   { id: 'photo_video',   label: 'Фото / Видео' },
   { id: 'decoration',    label: 'Декорация' },
   { id: 'pyro_lighting', label: 'Пиро / Светлини' },
@@ -511,6 +515,7 @@ function renderMonthSummary() {
   renderFinanceCharts(incomeCats, expByCat);
   if(electricityError){set('sum-expense-eur','Непълни данни');set('sum-profit-eur','Непълни данни');document.querySelector('[data-chart-total="expense"]').textContent='Непълни данни';}
   renderManagerPay();
+  renderStaffAllocations(expByCat);
   const incomeBreak = document.getElementById('income-cat-breakdown');
   if (incomeBreak) {
     incomeBreak.innerHTML = INCOME_LABELS.filter(c => incomeCats[c.id] > 0).map(c => `
@@ -1604,7 +1609,7 @@ async function addManualEvent() {
   renderDetail();
 }
 
-async function addEventExpense() {
+async function addEventExpense(category = 'other') {
   const sel = currentSelection();
   if (!sel) return;
   // Enquiry selection might not have its fe created yet - lazily create.
@@ -1616,7 +1621,7 @@ async function addEventExpense() {
     expense_date: fe.event_date || null,
     description: '',
     amount_eur: 0,
-    category: 'other',
+    category,
     event_id: fe.id,
   };
   const { data, error } = await db.from('financial_expenses').insert(row).select().single();
