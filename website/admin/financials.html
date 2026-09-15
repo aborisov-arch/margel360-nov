@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/admin.css?v=20">
   <link rel="stylesheet" href="css/financials.css?v=20">
+  <link rel="stylesheet" href="css/financials-analysis.css?v=1">
   <link rel="icon" href="/favicon.ico" sizes="48x48">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link rel="icon" type="image/png" sizes="192x192" href="/assets/favicon-192.png">
@@ -83,7 +84,7 @@
 
   <main class="admin-main fin">
     <div class="admin-container">
-      <h1 class="page-title">Финанси · P&amp;L по събитие</h1>
+      <h1 class="page-title">Финанси</h1>
       <p class="fin-page-sub">Изберете събитие за да видите оферираните приходи (авто-генерирани от запитването), плащанията от клиента и разходите към доставчиците. Комисионите от партньорите (кетъринг, декорация, певци, групи, DJ) са в отделния раздел най-долу.</p>
 
       <!-- Month filter - restricts the event list AND the summary block below.
@@ -156,6 +157,7 @@
         </div>
       </section>
 
+      <section class="fin-section" id="manager-pay"><h2>Възнаграждение на управителя</h2><div id="manager-pay-body">Зареждане…</div></section>
       <div class="event-pnl">
         <aside class="event-pnl__list">
           <div class="event-pnl__list-head">
@@ -278,6 +280,7 @@
   <script src="js/auth.js?v=8" defer></script>
   <script src="js/toast.js?v=2" defer></script>
   <script src="../js/catalog-db.js?v=1" defer></script>
-  <script src="js/financials.js?v=47" defer></script>
+  <script src="js/financials-analysis.js?v=1" defer></script>
+  <script src="js/financials.js?v=48" defer></script>
 </body>
 </html>

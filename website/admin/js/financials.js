@@ -505,6 +505,8 @@ function renderMonthSummary() {
     : 'няма записи');
 
   const incomeCats = { rent, drinks, addons, overtime, dj, employees };
+  renderFinanceCharts(incomeCats, expByCat);
+  renderManagerPay();
   const incomeBreak = document.getElementById('income-cat-breakdown');
   if (incomeBreak) {
     incomeBreak.innerHTML = INCOME_LABELS.filter(c => incomeCats[c.id] > 0).map(c => `
@@ -1105,6 +1107,7 @@ function renderDetail() {
   // Hero totals + Save-button state. Computed in one place so the
   // live-typing path can refresh them WITHOUT rebuilding the inputs.
   updateDetailTotals();
+  renderEventOvertime(fe);
 }
 
 // Refresh only the DERIVED figures (hero totals + Save button) for the
@@ -1496,17 +1499,8 @@ async function deletePnl() {
     : `Изтриване на ръчното събитие "${label}"?\nСамото събитие и всички прикачени разходи се изтриват.`;
   if (!confirm(msg)) return;
 
-  // Delete expenses first: financial_expenses.event_id is ON DELETE SET NULL,
-  // so dropping the fe row would null-orphan them rather than remove them.
-  // Income items (financial_income_items.event_id is ON DELETE CASCADE) are
-  // removed by the DB automatically - only the in-memory map needs clearing.
-  const rows = expensesByEvent.get(fe.id) || [];
-  if (rows.length) {
-    const { error: exErr } = await db.from('financial_expenses').delete().eq('event_id', fe.id);
-    if (exErr) { console.error(exErr); alert('Грешка при изтриване на разходите'); return; }
-  }
-  const { error: feErr } = await db.from('financial_events').delete().eq('id', fe.id);
-  if (feErr) { console.error(feErr); alert('Грешка при изтриване на P&L'); return; }
+  const { error: feErr } = await db.rpc('delete_financial_pnl', { target_event: fe.id });
+  if (feErr) { console.error(feErr); alert(feErr.code === '23503' ? 'Събитието има записи за извънреден труд. Финансовата история е запазена.' : 'Грешка при изтриване на P&L'); return; }
 
   financialEventsById.delete(fe.id);
   if (enquiry) financialEventByEnquiryId.delete(enquiry.id);
@@ -2154,7 +2148,7 @@ function expenseDrillRowHtml(fe, x, amt) {
   const badge = enq ? `#${esc(enq.enquiry_number ?? '-')}` : 'M';
   const sel = enq ? `data-enquiry="${esc(fe.enquiry_id)}"` : `data-manual-fe="${esc(fe.id)}"`;
   const note = x.notes ? ` · <span style="opacity:.75">${esc(x.notes)}</span>` : '';
-  return `<button type="button" class="drill-row" ${sel}
+  return `<button type="button" class="drill-row" ${sel} data-expense-id="${esc(x.id)}"
       style="display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;text-align:left;padding:10px 12px;border:1px solid var(--fin-border,#e6e1d6);border-radius:8px;background:var(--fin-bg,#fff);cursor:pointer;font:inherit;color:inherit">
       <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span class="enquiry-no">${badge}</span> ${esc(name)}${note}</span>
       <span style="opacity:.7;font-size:.85em;white-space:nowrap">${esc(fmtDateBg(fe.event_date))}</span>
@@ -2178,7 +2172,7 @@ function openCategoryBreakdown(kind, catId) {
       .sort((a, b) => b.amt - a.amt);
     rows.forEach(r => { total += r.amt; eventIds.add(r.fe.id); });
     lineCount = rows.length;
-    rowsHtml = rows.map(r => drillRowHtml(r.fe, r.amt, false)).join('');
+    rowsHtml = rows.map(r => drillRowHtml(r.fe, r.amt, false) + (catId === 'overtime' ? `<p class="pay-note">Към клиента: <strong>${Number(r.fe.income_overtime_hours || 0)} ч.</strong> × ${fmtEur(r.fe.income_overtime_rate_eur || 0)} · Управител: <strong>${managerOvertimeRows.filter(x => x.event_id === r.fe.id).reduce((s,x) => s + Number(x.hours), 0)} ч.</strong></p>` : '')).join('');
   } else {
     label = (EXPENSE_CATS.find(c => c.id === catId) || {}).label || catId;
     const rows = [];
@@ -2350,9 +2344,9 @@ document.addEventListener('click', evt => {
   // "open P&L" button opens the editable panel. These are scoped to
   // #drill-modal so the left-rail event list keeps its own behavior.
   const drillEnqRow = evt.target.closest('#drill-modal [data-enquiry]');
-  if (drillEnqRow) { openOfferView(drillEnqRow.getAttribute('data-enquiry')); return; }
+  if (drillEnqRow) { if (lastDrill?.kind === 'cat') { openCategoryEvent(drillEnqRow.getAttribute('data-enquiry'), null, drillEnqRow.dataset.expenseId); } else openOfferView(drillEnqRow.getAttribute('data-enquiry')); return; }
   const drillManualRow = evt.target.closest('#drill-modal [data-manual-fe]');
-  if (drillManualRow) { openManualPnlFromDrill(drillManualRow.getAttribute('data-manual-fe')); return; }
+  if (drillManualRow) { if (lastDrill?.kind === 'cat') openCategoryEvent(null, drillManualRow.getAttribute('data-manual-fe'), drillManualRow.dataset.expenseId); else openManualPnlFromDrill(drillManualRow.getAttribute('data-manual-fe')); return; }
   if (evt.target.closest('[data-drill-back]')) { reopenLastDrill(); return; }
   const offerPnlBtn = evt.target.closest('[data-offer-open-pnl]');
   if (offerPnlBtn) { openPnlFromOffer(offerPnlBtn.getAttribute('data-offer-open-pnl')); return; }
@@ -2515,6 +2509,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   await loadAll();
+  await loadManagerPay();
   const now = new Date();
   monthFilter = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   const monthInp = document.getElementById('fin-month');

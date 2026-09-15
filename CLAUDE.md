@@ -82,6 +82,8 @@ Quantities go in column AA (see `ADDON_TO_CELL`); furniture exports ordered-qty-
 
 ## Gotchas
 
+- Finance analysis (`financials-analysis.js/css`): row categories, pie charts and exact-entry highlighting. `manager_monthly_pay` stores wage/commission per month and manager; `manager_event_overtime` stores manager hours/rate, manually entered cash-register hours/reference and optional HTTPS camera link per event. These are separate from customer overtime revenue and are not deducted again from event P&L. Finance users read payroll; only the record's manager or an owner can write. Both tables are audited. Use atomic `delete_financial_pnl` RPC; overtime history blocks event deletion. Migration `20260915133012` is applied remotely.
+
 - Git identity is repo-local (`Angel Borisov <angelborisov@Angels-MacBook-Pro-2.local>`); set it again on a new machine.
 - `supabase/.temp/cli-latest` gets touched by the CLI — don't commit that churn.
 - The wizard's price summary and the submitted payload must always agree (auto-cleaning is added in BOTH `renderSummary` and the submit payload via `autoCleaningAddon()`).

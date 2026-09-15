@@ -1,0 +1,59 @@
+# Requires Python Playwright and Chromium. Start a static server for website/,
+# then run: python3 scripts/test-financials-ui.py http://127.0.0.1:8765
+# All database/auth calls are mocked; never writes business data.
+from playwright.sync_api import sync_playwright
+import json
+import sys
+
+fixture = {
+ 'enquiries': [], 'occupied_dates': [], 'financial_income_items': [], 'partners': [], 'partner_commission_rates': [], 'partner_commissions': [],
+ 'financial_events': [{'id':'11111111-1111-4111-8111-111111111111','month':'2026-09','event_date':'2026-09-01','customer_name':'QA Event','income_rent_eur':1000,'income_overtime_hours':3,'income_overtime_rate_eur':100,'income_overtime_eur':300,'pnl_drinks':[]}],
+ 'financial_expenses':[{'id':'22222222-2222-4222-8222-222222222222','event_id':'11111111-1111-4111-8111-111111111111','amount_eur':50,'category':'other','notes':'QA expense'}],
+ 'manager_monthly_pay':[], 'manager_event_overtime':[]
+}
+stub = 'const fixtures='+json.dumps(fixture)+';'+'''
+const db={auth:{getSession:async()=>({data:{session:{user:{email:'qa@example.test'}}}}),signOut:async()=>({})},rpc:async()=>({data:true}),from(table){const q={select(){return q},not(){return q},eq(){return q},order(){return q},upsert(value){fixtures[table]=[value];return Promise.resolve({error:null})},then(resolve){return Promise.resolve({data:fixtures[table]||[],error:null}).then(resolve)}};return q}};
+'''
+with sync_playwright() as p:
+ browser=p.chromium.launch(headless=True)
+ page=browser.new_page(viewport={'width':1440,'height':1000})
+ errors=[]
+ page.on('pageerror',lambda e:errors.append(str(e)))
+ page.route('**/js/supabase-client.js*',lambda route:route.fulfill(body=stub,content_type='application/javascript'))
+ page.route('**/js/catalog-db.js*',lambda route:route.fulfill(body='window.loadCatalog=async()=>{window.drinks=[];window.addonServices=[];};',content_type='application/javascript'))
+ page.goto((sys.argv[1] if len(sys.argv)>1 else 'http://127.0.0.1:8765')+'/admin/financials.html',wait_until='networkidle')
+ page.locator('#fin-month').fill('2026-09');page.locator('#fin-month').dispatch_event('change')
+ assert page.locator('.finance-pie').count()==2
+ assert page.locator('#sum-income-eur').inner_text()=='€1300.00'
+ page.locator('#income-cat-breakdown [data-cat="overtime"]').click()
+ page.locator('#drill-modal [data-manual-fe]').click()
+ assert page.locator('.finance-focus [data-fe-field="income_overtime_hours"]').input_value()=='3'
+ page.locator('#event-overtime-form [name="hours"]').fill('3')
+ page.locator('#event-overtime-form [name="rate_eur"]').fill('20')
+ page.locator('#event-overtime-form [name="register_hours"]').fill('3')
+ page.locator('#event-overtime-form button').click()
+ page.wait_for_function('managerOvertimeRows.length===1')
+ assert page.locator('#manager-pay-body .pay-match').inner_text()=='Съвпада'
+ page.locator('#monthly-pay-form [name="wage_eur"]').fill('1000')
+ page.locator('#monthly-pay-form [name="commission_eur"]').fill('100')
+ page.locator('#monthly-pay-form button').click()
+ page.wait_for_function('managerPayRows.length===1')
+ assert '€1160.00' in page.locator('#manager-pay-body').inner_text()
+ page.locator('#expense-cat-breakdown [data-cat="other"]').click()
+ page.locator('#drill-modal [data-expense-id]').click()
+ assert page.locator('.finance-focus [data-f="amount_eur"]').input_value()=='50'
+ page.locator('#event-overtime-form [name="register_hours"]').fill('2')
+ page.locator('#monthly-pay-form [name="wage_eur"]').fill('1234')
+ page.locator('#event-overtime-form button').click()
+ page.wait_for_function('managerOvertimeRows[0].register_hours===2')
+ assert page.locator('#manager-pay-body .pay-mismatch').inner_text()=='1 ч.'
+ assert page.locator('#monthly-pay-form [name="wage_eur"]').input_value()=='1234'
+ page.screenshot(path='/tmp/m360-finance-desktop.png',full_page=True)
+ page.set_viewport_size({'width':390,'height':844})
+ page.wait_for_timeout(300)
+ assert page.evaluate('document.documentElement.scrollWidth <= 390'), page.evaluate('document.documentElement.scrollWidth')
+ page.screenshot(path='/tmp/m360-finance-mobile.png',full_page=True)
+ assert not errors,errors
+ print('PASS charts, income/expense drilldowns, highlighted lines, payroll save/total, overtime match/mismatch, mobile render; no JS exceptions')
+ browser.close()
+
