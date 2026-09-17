@@ -892,7 +892,12 @@ main img { height: auto; }
 .blog-cover { width: 100%; border-radius: var(--radius-lg); margin: 0 0 26px; }
 #blog-article h2 { margin: 30px 0 12px; font-size: 1.35rem; }
 #blog-article p { line-height: 1.8; margin: 0 0 14px; }
-#blog-article ul { margin: 0 0 14px 22px; line-height: 1.8; }
+#blog-article ul { margin: 0 0 14px 22px; line-height: 1.8; list-style: disc outside; }
+@media (min-width: 1024px) {
+  .blog-post h1 { font-size: 2.25rem; line-height: 1.2; }
+  #blog-article h2 { font-size: 1.25rem; }
+  .blog-cta h2 { font-size: 1.5rem; }
+}
 .blog-cta { margin-top: 44px; padding: 26px 28px; background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-lg); }
 .blog-cta h2 { margin: 0 0 8px; }
 .blog-cta p { margin: 0 0 16px; color: var(--text-muted); }

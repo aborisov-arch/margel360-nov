@@ -33,9 +33,11 @@
 // ── Nav scroll effect ──
 const nav = document.querySelector('.nav');
 if (nav) {
-  window.addEventListener('scroll', () => {
-    nav.classList.toggle('scrolled', window.scrollY > 80);
-  }, { passive: true });
+  // Interior pages declare an opaque header; only hero pages switch on scroll.
+  const alwaysOpaque = nav.classList.contains('scrolled');
+  const updateNav = () => nav.classList.toggle('scrolled', alwaysOpaque || window.scrollY > 80);
+  window.addEventListener('scroll', updateNav, { passive: true });
+  updateNav();
 }
 
 // ── Hamburger menu ──

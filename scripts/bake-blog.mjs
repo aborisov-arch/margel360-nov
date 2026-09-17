@@ -38,7 +38,8 @@ function renderBody(text) {
     const line = raw.trim();
     if (!line) { flushPara(); flushList(); continue; }
     if (line.startsWith('## ')) { flushPara(); flushList(); out.push('<h2>' + esc(line.slice(3)) + '</h2>'); continue; }
-    if (line.startsWith('- ')) { flushPara(); (list = list || []).push(line.slice(2)); continue; }
+    const bullet = line.match(/^[-*•]\s+(.+)$/);
+    if (bullet) { flushPara(); (list = list || []).push(bullet[1]); continue; }
     flushList(); para.push(line);
   }
   flushPara(); flushList();

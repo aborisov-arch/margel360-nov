@@ -40,7 +40,8 @@ window.MargelBlog = (function () {
       const line = lines[i].trim();
       if (!line) { flushPara(); flushList(); continue; }
       if (line.indexOf('## ') === 0) { flushPara(); flushList(); out.push('<h2>' + esc(line.slice(3)) + '</h2>'); continue; }
-      if (line.indexOf('- ') === 0) { flushPara(); if (!list) list = []; list.push(line.slice(2)); continue; }
+      const bullet = line.match(/^[-*•]\s+(.+)$/);
+      if (bullet) { flushPara(); if (!list) list = []; list.push(bullet[1]); continue; }
       flushList(); para.push(line);
     }
     flushPara(); flushList();
