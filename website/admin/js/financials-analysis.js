@@ -74,11 +74,9 @@ function overtimeTable(rows) {
   }).join('')||'<tr><td colspan="8">Няма записан извънреден труд. Отворете събитие, за да добавите часове.</td></tr>'}</tbody></table></div>`;
 }
 function renderEventOvertime(fe) {
-  let host=document.getElementById('event-manager-overtime');
-  if(!host){host=document.createElement('section');host.id='event-manager-overtime';host.className='event-overtime';document.getElementById('pnl-body').append(host);}
-  if(!fe){host.innerHTML='';return;}
-  const r={...(managerOvertimeRows.find(r=>r.event_id===fe.id && r.manager_email===userEmail?.toLowerCase())||{}),...(payrollDrafts.get('event:'+fe.id)||{})};
-  host.innerHTML=`<h3>Извънреден труд на управителя · ${esc(fmtDateBg(fe.event_date))}</h3><p class="pay-note">Въведете реално отработените часове и часовете от касовия апарат. Линкът към камерите е по желание. Записва се отделно от офертата към клиента.</p>${managerPayError?`<p class="pay-error">${esc(managerPayError)}</p>`:`<form id="event-overtime-form" data-event="${esc(fe.id)}" class="pay-form">${payInput('hours','Мои извънредни часове',r.hours||0)}${payInput('rate_eur','Моята ставка · €/час',r.rate_eur||0)}${payInput('register_hours','Часове по касов апарат',r.register_hours)}${payInput('register_reference','Номер / час на касов бон',r.register_reference,'text')}${payInput('camera_url','Линк към камерите (https)',r.camera_url,'url')}${payInput('notes','Бележка / час за проверка',r.notes,'text')}<button class="btn btn-primary" type="submit">Запази часовете</button></form>`}${overtimeTable(managerOvertimeRows.filter(r=>r.event_id===fe.id))}`;
+  // The standalone event overtime panel was retired. Preserve historical
+  // payroll records and their monthly totals; staff expenses remain editable.
+  document.getElementById('event-manager-overtime')?.remove();
 }
 function renderFinanceCharts(income, expense) {
   let host=document.getElementById('finance-charts');

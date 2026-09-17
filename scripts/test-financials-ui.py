@@ -39,11 +39,10 @@ with sync_playwright() as p:
  page.locator('#income-cat-breakdown [data-cat="overtime"]').click()
  page.locator('#drill-modal [data-manual-fe]').click()
  assert page.locator('.finance-focus [data-fe-field="income_overtime_hours"]').input_value()=='3'
- page.locator('#event-overtime-form [name="hours"]').fill('3')
- page.locator('#event-overtime-form [name="rate_eur"]').fill('20')
- page.locator('#event-overtime-form [name="register_hours"]').fill('3')
- page.locator('#event-overtime-form button').click()
- page.wait_for_function('managerOvertimeRows.length===1')
+ assert page.locator('#event-manager-overtime').count()==0
+ assert page.locator('#event-overtime-form').count()==0
+ # Historical overtime remains counted even though its event editor was removed.
+ page.evaluate("fixtures.manager_event_overtime=[{event_id:'11111111-1111-4111-8111-111111111111',manager_email:'qa@example.test',hours:3,rate_eur:20,register_hours:3}];managerOvertimeRows=fixtures.manager_event_overtime;renderManagerPay()")
  assert page.locator('#manager-pay-body .pay-match').inner_text()=='Съвпада'
  page.locator('#monthly-pay-form [name="wage_eur"]').fill('1000')
  page.locator('#monthly-pay-form [name="commission_eur"]').fill('100')
@@ -53,10 +52,8 @@ with sync_playwright() as p:
  page.locator('#expense-cat-breakdown [data-cat="other"]').click()
  page.locator('#drill-modal [data-expense-id]').click()
  assert page.locator('.finance-focus [data-f="amount_eur"]').input_value()=='50'
- page.locator('#event-overtime-form [name="register_hours"]').fill('2')
  page.locator('#monthly-pay-form [name="wage_eur"]').fill('1234')
- page.locator('#event-overtime-form button').click()
- page.wait_for_function('managerOvertimeRows[0].register_hours===2')
+ page.evaluate('managerOvertimeRows[0].register_hours=2;renderManagerPay()')
  assert page.locator('#manager-pay-body .pay-mismatch').inner_text()=='1 ч.'
  assert page.locator('#monthly-pay-form [name="wage_eur"]').input_value()=='1234'
  page.screenshot(path='/tmp/m360-finance-desktop.png',full_page=True)
