@@ -219,8 +219,9 @@
 }
 
 /* ── Step 3: Paid add-on services ── */
-.addon-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px; }
+.addon-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; margin-bottom: 24px; }
 .addon-item {
+  min-width:0;
   display: flex; align-items: center; gap: 14px; padding: 14px 16px;
   background: var(--bg); border: 2px solid var(--border); border-radius: 10px;
   cursor: pointer; transition: all var(--transition);
@@ -668,4 +669,21 @@ span.flatpickr-weekday { color: var(--text-muted); font-size: 0.72rem; font-weig
 /* Flatpickr - readable on mobile (inline calendar is already fluid) */
 @media (max-width: 600px) {
   .flatpickr-day { height: 38px; line-height: 38px; }
+}
+/* Long service names and quantity controls remain fully visible on phones. */
+@media (max-width:900px) {
+  .addon-grid { grid-template-columns:minmax(0,1fr); }
+  .addon-item { min-width:0; display:grid; grid-template-columns:44px minmax(0,1fr) 24px; padding:14px 12px; align-items:start; }
+  .addon-name { white-space:normal; overflow:visible; text-overflow:clip; line-height:1.5; overflow-wrap:anywhere; }
+  .addon-price { margin-top:6px; }
+  .addon-hint { line-height:1.5; }
+  .addon-item--qty { grid-template-columns:44px minmax(0,1fr); }
+  .addon-qty { grid-column:2; justify-self:start; margin-top:6px; }
+  .addon-qty button { width:44px; height:44px; touch-action:manipulation; }
+  .addon-qty input[type=number] { font-size:16px; min-height:44px; }
+  .qty-btn { width:40px; height:40px; touch-action:manipulation; }
+  .qty-input { min-height:40px; font-size:16px; }
+  .wizard-section :is(input:not([type=checkbox]),select,textarea) { font-size:16px; }
+  .wizard-nav { flex-wrap:wrap; gap:12px; }
+  .wizard-nav .btn { min-height:48px; }
 }

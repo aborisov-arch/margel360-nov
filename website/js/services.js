@@ -74,8 +74,7 @@ const SERVICE_GROUPS = [
       { id:'heater_tbl', label_bg:'Маса', label_en:'Heating table' },
     ] },
 ];
-const GROUPED_IDS = new Set(SERVICE_GROUPS.flatMap(g => g.ids));
-const FIRST_ID_OF_GROUP = new Map(SERVICE_GROUPS.map(g => [g.ids[0], g]));
+const GROUP_BY_ID = new Map(SERVICE_GROUPS.flatMap(g => g.ids.map(id => [id, g])));
 
 function fmtPrice(svc) {
   // Bake the duration suffix into the price for items priced per session.
@@ -258,13 +257,16 @@ function renderServices(currentLang) {
   const grid = document.getElementById('services-grid');
   if (!grid || typeof addonServices === 'undefined') return;
   grid.innerHTML = '';
+  const renderedGroups = new Set();
   addonServices.forEach(svc => {
-    if (FIRST_ID_OF_GROUP.has(svc.id)) {
-      const groupCard = renderGroupCard(FIRST_ID_OF_GROUP.get(svc.id), currentLang);
+    const group = GROUP_BY_ID.get(svc.id);
+    if (group) {
+      if (renderedGroups.has(group.key)) return;
+      renderedGroups.add(group.key);
+      const groupCard = renderGroupCard(group, currentLang);
       if (groupCard) grid.appendChild(groupCard);
       return;
     }
-    if (GROUPED_IDS.has(svc.id)) return; // already rendered as part of its group
     grid.appendChild(renderSingleCard(svc, currentLang));
   });
 }

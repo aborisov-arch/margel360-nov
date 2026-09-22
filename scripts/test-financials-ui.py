@@ -30,6 +30,18 @@ with sync_playwright() as p:
  page.locator('#manager-pay summary').click()
  assert page.locator('.finance-pie').count()==2
  assert page.locator('#sum-income-eur').inner_text()=='€1300.00'
+ saved_before=page.evaluate('JSON.stringify([...financialEventsById.values()])')
+ page.locator('#fin-vat-toggle').click()
+ assert page.locator('#fin-vat-toggle').get_attribute('aria-pressed')=='true'
+ assert page.locator('#sum-income-eur').inner_text()=='€1083.33'
+ assert page.locator('[data-chart-total="income"]').inner_text()=='€1083.33'
+ assert page.locator('#sum-expense-eur').inner_text()=='€50.00'
+ page.locator('#income-cat-breakdown [data-cat="overtime"]').click()
+ assert 'без ДДС' in page.locator('#drill-title').inner_text()
+ assert '€250.00' in page.locator('#drill-body').inner_text()
+ page.evaluate('closeDrill()')
+ assert saved_before==page.evaluate('JSON.stringify([...financialEventsById.values()])')
+ page.locator('#fin-vat-toggle').click()
  assert page.locator('[data-chart-total="income"]').inner_text()=='€1300.00'
  assert page.locator('[data-chart-total="expense"]').inner_text()=='€50.00'
  page.locator('#finance-charts').screenshot(path='/tmp/m360-donut-desktop.png')
@@ -62,6 +74,16 @@ with sync_playwright() as p:
  assert page.evaluate('document.documentElement.scrollWidth <= 390'), page.evaluate('document.documentElement.scrollWidth')
  page.screenshot(path='/tmp/m360-finance-mobile.png',full_page=True)
  page.locator('#finance-charts').screenshot(path='/tmp/m360-donut-mobile.png')
+ page.evaluate("document.querySelector('.toast-stack')?.remove();document.getElementById('month-summary').scrollIntoView({behavior:'instant'})")
+ page.screenshot(path='/tmp/m360-summary-phone.png')
+ for width in [320,375,430,768]:
+  page.set_viewport_size({'width':width,'height':844})
+  assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'),width
+  assert page.locator('.event-pnl__line-row').first.evaluate('e=>e.scrollWidth<=e.clientWidth+1'),width
+  if width<=760:
+   for control in page.locator('.event-pnl__line-row :is(input,select,textarea,button)').all():
+    assert control.evaluate('e=>{const r=e.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth+1}'),width
+ page.set_viewport_size({'width':390,'height':844})
  page.locator('#fin-month').fill('2099-02');page.locator('#fin-month').dispatch_event('change')
  assert page.locator('[data-chart-total="income"]').inner_text()=='€0.00'
  assert page.locator('.finance-chart-empty').count()==2
@@ -132,6 +154,13 @@ with sync_playwright() as p:
  page.locator('#btn-save-pnl').click()
  page.wait_for_function("eventBottleCost(currentSelection().fe).missing===1")
  assert page.locator('#sum-profit-eur').inner_text()=='Непълни данни'
+ ring=page.locator('[data-chart-total="expense"]').locator('xpath=../..').bounding_box()
+ text_box=page.locator('[data-chart-total="expense"]').bounding_box()
+ assert abs((ring['x']+ring['width']/2)-(text_box['x']+text_box['width']/2))<2
+ assert abs((ring['y']+ring['height']/2)-(text_box['y']+text_box['height']/2))<2
+ page.locator('#finance-charts').screenshot(path='/tmp/m360-incomplete-centered.png')
+ page.evaluate("document.querySelector('.toast-stack')?.remove()")
+ page.locator('[data-chart-total="expense"]').locator('xpath=../../..').screenshot(path='/tmp/m360-expense-donut-phone.png')
  page.locator('[data-bottle-cost="0"]').fill('0')
  page.locator('#btn-save-pnl').click()
  page.wait_for_function("eventBottleCost(currentSelection().fe).missing===0")

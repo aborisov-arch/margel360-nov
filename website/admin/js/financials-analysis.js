@@ -84,7 +84,7 @@ function renderFinanceCharts(income, expense) {
   const colors=['#2e57bc','#4e9e61','#e2b73f','#8b78ba','#8b919a','#ce765b','#3b929b','#a55c80'];
   host.innerHTML=[['Приходи',income,INCOME_LABELS,'income'],['Разходи',expense,EXPENSE_CATS,'expense']].map(([title,values,labels,kind])=>{
     // Stable category colors, even when another category has no values this month.
-    const rows=labels.map((c,i)=>({...c,value:Number(values[c.id]||0),color:colors[i%colors.length]})).filter(r=>r.value!==0);
+    const rows=labels.map((c,i)=>({...c,value:kind==='income'?revenueForDisplay(values[c.id]):Number(values[c.id]||0),color:colors[i%colors.length]})).filter(r=>r.value!==0);
     const total=rows.reduce((s,r)=>s+r.value,0),positiveTotal=rows.reduce((s,r)=>s+Math.max(0,r.value),0);
     let offset=0;
     const arcs=rows.filter(r=>r.value>0).map(r=>{
@@ -117,3 +117,20 @@ document.addEventListener('submit',async event=>{
   try{const {error}=await db.from(table).upsert(payload,{onConflict:table==='manager_monthly_pay'?'month,manager_email':'event_id,manager_email'});if(error)throw error;payrollDrafts.delete(savedKey);await loadManagerPay();renderManagerPay();renderEventOvertime(currentSelection()?.fe);showToast('Запазено.');}catch(error){showToast('Записът не успя. Проверете стойностите и връзката.','error');button.disabled=false;}
 });
 document.addEventListener('click',async event=>{const button=event.target.closest('[data-pay-event]');if(!button)return;const fe=financialEventsById.get(button.dataset.payEvent);if(fe?.enquiry_id)await openPnlFromOffer(fe.enquiry_id);else await openManualPnlFromDrill(button.dataset.payEvent);if(currentSelection()?.fe?.id!==button.dataset.payEvent)return;const host=document.getElementById('event-manager-overtime');if(host){host.classList.add('finance-focus');host.scrollIntoView({behavior:'smooth',block:'center'});}});
+// Give each financial table cell its column label for the stacked phone view.
+// Observe new rows only; adding labels does not retrigger the observer.
+document.addEventListener('DOMContentLoaded', () => {
+  const root = document.querySelector('.fin');
+  if (!root) return;
+  const labelTables = () => root.querySelectorAll('.pay-table,.pc-table').forEach(table => {
+    table.classList.add('mobile-records');
+    const labels = Array.from(table.querySelectorAll('thead th'), th => th.textContent.trim());
+    table.querySelectorAll('tbody tr').forEach(row => {
+      Array.from(row.children).forEach((cell, index) => {
+        if (cell.tagName === 'TD' && cell.colSpan === 1) cell.dataset.label = labels[index] || '';
+      });
+    });
+  });
+  labelTables();
+  new MutationObserver(labelTables).observe(root, {childList:true, subtree:true});
+});

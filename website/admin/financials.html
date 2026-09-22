@@ -7,9 +7,10 @@
   <title>Финанси · P&L по събитие - Маргел 360° Админ</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/admin.css?v=20">
+  <link rel="stylesheet" href="css/admin.css?v=21">
   <link rel="stylesheet" href="css/financials.css?v=20">
-  <link rel="stylesheet" href="css/financials-analysis.css?v=5">
+  <link rel="stylesheet" href="css/financials-analysis.css?v=6">
+  <link rel="stylesheet" href="css/financials-mobile.css?v=1">
   <link rel="icon" href="/favicon.ico" sizes="48x48">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link rel="icon" type="image/png" sizes="192x192" href="/assets/favicon-192.png">
@@ -85,7 +86,7 @@
   <main class="admin-main fin">
     <div class="admin-container">
       <h1 class="page-title">Финанси</h1>
-      <p class="fin-page-sub">Изберете събитие за да видите оферираните приходи (авто-генерирани от запитването), плащанията от клиента и разходите към доставчиците. Комисионите от партньорите (кетъринг, декорация, певци, групи, DJ) са в отделния раздел най-долу.</p>
+      <p class="fin-page-sub">Приходи, разходи и печалба по събития. Изберете месец за обобщение или събитие за редакция.</p>
 
       <!-- Month filter - restricts the event list AND the summary block below.
            "all" shows every booking ever. -->
@@ -95,7 +96,12 @@
           <input type="month" id="fin-month">
         </div>
         <button type="button" class="btn btn-sm btn-outline" id="btn-month-all">Всички</button>
+        <button type="button" class="btn btn-outline fin-vat-toggle" id="fin-vat-toggle" aria-pressed="false" aria-describedby="fin-vat-note">Приходи: с ДДС</button>
       </div>
+      <p id="fin-vat-note" class="fin-vat-note">Приходите включват ДДС 20%. Плащанията, разходите и печалбата са по записаните суми.</p>
+      <nav class="fin-jump-nav" aria-label="Раздели във финансите">
+        <a href="#month-summary">Обобщение</a><a href="#staff-allocations">Месечни разходи</a><a href="#finance-events">Събития</a><a href="#partner-commissions">Комисиони</a>
+      </nav>
 
       <!-- Monthly summary KPIs - auto-recompute from the events in the
            current month filter. Same layout as the old financials.html. -->
@@ -165,7 +171,7 @@
       </section>
       <p class="pay-note">Покупните цени за бутилките се управляват в <a href="catalog.html">Каталог → Напитки</a>. Тук се запазват количествата и използваните цени по събитие.</p>
       <p class="pay-note"><strong>Услуги / извънредно време:</strong> След 5-ия час: €160/час за залата. При присъствие на хигиенист: допълнително €20/час за хигиениста. Отделно от стандартната такса за почистване; начислява се според реалното ползване.</p>
-      <div class="event-pnl">
+      <div class="event-pnl" id="finance-events">
         <aside class="event-pnl__list">
           <div class="event-pnl__list-head">
             <h2>Събития</h2>
@@ -198,7 +204,7 @@
             <div class="event-pnl__cols">
               <!-- INCOME - auto-filled from the enquiry, plus payments received -->
               <div class="event-pnl__col event-pnl__col--income">
-                <div class="event-pnl__col-head">
+            <div class="event-pnl__col-head">
                   <h3>Приходи · оферта</h3>
                   <span class="event-pnl__col-total" id="pnl-income-total">€0.00</span>
                 </div>
@@ -291,8 +297,9 @@
   <script src="js/auth.js?v=8" defer></script>
   <script src="js/toast.js?v=2" defer></script>
   <script src="../js/catalog-db.js?v=1" defer></script>
-  <script src="js/financials-analysis.js?v=6" defer></script>
+  <script src="js/financials-analysis.js?v=7" defer></script>
   <script src="js/drink-costs.js?v=1" defer></script>
-  <script src="js/financials.js?v=53" defer></script>
+  <script src="js/financials.js?v=54" defer></script>
+  <script src="js/admin-mobile.js?v=1" defer></script>
 </body>
 </html>

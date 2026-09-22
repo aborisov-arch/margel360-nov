@@ -111,6 +111,20 @@ const PARTNER_CATS = [
 const DEFAULT_COMMISSION_PCT = 10;
 
 const fmtEur = n => '€' + (Number(n) || 0).toFixed(2);
+let revenueWithoutVat = false;
+const revenueForDisplay = n => (Number(n) || 0) / (revenueWithoutVat ? 1.2 : 1);
+const fmtRevenue = n => fmtEur(revenueForDisplay(n));
+document.addEventListener('click', event => {
+  if (!event.target.closest('#fin-vat-toggle')) return;
+  revenueWithoutVat = !revenueWithoutVat;
+  const button = document.getElementById('fin-vat-toggle');
+  button.setAttribute('aria-pressed', String(revenueWithoutVat));
+  button.textContent = revenueWithoutVat ? 'Приходи: без ДДС' : 'Приходи: с ДДС';
+  document.getElementById('fin-vat-note').textContent =
+    (revenueWithoutVat ? 'Приходите са без ДДС 20% (сума ÷ 1,20).' : 'Приходите включват ДДС 20%.') +
+    ' Плащанията, разходите и печалбата са по записаните суми.';
+  renderMonthSummary();
+});
 function esc(s) {
   if (s == null) return '';
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -497,8 +511,8 @@ function renderMonthSummary() {
   const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
   set('sum-month-label', monthLabel(monthFilter));
   set('sum-count',       `${realizedCount} ${realizedCount === 1 ? 'проведено' : 'проведени'}${upcomingCount ? ` · ${upcomingCount} предстоящи` : ''}`);
-  set('sum-income-eur',  fmtEur(income));
-  set('sum-upcoming-eur', fmtEur(upcomingIncome));
+  set('sum-income-eur',  fmtRevenue(income));
+  set('sum-upcoming-eur', fmtRevenue(upcomingIncome));
   set('sum-paid-eur',    fmtEur(paid));
   set('sum-expense-eur', fmtEur(expense));
   set('sum-profit-eur',  fmtEur(profit));
@@ -516,7 +530,12 @@ function renderMonthSummary() {
 
   const incomeCats = { rent, drinks, addons, overtime, dj, employees };
   renderFinanceCharts(incomeCats, expByCat);
-  if(electricityError || incompleteBottleCostsInMonth()){set('sum-expense-eur','Непълни данни');set('sum-profit-eur','Непълни данни');document.querySelector('[data-chart-total="expense"]').textContent='Непълни данни';}
+  if(electricityError || incompleteBottleCostsInMonth()){
+    set('sum-expense-eur','Непълни данни');set('sum-profit-eur','Непълни данни');
+    const total = document.querySelector('[data-chart-total="expense"]');
+    total.textContent='Непълни данни';total.classList.add('is-incomplete');
+    total.closest('.finance-pie').querySelector('svg').setAttribute('aria-label','Разходи: непълни данни.');
+  }
   renderManagerPay();
   renderStaffAllocations(expByCat);
   const incomeBreak = document.getElementById('income-cat-breakdown');
@@ -524,7 +543,7 @@ function renderMonthSummary() {
     incomeBreak.innerHTML = INCOME_LABELS.filter(c => incomeCats[c.id] > 0).map(c => `
       <div class="pill" data-cat="${esc(c.id)}" role="button" tabindex="0" style="cursor:pointer" title="Пълна разбивка по събития">
         <div class="pill__label">${esc(c.label)}</div>
-        <div class="pill__value">${fmtEur(incomeCats[c.id])}</div>
+        <div class="pill__value">${fmtRevenue(incomeCats[c.id])}</div>
         <div class="pill__sub">${income ? `<span class="pill__pct">${Math.round(incomeCats[c.id] / income * 100)}%</span>` : ''}</div>
       </div>
     `).join('');
@@ -2152,8 +2171,8 @@ function openMetricBreakdown(metric) {
   const amountOf = (fe) => {
     const past = eventHasHappened(fe);
     switch (metric) {
-      case 'income':   return past  ? feIncome(fe).total : null;
-      case 'upcoming': return !past ? feIncome(fe).total : null;
+      case 'income':   return past  ? revenueForDisplay(feIncome(fe).total) : null;
+      case 'upcoming': return !past ? revenueForDisplay(feIncome(fe).total) : null;
       case 'paid':     return fePaid(fe) || null;
       case 'expense':  return past  ? (feExpenseTotal(fe) || null) : null;
       case 'profit':   return past  ? (feIncome(fe).total - feExpenseTotal(fe)) : null;
@@ -2168,7 +2187,7 @@ function openMetricBreakdown(metric) {
   const overheadRows = ['expense','profit'].includes(metric) ? electricityDrillRows(metric==='profit'?-1:1) : '';
   const total = rows.reduce((s, r) => s + r.amt, 0) + overhead;
   const title = document.getElementById('drill-title');
-  if (title) title.textContent = `${TITLES[metric] || 'Разбивка'} · ${monthLabel(monthFilter)}`;
+  if (title) title.textContent = `${TITLES[metric] || 'Разбивка'}${['income','upcoming'].includes(metric) ? (revenueWithoutVat ? ' · без ДДС' : ' · с ДДС') : ''} · ${monthLabel(monthFilter)}`;
   const body = document.getElementById('drill-body');
   if (body) {
     body.innerHTML = rows.length || overheadRows
@@ -2215,7 +2234,7 @@ function openCategoryBreakdown(kind, catId) {
   if (kind === 'income') {
     label = (INCOME_LABELS.find(c => c.id === catId) || {}).label || catId;
     const rows = scopeFes
-      .map(fe => ({ fe, amt: feIncome(fe)[catId] || 0 }))
+      .map(fe => ({ fe, amt: revenueForDisplay(feIncome(fe)[catId] || 0) }))
       .filter(r => r.amt !== 0)
       .sort((a, b) => b.amt - a.amt);
     rows.forEach(r => { total += r.amt; eventIds.add(r.fe.id); });
@@ -2236,7 +2255,7 @@ function openCategoryBreakdown(kind, catId) {
     rowsHtml = rows.map(r => expenseDrillRowHtml(r.fe, r.x, r.amt)).join('');
   }
   const title = document.getElementById('drill-title');
-  if (title) title.textContent = `${label} · ${monthLabel(monthFilter)}`;
+  if (title) title.textContent = `${label}${kind === 'income' ? (revenueWithoutVat ? ' · без ДДС' : ' · с ДДС') : ''} · ${monthLabel(monthFilter)}`;
   if(kind==='expense'&&catId==='drinks'){scopeFes.forEach(fe=>{const cost=eventBottleCost(fe);if(cost.auto){rowsHtml+=bottleCostDrillRow(fe);total+=cost.auto;lineCount++;eventIds.add(fe.id);}});}
   if(kind==='expense' && catId==='utilities'){rowsHtml+=electricityDrillRows();total+=electricityTotal();lineCount+=electricityScope().filter(r=>Number(r.amount_eur)!==0).length;}
   const body = document.getElementById('drill-body');
