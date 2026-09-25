@@ -169,7 +169,7 @@ async function buildOfferXLSXBlob(enquiry) {
     if (cfg.end)   ws.getCell('AF8').value = cfg.end;
     ws.getCell('AA11').value = cfg.label;
   } else {
-    ws.getCell('AA11').value = enquiry.event_type || '';
+    ws.getCell('AA11').value = eventTypeBg(enquiry);
   }
 
   // ── Promo discount → the template's native "TO%" cell on the venue row.
@@ -213,7 +213,7 @@ async function buildOfferXLSXBlob(enquiry) {
       // in EUR. Detect and convert before summing into the offer's EUR total.
       const eur = addonPriceEur(a.id, Number(a.price) || 0);
       otherTotal += eur;
-      unmapped.push(a.name || a.id);
+      unmapped.push(itemNameBg(a));
     }
   }
   if (otherTotal > 0) {

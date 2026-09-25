@@ -1,4 +1,6 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
+import { eventTypeBg, itemNameBg, paymentBg, timeOfDayBg } from "../_shared/labels-bg.ts";
+import { partnerCategoryLabel } from "../_shared/enquiry-email.ts";
 
 // notify-enquiry is fired by the database webhook on INSERT into
 // enquiries. The webhook is configured in the Supabase dashboard with
@@ -40,56 +42,54 @@ serve(async (req) => {
 
     const addonsText = Array.isArray(record.addons) && record.addons.length
       ? record.addons.map((a: { id: string; name: string; price: number }) =>
-          `  - ${a.name}: €${addonEur(a.id, a.price).toFixed(2)}`
+          `  - ${itemNameBg(a)}: €${addonEur(a.id, a.price).toFixed(2)}`
         ).join("\n")
       : null;
 
     const drinksText = Array.isArray(record.drinks) && record.drinks.length
       ? record.drinks.map((d: { name: string; qty: number }) =>
-          `  - ${d.name} × ${d.qty}`
+          `  - ${itemNameBg(d)} × ${d.qty}`
         ).join("\n")
       : null;
 
     const partnersText = Array.isArray(record.partner_interest) && record.partner_interest.length
       ? record.partner_interest.map((p: { name: string; category: string }) =>
-          `  - ${p.name} (${p.category})`
+          `  - ${p.name} (${partnerCategoryLabel(p.category, "bg")})`
         ).join("\n")
       : null;
 
-    const timeLabel = record.time_of_day === "day"
-      ? "Daytime (until 17:30)"
-      : "Evening (after 19:00)";
+    const timeLabel = timeOfDayBg({ time_of_day: record.time_of_day });
 
     const refNo = record.enquiry_number != null ? `#${record.enquiry_number} ` : "";
 
     const body = [
-      "New enquiry received at Margel 360°",
+      "Ново запитване в Маргел 360°",
       "",
       "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
       "",
-      ...(refNo ? [`Ref:            ${refNo.trim()}`] : []),
-      `Name:           ${record.full_name}`,
-      `Email:          ${record.email}`,
-      `Phone:          ${record.phone}`,
+      ...(refNo ? [`Номер:          ${refNo.trim()}`] : []),
+      `Име:            ${record.full_name}`,
+      `Имейл:          ${record.email}`,
+      `Телефон:        ${record.phone}`,
       "",
       "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
       "",
-      `Event:          ${record.event_type}`,
-      `Date:           ${record.preferred_date}`,
-      `Time:           ${timeLabel}`,
-      `Guests:         ${record.guests ?? "—"}`,
-      `Payment:        ${record.payment_method}`,
+      `Събитие:        ${eventTypeBg(record)}`,
+      `Дата:           ${record.preferred_date}`,
+      `Час:            ${timeLabel}`,
+      `Гости:          ${record.guests ?? "—"}`,
+      `Плащане:        ${paymentBg(record.payment_method)}`,
       "",
-      ...(addonsText ? ["━━━━━━━━━━━━━━━━━━━━━━━━━━━━", "", "Add-on services:", addonsText, ""] : []),
-      ...(drinksText ? ["━━━━━━━━━━━━━━━━━━━━━━━━━━━━", "", "Drinks:", drinksText, ""] : []),
-      ...(partnersText ? ["━━━━━━━━━━━━━━━━━━━━━━━━━━━━", "", "Partner interest (no charge):", partnersText, ""] : []),
-      ...(record.notes ? ["━━━━━━━━━━━━━━━━━━━━━━━━━━━━", "", "Notes:", record.notes, ""] : []),
+      ...(addonsText ? ["━━━━━━━━━━━━━━━━━━━━━━━━━━━━", "", "Допълнителни услуги:", addonsText, ""] : []),
+      ...(drinksText ? ["━━━━━━━━━━━━━━━━━━━━━━━━━━━━", "", "Напитки:", drinksText, ""] : []),
+      ...(partnersText ? ["━━━━━━━━━━━━━━━━━━━━━━━━━━━━", "", "Интерес към партньори (без заплащане):", partnersText, ""] : []),
+      ...(record.notes ? ["━━━━━━━━━━━━━━━━━━━━━━━━━━━━", "", "Бележки:", record.notes, ""] : []),
       "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
       "",
-      `Submitted at: ${new Date(record.created_at).toLocaleString("en-GB")}`,
+      `Изпратено на: ${new Date(record.created_at).toLocaleString("bg-BG", { timeZone: "Europe/Sofia" })}`,
     ].join("\n");
 
-    const subject = `New Enquiry — ${refNo}${record.full_name} — ${record.event_type}`;
+    const subject = `Ново запитване — ${refNo}${record.full_name} — ${eventTypeBg(record)}`;
 
     const resendRes = await fetch("https://api.resend.com/emails", {
       method: "POST",

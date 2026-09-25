@@ -1,5 +1,6 @@
 import type { DiffEntry } from "./diff.ts";
 import { localizedItemName } from "./item-names.ts";
+import { eventTypeBg, itemNameBg, paymentBg, timeOfDayBg } from "./labels-bg.ts";
 
 type Enquiry = {
   id: string;
@@ -27,7 +28,7 @@ type Enquiry = {
 
 // Customer-email copy in both languages. The customer email is rendered in the
 // language the customer used on the site (e.lang); item names come from the
-// shared catalog (localizedItemName). Owner/team emails stay English below.
+// shared catalog (localizedItemName). Owner/team emails are Bulgarian (labels-bg.ts).
 const EMAIL_T = {
   bg: {
     htmlLang: "bg", expiryLocale: "bg-BG", brand: "Маргел",
@@ -341,9 +342,9 @@ export function renderCustomerEmail(e: Enquiry, siteUrl: string): { subject: str
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 28px">${drinkRows}</table>` : ""}
 
         ${partnerRows ? `
-        ${sectionTitle("Интерес към партньори")}
+        ${sectionTitle(lang === "bg" ? "Интерес към партньори" : "Partner interest")}
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 8px">${partnerRows}</table>
-        <p style="margin:0 0 28px;font:11px/1.5 ${SANS};color:${MUTED}">Безплатно и необвързващо — ще ви свържем с избраните партньори.</p>` : ""}
+        <p style="margin:0 0 28px;font:11px/1.5 ${SANS};color:${MUTED}">${lang === "bg" ? "Безплатно и необвързващо — ще ви свържем с избраните партньори." : "Free and non-binding — we will put you in touch with the selected partners."}</p>` : ""}
 
         ${e.notes ? `
         ${sectionTitle(t.notes)}
@@ -400,23 +401,23 @@ export function renderCustomerEmail(e: Enquiry, siteUrl: string): { subject: str
 type LineItem = { id?: string; name?: string; qty?: number; price?: number };
 
 const FIELD_LABEL: Record<string, string> = {
-  guests:         "Guests",
-  phone:          "Phone",
-  notes:          "Notes",
-  addons:         "Add-on services",
-  drinks:         "Drinks",
-  preferred_date: "Date",
+  guests:         "Гости",
+  phone:          "Телефон",
+  notes:          "Бележки",
+  addons:         "Допълнителни услуги",
+  drinks:         "Напитки",
+  preferred_date: "Дата",
 };
 
 function fmtAddon(a: LineItem): string {
-  const name  = String(a?.name ?? a?.id ?? "?");
+  const name  = itemNameBg(a) || "?";
   const qty   = typeof a?.qty   === "number" && a.qty   > 0 ? ` × ${a.qty}` : "";
   const price = typeof a?.price === "number" && a.price > 0 ? ` — ${fmtEur(a.price, a.id)}` : "";
   return `${name}${qty}${price}`;
 }
 
 function fmtDrink(d: LineItem): string {
-  const name = String(d?.name ?? d?.id ?? "?");
+  const name = itemNameBg(d) || "?";
   const qty  = typeof d?.qty === "number" ? ` × ${d.qty}` : "";
   return `${name}${qty}`;
 }
@@ -439,18 +440,18 @@ function fmtArrayDiff(field: "addons" | "drinks", before: unknown, after: unknow
   const fmt = field === "addons" ? fmtAddon : fmtDrink;
   const lines: string[] = [];
   if (removed.length) {
-    lines.push("    Removed:");
+    lines.push("    Премахнати:");
     for (const r of removed) lines.push(`      − ${fmt(r)}`);
   }
   if (added.length) {
-    lines.push("    Added:");
+    lines.push("    Добавени:");
     for (const x of added) lines.push(`      + ${fmt(x)}`);
   }
   if (changed.length) {
-    lines.push("    Changed:");
+    lines.push("    Променени:");
     for (const c of changed) lines.push(`      • ${fmt(c.from)}  →  ${fmt(c.to)}`);
   }
-  return lines.length ? lines.join("\n") : "    (no item-level differences)";
+  return lines.length ? lines.join("\n") : "    (няма разлики по артикули)";
 }
 
 function fmtScalar(v: unknown): string {
@@ -467,38 +468,36 @@ export function renderOwnerEmail(
   const subjectPrefix = reason === "updated" ? "[Редактирана резервация] " : "";
   const totals = computeTotals(e);
   const refNo = e.enquiry_number != null ? `#${e.enquiry_number} ` : "";
-  const subject = `${subjectPrefix}${refNo}${e.full_name} — ${e.event_type} — ${e.preferred_date} — €${totals.total.toFixed(2)}`;
+  const subject = `${subjectPrefix}${refNo}${e.full_name} — ${eventTypeBg(e)} — ${e.preferred_date} — €${totals.total.toFixed(2)}`;
 
-  const addonsText = (e.addons ?? []).map(a => `  - ${a.name}: ${fmtEur(a.price, a.id)}`).join("\n");
+  const addonsText = (e.addons ?? []).map(a => `  - ${itemNameBg(a)}: ${fmtEur(a.price, a.id)}`).join("\n");
   const drinksText = (e.drinks ?? []).map(d => {
     const line = (Number(d.price_eur) || 0) * (Number(d.qty) || 0);
     return line > 0
-      ? `  - ${d.name} × ${d.qty} — €${line.toFixed(2)}`
-      : `  - ${d.name} × ${d.qty}`;
+      ? `  - ${itemNameBg(d)} × ${d.qty} — €${line.toFixed(2)}`
+      : `  - ${itemNameBg(d)} × ${d.qty}`;
   }).join("\n");
   const partnersText = (e.partner_interest ?? []).map(p =>
-    `  - ${p.name} (${p.category})`
+    `  - ${p.name} (${partnerCategoryLabel(p.category, "bg")})`
   ).join("\n");
-  const timeLabel = e.arrival_time
-    ? `Evening · arrival ${e.arrival_time}`
-    : (e.time_of_day === "day" ? "Daytime (until 17:30)" : "Evening (after 19:00)");
+  const timeLabel = timeOfDayBg(e);
 
   const totalsBlock = [
     "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
-    "TOTAL",
-    `  Venue base (up to ${VENUE_MIN_GUESTS} guests): €${totals.venue.toFixed(2)}`,
-    ...(totals.extraGuests > 0 ? [`  +${totals.extraGuests} extra guests × €${EXTRA_GUEST_FEE_EUR}:           €${totals.extraGuestsCost.toFixed(2)}`] : []),
-    `  Add-ons:                          €${totals.addons.toFixed(2)}`,
-    `  Drinks:                           €${totals.drinks.toFixed(2)}`,
-    ...(totals.discount > 0 ? [`  Discount (${totals.discountPercent}%):                 −€${totals.discount.toFixed(2)}`] : []),
+    "ОБЩО",
+    `  Зала (до ${VENUE_MIN_GUESTS} гости):              €${totals.venue.toFixed(2)}`,
+    ...(totals.extraGuests > 0 ? [`  +${totals.extraGuests} допълнителни гости × €${EXTRA_GUEST_FEE_EUR}:    €${totals.extraGuestsCost.toFixed(2)}`] : []),
+    `  Допълнителни услуги:              €${totals.addons.toFixed(2)}`,
+    `  Напитки:                          €${totals.drinks.toFixed(2)}`,
+    ...(totals.discount > 0 ? [`  Отстъпка (${totals.discountPercent}%):                 −€${totals.discount.toFixed(2)}`] : []),
     `  ──────────────────────────`,
-    `  GRAND TOTAL:                      €${totals.total.toFixed(2)}`,
+    `  ОБЩА СУМА:                        €${totals.total.toFixed(2)}`,
     "",
   ];
 
   const diffBlock = reason === "updated" && diff && diff.length
     ? [
-        "CHANGED FIELDS",
+        "ПРОМЕНЕНИ ПОЛЕТА",
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
         ...diff.flatMap(d => {
           const label = FIELD_LABEL[d.field] ?? d.field;
@@ -507,8 +506,8 @@ export function renderOwnerEmail(
           }
           return [
             `  ${label}:`,
-            `    before: ${fmtScalar(d.before)}`,
-            `    after:  ${fmtScalar(d.after)}`,
+            `    преди: ${fmtScalar(d.before)}`,
+            `    след:  ${fmtScalar(d.after)}`,
             "",
           ];
         }),
@@ -517,28 +516,28 @@ export function renderOwnerEmail(
 
   const text = [
     reason === "updated"
-      ? `Customer edited their enquiry at Margel 360°`
-      : `New enquiry received at Margel 360°`,
+      ? `Клиентът редактира запитването си в Маргел 360°`
+      : `Ново запитване в Маргел 360°`,
     "",
     "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
     "",
     ...diffBlock,
-    `Name:           ${e.full_name}`,
-    `Email:          ${e.email}`,
-    `Phone:          ${e.phone}`,
+    `Име:            ${e.full_name}`,
+    `Имейл:          ${e.email}`,
+    `Телефон:        ${e.phone}`,
     "",
     "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
     "",
-    `Event:          ${e.event_type}`,
-    `Date:           ${e.preferred_date}`,
-    `Time:           ${timeLabel}`,
-    `Guests:         ${e.guests ?? "—"}`,
-    `Payment:        ${e.payment_method}`,
+    `Събитие:        ${eventTypeBg(e)}`,
+    `Дата:           ${e.preferred_date}`,
+    `Час:            ${timeLabel}`,
+    `Гости:          ${e.guests ?? "—"}`,
+    `Плащане:        ${paymentBg(e.payment_method)}`,
     "",
-    ...(addonsText ? ["Add-on services:", addonsText, ""] : []),
-    ...(drinksText ? ["Drinks:", drinksText, ""] : []),
-    ...(partnersText ? ["Partner interest (no charge):", partnersText, ""] : []),
-    ...(e.notes ? ["Notes:", e.notes, ""] : []),
+    ...(addonsText ? ["Допълнителни услуги:", addonsText, ""] : []),
+    ...(drinksText ? ["Напитки:", drinksText, ""] : []),
+    ...(partnersText ? ["Интерес към партньори (без заплащане):", partnersText, ""] : []),
+    ...(e.notes ? ["Бележки:", e.notes, ""] : []),
     ...totalsBlock,
     "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
   ].join("\n");

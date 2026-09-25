@@ -79,7 +79,7 @@ function esc(s){ return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;
             <div class="feedback-card__hdr">
               <div>
                 <span class="feedback-card__name">${esc(e.full_name)}</span>
-                <span class="feedback-card__meta"> · ${esc(e.event_type || '-')} · ${esc(e.preferred_date || '-')}</span>
+                <span class="feedback-card__meta"> · ${esc(eventTypeBg(e) || '-')} · ${esc(e.preferred_date || '-')}</span>
               </div>
               <span class="feedback-card__meta">${fmt(r.submitted_at)}</span>
             </div>

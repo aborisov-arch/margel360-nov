@@ -43,7 +43,7 @@ function groupCustomers(enquiries) {
     const g = map.get(key);
     g.count++;
     g.lifetime += estimateTotal(e);
-    if (e.event_type) g.events.add(e.event_type);
+    if (e.event_type) g.events.add(eventTypeBg(e));
     if (e.pipeline_status) g.pipelineStages.add(e.pipeline_status);
     if (e.marketing_consent) g.marketing = true;
     if (new Date(e.created_at) > new Date(g.last)) {
@@ -92,7 +92,7 @@ function downloadCsv() {
     new Date(g.last).toISOString().slice(0, 10),
     Array.from(g.events).join('; '),
     g.lifetime,
-    Array.from(g.pipelineStages).join('; '),
+    Array.from(g.pipelineStages).map(st => t('crm_status_' + st)).join('; '),
     g.marketing ? 'Да' : 'Не',
   ]);
   const csv = [header, ...rows].map(r => r.map(csvEscape).join(',')).join('\r\n');
@@ -116,7 +116,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   allEnquiries = data || [];
 
   // Populate event-type filter from actual data.
-  const types = Array.from(new Set(allEnquiries.map(e => e.event_type).filter(Boolean))).sort();
+  // Bulgarian labels (groupCustomers stores the same labels in g.events).
+  const types = Array.from(new Set(allEnquiries.filter(e => e.event_type).map(e => eventTypeBg(e)))).sort((a, b) => a.localeCompare(b, 'bg'));
   const evSel = document.getElementById('filter-event');
   types.forEach(tp => {
     const o = document.createElement('option');

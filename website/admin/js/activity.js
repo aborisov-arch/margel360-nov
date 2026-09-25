@@ -13,6 +13,10 @@ const TABLE_LABELS = {
     partner_commission_rates: 'Ставка комисион (партньор)',
     enquiries:              'Запитване',
     'auth.users':           'Потребител (парола)',
+    manager_monthly_pay:    'Заплата / комисион (месечно)',
+    manager_event_overtime: 'Извънреден труд (управител)',
+    monthly_electricity:    'Сметка за ток',
+    drink_purchase_prices:  'Покупна цена на напитка',
   },
   en: {
     financial_events:       'Financial event (P&L)',
@@ -27,6 +31,13 @@ const TABLE_LABELS = {
 const ACTION_LABELS = {
   bg: { INSERT: 'Създаде', UPDATE: 'Промени', DELETE: 'Изтри' },
   en: { INSERT: 'Created', UPDATE: 'Changed', DELETE: 'Deleted' },
+};
+// Stored enum values shown in Bulgarian (English admin keeps the raw value).
+const VALUE_LABELS = {
+  payment_method: { cash: 'В брой', transfer: 'Банков превод', card: 'Карта' },
+  time_of_day: { day: 'Дневно', evening: 'Вечер' },
+  lang: { bg: 'Български', en: 'Английски' },
+  status: { new: 'Ново', answered: 'Отговорено' },
 };
 const ACTION_CLASS = { INSERT: 'ins', UPDATE: 'upd', DELETE: 'del' };
 
@@ -57,6 +68,15 @@ const FIELD_LABELS = {
     next_followup_at: 'Следващ контакт', payment_tracking: 'Плащания (отбелязани)',
     partner_interest: 'Партньори (интерес)',
     password: 'Парола',
+    status: 'Статус', edit_locked: 'Заключено за редакция', offer_sent_at: 'Изпратена оферта',
+    arrival_time: 'Час на пристигане', time_of_day: 'Част от деня', lang: 'Език',
+    marketing_consent: 'Съгласие за маркетинг', edited_by_admin: 'Редактирано от админ',
+    edit_count: 'Брой редакции', token_expires_at: 'Валидност на линка', reminder_sent_at: 'Изпратено напомняне',
+    feedback_sent_at: 'Изпратена анкета', run_sheet_sent_at: 'Изпратен план за вечерта',
+    addons_reminder_count: 'Напомняния за доп. услуги', offer_followup_sent_at: 'Последващо писмо за оферта',
+    venue_price_eur: 'Цена на залата', applied_discount_code: 'Код за отстъпка',
+    wage_eur: 'Заплата', manager_email: 'Управител', reference: 'Фактура / бележка',
+    drinks_cost_in_expenses: 'Себестойност в ръчните разходи', unit_cost_eur: 'Покупна цена',
   },
   en: {
     // financial_events - income
@@ -107,6 +127,10 @@ function fmtVal(key, v) {
     return t('activity_data');
   }
   if (typeof key === 'string' && key.endsWith('_eur') && Number.isFinite(Number(v))) return '€' + Number(v).toFixed(2);
+  if (typeof v === 'boolean') return v ? t('activity_yes') : t('activity_no');
+  const enumLabel = VALUE_LABELS[key]?.[v];
+  if (enumLabel) return getAdminLang() === 'en' ? String(v) : enumLabel;
+  if (key === 'pipeline_status') return t('crm_status_' + v);
   return String(v);
 }
 

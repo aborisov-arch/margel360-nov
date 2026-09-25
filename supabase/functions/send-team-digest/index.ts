@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import { json, preflight } from "../_shared/cors.ts";
+import { eventTypeBg } from "../_shared/labels-bg.ts";
 
 // Cron-triggered once each morning (Europe/Sofia). Scans enquiries and emails
 // the team ONE digest with the things that need a human today:
@@ -125,7 +126,7 @@ function renderSection(title: string, rows: Row[]): { html: string; text: string
   const SERIF = "Fraunces,Georgia,'Times New Roman',serif";
   const items = rows.map(({ e, meta }) => {
     const date = e.preferred_date ? ` · ${fmtDateBg(e.preferred_date)}` : "";
-    const ev = e.event_type ? ` · ${esc(e.event_type)}` : "";
+    const ev = e.event_type ? ` · ${esc(eventTypeBg(e))}` : "";
     const ph = e.phone ? ` · ${esc(e.phone)}` : "";
     const m = meta ? ` <span style="color:#B9894A">${esc(meta)}</span>` : "";
     return `<tr><td style="padding:8px 0;border-bottom:1px solid rgba(185,137,74,0.18);font:14px/1.5 ${SANS};color:#2A2620">
@@ -138,7 +139,7 @@ function renderSection(title: string, rows: Row[]): { html: string; text: string
     </td></tr>`;
 
   const textItems = rows.map(({ e, meta }) => {
-    const parts = [label(e), e.event_type, e.preferred_date ? fmtDateBg(e.preferred_date) : null, e.phone, meta]
+    const parts = [label(e), e.event_type ? eventTypeBg(e) : null, e.preferred_date ? fmtDateBg(e.preferred_date) : null, e.phone, meta]
       .filter(Boolean).join(" · ");
     return `  - ${parts}\n    ${adminLink(e)}`;
   }).join("\n");

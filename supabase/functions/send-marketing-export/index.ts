@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import { json, preflight } from "../_shared/cors.ts";
+import { eventTypeBg, pipelineBg } from "../_shared/labels-bg.ts";
 
 // Cron-triggered on the 1st of each month: builds a CSV of customers with
 // marketing consent (deduped by email, then phone) and emails it to the
@@ -62,9 +63,9 @@ serve(async (req) => {
     const cur = byKey.get(key);
     if (cur) {
       cur.count++;
-      if (e.event_type) cur.events.add(e.event_type);
+      if (e.event_type) cur.events.add(eventTypeBg(e));
     } else {
-      byKey.set(key, { e, count: 1, events: new Set(e.event_type ? [e.event_type] : []) });
+      byKey.set(key, { e, count: 1, events: new Set(e.event_type ? [eventTypeBg(e)] : []) });
     }
   }
 
@@ -79,7 +80,7 @@ serve(async (req) => {
     lines.push([
       csvCell(e.full_name), csvCell(e.email), csvCell(e.phone),
       csvCell([...events].join(" | ")), csvCell(count),
-      csvCell(e.pipeline_status), csvCell(e.created_at?.slice(0, 10)),
+      csvCell(pipelineBg(e.pipeline_status)), csvCell(e.created_at?.slice(0, 10)),
     ].join(","));
   }
   // BOM so Excel opens the Cyrillic as UTF-8.

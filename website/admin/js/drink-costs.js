@@ -35,14 +35,25 @@ function eventBottleCost(fe,live=false) {
   if(!lines.length && Number(fe.income_drinks_eur||0)!==0)result.missing++;
   return {...result,auto:result.cost};
 }
+// What is missing for an event's bottle cost, in words (finance gaps list,
+// event note and the month-end reminder email use the same three cases).
+function bottleGapText(fe,live=false){
+  const manual=live?('drinks_cost_in_expenses' in dirtyFe?dirtyFe.drinks_cost_in_expenses:fe.drinks_cost_in_expenses):fe.drinks_cost_in_expenses;
+  if(manual)return 'няма въведен разход „Напитки / алкохол“';
+  const enquiry=fe.enquiry_id?allEnquiries.find(e=>e.id===fe.enquiry_id):null;
+  const lines=live?getWorkingDrinks():(fe.pnl_drinks??seedDrinksFromOrder(enquiry));
+  const n=eventBottleCost(fe,live).missing;
+  if(!lines.length)return 'липсва разбивка на продадените напитки';
+  return `липсва покупна цена за ${n} ${n===1?'напитка':'напитки'}`;
+}
 function incompleteBottleCostsInMonth(){return Array.from(financialEventsById.values()).some(fe=>(!monthFilter||fe.month===monthFilter)&&eventHasHappened(fe)&&eventBottleCost(fe).missing);}
 function bottleCostDrillRow(fe){const cost=eventBottleCost(fe);return cost.auto?`<button type="button" class="drill-row" data-bottle-event="${esc(fe.id)}">${esc(fmtDateBg(fe.event_date))} · ${esc(fe.customer_name||allEnquiries.find(e=>e.id===fe.enquiry_id)?.full_name||'Събитие')} · Себестойност на бутилките <strong>${fmtEur(cost.auto)}</strong></button>`:'';}
 function renderBottleCostSummary(fe) {
   const host=document.getElementById('bottle-cost-summary');if(!host||!fe)return;
   const result=eventBottleCost(fe,true),revenue=drinksTotalOf(getWorkingDrinks());
   const manual='drinks_cost_in_expenses' in dirtyFe?dirtyFe.drinks_cost_in_expenses:fe.drinks_cost_in_expenses;
-  const expenseNote=document.getElementById('event-bottle-expense');if(expenseNote)expenseNote.textContent=result.missing?'Себестойност на бутилките: непълни данни.':manual?'Себестойността на бутилките е включена в ръчните разходи „Напитки / алкохол“.':`Автоматична себестойност на бутилките: ${fmtEur(result.auto)} — включена в общите разходи. Не я добавяйте повторно.`;
-  host.innerHTML=`<div class="pay-kpis"><span>Приход от бутилки<strong>${fmtEur(revenue)}</strong></span><span>Себестойност<strong>${result.missing?'Непълни данни':fmtEur(result.cost)}</strong></span><span>Печалба от бутилки<strong>${result.missing?'Непълни данни':fmtEur(revenue-result.cost)}</strong></span></div><p class="pay-note">Въведете реално продадените бутилки. Покупните цени и количествата се запазват с „Запази промените“. ${result.missing?'Липсва покупна цена или разбивка на бутилките.':''}</p><button type="button" id="apply-bottle-costs" class="btn btn-outline btn-sm">Попълни липсващите покупни цени от каталога</button><label class="pay-note" style="display:block;margin-top:12px"><input type="checkbox" id="bottle-cost-manual" ${manual?'checked':''}> Себестойността вече е въведена ръчно в разходи „Напитки / алкохол“ — не я начислявай повторно.</label>${!manual&&(expensesByEvent.get(fe.id)||[]).some(r=>expFieldValue(r,'category')==='drinks')?'<p class="pay-error">Има и ръчен разход за напитки. Проверете дали е същата покупка и при нужда включете отметката, за да няма двойно броене.</p>':''}`;
+  const expenseNote=document.getElementById('event-bottle-expense');if(expenseNote)expenseNote.textContent=result.missing?`Себестойност на бутилките: ${fmtEur(result.cost)} от въведените цени — ${bottleGapText(fe,true)}. Попълнете ги по-долу.`:manual?'Себестойността на бутилките е включена в ръчните разходи „Напитки / алкохол“.':`Автоматична себестойност на бутилките: ${fmtEur(result.auto)} — включена в общите разходи. Не я добавяйте повторно.`;
+  host.innerHTML=`<div class="pay-kpis"><span>Приход от бутилки<strong>${fmtEur(revenue)}</strong></span><span>Себестойност<strong>${fmtEur(result.cost)}</strong>${result.missing?'<small>без липсващите цени</small>':''}</span><span>Печалба от бутилки<strong>${fmtEur(revenue-result.cost)}</strong>${result.missing?'<small>без липсващите цени</small>':''}</span></div><p class="pay-note">Въведете реално продадените бутилки. Покупните цени и количествата се запазват с „Запази промените“. ${result.missing?'Липсва покупна цена или разбивка на бутилките.':''}</p><button type="button" id="apply-bottle-costs" class="btn btn-outline btn-sm">Попълни липсващите покупни цени от каталога</button><label class="pay-note" style="display:block;margin-top:12px"><input type="checkbox" id="bottle-cost-manual" ${manual?'checked':''}> Себестойността вече е въведена ръчно в разходи „Напитки / алкохол“ — не я начислявай повторно.</label>${!manual&&(expensesByEvent.get(fe.id)||[]).some(r=>expFieldValue(r,'category')==='drinks')?'<p class="pay-error">Има и ръчен разход за напитки. Проверете дали е същата покупка и при нужда включете отметката, за да няма двойно броене.</p>':''}`;
 }
 document.addEventListener('input',event=>{
   const input=event.target.closest('[data-bottle-cost]');if(!input)return;
