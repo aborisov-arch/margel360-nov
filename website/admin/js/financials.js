@@ -504,6 +504,8 @@ function renderMonthSummary() {
 
   expense += electricityTotal();
   expByCat.utilities += electricityTotal();
+  expense += managerPayTotal();
+  expByCat.staff_service += managerPayTotal();
   renderElectricity();
   const income = rent + drinks + addons + overtime + dj + employees;
   const profit = income - expense;
@@ -530,7 +532,7 @@ function renderMonthSummary() {
 
   const incomeCats = { rent, drinks, addons, overtime, dj, employees };
   renderFinanceCharts(incomeCats, expByCat);
-  if(electricityError || incompleteBottleCostsInMonth()){
+  if(electricityError || managerPayError || incompleteBottleCostsInMonth()){
     set('sum-expense-eur','Непълни данни');set('sum-profit-eur','Непълни данни');
     const total = document.querySelector('[data-chart-total="expense"]');
     total.textContent='Непълни данни';total.classList.add('is-incomplete');
@@ -2161,6 +2163,7 @@ function drillRowHtml(fe, amt, signed) {
 function openMetricBreakdown(metric) {
   if(incompleteBottleCostsInMonth() && ['expense','profit'].includes(metric)){showToast('Липсват покупни цени за бутилки. Попълнете ги по събития.','error');return;}
   if(electricityError && ['expense','profit'].includes(metric)){showToast('Непълни данни за електроенергията. Презаредете страницата.','error');return;}
+  if(managerPayError && ['expense','profit'].includes(metric)){showToast('Непълни данни за заплатите. Презаредете страницата.','error');return;}
   if (metric === 'commissions') { openCommissionBreakdown(); return; }
   lastDrill = { kind: 'metric', metric };
   const TITLES = { income: 'Приходи (реализирани)', upcoming: 'Очаквани (предстоящи)', paid: 'Платено от клиенти', expense: 'Разходи', profit: 'Печалба' };
@@ -2183,8 +2186,9 @@ function openMetricBreakdown(metric) {
     .map(fe => ({ fe, amt: amountOf(fe) }))
     .filter(r => r.amt != null && (['profit','expense'].includes(metric) ? r.amt !== 0 : r.amt > 0))
     .sort((a, b) => b.amt - a.amt);
-  const overhead = metric === 'expense' ? electricityTotal() : metric === 'profit' ? -electricityTotal() : 0;
-  const overheadRows = ['expense','profit'].includes(metric) ? electricityDrillRows(metric==='profit'?-1:1) : '';
+  const overheadTotal = electricityTotal() + managerPayTotal();
+  const overhead = metric === 'expense' ? overheadTotal : metric === 'profit' ? -overheadTotal : 0;
+  const overheadRows = ['expense','profit'].includes(metric) ? electricityDrillRows(metric==='profit'?-1:1) + managerPayDrillRows(metric==='profit'?-1:1) : '';
   const total = rows.reduce((s, r) => s + r.amt, 0) + overhead;
   const title = document.getElementById('drill-title');
   if (title) title.textContent = `${TITLES[metric] || 'Разбивка'}${['income','upcoming'].includes(metric) ? (revenueWithoutVat ? ' · без ДДС' : ' · с ДДС') : ''} · ${monthLabel(monthFilter)}`;
@@ -2193,7 +2197,7 @@ function openMetricBreakdown(metric) {
     body.innerHTML = rows.length || overheadRows
       ? `<div class="link-modal__list">${rows.map(r => drillRowHtml(r.fe, r.amt, metric === 'profit')).join('')}${overheadRows}</div>
          <div style="display:flex;justify-content:space-between;margin-top:14px;padding-top:10px;border-top:2px solid var(--fin-border,#e6e1d6);font-weight:800">
-           <span>Общо · ${rows.length} събития${overheadRows?' + ток':''}</span><span>${fmtEur(total)}</span>
+           <span>Общо · ${rows.length} събития${overheadRows?' + месечни разходи':''}</span><span>${fmtEur(total)}</span>
          </div>`
       : '<div class="empty-state">Няма събития в този период.</div>';
   }
@@ -2223,6 +2227,7 @@ function expenseDrillRowHtml(fe, x, amt) {
 function openCategoryBreakdown(kind, catId) {
   if(kind==='expense' && catId==='drinks' && incompleteBottleCostsInMonth()){showToast('Липсват покупни цени за бутилки. Попълнете ги по събития.','error');return;}
   if(electricityError && kind==='expense' && catId==='utilities'){showToast('Непълни данни за електроенергията. Презаредете страницата.','error');return;}
+  if(managerPayError && kind==='expense' && catId==='staff_service'){showToast('Непълни данни за заплатите. Презаредете страницата.','error');return;}
   lastDrill = { kind: 'cat', catKind: kind, catId };
   const scopeFes = [];
   for (const fe of financialEventsById.values()) {
@@ -2258,6 +2263,7 @@ function openCategoryBreakdown(kind, catId) {
   if (title) title.textContent = `${label}${kind === 'income' ? (revenueWithoutVat ? ' · без ДДС' : ' · с ДДС') : ''} · ${monthLabel(monthFilter)}`;
   if(kind==='expense'&&catId==='drinks'){scopeFes.forEach(fe=>{const cost=eventBottleCost(fe);if(cost.auto){rowsHtml+=bottleCostDrillRow(fe);total+=cost.auto;lineCount++;eventIds.add(fe.id);}});}
   if(kind==='expense' && catId==='utilities'){rowsHtml+=electricityDrillRows();total+=electricityTotal();lineCount+=electricityScope().filter(r=>Number(r.amount_eur)!==0).length;}
+  if(kind==='expense' && catId==='staff_service'){rowsHtml+=managerPayDrillRows();total+=managerPayTotal();lineCount+=managerPayScope().filter(r=>managerPayAmount(r)!==0).length;}
   const body = document.getElementById('drill-body');
   if (body) {
     const n = eventIds.size;

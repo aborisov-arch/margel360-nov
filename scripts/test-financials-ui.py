@@ -61,6 +61,8 @@ with sync_playwright() as p:
  page.locator('#monthly-pay-form button').click()
  page.wait_for_function('managerPayRows.length===1')
  assert '€1160.00' in page.locator('#manager-pay-body').inner_text()
+ # Saved wage + commission is monthly overhead in the expense KPI (historical overtime is not).
+ assert page.locator('#sum-expense-eur').inner_text()=='€1150.00'
  page.locator('#expense-cat-breakdown [data-cat="other"]').click()
  page.locator('#drill-modal [data-expense-id]').click()
  assert page.locator('.finance-focus [data-f="amount_eur"]').input_value()=='50'
@@ -68,6 +70,8 @@ with sync_playwright() as p:
  page.evaluate('managerOvertimeRows[0].register_hours=2;renderManagerPay()')
  assert page.locator('#manager-pay-body .pay-mismatch').inner_text()=='1 ч.'
  assert page.locator('#monthly-pay-form [name="wage_eur"]').input_value()=='1234'
+ page.evaluate('payrollDrafts.clear();managerPayRows=[];fixtures.manager_monthly_pay=[];renderMonthSummary()')
+ assert page.locator('#sum-expense-eur').inner_text()=='€50.00'
  page.screenshot(path='/tmp/m360-finance-desktop.png',full_page=True)
  page.set_viewport_size({'width':390,'height':844})
  page.wait_for_timeout(300)
@@ -130,6 +134,24 @@ with sync_playwright() as p:
  page.locator('[data-staff-category="ivan_fee"] button').click()
  assert '€80.00' in page.locator('#drill-body').inner_text()
  page.evaluate('closeDrill()')
+ page.locator('[data-staff-pay]').click()
+ assert page.evaluate("document.getElementById('manager-pay').open")
+ page.locator('#monthly-pay-form [name="wage_eur"]').fill('780')
+ page.locator('#monthly-pay-form [name="commission_eur"]').fill('430')
+ page.locator('#monthly-pay-form button').click()
+ page.wait_for_function('managerPayRows.length===1')
+ assert '€1210.00' in page.locator('[data-staff-category="ivan_salary"]').inner_text()
+ assert page.locator('#sum-expense-eur').inner_text()=='€1520.00'
+ assert page.locator('[data-chart-total="expense"]').inner_text()=='€1520.00'
+ page.locator('[data-chart-cat="staff_service"]').click()
+ assert page.locator('#drill-body [data-pay-month]').count()==1
+ assert '€1210.00' in page.locator('#drill-body').inner_text()
+ page.evaluate("closeDrill();openMetricBreakdown('expense')")
+ assert '€1520.00' in page.locator('#drill-body').inner_text()
+ page.evaluate('closeDrill();managerPayError="x";renderMonthSummary()')
+ assert page.locator('#sum-expense-eur').inner_text()=='Непълни данни'
+ page.evaluate('managerPayError="";managerPayRows=[];fixtures.manager_monthly_pay=[];renderMonthSummary()')
+ assert page.locator('#sum-expense-eur').inner_text()=='€310.00'
  page.locator('#staff-allocations').screenshot(path='/tmp/m360-staff-allocations.png')
  assert page.evaluate('document.documentElement.scrollWidth <= 390')
  page.locator('#btn-add-drink-manual').click()
