@@ -21,7 +21,8 @@ const SITE_URL     = (Deno.env.get("PUBLIC_SITE_URL") ?? "https://margel360.bg")
 
 // CORS locked to the admin-panel origins (defense-in-depth; the real gate
 // is the JWT + is_admin() check below). Unknown origins get the apex.
-const ADMIN_ORIGINS = new Set(["https://margel360.bg", "https://www.margel360.bg"]);
+// margell360.netlify.app is the site's own Netlify domain (was live-only; synced 2026-09-25).
+const ADMIN_ORIGINS = new Set(["https://margel360.bg", "https://www.margel360.bg", "https://margell360.netlify.app"]);
 function corsHeadersFor(req: Request): Record<string, string> {
   const origin = req.headers.get("origin") ?? "";
   return {
