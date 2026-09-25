@@ -9,6 +9,7 @@ export const ITEM_NAMES: Record<string, { bg: string; en: string }> = {
   "bar_stool": { bg: "Бар стол", en: "Bar stool" },
   "barbayani": { bg: "Барбаяни Зелен етикет 0.70л", en: "Barbayani Green Label 0.70L" },
   "benedo_spa": { bg: "San Benedetto газирана 0.5л", en: "San Benedetto sparkling 0.5L" },
+  "benedo_st": { bg: "San Benedetto негазирана 0.5л", en: "San Benedetto still 0.5L" },
   "booth2": { bg: "Фото будка 360° (2 часа)", en: "360° Photo Booth (2 hours)" },
   "booth4": { bg: "Фото будка 360° (4 часа)", en: "360° Photo Booth (4 hours)" },
   "candles_h": { bg: "Свещи в залата — 60 бр.", en: "Hall candles 60 pcs" },

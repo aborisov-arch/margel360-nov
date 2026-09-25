@@ -64,7 +64,7 @@ function groupEnquiries(enquiries) {
       g.label = e.full_name || g.label;
     }
     g.lifetime += estimateTotal(e);
-    if (e.event_type) g.events.add(e.event_type);
+    if (e.event_type) g.events.add(eventTypeBg(e));
     if (e.marketing_consent) g.marketing = true;
   });
   return Array.from(map.values()).sort((a, b) => new Date(b.lastAt) - new Date(a.lastAt));
@@ -78,7 +78,7 @@ function renderRows(rows) {
   }
   tbody.innerHTML = rows.map(g => `
     <tr data-key="${esc(g.key)}">
-      <td><strong>${esc(g.label)}</strong>${g.marketing ? ' <span class="pipe-badge pipe-confirmed" title="Marketing consent">✓</span>' : ''}</td>
+      <td><strong>${esc(g.label)}</strong>${g.marketing ? ' <span class="pipe-badge pipe-confirmed" title="Съгласие за маркетинг">✓</span>' : ''}</td>
       <td>${esc(g.contact)}</td>
       <td>${g.count}</td>
       <td>${esc(fmtDate(g.lastAt))}</td>
@@ -96,10 +96,10 @@ function renderDetail(g) {
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
     .map(e => `
       <div class="enquiry-row">
-        <strong>${esc(e.event_type || '-')}</strong>
+        <strong>${esc(eventTypeBg(e) || '-')}</strong>
         <span>${esc(e.preferred_date || '')}</span>
         <span>${e.guests != null ? e.guests + ' гости' : ''}</span>
-        <span class="pipe-badge pipe-${esc(e.pipeline_status || 'new')}">${esc(e.pipeline_status || 'new')}</span>
+        <span class="pipe-badge pipe-${esc(e.pipeline_status || 'new')}">${esc(t('crm_status_' + (e.pipeline_status || 'new')))}</span>
         <span style="margin-left:auto;color:#888;font-size:0.85em">${esc(fmtDate(e.created_at))}</span>
         <a href="dashboard.html#enquiry-${esc(e.id)}" style="color:var(--accent);text-decoration:none">→</a>
       </div>

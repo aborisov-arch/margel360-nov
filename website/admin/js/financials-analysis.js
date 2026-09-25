@@ -164,3 +164,37 @@ document.addEventListener('DOMContentLoaded', () => {
   labelTables();
   new MutationObserver(labelTables).observe(root, {childList:true, subtree:true});
 });
+// ── Missing-data list ─────────────────────────────────────────────
+// Totals always show the sums that ARE entered; this list names what is
+// still missing for the selected period so it can be filled in. The
+// month-end reminder email (send-finance-reminder) checks the same things.
+function financeGapMonths(){
+  const now=currentPayMonth();
+  if(monthFilter)return monthFilter<=now?[monthFilter]:[];
+  const past=Array.from(financialEventsById.values()).map(fe=>fe.month).filter(m=>m&&m<=now).sort();
+  if(!past.length)return [];
+  const out=[];for(let m=past[0];m<=now;m=nextPayMonth(m))out.push(m);return out;
+}
+function financeGaps(){
+  const gaps=[];
+  if(electricityError)gaps.push({text:'Сметките за ток не се заредиха. Презаредете страницата.'});
+  else financeGapMonths().forEach(m=>{if(!electricityRows.some(r=>r.month.slice(0,7)===m))gaps.push({text:`Ток · ${m}: няма въведена месечна сметка`,attr:`data-electricity-month="${esc(m)}"`});});
+  if(managerPayError)gaps.push({text:'Заплатите не се заредиха. Презаредете страницата.'});
+  Array.from(financialEventsById.values())
+    .filter(fe=>(!monthFilter||fe.month===monthFilter)&&eventHasHappened(fe)&&eventBottleCost(fe).missing)
+    .sort((a,b)=>(a.event_date||'').localeCompare(b.event_date||''))
+    .forEach(fe=>gaps.push({text:`${fmtDateBg(fe.event_date)} · ${fe.customer_name||allEnquiries.find(e=>e.id===fe.enquiry_id)?.full_name||'Събитие'}: ${bottleGapText(fe)}`,attr:`data-bottle-event="${esc(fe.id)}"`}));
+  return gaps;
+}
+function renderFinanceGaps(){
+  let host=document.getElementById('finance-gaps');
+  const grid=document.querySelector('#month-summary .kpi-grid');
+  if(!host&&grid){host=document.createElement('section');host.id='finance-gaps';host.className='finance-gaps';}
+  if(host&&grid&&grid.nextElementSibling!==host)grid.after(host);
+  const gaps=financeGaps();
+  if(host){
+    host.hidden=!gaps.length;
+    host.innerHTML=gaps.length?`<h3>Липсващи данни (${gaps.length})</h3><p class="pay-note">Сумите по-горе включват само въведените данни. Попълнете липсващото, за да са пълни разходите и печалбата.</p><ul>${gaps.map(g=>`<li>${g.attr?`<button type="button" class="drill-row" ${g.attr}>${esc(g.text)}</button>`:esc(g.text)}</li>`).join('')}</ul>`:'';
+  }
+  return gaps.length;
+}

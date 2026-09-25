@@ -61,7 +61,7 @@ async function loadBookings() {
     if (!bookingsByDate.has(iso)) bookingsByDate.set(iso, []);
     bookingsByDate.get(iso).push({
       name: e.full_name || '-',
-      event_type: e.event_type || '',
+      event_type: eventTypeBg(e),
       id: e.id,
     });
   });

@@ -1,3 +1,4 @@
+import { eventTypeBg } from "./labels-bg.ts";
 // Branded cover-note email that carries the offer XLSX as an attachment.
 // The full priced line items live in the attached spreadsheet (built client
 // side by offer-export.js) — this email is the polished cover letter, so we
@@ -34,7 +35,7 @@ export function renderOfferEmail(e: OfferEnquiry, siteUrl: string): { subject: s
         <a href="${site}/edit.html?token=${esc(e.edit_token)}" style="color:#B9894A">отворете резервацията</a>.</p>`
     : "";
   const facts = [
-    e.event_type ? `<strong>Събитие:</strong> ${esc(e.event_type)}` : "",
+    e.event_type ? `<strong>Събитие:</strong> ${esc(eventTypeBg(e))}` : "",
     dateBg ? `<strong>Дата:</strong> ${dateBg}` : "",
     e.guests ? `<strong>Гости:</strong> ${esc(e.guests)}` : "",
   ].filter(Boolean).join(" · ");

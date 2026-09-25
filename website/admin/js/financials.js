@@ -532,12 +532,12 @@ function renderMonthSummary() {
 
   const incomeCats = { rent, drinks, addons, overtime, dj, employees };
   renderFinanceCharts(incomeCats, expByCat);
-  if(electricityError || managerPayError || incompleteBottleCostsInMonth()){
-    set('sum-expense-eur','Непълни данни');set('sum-profit-eur','Непълни данни');
-    const total = document.querySelector('[data-chart-total="expense"]');
-    total.textContent='Непълни данни';total.classList.add('is-incomplete');
-    total.closest('.finance-pie').querySelector('svg').setAttribute('aria-label','Разходи: непълни данни.');
-  }
+  // Totals always show the entered sums; anything still missing is listed
+  // under the KPIs (renderFinanceGaps) instead of hiding the numbers.
+  const gapCount = renderFinanceGaps();
+  const gapNote = gapCount ? `без ${gapCount} ${gapCount === 1 ? 'липсващ запис' : 'липсващи записа'} · виж по-долу` : '';
+  set('sum-expense-sub', gapNote);
+  set('sum-profit-sub', gapNote);
   renderManagerPay();
   renderStaffAllocations(expByCat);
   const incomeBreak = document.getElementById('income-cat-breakdown');
@@ -715,7 +715,7 @@ function seedDrinksFromOrder(enquiry) {
     const c = d.id ? drinkCatalogById.get(d.id) : null;
     return {
       id: d.id || null,
-      name: c ? c.name_bg : (d.name || ''),   // prefer the BG catalog name
+      name: c ? c.name_bg : itemNameBg(d),   // prefer the BG catalog name
       qty: Number(d.qty) || 0,
       unit_price_eur: d.price_eur != null ? Number(d.price_eur) : null,
       manual: false,
@@ -904,14 +904,14 @@ function renderDetail() {
     document.getElementById('pnl-customer').innerHTML =
       `<span class="enquiry-no">#${esc(enquiry.enquiry_number ?? '-')}</span> ${esc(enquiry.full_name || '-')}`;
     document.getElementById('pnl-date').textContent     = fmtDateBg(parsePreferredDate(enquiry.preferred_date));
-    document.getElementById('pnl-event-type').textContent = enquiry.event_type || '-';
+    document.getElementById('pnl-event-type').textContent = eventTypeBg(enquiry) || '-';
     document.getElementById('pnl-guests').textContent   = (enquiry.guests != null ? enquiry.guests + ' гости' : '-');
   } else {
     // Manual event - name + date are stored on the fe row itself.
     document.getElementById('pnl-customer').innerHTML =
       `<span class="enquiry-no enquiry-no--manual">M</span> ${esc(fe.customer_name || '-')}`;
     document.getElementById('pnl-date').textContent     = fmtDateBg(fe.event_date);
-    document.getElementById('pnl-event-type').textContent = fe.event_type || 'Ръчно събитие';
+    document.getElementById('pnl-event-type').textContent = eventTypeBg(fe) || 'Ръчно събитие';
     document.getElementById('pnl-guests').textContent   = '-';
   }
 
@@ -1040,7 +1040,7 @@ function renderDetail() {
       <div class="event-pnl__svc-ref-lbl">Клиентът добави към офертата:</div>
       <ul class="event-pnl__sub-items">
         ${pickedAddons.map(a => {
-          const name = a.name || a.id || '-';
+          const name = itemNameBg(a) || '-';
           const price = a.price != null ? fmtEur(Number(a.price)) : '-';
           return `<li><span class="event-pnl__sub-name">${esc(name)}</span><span class="event-pnl__sub-val">${price}</span></li>`;
         }).join('')}
@@ -1174,7 +1174,6 @@ function updateDetailTotals() {
   set('pnl-paid-total',    fmtEur(paid));
   set('pnl-balance',       fmtEur(balance));
   set('pnl-net-eur',       fmtEur(net));
-  if(costMissing){set('pnl-expense-total','Непълни данни');set('pnl-net-eur','Непълни данни');}
   renderBottleCostSummary(fe);
   const staffHost=document.getElementById('event-staff-taken');
   if(staffHost){const staff=(prefix)=>(expensesByEvent.get(fe?.id)||[]).filter(r=>[prefix+'_fee',prefix+'_overtime'].includes(expFieldValue(r,'category'))).reduce((s,r)=>s+Number(expFieldValue(r,'amount_eur')||0),0);staffHost.textContent=`Получено за вечерта — Иван: ${fmtEur(staff('ivan'))} · Ели: ${fmtEur(staff('eli'))}. Сумите са включени в разходите по-долу.`;}
@@ -2161,9 +2160,6 @@ function drillRowHtml(fe, amt, signed) {
     </button>`;
 }
 function openMetricBreakdown(metric) {
-  if(incompleteBottleCostsInMonth() && ['expense','profit'].includes(metric)){showToast('Липсват покупни цени за бутилки. Попълнете ги по събития.','error');return;}
-  if(electricityError && ['expense','profit'].includes(metric)){showToast('Непълни данни за електроенергията. Презаредете страницата.','error');return;}
-  if(managerPayError && ['expense','profit'].includes(metric)){showToast('Непълни данни за заплатите. Презаредете страницата.','error');return;}
   if (metric === 'commissions') { openCommissionBreakdown(); return; }
   lastDrill = { kind: 'metric', metric };
   const TITLES = { income: 'Приходи (реализирани)', upcoming: 'Очаквани (предстоящи)', paid: 'Платено от клиенти', expense: 'Разходи', profit: 'Печалба' };
@@ -2225,9 +2221,6 @@ function expenseDrillRowHtml(fe, x, amt) {
     </button>`;
 }
 function openCategoryBreakdown(kind, catId) {
-  if(kind==='expense' && catId==='drinks' && incompleteBottleCostsInMonth()){showToast('Липсват покупни цени за бутилки. Попълнете ги по събития.','error');return;}
-  if(electricityError && kind==='expense' && catId==='utilities'){showToast('Непълни данни за електроенергията. Презаредете страницата.','error');return;}
-  if(managerPayError && kind==='expense' && catId==='staff_service'){showToast('Непълни данни за заплатите. Презаредете страницата.','error');return;}
   lastDrill = { kind: 'cat', catKind: kind, catId };
   const scopeFes = [];
   for (const fe of financialEventsById.values()) {
@@ -2300,14 +2293,14 @@ function computeOffer(enq) {
     .map(d => {
       const qty = Number(d.qty) || 0;
       const unit = d.price_eur != null ? Number(d.price_eur) : (Number(d.price) || 0);
-      return { name: d.name || d.id || '-', qty, unit, line: unit * qty };
+      return { name: itemNameBg(d) || '-', qty, unit, line: unit * qty };
     })
     .filter(d => d.qty > 0);
   const drinksSum = drinkRows.reduce((s, d) => s + d.line, 0);
 
   const addonRows = (Array.isArray(enq.addons) ? enq.addons : [])
     .map(a => ({
-      name: a.name || a.id || '-',
+      name: itemNameBg(a) || '-',
       qty: a.qty != null ? Number(a.qty) : null,
       line: offerAddonPriceEur(a.id, Number(a.price) || 0),
     }));
@@ -2333,7 +2326,7 @@ function offerViewHtml(enq, o) {
   const sub = (l, v) => `<div style="${subCss}"><span style="flex:1;min-width:0">${l}</span><span style="white-space:nowrap">${v}</span></div>`;
 
   const parts = [];
-  parts.push(row(`Наем на залата · ${esc(enq.event_type || '-')}`, fmtEur(o.venue)));
+  parts.push(row(`Наем на залата · ${esc(eventTypeBg(enq) || '-')}`, fmtEur(o.venue)));
   if (o.extraGuests > 0) parts.push(row(`Допълнителни гости (${o.extraGuests} × ${fmtEur(EXTRA_GUEST_FEE_EUR)})`, fmtEur(o.extraGuestsCost)));
   if (o.drinkRows.length) {
     parts.push(`<div style="${grpCss}">Напитки</div>`);
@@ -2350,7 +2343,7 @@ function offerViewHtml(enq, o) {
   return `
     <button type="button" class="btn btn-ghost btn-sm" data-drill-back style="margin-bottom:12px">← Назад към разбивката</button>
     <div style="font-weight:800;font-size:1.05em"><span class="enquiry-no">#${esc(enq.enquiry_number ?? '-')}</span> ${esc(enq.full_name || '-')}</div>
-    <div style="opacity:.7;font-size:.9em;margin-bottom:12px">${esc(enq.event_type || '-')} · ${dateStr} · ${guestsStr}</div>
+    <div style="opacity:.7;font-size:.9em;margin-bottom:12px">${esc(eventTypeBg(enq) || '-')} · ${dateStr} · ${guestsStr}</div>
     <div>${parts.join('')}</div>
     <div style="${rowCss};margin-top:12px;padding-top:10px;border-top:2px solid var(--fin-border,#e6e1d6);font-weight:800;font-size:1.05em">
       <span>Общо</span><span style="white-space:nowrap">${fmtEur(o.total)}</span></div>

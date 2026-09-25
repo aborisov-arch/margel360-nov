@@ -125,7 +125,7 @@ function computeOfferBreakdown(enquiry) {
   const addonRows = addons.map(a => {
     // addon.price is the LINE price (qty folded in, furniture freeUntil applied).
     const line = pdfAddonPriceEur(a.id, Number(a.price) || 0);
-    return { name: a.name || a.id, qty: Number(a.qty) > 0 ? Number(a.qty) : 1, line };
+    return { name: itemNameBg(a), qty: Number(a.qty) > 0 ? Number(a.qty) : 1, line };
   });
   const addonsSum = addonRows.reduce((s, r) => s + r.line, 0);
 
@@ -133,7 +133,7 @@ function computeOfferBreakdown(enquiry) {
   const drinkRows = drinks.map(d => {
     const unit = Number(d.price_eur != null ? d.price_eur : d.price) || 0;
     const qty = Number(d.qty) || 0;
-    return { name: d.name || d.id, qty, unit, line: unit * qty };
+    return { name: itemNameBg(d), qty, unit, line: unit * qty };
   }).filter(r => r.qty > 0);
   const drinksSum = drinkRows.reduce((s, r) => s + r.line, 0);
 
@@ -154,7 +154,7 @@ function buildDocDefinition(enquiry) {
   const issued = new Date();
   const validUntil = new Date(issued.getTime());
   validUntil.setDate(validUntil.getDate() + PDF_OFFER_VALID_DAYS);
-  const eventLabel = b.cfg ? b.cfg.label : (enquiry.event_type || '');
+  const eventLabel = b.cfg ? b.cfg.label : eventTypeBg(enquiry);
   const slot = b.cfg && b.cfg.slot ? b.cfg.slot : '';
 
   // ── Line-item table body.

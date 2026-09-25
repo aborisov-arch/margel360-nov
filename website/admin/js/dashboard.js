@@ -211,7 +211,7 @@ function renderEnquiries(enquiries) {
     tr.innerHTML = `
       <td><span class="enquiry-no">#${esc(e.enquiry_number ?? '-')}</span> ${esc(e.full_name)}</td>
       <td>${esc(e.phone)}</td>
-      <td>${esc(e.event_type)}</td>
+      <td>${esc(eventTypeBg(e))}</td>
       <td>${esc(e.preferred_date)}</td>
       <td>${esc(fmtDate(e.created_at))}</td>
       <td>${esc(e.last_edited_at ? fmtDate(e.last_edited_at) : t('edit_never'))}</td>
@@ -239,7 +239,7 @@ function renderEnquiries(enquiries) {
             <div><strong>${t('detail_email')}:</strong> ${esc(e.email)}</div>
             <div><strong>${t('detail_guests')}:</strong> ${e.guests != null ? esc(e.guests) : '-'}</div>
             <div><strong>${t('detail_time')}:</strong> ${e.arrival_time ? `${esc(e.arrival_time)} (${t('detail_time_eve')})` : (e.time_of_day === 'day' ? t('detail_time_day') : t('detail_time_eve'))}</div>
-            <div><strong>${t('detail_payment')}:</strong> ${esc(e.payment_method)}</div>
+            <div><strong>${t('detail_payment')}:</strong> ${esc(paymentBg(e.payment_method))}</div>
           </div>
           ${fmtAddons(e.addons)}
           ${fmtDrinks(e.drinks, e.id)}
@@ -833,7 +833,7 @@ function bindTableHandlers() {
           const { error: insErr } = await db.from('occupied_dates').insert({ date: iso });
           if (insErr && !/duplicate|unique/i.test(insErr.message ?? '')) {
             console.warn('Could not mark date occupied:', insErr);
-            syncWarning = 'calendar sync failed';
+            syncWarning = 'неуспешна синхронизация с календара';
           }
         } else {
           // Same ownership guard as the delete handler: keep the date blocked
@@ -846,7 +846,7 @@ function bindTableHandlers() {
             const { error: delErr } = await db.from('occupied_dates').delete().eq('date', iso);
             if (delErr) {
               console.warn('Could not unmark date:', delErr);
-              syncWarning = 'calendar sync failed';
+              syncWarning = 'неуспешна синхронизация с календара';
             }
           }
         }
@@ -959,7 +959,7 @@ function renderTotals(e) {
   return `
     <div class="detail-totals">
       <h4 class="payment-heading">${t('total_heading')}</h4>
-      ${totals.venue  ? row(`${t('total_venue')} · ${esc(e.event_type)} <span style="color:#888;font-size:0.78rem">(до ${VENUE_MIN_GUESTS} гости)</span>`, totals.venue) : ''}
+      ${totals.venue  ? row(`${t('total_venue')} · ${esc(eventTypeBg(e))} <span style="color:#888;font-size:0.78rem">(до ${VENUE_MIN_GUESTS} гости)</span>`, totals.venue) : ''}
       ${totals.extraGuests > 0 ? row(`+${totals.extraGuests} допълнителни гости <span style="color:#888;font-size:0.78rem">(× €${EXTRA_GUEST_FEE_EUR})</span>`, totals.extraGuestsCost) : ''}
       ${totals.addons ? row(t('total_addons'), totals.addons) : ''}
       ${totals.drinks ? row(t('total_drinks'), totals.drinks) : ''}
@@ -1048,7 +1048,7 @@ function fmtAddons(addons) {
   const items = addons.map(a => {
     const price = Number(a?.price);
     const priceStr = Number.isFinite(price) ? addonPriceEur(a?.id, price).toFixed(2) : '-';
-    return `<li>${esc(a?.name)} - €${priceStr}</li>`;
+    return `<li>${esc(itemNameBg(a))} - €${priceStr}</li>`;
   }).join('');
   return `<div class="detail-section"><strong>${t('detail_addons')}:</strong><ul>${items}</ul></div>`;
 }
@@ -1061,7 +1061,7 @@ function fmtDrinks(drinks, enquiryId) {
     const qty = Number(d?.qty);
     const qtyVal = Number.isInteger(qty) && qty >= 0 ? qty : 0;
     return `<li class="admin-drink-row">
-      <span class="admin-drink-name">${esc(d?.name)}</span>
+      <span class="admin-drink-name">${esc(itemNameBg(d))}</span>
       <span class="admin-drink-qty">
         <span class="admin-drink-qty__times">×</span>
         <input type="number" class="drink-qty-input"

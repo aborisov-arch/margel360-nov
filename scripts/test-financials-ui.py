@@ -99,12 +99,14 @@ with sync_playwright() as p:
  page.evaluate("monthFilter='2026-09'; expensesByEvent.get('11111111-1111-4111-8111-111111111111').push({id:'correction',category:'other',amount_eur:-20});renderMonthSummary();openCategoryBreakdown('expense','other')")
  assert page.locator('[data-chart-total="expense"]').inner_text()=='€30.00'
  assert page.locator('#drill-modal [data-expense-id]').count()==2
- page.evaluate('closeDrill();renderMonthSummary()')
+ page.evaluate("closeDrill();currentPayMonth=()=>'2026-09';renderMonthSummary()")
+ assert 'Ток · 2026-09: няма въведена месечна сметка' in page.locator('#finance-gaps').inner_text()
  page.locator('#electricity-form [name="amount_eur"]').fill('200')
  page.locator('#electricity-form [name="reference"]').fill('QA invoice')
  page.locator('#electricity-form button').click()
  page.wait_for_function('electricityRows.length===1')
  assert page.locator('#sum-expense-eur').inner_text()=='€230.00'
+ assert 'Ток · 2026-09' not in (page.locator('#finance-gaps').inner_text() or '')
  assert page.locator('#sum-profit-eur').inner_text()=='€1070.00'
  assert page.locator('[data-chart-total="expense"]').inner_text()=='€230.00'
  page.locator('[data-chart-cat="utilities"]').click()
@@ -113,11 +115,13 @@ with sync_playwright() as p:
  assert page.locator('#monthly-electricity.finance-focus').count()==1
  page.evaluate("openMetricBreakdown('profit')")
  assert '€1070.00' in page.locator('#drill-body').inner_text()
- page.evaluate("closeDrill();electricityError=true;openMetricBreakdown('expense')")
- assert page.locator('#drill-modal').is_hidden()
- page.evaluate("openCategoryBreakdown('expense','utilities')")
- assert page.locator('#drill-modal').is_hidden()
- page.evaluate('electricityError=false;renderMonthSummary()')
+ # A load error no longer hides the totals; it is listed under the KPIs.
+ page.evaluate("closeDrill();electricityError=true;renderMonthSummary();openMetricBreakdown('expense')")
+ assert page.locator('#drill-modal').is_visible()
+ assert page.locator('#sum-expense-eur').inner_text().startswith('€')
+ assert 'Сметките за ток не се заредиха' in page.locator('#finance-gaps').inner_text()
+ page.evaluate('closeDrill();electricityError=false;renderMonthSummary()')
+ assert page.locator('#finance-gaps').is_hidden()
  assert page.locator('[data-staff-category]').count()==7
  assert 'Не е зададена' in page.locator('[data-staff-category="ivan_salary"]').inner_text()
  page.locator('#staff-allocation-form [name="category"]').select_option('ivan_fee')
@@ -163,7 +167,8 @@ with sync_playwright() as p:
  assert '€900.00' in page.locator('[data-staff-category="ivan_salary"]').inner_text()
  page.evaluate("managerPayRows=[{month:'2026-09-01',manager_email:'qa@example.test',wage_eur:780,commission_eur:430}];currentPayMonth=()=>new Date().toLocaleDateString('en-CA',{timeZone:'Europe/Sofia'}).slice(0,7);renderMonthSummary()")
  page.evaluate('managerPayError="x";renderMonthSummary()')
- assert page.locator('#sum-expense-eur').inner_text()=='Непълни данни'
+ assert page.locator('#sum-expense-eur').inner_text().startswith('€')
+ assert 'Заплатите не се заредиха' in page.locator('#finance-gaps').inner_text()
  page.evaluate('managerPayError="";managerPayRows=[];fixtures.manager_monthly_pay=[];renderMonthSummary()')
  assert page.locator('#sum-expense-eur').inner_text()=='€310.00'
  page.locator('#staff-allocations').screenshot(path='/tmp/m360-staff-allocations.png')
@@ -172,7 +177,8 @@ with sync_playwright() as p:
  page.locator('[data-drink-f="name"]').fill('QA bottle')
  page.locator('[data-drink-f="unit_price_eur"]').fill('40')
  page.locator('[data-drink-f="qty"]').fill('3')
- assert page.locator('#pnl-net-eur').inner_text()=='Непълни данни'
+ assert page.locator('#pnl-net-eur').inner_text().startswith('€')
+ assert 'липсва покупна цена за 1 напитка' in page.locator('#event-bottle-expense').inner_text()
  page.locator('[data-bottle-cost="0"]').fill('20')
  assert '€60.00' in page.locator('#bottle-cost-summary').inner_text()
  page.locator('#btn-save-pnl').click()
@@ -189,9 +195,14 @@ with sync_playwright() as p:
  page.locator('[data-bottle-cost="0"]').fill('')
  page.locator('#btn-save-pnl').click()
  page.wait_for_function("eventBottleCost(currentSelection().fe).missing===1")
- assert page.locator('#sum-profit-eur').inner_text()=='Непълни данни'
+ assert page.locator('#sum-profit-eur').inner_text()=='€1110.00'
+ assert 'липсващ' in page.locator('#sum-profit-sub').inner_text()
+ assert 'липсва покупна цена за 1 напитка' in page.locator('#finance-gaps').inner_text()
+ page.locator('#finance-gaps [data-bottle-event]').click()
+ assert page.locator('#pnl-drinks-lines.finance-focus').count()==1
+ page.wait_for_timeout(800)
  ring=page.locator('[data-chart-total="expense"]').locator('xpath=../..').bounding_box()
- text_box=page.locator('[data-chart-total="expense"]').bounding_box()
+ text_box=page.locator('[data-chart-total="expense"]').locator('xpath=..').bounding_box()
  assert abs((ring['x']+ring['width']/2)-(text_box['x']+text_box['width']/2))<2
  assert abs((ring['y']+ring['height']/2)-(text_box['y']+text_box['height']/2))<2
  page.locator('#finance-charts').screenshot(path='/tmp/m360-incomplete-centered.png')

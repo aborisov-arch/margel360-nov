@@ -96,3 +96,10 @@
   .drill-row { flex-wrap:wrap; }
   .drill-row > span:first-child { flex:1 0 100%!important; white-space:normal!important; }
 }
+.finance-gaps { margin:16px 0 0; padding:14px 16px; border-left:3px solid #c9822b; background:#fdf6ec; border-radius:6px; }
+.finance-gaps h3 { margin:0 0 4px; font-size:15px; }
+.finance-gaps ul { list-style:none; margin:8px 0 0; padding:0; display:grid; gap:4px; }
+.finance-gaps .drill-row { width:100%; text-align:left; background:none; border:0; padding:4px 0; font:inherit; font-size:14px; color:#1a1815; cursor:pointer; text-decoration:underline; text-decoration-color:rgba(201,130,43,.5); text-underline-offset:3px; }
+.finance-gaps .drill-row:hover { color:#9a5f14; }
+.finance-gaps li { font-size:14px; }
+.pay-kpis small { display:block; font-size:11px; color:#7a7568; font-weight:400; }

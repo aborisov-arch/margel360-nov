@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import { json, preflight } from "../_shared/cors.ts";
+import { eventTypeBg } from "../_shared/labels-bg.ts";
 
 // Cron-triggered Monday mornings: one KPI email to the owners covering the
 // past 7 days:
@@ -105,7 +106,7 @@ serve(async (req) => {
   // New enquiries in window, split by event type.
   const fresh = all.filter(e => Date.parse(e.created_at) >= windowStart.getTime());
   const byType = new Map<string, number>();
-  for (const e of fresh) byType.set(e.event_type ?? "—", (byType.get(e.event_type ?? "—") ?? 0) + 1);
+  for (const e of fresh) { const k = e.event_type ? eventTypeBg(e) : "—"; byType.set(k, (byType.get(k) ?? 0) + 1); }
 
   // Offers sent in window.
   const offersSent = all.filter(e => e.offer_sent_at && Date.parse(e.offer_sent_at) >= windowStart.getTime()).length;
@@ -169,7 +170,7 @@ serve(async (req) => {
       const en = nameById.get(r.enquiry_id);
       return {
         name: (en?.full_name || "").split(" ")[0] || "Гост",
-        type: en?.event_type || "",
+        type: en?.event_type ? eventTypeBg(en) : "",
         quote: String(r.experience_comment || r.service_comment || ""),
       };
     });

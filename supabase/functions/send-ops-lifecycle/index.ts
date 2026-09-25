@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import { json, preflight } from "../_shared/cors.ts";
+import { eventTypeBg, itemNameBg } from "../_shared/labels-bg.ts";
 
 // Cron-triggered each morning (Europe/Sofia). Two operations/retention
 // passes, each guarded by its own one-shot stamp:
@@ -83,11 +84,11 @@ type Enquiry = {
 function runSheetHtml(e: Enquiry): string {
   const addons = Array.isArray(e.addons) ? e.addons : [];
   const drinks = Array.isArray(e.drinks) ? e.drinks : [];
-  const addonList = addons.length ? addons.map(a => esc(a.name || a.id)).join(", ") : "—";
-  const drinkList = drinks.length ? drinks.map(d => `${esc(d.id)}×${esc(d.qty ?? 1)}`).join(", ") : "—";
+  const addonList = addons.length ? addons.map(a => esc(itemNameBg(a))).join(", ") : "—";
+  const drinkList = drinks.length ? drinks.map(d => `${esc(itemNameBg(d))} × ${esc(d.qty ?? 1)}`).join(", ") : "—";
   const row = (l: string, v: string) => `<tr><td style="padding:5px 0;font:12px/1.4 ${SANS};color:#7A7568;width:120px">${l}</td><td style="padding:5px 0;font:13px/1.5 ${SANS};color:#1A1815">${v}</td></tr>`;
   return `<div style="margin:0 0 18px;padding:14px 16px;border-left:3px solid #B9894A;background:#F6F1E8">
-    <p style="margin:0 0 8px;font:500 16px/1.2 ${SERIF};color:#1A1815">${esc(e.full_name || "—")}${e.event_type ? ` · ${esc(e.event_type)}` : ""}</p>
+    <p style="margin:0 0 8px;font:500 16px/1.2 ${SERIF};color:#1A1815">${esc(e.full_name || "—")}${e.event_type ? ` · ${esc(eventTypeBg(e))}` : ""}</p>
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
       ${row("Час", esc(e.arrival_time || "—"))}
       ${row("Гости", esc(e.guests ?? "—"))}
@@ -165,7 +166,7 @@ serve(async (req) => {
       const first = (e.full_name || "").split(" ")[0] || e.full_name || "";
       const subject = `Една година по-късно · да празнуваме отново? · Маргел 360°`;
       const body = `<h1 style="margin:0 0 12px;font:400 32px/1.15 ${SERIF}">Мина <em style="font-style:italic;color:#B9894A">година</em>!</h1>
-        <p style="margin:0 0 20px;font:16px/1.55 ${SANS};color:#2A2620">Здравейте, ${esc(first)}. Преди около година празнувахте при нас${e.event_type ? ` (${esc(e.event_type)})` : ""}. Беше удоволствие! Ако предстои нов повод, ще се радваме отново да сме ваши домакини.</p>
+        <p style="margin:0 0 20px;font:16px/1.55 ${SANS};color:#2A2620">Здравейте, ${esc(first)}. Преди около година празнувахте при нас${e.event_type ? ` (${esc(eventTypeBg(e))})` : ""}. Беше удоволствие! Ако предстои нов повод, ще се радваме отново да сме ваши домакини.</p>
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px"><tr><td><a href="${SITE_URL}/reservation.html" style="display:inline-block;padding:14px 28px;background:#1A1815;color:#F6F1E8;font:600 12px/1 ${SANS};letter-spacing:0.14em;text-transform:uppercase;text-decoration:none">Проверете свободни дати</a></td></tr></table>
         <p style="margin:0;font:13px/1.6 ${SANS};color:#7A7568">Отговорете на този имейл за специална оферта за повторни гости.</p>`;
       await sendResend(e.email!, subject, shell(subject, body));
