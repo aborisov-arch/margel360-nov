@@ -118,7 +118,7 @@ with sync_playwright() as p:
  page.evaluate("openCategoryBreakdown('expense','utilities')")
  assert page.locator('#drill-modal').is_hidden()
  page.evaluate('electricityError=false;renderMonthSummary()')
- assert page.locator('[data-staff-category]').count()==6
+ assert page.locator('[data-staff-category]').count()==7
  assert 'Не е зададена' in page.locator('[data-staff-category="ivan_salary"]').inner_text()
  page.locator('#staff-allocation-form [name="category"]').select_option('ivan_fee')
  page.locator('#staff-allocation-form [name="event"]').select_option('11111111-1111-4111-8111-111111111111')
@@ -134,13 +134,14 @@ with sync_playwright() as p:
  page.locator('[data-staff-category="ivan_fee"] button').click()
  assert '€80.00' in page.locator('#drill-body').inner_text()
  page.evaluate('closeDrill()')
- page.locator('[data-staff-pay]').click()
+ page.locator('[data-staff-category="ivan_salary"] [data-staff-pay]').click()
  assert page.evaluate("document.getElementById('manager-pay').open")
  page.locator('#monthly-pay-form [name="wage_eur"]').fill('780')
  page.locator('#monthly-pay-form [name="commission_eur"]').fill('430')
  page.locator('#monthly-pay-form button').click()
  page.wait_for_function('managerPayRows.length===1')
- assert '€1210.00' in page.locator('[data-staff-category="ivan_salary"]').inner_text()
+ assert '€780.00' in page.locator('[data-staff-category="ivan_salary"]').inner_text()
+ assert '€430.00' in page.locator('[data-staff-category="ivan_commission"]').inner_text()
  assert page.locator('#sum-expense-eur').inner_text()=='€1520.00'
  assert page.locator('[data-chart-total="expense"]').inner_text()=='€1520.00'
  page.locator('[data-chart-cat="staff_service"]').click()
@@ -148,7 +149,20 @@ with sync_playwright() as p:
  assert '€1210.00' in page.locator('#drill-body').inner_text()
  page.evaluate("closeDrill();openMetricBreakdown('expense')")
  assert '€1520.00' in page.locator('#drill-body').inner_text()
- page.evaluate('closeDrill();managerPayError="x";renderMonthSummary()')
+ # Fixed wage recurs from the first saved month through the current month; commission does not.
+ page.evaluate("closeDrill();managerPayRows=[{month:'2026-05-01',manager_email:'qa@example.test',wage_eur:780,commission_eur:0},{month:'2026-08-01',manager_email:'qa@example.test',wage_eur:780,commission_eur:430}];currentPayMonth=()=>'2026-09'")
+ for month, wage, commission in [('2026-04','€0.00','€0.00'),('2026-05','€780.00','€0.00'),('2026-07','€780.00','€0.00'),('2026-08','€780.00','€430.00'),('2026-09','€780.00','€0.00')]:
+  page.evaluate(f"monthFilter='{month}';renderMonthSummary()")
+  assert wage in page.locator('[data-staff-category="ivan_salary"]').inner_text(), month
+  assert commission in page.locator('[data-staff-category="ivan_commission"]').inner_text(), month
+ assert page.locator('#monthly-pay-form [name="wage_eur"]').input_value()=='780'
+ assert 'автоматично' in page.locator('#manager-pay-body').inner_text()
+ page.evaluate("monthFilter='';renderMonthSummary()")
+ assert '€3900.00' in page.locator('[data-staff-category="ivan_salary"]').inner_text()
+ page.evaluate("managerPayRows.push({month:'2026-09-01',manager_email:'qa@example.test',wage_eur:900,commission_eur:0});monthFilter='2026-09';renderMonthSummary()")
+ assert '€900.00' in page.locator('[data-staff-category="ivan_salary"]').inner_text()
+ page.evaluate("managerPayRows=[{month:'2026-09-01',manager_email:'qa@example.test',wage_eur:780,commission_eur:430}];currentPayMonth=()=>new Date().toLocaleDateString('en-CA',{timeZone:'Europe/Sofia'}).slice(0,7);renderMonthSummary()")
+ page.evaluate('managerPayError="x";renderMonthSummary()')
  assert page.locator('#sum-expense-eur').inner_text()=='Непълни данни'
  page.evaluate('managerPayError="";managerPayRows=[];fixtures.manager_monthly_pay=[];renderMonthSummary()')
  assert page.locator('#sum-expense-eur').inner_text()=='€310.00'

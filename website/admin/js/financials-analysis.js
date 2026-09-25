@@ -5,9 +5,9 @@ let electricityRows = [], electricityError = false;
 const electricityDrafts = new Map();
 function renderStaffAllocations(totals) {
  const host=document.getElementById('staff-allocations-body');if(!host)return;
- const categories=[['ivan_fee','Иван хонорар'],['ivan_salary','Иван твърда'],['ivan_overtime','Иван овъртайм'],['eli_fee','Ели хонорар'],['eli_overtime','Ели овъртайм'],['electricity','Ток']];
+ const categories=[['ivan_fee','Иван хонорар'],['ivan_salary','Иван твърда'],['ivan_commission','Иван комисион'],['ivan_overtime','Иван овъртайм'],['eli_fee','Ели хонорар'],['eli_overtime','Ели овъртайм'],['electricity','Ток']];
  const events=Array.from(financialEventsById.values()).filter(fe=>!monthFilter||fe.month===monthFilter).sort((a,b)=>(b.event_date||'').localeCompare(a.event_date||''));
- host.innerHTML=`<p class="pay-note">Хонорари и овъртайм: по събитие. Ток: по месец. Сумите за събитията влизат в реализираните разходи след провеждането им. Месечната заплата и комисионът се начисляват веднъж за месеца в „Персонал / Заплати“.</p><div class="pay-scroll"><table class="pay-table"><thead><tr><th>Разход</th><th>Сума за периода</th><th>Разбивка</th></tr></thead><tbody>${categories.map(([id,label])=>`${['ivan_fee','eli_fee','electricity'].includes(id)?`<tr class="staff-group"><th colspan="3"><h3>${id==='ivan_fee'?'Иван':id==='eli_fee'?'Ели':'Ток'}</h3></th></tr>`:'' }<tr data-staff-category="${id}"><td>${label}</td><td><strong>${id==='ivan_salary'?(managerPayError?'Непълни данни':managerPayScope().length?fmtEur(managerPayTotal()):'Не е зададена'):id==='electricity'?(electricityError?'Непълни данни':fmtEur(electricityTotal())):fmtEur(totals[id]||0)}</strong></td><td>${id==='ivan_salary'?'<button type="button" data-staff-pay>Месечна заплата</button>':id==='electricity'?'<button type="button" data-staff-electricity>Месечна сметка</button>':`<button type="button" data-chart-kind="expense" data-chart-cat="${id}">Виж събитията</button>`}</td></tr>`).join('')}</tbody></table></div><h3>Разпределяне на разход по събитие</h3><form id="staff-allocation-form" class="pay-form"><label>Разход<select name="category">${categories.filter(([id])=>!['ivan_salary','electricity'].includes(id)).map(([id,label])=>`<option value="${id}">${label}</option>`).join('')}</select></label><label>Събитие<select name="event" required><option value="">Изберете събитие</option>${events.map(fe=>`<option value="${esc(fe.id)}">${esc(fmtDateBg(fe.event_date))} · ${esc(fe.customer_name||allEnquiries.find(e=>e.id===fe.enquiry_id)?.full_name||'Събитие')}</option>`).join('')}</select></label><button class="btn btn-primary" type="submit" ${events.length?'':'disabled'}>Добави разход към събитието</button></form><p class="pay-note">След добавяне въведете сумата и бележка в маркирания ред и натиснете „Запази промените“. За овъртайм запишете часовете и периода в бележката. Старите общи разходи и записите за възнаграждения не са разпределени автоматично; при прехвърляне променете категорията на съществуващия разход, без да го дублирате.</p>`;
+ host.innerHTML=`<p class="pay-note">Хонорари и овъртайм: по събитие. Ток: по месец. Сумите за събитията влизат в реализираните разходи след провеждането им. Твърдата заплата се начислява всеки месец (последната въведена сума, до промяна); комисионът се въвежда за всеки месец. И двете влизат веднъж в „Персонал / Заплати“.</p><div class="pay-scroll"><table class="pay-table"><thead><tr><th>Разход</th><th>Сума за периода</th><th>Разбивка</th></tr></thead><tbody>${categories.map(([id,label])=>`${['ivan_fee','eli_fee','electricity'].includes(id)?`<tr class="staff-group"><th colspan="3"><h3>${id==='ivan_fee'?'Иван':id==='eli_fee'?'Ели':'Ток'}</h3></th></tr>`:'' }<tr data-staff-category="${id}"><td>${label}</td><td><strong>${['ivan_salary','ivan_commission'].includes(id)?(managerPayError?'Непълни данни':id==='ivan_commission'?fmtEur(managerPayCommission()):managerPayRows.length?fmtEur(managerPayWage()):'Не е зададена'):id==='electricity'?(electricityError?'Непълни данни':fmtEur(electricityTotal())):fmtEur(totals[id]||0)}</strong></td><td>${['ivan_salary','ivan_commission'].includes(id)?'<button type="button" data-staff-pay>Месечна заплата</button>':id==='electricity'?'<button type="button" data-staff-electricity>Месечна сметка</button>':`<button type="button" data-chart-kind="expense" data-chart-cat="${id}">Виж събитията</button>`}</td></tr>`).join('')}</tbody></table></div><h3>Разпределяне на разход по събитие</h3><form id="staff-allocation-form" class="pay-form"><label>Разход<select name="category">${categories.filter(([id])=>!['ivan_salary','ivan_commission','electricity'].includes(id)).map(([id,label])=>`<option value="${id}">${label}</option>`).join('')}</select></label><label>Събитие<select name="event" required><option value="">Изберете събитие</option>${events.map(fe=>`<option value="${esc(fe.id)}">${esc(fmtDateBg(fe.event_date))} · ${esc(fe.customer_name||allEnquiries.find(e=>e.id===fe.enquiry_id)?.full_name||'Събитие')}</option>`).join('')}</select></label><button class="btn btn-primary" type="submit" ${events.length?'':'disabled'}>Добави разход към събитието</button></form><p class="pay-note">След добавяне въведете сумата и бележка в маркирания ред и натиснете „Запази промените“. За овъртайм запишете часовете и периода в бележката. Старите общи разходи и записите за възнаграждения не са разпределени автоматично; при прехвърляне променете категорията на съществуващия разход, без да го дублирате.</p>`;
 }
 function openManagerPay(){const d=document.getElementById('manager-pay');if(!d)return;d.open=true;d.classList.add('finance-focus');d.scrollIntoView({behavior:'smooth',block:'center'});}
 document.addEventListener('click',event=>{if(event.target.closest('[data-staff-pay]'))openManagerPay();});
@@ -49,7 +49,28 @@ async function loadManagerPay() {
 }
 // Monthly wage + commission is venue overhead, like electricity: counted once in
 // the month's expense/profit and in „Персонал / Заплати“, never in event P&L.
-function managerPayScope(){return managerPayRows.filter(r=>!monthFilter||r.month.slice(0,7)===monthFilter);}
+// The fixed wage recurs: each month from a manager's first saved month through
+// the current month uses their latest saved wage (a new row changes it from that
+// month on). Commission is per month and never carried forward.
+function currentPayMonth(){return new Date().toLocaleDateString('en-CA',{timeZone:'Europe/Sofia'}).slice(0,7);}
+function nextPayMonth(m){const [y,mo]=m.split('-').map(Number);return mo===12?`${y+1}-01`:`${y}-${String(mo+1).padStart(2,'0')}`;}
+function effectiveManagerPay(){
+  const now=currentPayMonth(),out=[],byManager=new Map();
+  managerPayRows.forEach(r=>byManager.set(r.manager_email,[...(byManager.get(r.manager_email)||[]),r]));
+  byManager.forEach((rows,email)=>{
+    const saved=new Map(rows.map(r=>[r.month.slice(0,7),r])),months=[...saved.keys()].sort();
+    const last=months[months.length-1]>now?months[months.length-1]:now;
+    let wage=0;
+    for(let m=months[0];m<=last;m=nextPayMonth(m)){
+      const row=saved.get(m);if(row)wage=Number(row.wage_eur||0);
+      out.push({manager_email:email,month:m+'-01',wage_eur:wage,commission_eur:row?Number(row.commission_eur||0):0,carried:!row});
+    }
+  });
+  return out;
+}
+function managerPayScope(){return effectiveManagerPay().filter(r=>!monthFilter||r.month.slice(0,7)===monthFilter);}
+function managerPayWage(){return managerPayScope().reduce((s,r)=>s+Number(r.wage_eur),0);}
+function managerPayCommission(){return managerPayScope().reduce((s,r)=>s+Number(r.commission_eur),0);}
 function managerPayAmount(r){return Number(r.wage_eur||0)+Number(r.commission_eur||0);}
 function managerPayTotal(){return managerPayScope().reduce((s,r)=>s+managerPayAmount(r),0);}
 function managerPayDrillRows(sign=1){return managerPayScope().filter(r=>managerPayAmount(r)!==0).map(r=>`<button type="button" class="drill-row" data-pay-month="${esc(r.month.slice(0,7))}">Заплата и комисион · ${esc(r.manager_email)} · ${esc(r.month.slice(0,7))} <strong>${fmtEur(sign*managerPayAmount(r))}</strong></button>`).join('');}
@@ -63,7 +84,7 @@ function payInput(name, label, value, type='number') {
 function renderManagerPay() {
   const host = document.getElementById('manager-pay-body'); if (!host) return;
   if (managerPayError) { host.innerHTML = `<p class="pay-error">${esc(managerPayError)}</p>`; return; }
-  const own = {...(managerPayRows.find(r => r.month === monthFilter+'-01' && r.manager_email === userEmail?.toLowerCase()) || {}),...(payrollDrafts.get('month:'+monthFilter)||{})};
+  const own = {...(effectiveManagerPay().find(r => r.month === monthFilter+'-01' && r.manager_email === userEmail?.toLowerCase()) || {}),...(payrollDrafts.get('month:'+monthFilter)||{})};
   const pay = managerPayScope();
   const ot = payrollScope();
   const wage = pay.reduce((s,r)=>s+Number(r.wage_eur),0), commission = pay.reduce((s,r)=>s+Number(r.commission_eur),0);
@@ -71,7 +92,7 @@ function renderManagerPay() {
   host.innerHTML = `<p class="pay-note">Месечна заплата и комисион на управителя. Заплатата и комисионът влизат в месечните разходи и печалбата (категория „Персонал / Заплати“). Не ги добавяйте повторно към събитие. Старите записи за извънреден труд по-долу са само за справка и не се начисляват.</p>
     <div class="pay-kpis"><span>Заплати<strong>${fmtEur(wage)}</strong></span><span>Комисиони<strong>${fmtEur(commission)}</strong></span><span>Извънреден труд<strong>${fmtEur(overtime)}</strong></span><span>Общо възнаграждения<strong>${fmtEur(wage+commission+overtime)}</strong></span></div>
     ${monthFilter?`<form id="monthly-pay-form" class="pay-form">${payInput('wage_eur','Моята месечна заплата · €',own.wage_eur||0)}${payInput('commission_eur','Моят месечен комисион · €',own.commission_eur||0)}<button class="btn btn-primary" type="submit">Запази възнаграждение</button></form>`:'<p class="pay-note">Изберете месец, за да въведете възнаграждение.</p>'}
-    <div class="pay-scroll"><table class="pay-table"><thead><tr><th>Управител / месец</th><th>Заплата</th><th>Комисион</th></tr></thead><tbody>${pay.map(r=>`<tr><td>${esc(r.manager_email)} · ${esc(r.month.slice(0,7))}</td><td>${fmtEur(r.wage_eur)}</td><td>${fmtEur(r.commission_eur)}</td></tr>`).join('')||'<tr><td colspan="3">Няма записани възнаграждения.</td></tr>'}</tbody></table></div>
+    <div class="pay-scroll"><table class="pay-table"><thead><tr><th>Управител / месец</th><th>Заплата</th><th>Комисион</th></tr></thead><tbody>${pay.map(r=>`<tr><td>${esc(r.manager_email)} · ${esc(r.month.slice(0,7))}${r.carried?' · автоматично':''}</td><td>${fmtEur(r.wage_eur)}</td><td>${fmtEur(r.commission_eur)}</td></tr>`).join('')||'<tr><td colspan="3">Няма записани възнаграждения.</td></tr>'}</tbody></table></div>
     <h3>Проверка на извънредния труд по събития</h3>${overtimeTable(ot)}`;
 }
 function overtimeTable(rows) {
