@@ -5,6 +5,7 @@ const SUPABASE_URL = 'https://wlxutsufrobzovdsiecb.supabase.co';
     const $ = id => document.getElementById(id);
     const state = {
       token: null,
+      preview: false,
       experience: 0, service: 0, venue: 0, rebook: 0,
       source: null,
       lang: (localStorage.getItem('margel_lang') === 'en') ? 'en' : 'bg',
@@ -46,6 +47,7 @@ const SUPABASE_URL = 'https://wlxutsufrobzovdsiecb.supabase.co';
         err_missing: 'Моля, отговорете на всички въпроси: ',
         err_server: 'Нещо се обърка. Моля опитайте отново или пишете на 360@margel.info.',
         missing_experience: 'преживяване', missing_service: 'обслужване', missing_venue: 'зала', missing_rebook: 'резервация отново', missing_source: 'източник',
+        preview_banner: 'Преглед: така клиентът вижда анкетата. Отговорите тук не се записват.',
       },
       en: {
         loading_label: 'Loading',
@@ -82,6 +84,7 @@ const SUPABASE_URL = 'https://wlxutsufrobzovdsiecb.supabase.co';
         err_missing: 'Please answer all questions: ',
         err_server: 'Something went wrong. Please try again or write to 360@margel.info.',
         missing_experience: 'experience', missing_service: 'service', missing_venue: 'venue', missing_rebook: 'rebook', missing_source: 'source',
+        preview_banner: 'Preview: this is the survey as customers see it. Answers here are not saved.',
       },
     };
 
@@ -158,12 +161,36 @@ const SUPABASE_URL = 'https://wlxutsufrobzovdsiecb.supabase.co';
       $('source-other-wrap').hidden = state.source !== 'other';
     }
 
+    function renderForm() {
+      document.querySelectorAll('.question').forEach(sec => {
+        if (sec.dataset.q !== 'source') buildScale(sec);
+      });
+      buildSource();
+      document.querySelectorAll('.question').forEach(sec => {
+        if (sec.dataset.q !== 'source') paintScale(sec);
+      });
+      paintSource();
+
+      show('state-form');
+    }
+
     async function main() {
       applyI18n();
       $('lang-bg').addEventListener('click', () => { state.lang = 'bg'; localStorage.setItem('margel_lang','bg'); applyI18n(); });
       $('lang-en').addEventListener('click', () => { state.lang = 'en'; localStorage.setItem('margel_lang','en'); applyI18n(); });
 
       const params = new URLSearchParams(location.search);
+
+      // ?preview=1 — the admin panel's „Преглед на формата“ link: the empty
+      // survey as customers see it; nothing is loaded or saved.
+      if (params.get('preview') === '1') {
+        state.preview = true;
+        $('preview-banner').hidden = false;
+        renderForm();
+        $('feedback-form').addEventListener('submit', onSubmit);
+        return;
+      }
+
       const token = params.get('token');
       if (!token) return show('state-not-found');
       state.token = token;
@@ -197,16 +224,7 @@ const SUPABASE_URL = 'https://wlxutsufrobzovdsiecb.supabase.co';
           $('c-source-other').value = ex.source_other       || '';
         }
 
-        document.querySelectorAll('.question').forEach(sec => {
-          if (sec.dataset.q !== 'source') buildScale(sec);
-        });
-        buildSource();
-        document.querySelectorAll('.question').forEach(sec => {
-          if (sec.dataset.q !== 'source') paintScale(sec);
-        });
-        paintSource();
-
-        show('state-form');
+        renderForm();
       } catch {
         show('state-not-found');
       }
@@ -229,6 +247,15 @@ const SUPABASE_URL = 'https://wlxutsufrobzovdsiecb.supabase.co';
         err.textContent = t('err_missing') + missing.join(', ') + '.';
         err.classList.remove('hidden');
         err.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+
+      if (state.preview) {
+        $('thank-code').textContent = 'MG-XXXX-XXXX';
+        $('thank-code-box').hidden = false;
+        show('state-thanks');
+        applyI18n();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
 

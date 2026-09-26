@@ -50,7 +50,7 @@ Three non-seasonal jobs:
 - `send-marketing-export-monthly` — `0 6 1 * *` (1st of month): POSTs to `send-marketing-export` (reuses `team_digest_cron_secret`) — emails owners a CSV of marketing-consenting customers; skips silently when there are none.
 - `send-ops-lifecycle` — `0 6 * * *` (daily, ~08:00–09:00 Sofia): POSTs to `send-ops-lifecycle` (reuses `team_digest_cron_secret`) — team run sheet for today's events + ~1-year anniversary win-back to consenting past customers. (The 10–14-day pre-event upsell was retired 2026-08-29 in favour of the add-on drip in `send-event-reminders`; `upsell_sent_at` stays in the table unused.) `dry_run` supported.
 
-Note: the feedback cron's function also does a **one-time re-ask** — if the first feedback email is 3–10 days old, nothing was submitted, and `feedback_resent_at` is null, it sends one reminder and stamps the flag.
+Note: the feedback cron's function only emails **confirmed/completed** bookings (never new/contacted/quoted/lost/archived enquiries). The first ask targets events 1–7 days back that have no `feedback_sent_at`, so a failed or missed run is retried the next day (normally it goes out the day after the event). It also does a **one-time re-ask** — if the first feedback email is 3–10 days old, nothing was submitted, and `feedback_resent_at` is null, it sends one reminder and stamps the flag. Per-event delivery status is on the admin **Впечатления** page (`admin/feedback.html`).
 
 Inspect with `select jobname, schedule from cron.job;`. These live only in the database — if the project is ever recreated, re-create them (and the Vault secrets) by hand.
 

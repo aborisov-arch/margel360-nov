@@ -4,20 +4,126 @@ function esc(s){ return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;
 
     const SOURCE_LABELS = { friends: 'Приятели', social: 'Социални мрежи', google: 'Google', other: 'Друго' };
 
+    // ── Survey delivery ── mirrors send-feedback-request: confirmed/completed
+    // events get the survey around 12:00 Sofia the day after; a failed run is
+    // retried while the event is at most CATCH_UP_DAYS old; one reminder
+    // follows 3 days after the first email while that email is at most
+    // RESEND_MAX_AGE_DAYS old and nothing was submitted.
+    const CATCH_UP_DAYS = 7, RESEND_MAX_AGE_DAYS = 10, DELIVERY_ROWS = 15;
+    const SOFIA_DAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Sofia', year: 'numeric', month: '2-digit', day: '2-digit' });
+
+    // Day number (days since 1970-01-01) of the Sofia calendar date of an instant.
+    function sofiaDay(date) {
+      const p = Object.fromEntries(SOFIA_DAY.formatToParts(date).map(x => [x.type, x.value]));
+      return Date.UTC(+p.year, +p.month - 1, +p.day) / 86400000;
+    }
+    // preferred_date is stored as "DD/MM/YYYY".
+    function eventDay(stored) {
+      const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(stored || '');
+      return m ? Date.UTC(+m[3], +m[2] - 1, +m[1]) / 86400000 : null;
+    }
+    function fmtSofia(iso) {
+      return new Date(iso).toLocaleString('bg-BG', { timeZone: 'Europe/Sofia', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    }
+
+    function renderDelivery(events, answeredAt) {
+      const el = document.getElementById('delivery');
+      const today = sofiaDay(new Date());
+      const past = events
+        .map(e => ({ ...e, day: eventDay(e.preferred_date) }))
+        .filter(e => e.day !== null && e.day < today)
+        .sort((a, b) => b.day - a.day || b.enquiry_number - a.enquiry_number);
+
+      if (!past.length) {
+        el.innerHTML = '<p style="color:#777;padding:8px 0">Все още няма минали потвърдени събития.</p>';
+        return;
+      }
+
+      const n = { sent: 0, ontime: 0, late: 0, missing: 0, wait: 0, answered: 0 };
+      const rows = past.map(e => {
+        const answered = answeredAt[e.id];
+        if (answered) n.answered++;
+        let survey;
+        if (e.feedback_sent_at) {
+          n.sent++;
+          const after = sofiaDay(new Date(e.feedback_sent_at)) - e.day;
+          const when = `<small>${esc(fmtSofia(e.feedback_sent_at))}</small>`;
+          if (after <= 1) { n.ontime++; survey = `<span class="status-badge fb-ok">На следващия ден</span><br>${when}`; }
+          else { n.late++; survey = `<span class="status-badge fb-late">След ${after} дни</span><br>${when}`; }
+        } else if (e.email && today - e.day <= CATCH_UP_DAYS) {
+          n.wait++; survey = '<span class="status-badge fb-wait">Предстои</span><br><small>около 12:00 ч.</small>';
+        } else {
+          n.missing++; survey = `<span class="status-badge fb-missing">${e.email ? 'Не е изпратена' : 'Няма имейл'}</span>`;
+        }
+        const reminderDue = e.feedback_sent_at && !answered
+          && Date.now() - Date.parse(e.feedback_sent_at) < RESEND_MAX_AGE_DAYS * 86400000;
+        const reminder = e.feedback_resent_at ? `<span>${esc(fmtSofia(e.feedback_resent_at))}</span>`
+          : `<span class="fb-muted">${reminderDue ? 'Предстои' : '—'}</span>`;
+        const answer = answered
+          ? `<span class="status-badge fb-ok">Попълнена</span><br><small>${esc(fmtSofia(answered))}</small>`
+          : `<span class="fb-muted">${e.feedback_sent_at ? 'Няма отговор' : '—'}</span>`;
+        return `<tr>
+          <td>${esc(String(e.preferred_date).replaceAll('/', '.'))}</td>
+          <td><strong>${esc(e.full_name)}</strong><br><small>№${esc(e.enquiry_number)} · ${esc(eventTypeBg(e) || '-')}</small></td>
+          <td>${survey}</td>
+          <td>${reminder}</td>
+          <td>${answer}</td>
+        </tr>`;
+      });
+
+      const pct = n.sent ? ` (${Math.round(n.answered / n.sent * 100)}%)` : '';
+      el.innerHTML = `
+        <div class="feedback-summary">
+          <div><span class="lbl">Минали събития</span><span class="val">${past.length}</span></div>
+          <div><span class="lbl">На следващия ден</span><span class="val">${n.ontime}</span></div>
+          <div><span class="lbl">Със закъснение</span><span class="val">${n.late}</span></div>
+          <div><span class="lbl">Неизпратени</span><span class="val">${n.missing}</span></div>
+          ${n.wait ? `<div><span class="lbl">Предстоят</span><span class="val">${n.wait}</span></div>` : ''}
+          <div><span class="lbl">Попълнени</span><span class="val">${n.answered}<small>${pct}</small></span></div>
+        </div>
+        <table class="customers-table fb-delivery-table">
+          <thead><tr><th>Събитие</th><th>Клиент</th><th>Анкета</th><th>Напомняне</th><th>Отговор</th></tr></thead>
+          <tbody>${rows.slice(0, DELIVERY_ROWS).join('')}</tbody>
+        </table>
+        ${rows.length > DELIVERY_ROWS ? `<button type="button" class="btn btn-outline btn-sm fb-more" id="fb-more">Покажи всички (${rows.length})</button>` : ''}`;
+
+      const more = document.getElementById('fb-more');
+      if (more) more.addEventListener('click', () => {
+        el.querySelector('tbody').innerHTML = rows.join('');
+        more.remove();
+      });
+    }
+
     document.addEventListener('DOMContentLoaded', async () => {
       const session = await requireAuth();
       if (!session) return;
 
-      const { data, error } = await db
-        .from('event_feedback')
-        .select('id, enquiry_id, experience_rating, experience_comment, service_rating, service_comment, venue_rating, venue_comment, source, source_other, rebook_rating, rebook_comment, submitted_at, enquiries(full_name, event_type, preferred_date, email)')
-        .order('submitted_at', { ascending: false });
+      const [{ data, error }, events] = await Promise.all([
+        db.from('event_feedback')
+          .select('id, enquiry_id, experience_rating, experience_comment, service_rating, service_comment, venue_rating, venue_comment, source, source_other, rebook_rating, rebook_comment, submitted_at, enquiries(full_name, event_type, preferred_date, email)')
+          .order('submitted_at', { ascending: false }),
+        db.from('enquiries')
+          .select('id, enquiry_number, full_name, email, event_type, event_id, preferred_date, feedback_sent_at, feedback_resent_at')
+          .in('pipeline_status', ['confirmed', 'completed']),
+      ]);
 
       document.getElementById('loading').style.display = 'none';
       document.getElementById('content').style.display = 'block';
 
+      const loadErr = events.error || error;
+      if (loadErr) {
+        document.getElementById('delivery').innerHTML = `<p style="color:var(--accent);padding:8px 0">Грешка: ${esc(loadErr.message)}</p>`;
+      } else {
+        // Earliest submission per enquiry (a customer may re-submit).
+        const answeredAt = {};
+        (data ?? []).forEach(r => {
+          if (!answeredAt[r.enquiry_id] || r.submitted_at < answeredAt[r.enquiry_id]) answeredAt[r.enquiry_id] = r.submitted_at;
+        });
+        renderDelivery(events.data ?? [], answeredAt);
+      }
+
       if (error) {
-        document.getElementById('content').innerHTML = `<p style="color:var(--accent);padding:20px 0">Грешка: ${esc(error.message)}</p>`;
+        document.getElementById('summary').innerHTML = `<p style="color:var(--accent);padding:20px 0">Грешка: ${esc(error.message)}</p>`;
         return;
       }
 

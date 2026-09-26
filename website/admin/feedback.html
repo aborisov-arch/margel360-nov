@@ -33,6 +33,22 @@
     .qa-block__comment { padding:8px 12px; background:#FAFAFA; border-left:3px solid #B9894A; font-style:italic; color:#333; white-space:pre-wrap; font-size:0.92rem; }
     .qa-block__source { font-size:1rem; color:#1A1815; font-weight:500; }
     .qa-block__source em { font-style:italic; color:#7A7568; margin-left:6px; font-weight:400; }
+
+    .fb-section { margin:0 0 36px; }
+    .fb-section__head { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px 16px; margin:0 0 6px; }
+    .fb-section__title { font-family:var(--font-serif); font-size:1.3rem; font-weight:500; color:var(--text); }
+    .fb-section .page-sub { margin-bottom:18px; max-width:760px; }
+    .fb-delivery-table tbody tr:hover { background:transparent; cursor:default; }
+    .fb-delivery-table small { color:#777; font-size:0.8rem; }
+    .fb-muted { color:#999; }
+    .status-badge.fb-ok      { background:rgba(39,174,96,0.12);  color:#1e8449; }
+    .status-badge.fb-late    { background:rgba(230,145,30,0.15); color:#9a5b00; }
+    .status-badge.fb-missing { background:rgba(217,79,79,0.14);  color:#a12828; }
+    .status-badge.fb-wait    { background:var(--surface-2);      color:#555; }
+    .fb-more { margin-top:12px; }
+    /* Phone cards: the shared rule lays the last cell out as an action row;
+       here it is data, so keep the label | value grid like the other cells. */
+    @media (max-width:980px) { .admin-records.fb-delivery-table td:last-child { display:grid; } }
   </style>
   <link rel="icon" href="/favicon.ico" sizes="48x48">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
@@ -111,8 +127,19 @@
       <h1 class="page-title">Впечатления от събития</h1>
       <div id="loading" class="loading-state">Зареждане…</div>
       <div id="content" style="display:none">
-        <div id="summary"></div>
-        <div id="list"></div>
+        <section class="fb-section" aria-labelledby="delivery-title">
+          <div class="fb-section__head">
+            <h2 class="fb-section__title" id="delivery-title">Изпращане на анкетата</h2>
+            <a class="btn btn-outline btn-sm" href="/feedback.html?preview=1" target="_blank" rel="noopener">Преглед на формата ↗</a>
+          </div>
+          <p class="page-sub">Анкетата тръгва автоматично около 12:00 ч. на деня след всяко събитие със статус „Потвърдено“ или „Проведено“ (при неуспех системата опитва отново до 7 дни). Ако клиентът не я попълни, след 3 дни получава едно напомняне.</p>
+          <div id="delivery"></div>
+        </section>
+        <section class="fb-section" aria-labelledby="answers-title">
+          <h2 class="fb-section__title" id="answers-title" style="margin-bottom:14px">Получени отговори</h2>
+          <div id="summary"></div>
+          <div id="list"></div>
+        </section>
       </div>
     </div>
   </main>
@@ -122,7 +149,7 @@
   <script src="js/admin-i18n.js?v=29" defer></script>
   <script src="js/labels-bg.js?v=1" defer></script>
   <script src="js/auth.js?v=8" defer></script>
-  <script src="js/admin-feedback.js?v=3"></script>
+  <script src="js/admin-feedback.js?v=4"></script>
   <script src="js/admin-mobile.js?v=1" defer></script>
 </body>
 </html>

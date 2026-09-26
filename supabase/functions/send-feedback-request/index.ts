@@ -2,9 +2,11 @@ import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import { json, preflight } from "../_shared/cors.ts";
 
-// Cron-triggered, two passes:
-//  1. First ask  — enquiries whose preferred_date was yesterday (Sofia time)
-//     and not yet emailed; send + stamp feedback_sent_at.
+// Cron-triggered, two passes, confirmed/completed bookings only:
+//  1. First ask  — events whose preferred_date was yesterday (Sofia time)
+//     and not yet emailed; stamp feedback_sent_at + send. A run that fails
+//     (Resend outage, missed cron) is retried by the next runs while the
+//     event is at most CATCH_UP_DAYS old.
 //  2. Re-ask     — enquiries emailed RESEND_AFTER_DAYS+ days ago that still
 //     have no event_feedback row; send ONE reminder + stamp
 //     feedback_resent_at. The resend window is bounded so old enquiries
@@ -26,6 +28,15 @@ const CRON_SECRET   = Deno.env.get("FEEDBACK_CRON_SECRET") ?? "";
 const RESEND_AFTER_DAYS = 3;
 const RESEND_MAX_AGE_DAYS = 10;
 
+// Only real bookings get the survey — the same statuses that block the
+// calendar date and drive every other event-day job. An enquiry left
+// new/contacted/quoted/lost/archived never had an event with us.
+const EVENT_STATUSES = ["confirmed", "completed"];
+
+// The first ask normally goes out the day after the event; if that run
+// fails, retry for up to this many days after the event, then give up.
+const CATCH_UP_DAYS = 7;
+
 const sb = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
 
 function esc(s: unknown): string {
@@ -36,32 +47,21 @@ function fmtDateBg(stored: string): string {
   return String(stored ?? "").replaceAll("/", ".");
 }
 
-// preferred_date is stored as "DD/MM/YYYY". Parse to a Date in Europe/Sofia
-// (we treat the date as midnight Sofia local).
-function parsePreferredDate(s: string): Date | null {
-  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(s ?? "");
-  if (!m) return null;
-  const [, d, mo, y] = m;
-  // Construct as if midnight Sofia time. Sofia is UTC+2 or +3 depending on DST.
-  // For day-bucketing this offset doesn't matter — the date in Sofia is what
-  // we're comparing, not a precise instant.
-  return new Date(`${y}-${mo}-${d}T00:00:00+02:00`);
-}
-
-function sofiaToday(): Date {
-  // Format current UTC time as Sofia date by shifting via Intl.
+// preferred_date is stored as "DD/MM/YYYY" (a Sofia calendar date). Returns
+// the dates 1..CATCH_UP_DAYS days before today in Europe/Sofia, in that
+// stored format, so the query can match them exactly.
+function recentEventDates(): string[] {
   const fmt = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Sofia", year: "numeric", month: "2-digit", day: "2-digit" });
   const parts = fmt.formatToParts(new Date());
-  const y = parts.find(p => p.type === "year")!.value;
-  const mo = parts.find(p => p.type === "month")!.value;
-  const d = parts.find(p => p.type === "day")!.value;
-  return new Date(`${y}-${mo}-${d}T00:00:00+02:00`);
-}
-
-function isYesterdayInSofia(eventDate: Date): boolean {
-  const todaySofia = sofiaToday();
-  const diffDays = Math.round((todaySofia.getTime() - eventDate.getTime()) / 86_400_000);
-  return diffDays === 1;
+  const part = (type: string) => Number(parts.find(p => p.type === type)!.value);
+  const [y, mo, d] = [part("year"), part("month"), part("day")];
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const dates: string[] = [];
+  for (let back = 1; back <= CATCH_UP_DAYS; back++) {
+    const t = new Date(Date.UTC(y, mo - 1, d - back));
+    dates.push(`${pad(t.getUTCDate())}/${pad(t.getUTCMonth() + 1)}/${t.getUTCFullYear()}`);
+  }
+  return dates;
 }
 
 async function sendResend(to: string, subject: string, html: string) {
@@ -132,34 +132,39 @@ serve(async (req) => {
   const provided = req.headers.get("x-cron-secret") ?? "";
   if (provided !== CRON_SECRET) return json({ error: "unauthorized" }, 401);
 
-  // Pull recent enquiries (window of last 7 days for resilience if a cron run
-  // was missed) that have not yet been emailed.
+  // Bookings whose event was in the last CATCH_UP_DAYS days (yesterday on a
+  // normal day) and that have not been emailed yet.
   const { data, error } = await sb
     .from("enquiries")
-    .select("id, full_name, email, event_type, preferred_date, feedback_token, feedback_sent_at")
+    .select("id, full_name, email, event_type, preferred_date, feedback_token")
     .is("feedback_sent_at", null)
-    .order("created_at", { ascending: false })
-    .limit(200);
+    .in("pipeline_status", EVENT_STATUSES)
+    .in("preferred_date", recentEventDates());
 
   if (error) {
     console.error("query failed:", error);
     return json({ error: "query_failed" }, 500);
   }
 
-  const toSend = (data ?? []).filter(e => {
-    const d = parsePreferredDate(e.preferred_date);
-    return d && isYesterdayInSofia(d) && !!e.email;
-  });
+  const toSend = (data ?? []).filter(e => !!e.email);
 
   let sent = 0;
   for (const e of toSend) {
+    // Claim first (only while still unsent) so an overlapping run can't
+    // double-send; roll back on send failure so the next run retries.
+    const { data: claimed, error: claimErr } = await sb.from("enquiries")
+      .update({ feedback_sent_at: new Date().toISOString() })
+      .eq("id", e.id).is("feedback_sent_at", null)
+      .select("id").maybeSingle();
+    if (claimErr) { console.error(`stamp failed for enquiry ${e.id}:`, claimErr); continue; }
+    if (!claimed) continue;
     try {
       const { subject, html } = renderFeedbackEmail(e);
       await sendResend(e.email!, subject, html);
-      await sb.from("enquiries").update({ feedback_sent_at: new Date().toISOString() }).eq("id", e.id);
       sent++;
     } catch (err) {
-      console.error(`failed for enquiry ${e.id}:`, err);
+      console.error(`failed for enquiry ${e.id}, rolling back stamp:`, err);
+      await sb.from("enquiries").update({ feedback_sent_at: null }).eq("id", e.id);
     }
   }
 
@@ -170,6 +175,7 @@ serve(async (req) => {
   const { data: resendData, error: resendErr } = await sb
     .from("enquiries")
     .select("id, full_name, email, event_type, preferred_date, feedback_token")
+    .in("pipeline_status", EVENT_STATUSES)
     .not("feedback_sent_at", "is", null)
     .lt("feedback_sent_at", resendCutoff)
     .gt("feedback_sent_at", resendFloor)

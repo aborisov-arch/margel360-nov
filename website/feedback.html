@@ -52,6 +52,9 @@
 
     .other-comment { margin-top: 8px; }
 
+    .preview-banner { margin: 0 0 20px; padding: 10px 14px; border: 1.5px dashed #B9894A; border-radius: 6px; font: 600 12px/1.5 'Manrope', sans-serif; letter-spacing: 0.04em; color: #1A1815; background: #FDFBF7; }
+    .preview-banner[hidden] { display: none; }
+
     /* Mobile: give the form real breathing room. The .stage container can be
        tight on phones, so add horizontal padding here and loosen vertical
        rhythm. */
@@ -94,6 +97,8 @@
 
     <main class="stage">
 
+      <p class="preview-banner" id="preview-banner" hidden data-i18n="preview_banner">Преглед: така клиентът вижда анкетата. Отговорите тук не се записват.</p>
+
       <section class="spread" id="state-loading">
         <p class="label-caps" data-i18n="loading_label">Зареждане</p>
         <h1 class="display display-lg" data-i18n="loading_title">Подготвяме формата…</h1>
@@ -110,7 +115,7 @@
       <section class="spread state-page" id="state-thanks" hidden>
         <p class="label-caps" data-i18n="thanks_label">- получено -</p>
         <h1 class="display display-xl"><em data-i18n="thanks_title">Благодарим!</em></h1>
-        <p class="lead" data-i18n="thanks_body">Вашите впечатления вече са с нас. Като благодарност ви подаряваме <strong>3% отстъпка</strong> от наема на залата при следващото ви събитие.</p>
+        <p class="lead" data-i18n-html="thanks_body">Вашите впечатления вече са с нас. Като благодарност ви подаряваме <strong>3% отстъпка</strong> от наема на залата при следващото ви събитие.</p>
         <div id="thank-code-box" style="margin:32px auto;max-width:340px;padding:24px;border:2px dashed #B9894A;background:#F6F1E8;text-align:center" hidden>
           <p class="label-caps" style="margin:0 0 8px" data-i18n="thanks_code_label">Вашият промо код</p>
           <p id="thank-code" style="margin:0;font:600 28px/1.1 'Fraunces',serif;letter-spacing:0.06em;color:#1A1815"></p>
@@ -218,7 +223,7 @@
 
   </div>
 
-  <script src="js/feedback.js?v=3"></script>
+  <script src="js/feedback.js?v=4"></script>
 
 </body>
 </html>
