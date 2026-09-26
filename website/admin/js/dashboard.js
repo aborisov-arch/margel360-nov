@@ -1,5 +1,6 @@
 let allEnquiries = [];
 let notesByEnquiry = {}; // enquiry_id -> [{id, body, author_email, created_at}, ...]
+let discountCodes = [];  // survey reward codes: issued_for_enquiry_id = the event that earned it
 // Tab filter on top of the dashboard. 'unanswered' = inbox view (default,
 // what the team should be acting on next), 'answered' = archive of dealt
 // with rows, 'all' = unfiltered.
@@ -46,9 +47,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   const loadingEl = document.getElementById('loading');
   const wrapEl    = document.getElementById('enquiries-wrap');
 
-  const [{ data: enquiries, error }, { data: notes, error: notesErr }] = await Promise.all([
+  const [{ data: enquiries, error }, { data: notes, error: notesErr }, { data: codes, error: codesErr }] = await Promise.all([
     db.from('enquiries').select('*').order('created_at', { ascending: false }).limit(1000), // cap: most-recent 1000 (M-3)
     db.from('enquiry_notes').select('*').order('created_at', { ascending: false }),
+    db.from('discount_codes').select('code, percent, expires_at, redeemed_at, issued_for_enquiry_id'),
   ]);
 
   loadingEl.style.display = 'none';
@@ -60,6 +62,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
   if (notesErr) console.error('Failed to fetch notes:', notesErr);
+  if (codesErr) console.error('Failed to fetch discount codes:', codesErr);
+  discountCodes = codes || [];
 
   allEnquiries = enquiries || [];
   notesByEnquiry = {};
@@ -949,6 +953,26 @@ function computeTotals(e) {
   };
 }
 
+// Survey reward check under the discount field: whose survey earned the code
+// applied here (flagged when it was another customer's), or — when no code
+// is applied — an unused code this customer still holds.
+function codeHint(e) {
+  const issuer = c => allEnquiries.find(x => x.id === c.issued_for_enquiry_id);
+  if (e.applied_discount_code) {
+    const c = discountCodes.find(x => x.code === e.applied_discount_code);
+    const src = c && issuer(c);
+    if (!src) return '';
+    const foreign = customerKey(src) !== customerKey(e);
+    return `<div class="code-hint${foreign ? ' code-hint--warn' : ''}">${t('code_from_survey')} ${esc(src.full_name)} (№${esc(src.enquiry_number)})${foreign ? ` · ⚠ ${t('code_other_customer')}` : ''}</div>`;
+  }
+  const key = customerKey(e);
+  const held = key && discountCodes.find(c => !c.redeemed_at && Date.parse(c.expires_at) > Date.now()
+    && customerKey(issuer(c) || {}) === key);
+  if (!held) return '';
+  const until = new Date(held.expires_at).toLocaleDateString('bg-BG', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  return `<div class="code-hint">${t('code_unused_hint')} <strong>${esc(held.code)}</strong> (${esc(held.percent)}% ${t('code_hall_only')}, ${t('code_valid_until')} ${esc(until)})</div>`;
+}
+
 function renderTotals(e) {
   const totals = computeTotals(e);
   const row = (label, value) => `
@@ -970,6 +994,7 @@ function renderTotals(e) {
           <button type="button" class="btn btn-outline btn-sm btn-discount-save" data-enquiry-id="${esc(e.id)}">${t('discount_save')}</button>
         </span>
       </div>
+      ${codeHint(e)}
       ${totals.discount > 0 ? `
       <div class="total-row" style="color:#2F8F4F">
         <span>${t('total_discount')} (${totals.discountPercent}%)</span>

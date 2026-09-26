@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import { json, preflight } from "../_shared/cors.ts";
+import { FEEDBACK_DISCOUNT_PERCENT } from "../_shared/feedback-reward.ts";
 
 // Cron-triggered, two passes, confirmed/completed bookings only:
 //  1. First ask  — events whose preferred_date was yesterday (Sofia time)
@@ -82,7 +83,7 @@ function renderFeedbackEmail(e: { full_name: string; event_type: string; preferr
   const SERIF = "Fraunces,Georgia,'Times New Roman',serif";
   const SANS  = "Manrope,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
   const subject = isReminder
-    ? `Напомняне: вашите 3% отстъпка ви очакват · Маргел 360°`
+    ? `Напомняне: вашите ${FEEDBACK_DISCOUNT_PERCENT}% отстъпка ви очакват · Маргел 360°`
     : `Как премина събитието ви в Маргел 360°? · ${fmtDateBg(e.preferred_date)}`;
   const html = `<!doctype html><html lang="bg"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(subject)}</title>
 <style>@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..600;1,9..144,400..600&family=Manrope:wght@300;400;500;600;700&display=swap');</style>
@@ -99,7 +100,7 @@ function renderFeedbackEmail(e: { full_name: string; event_type: string; preferr
           Здравейте, ${esc(first)}. Благодарим, че празнувахте при нас на ${fmtDateBg(e.preferred_date)}. Бихме искали да чуем впечатленията ви — отнема по-малко от минута.
         </p>
         <p style="margin:0 0 24px;padding:14px 18px;border-left:3px solid #B9894A;background:#F6F1E8;font:14px/1.55 ${SANS};color:#1A1815">
-          <strong style="color:#B9894A">Подарък от нас:</strong> за всяка попълнена анкета получавате <strong>3% отстъпка</strong> от наема на залата при следващото ви събитие при нас.
+          <strong style="color:#B9894A">Подарък от нас:</strong> за всяка попълнена анкета получавате <strong>${FEEDBACK_DISCOUNT_PERCENT}% отстъпка</strong> от наема на залата при следващото ви събитие при нас.
         </p>
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 24px"><tr><td>
           <a href="${url}" style="display:inline-block;padding:14px 28px;background:#1A1815;color:#F6F1E8;font:600 12px/1 ${SANS};letter-spacing:0.14em;text-transform:uppercase;text-decoration:none">

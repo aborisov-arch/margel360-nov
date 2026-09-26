@@ -1,11 +1,15 @@
 const SUPABASE_URL = 'https://wlxutsufrobzovdsiecb.supabase.co';
     const FN_GET = `${SUPABASE_URL}/functions/v1/get-feedback-by-token`;
     const FN_SUB = `${SUPABASE_URL}/functions/v1/submit-feedback`;
+    // Survey reward: % off the hall rent only. Mirrors FEEDBACK_DISCOUNT_PERCENT
+    // in supabase/functions/_shared/feedback-reward.ts (+ feedback.html defaults).
+    const REWARD_PERCENT = 5;
 
     const $ = id => document.getElementById(id);
     const state = {
       token: null,
       preview: false,
+      pct: REWARD_PERCENT, // replaced by the issued code's own percent on submit
       experience: 0, service: 0, venue: 0, rebook: 0,
       source: null,
       lang: (localStorage.getItem('margel_lang') === 'en') ? 'en' : 'bg',
@@ -20,14 +24,14 @@ const SUPABASE_URL = 'https://wlxutsufrobzovdsiecb.supabase.co';
         nf_body: 'Моля пишете ни директно - ще се радваме да чуем впечатленията ви.',
         thanks_label: '- получено -',
         thanks_title: 'Благодарим!',
-        thanks_body: 'Вашите впечатления вече са с нас. Като благодарност ви подаряваме <strong>3% отстъпка</strong> от наема на залата при следващото ви събитие.',
+        thanks_body: 'Вашите впечатления вече са с нас. Като благодарност ви подаряваме <strong>{pct}% отстъпка</strong> от наема на залата при следващото ви събитие.',
         thanks_code_label: 'Вашият промо код',
         thanks_code_hint: 'Изпратихме го и на имейла ви. Валиден за една година, еднократна употреба.',
         thanks_code_emailfail: 'Запазете кода - изпращането на имейла не успя. Свържете се с нас, ако имате нужда от копие.',
         form_label: 'Впечатления · след събитието',
         form_title: 'Една <em>минутка</em> от вашето време.',
         form_lead: 'Споделете впечатленията си - помагате ни да правим всеки следващ празник още по-добър.',
-        reward: '<strong>Подарък от нас:</strong> попълнете анкетата и получавате <strong>3% отстъпка</strong> от наема на залата при следваща резервация при нас.',
+        reward: '<strong>Подарък от нас:</strong> попълнете анкетата и получавате <strong>{pct}% отстъпка</strong> от наема на залата при следваща резервация при нас.',
         q_experience: '1.&nbsp;&nbsp;Как бихте оценили <em>цялостното си преживяване</em>?',
         q_service:    '2.&nbsp;&nbsp;Колко доволни останахте от <em>обслужването</em> ни?',
         q_venue:      '3.&nbsp;&nbsp;Как ви се стори <em>атмосферата</em> в залата?',
@@ -57,14 +61,14 @@ const SUPABASE_URL = 'https://wlxutsufrobzovdsiecb.supabase.co';
         nf_body: 'Please write to us directly - we would love to hear your impressions.',
         thanks_label: '- received -',
         thanks_title: 'Thank you!',
-        thanks_body: 'Your feedback is with us. As a thank-you, here is a <strong>3% discount</strong> off the venue hire for your next event with us.',
+        thanks_body: 'Your feedback is with us. As a thank-you, here is a <strong>{pct}% discount</strong> off the venue hire for your next event with us.',
         thanks_code_label: 'Your promo code',
         thanks_code_hint: 'We also emailed it to you. Valid for one year, single use.',
         thanks_code_emailfail: 'Please save this code - we could not deliver the email. Contact us if you need a copy.',
         form_label: 'Feedback · after the event',
         form_title: 'A <em>minute</em> of your time.',
         form_lead: 'Share your impressions - they help us make every next celebration even better.',
-        reward: '<strong>A gift from us:</strong> complete the survey and receive a <strong>3% discount</strong> off the venue hire on your next booking.',
+        reward: '<strong>A gift from us:</strong> complete the survey and receive a <strong>{pct}% discount</strong> off the venue hire on your next booking.',
         q_experience: '1.&nbsp;&nbsp;How would you rate your <em>overall experience</em>?',
         q_service:    '2.&nbsp;&nbsp;How satisfied were you with our <em>service</em>?',
         q_venue:      '3.&nbsp;&nbsp;How did you find the <em>atmosphere</em> of the hall?',
@@ -90,15 +94,17 @@ const SUPABASE_URL = 'https://wlxutsufrobzovdsiecb.supabase.co';
 
     function t(key) { return I18N[state.lang][key] ?? key; }
 
+    const fillPct = s => String(s).replaceAll('{pct}', state.pct);
+
     function applyI18n() {
       document.documentElement.lang = state.lang;
       document.querySelectorAll('[data-i18n]').forEach(el => {
         const k = el.getAttribute('data-i18n');
-        if (I18N[state.lang][k] !== undefined) el.textContent = I18N[state.lang][k];
+        if (I18N[state.lang][k] !== undefined) el.textContent = fillPct(I18N[state.lang][k]);
       });
       document.querySelectorAll('[data-i18n-html]').forEach(el => {
         const k = el.getAttribute('data-i18n-html');
-        if (I18N[state.lang][k] !== undefined) el.innerHTML = I18N[state.lang][k];
+        if (I18N[state.lang][k] !== undefined) el.innerHTML = fillPct(I18N[state.lang][k]);
       });
       const bgBtn = $('lang-bg'), enBtn = $('lang-en');
       if (bgBtn && enBtn) {
@@ -284,6 +290,7 @@ const SUPABASE_URL = 'https://wlxutsufrobzovdsiecb.supabase.co';
         });
         const body = await r.json().catch(() => ({}));
         if (!r.ok) throw new Error(body?.error || 'server_error');
+        if (Number.isInteger(body.discount_percent)) state.pct = body.discount_percent;
         if (body.discount_code) {
           $('thank-code').textContent = body.discount_code;
           $('thank-code-box').hidden = false;

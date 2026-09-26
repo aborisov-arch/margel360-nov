@@ -84,7 +84,7 @@ Version labels below are the last recorded live versions where known; verify the
 | send-marketing-export (v1) | no | monthly cron: CSV of marketing-consenting customers emailed to owners (x-cron-secret = TEAM_DIGEST_CRON_SECRET; skips when empty) |
 | send-weekly-kpi (v1) | no | Monday cron: weekly KPI report (funnel, NPS trend, testimonials, sources) to owners (x-cron-secret = TEAM_DIGEST_CRON_SECRET) |
 | send-ops-lifecycle (v1) | no | daily cron: team run sheet + pre-event upsell + 1-year win-back (x-cron-secret = TEAM_DIGEST_CRON_SECRET; dry_run supported) |
-| submit-feedback (v8) | no | stores feedback, mints 3% MG- discount code, emails it |
+| submit-feedback (v8) | no | stores feedback, mints a 5% hall-rent MG- discount code (`_shared/feedback-reward.ts`), emails it |
 | get-feedback-by-token (v4) | no | feedback page load |
 | validate-discount-code (v4) / redeem-discount-code (v4) | no | promo code check/claim |
 

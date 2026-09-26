@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import { json, preflight } from "../_shared/cors.ts";
 import { getIp, rateLimitHit } from "../_shared/rate-limit.ts";
+import { FEEDBACK_DISCOUNT_PERCENT } from "../_shared/feedback-reward.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -67,11 +68,11 @@ serve(async (req) => {
   const { error: insErr } = await sb.from("event_feedback").insert({ enquiry_id: e.id, ...row });
   if (insErr) { console.error(insErr); return json({ error: "save_failed" }, 500); }
 
-  // Issue a 3% discount code if this enquiry hasn't already received one.
-  // Idempotent: re-submitting feedback returns the same code rather than
-  // generating a new one each time.
-  const code = await issueDiscountCode(e.id);
-  const emailDelivered = await sendDiscountEmail(e.email, e.full_name, code);
+  // Issue a hall-rent discount code if this enquiry hasn't already received
+  // one. Idempotent: re-submitting feedback returns the same code (at the
+  // percent it was minted with) rather than generating a new one each time.
+  const { code, percent } = await issueDiscountCode(e.id);
+  const emailDelivered = await sendDiscountEmail(e.email, e.full_name, code, percent);
 
   // Reputation routing — fires once because feedback is one-per-enquiry:
   //  - delighted (total ≥ 14/16): invite the customer to leave a public
@@ -82,7 +83,7 @@ serve(async (req) => {
     console.error("feedback routing failed (non-fatal):", err); return null;
   });
 
-  return json({ success: true, discount_code: code, discount_percent: 3, email_delivered: emailDelivered, routing });
+  return json({ success: true, discount_code: code, discount_percent: percent, email_delivered: emailDelivered, routing });
 });
 
 async function sendResend(to: string | string[], subject: string, html: string): Promise<boolean> {
@@ -170,10 +171,10 @@ async function routeFeedback(
   return { branch: "none" };
 }
 
-async function issueDiscountCode(enquiryId: string): Promise<string> {
+async function issueDiscountCode(enquiryId: string): Promise<{ code: string; percent: number }> {
   const { data: existing } = await sb
-    .from("discount_codes").select("code").eq("issued_for_enquiry_id", enquiryId).maybeSingle();
-  if (existing?.code) return existing.code;
+    .from("discount_codes").select("code, percent").eq("issued_for_enquiry_id", enquiryId).maybeSingle();
+  if (existing?.code) return { code: existing.code, percent: existing.percent };
 
   // Format: MG-XXXX-YYYY where each block is 4 chars from an unambiguous
   // alphabet (no 0/O, 1/I). 32^8 = 1.1 trillion combos, more than enough.
@@ -185,9 +186,9 @@ async function issueDiscountCode(enquiryId: string): Promise<string> {
       Array.from(bytes.slice(0, 4)).map(b => ALPHA[b % 32]).join("") + "-" +
       Array.from(bytes.slice(4, 8)).map(b => ALPHA[b % 32]).join("");
     const { error } = await sb.from("discount_codes").insert({
-      code, percent: 3, issued_for_enquiry_id: enquiryId,
+      code, percent: FEEDBACK_DISCOUNT_PERCENT, issued_for_enquiry_id: enquiryId,
     });
-    if (!error) return code;
+    if (!error) return { code, percent: FEEDBACK_DISCOUNT_PERCENT };
     if (!/duplicate|unique/i.test(error.message ?? "")) {
       console.error("code insert failed:", error);
       throw new Error("code_insert_failed");
@@ -196,7 +197,7 @@ async function issueDiscountCode(enquiryId: string): Promise<string> {
   throw new Error("code_collision");
 }
 
-async function sendDiscountEmail(to: string, fullName: string, code: string): Promise<boolean> {
+async function sendDiscountEmail(to: string, fullName: string, code: string, percent: number): Promise<boolean> {
   const RESEND_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
   const FROM_ADDR = Deno.env.get("EVENT_HALL_FROM_EMAIL") ?? "enquiries@margel360.bg";
   const FROM = FROM_ADDR.includes("<") ? FROM_ADDR : `Margel360 <${FROM_ADDR}>`;
@@ -209,7 +210,7 @@ async function sendDiscountEmail(to: string, fullName: string, code: string): Pr
   const first = esc((fullName || "").split(" ")[0] || fullName || "");
   const SERIF = "Fraunces,Georgia,'Times New Roman',serif";
   const SANS  = "Manrope,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
-  const subject = `Вашата 3% отстъпка · код ${code}`;
+  const subject = `Вашата ${percent}% отстъпка · код ${code}`;
   const html = `<!doctype html><html lang="bg"><body style="margin:0;padding:0;background:#F6F1E8;font-family:${SANS};color:#1A1815">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F6F1E8;padding:32px 0"><tr><td align="center">
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="background:#FDFBF7;max-width:600px;width:100%">
@@ -220,14 +221,14 @@ async function sendDiscountEmail(to: string, fullName: string, code: string): Pr
     <p style="margin:0 0 8px;font:600 11px/1.2 ${SANS};letter-spacing:0.2em;color:#B9894A;text-transform:uppercase">Благодарим за впечатленията</p>
     <h1 style="margin:0 0 18px;font:400 36px/1.1 ${SERIF};color:#1A1815">${first}, вашата <em style="font-style:italic;color:#B9894A">отстъпка</em> ви очаква.</h1>
     <p style="margin:0 0 24px;font:16px/1.55 ${SANS};color:#2A2620">
-      Като благодарност за отделеното време ви подаряваме <strong>3% отстъпка</strong> от наема на залата за следващото ви събитие при нас.
+      Като благодарност за отделеното време ви подаряваме <strong>${percent}% отстъпка</strong> от наема на залата за следващото ви събитие при нас.
     </p>
     <div style="margin:0 0 28px;padding:22px;border:2px dashed #B9894A;background:#F6F1E8;text-align:center">
       <p style="margin:0 0 6px;font:600 11px/1.2 ${SANS};letter-spacing:0.18em;color:#7A7568;text-transform:uppercase">Вашият промо код</p>
       <p style="margin:0;font:600 26px/1.1 ${SERIF};letter-spacing:0.06em;color:#1A1815">${code}</p>
     </div>
     <p style="margin:0;font:13px/1.6 ${SANS};color:#7A7568">
-      Въведете кода при следваща резервация на нашия сайт. Валиден за една година, еднократна употреба.
+      Въведете кода при следваща резервация на нашия сайт. Отстъпката важи само за наема на залата (не за напитки и допълнителни услуги). Валиден за една година, еднократна употреба.
     </p>
   </td></tr>
   <tr><td style="padding:24px 44px;background:#1A1815;color:#C9A86A;font:11px/1.6 ${SANS}">
