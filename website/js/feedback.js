@@ -4,15 +4,21 @@ const SUPABASE_URL = 'https://wlxutsufrobzovdsiecb.supabase.co';
     // Survey reward: % off the hall rent only. Mirrors FEEDBACK_DISCOUNT_PERCENT
     // in supabase/functions/_shared/feedback-reward.ts (+ feedback.html defaults).
     const REWARD_PERCENT = 5;
+    // Survey form v2: five questions rated 1-5 stars. The keys mirror
+    // supabase/functions/_shared/feedback-form.ts (sent as `${key}_rating`).
+    const FORM_VERSION = 2;
+    const RATINGS = ['organization', 'website', 'overall', 'cleanliness', 'team'];
+    const STARS = 5;
 
     const $ = id => document.getElementById(id);
+    const storedLang = () => { try { return localStorage.getItem('margel_lang'); } catch { return null; } };
     const state = {
       token: null,
       preview: false,
       pct: REWARD_PERCENT, // replaced by the issued code's own percent on submit
-      experience: 0, service: 0, venue: 0, rebook: 0,
+      organization: 0, website: 0, overall: 0, cleanliness: 0, team: 0,
       source: null,
-      lang: (localStorage.getItem('margel_lang') === 'en') ? 'en' : 'bg',
+      lang: storedLang() === 'en' ? 'en' : 'bg',
     };
 
     const I18N = {
@@ -29,28 +35,30 @@ const SUPABASE_URL = 'https://wlxutsufrobzovdsiecb.supabase.co';
         thanks_code_hint: 'Изпратихме го и на имейла ви. Валиден за една година, еднократна употреба.',
         thanks_code_emailfail: 'Запазете кода - изпращането на имейла не успя. Свържете се с нас, ако имате нужда от копие.',
         form_label: 'Впечатления · след събитието',
-        form_title: 'Една <em>минутка</em> от вашето време.',
-        form_lead: 'Споделете впечатленията си - помагате ни да правим всеки следващ празник още по-добър.',
+        form_title: 'Вашето мнение е <em>важно</em> за нас',
+        form_lead: 'Благодарим Ви, че избрахте нашата зала за Вашето събитие. Анкетата отнема по-малко от 1 минута.',
         reward: '<strong>Подарък от нас:</strong> попълнете анкетата и получавате <strong>{pct}% отстъпка</strong> от наема на залата при следваща резервация при нас.',
-        q_experience: '1.&nbsp;&nbsp;Как бихте оценили <em>цялостното си преживяване</em>?',
-        q_service:    '2.&nbsp;&nbsp;Колко доволни останахте от <em>обслужването</em> ни?',
-        q_venue:      '3.&nbsp;&nbsp;Как ви се стори <em>атмосферата</em> в залата?',
-        q_source:     '4.&nbsp;&nbsp;Как <em>разбрахте</em> за Маргел 360°?',
-        q_rebook:     '5.&nbsp;&nbsp;Бихте ли организирали и <em>следващото си събитие</em> при нас?',
-        scale_low: '1 - лошо',
-        scale_high: '4 - отлично',
-        rebook_low: '1 - не',
-        rebook_high: '4 - със сигурност',
-        comment_optional: 'Коментар (по желание)',
+        q_organization: '1.&nbsp;&nbsp;Как оценявате <em>организацията</em> преди събитието?',
+        h_organization: 'Офертата, комуникацията, съдействието и подготовката от наша страна.',
+        q_website:      '2.&nbsp;&nbsp;Как оценявате нашия <em>уебсайт</em>?',
+        h_website:      'Информация, визия и леснота при намиране на необходимото.',
+        q_overall:      '3.&nbsp;&nbsp;Как оценявате <em>цялостното си преживяване</em> и атмосферата в залата?',
+        q_cleanliness:  '4.&nbsp;&nbsp;Как оценявате <em>чистотата</em> и поддръжката на залата?',
+        q_team:         '5.&nbsp;&nbsp;Как оценявате <em>обслужването</em> и отношението на нашия екип по време на събитието?',
+        q_source:       '6.&nbsp;&nbsp;<em>Откъде</em> научихте за нас?',
+        q_improve:      '7.&nbsp;&nbsp;Какво бихте ни препоръчали да <em>подобрим</em>?',
+        h_improve:      'Ще се радваме да споделите Вашите препоръки, идеи или забележки.',
+        star_label: '{n} от 5',
         src_friends: 'Приятели',
         src_social: 'Социални мрежи',
         src_other: 'Друго',
         src_other_label: 'Откъде по-точно?',
-        submit: 'Изпрати впечатления',
+        submit: 'Изпрати анкетата',
         submitting: 'Изпращане…',
         err_missing: 'Моля, отговорете на всички въпроси: ',
         err_server: 'Нещо се обърка. Моля опитайте отново или пишете на 360@margel.info.',
-        missing_experience: 'преживяване', missing_service: 'обслужване', missing_venue: 'зала', missing_rebook: 'резервация отново', missing_source: 'източник',
+        missing_organization: 'организация', missing_website: 'уебсайт', missing_overall: 'преживяване',
+        missing_cleanliness: 'чистота', missing_team: 'обслужване', missing_source: 'откъде научихте за нас',
         preview_banner: 'Преглед: така клиентът вижда анкетата. Отговорите тук не се записват.',
       },
       en: {
@@ -66,28 +74,30 @@ const SUPABASE_URL = 'https://wlxutsufrobzovdsiecb.supabase.co';
         thanks_code_hint: 'We also emailed it to you. Valid for one year, single use.',
         thanks_code_emailfail: 'Please save this code - we could not deliver the email. Contact us if you need a copy.',
         form_label: 'Feedback · after the event',
-        form_title: 'A <em>minute</em> of your time.',
-        form_lead: 'Share your impressions - they help us make every next celebration even better.',
+        form_title: 'Your opinion <em>matters</em> to us',
+        form_lead: 'Thank you for choosing our venue for your event. The survey takes less than 1 minute.',
         reward: '<strong>A gift from us:</strong> complete the survey and receive a <strong>{pct}% discount</strong> off the venue hire on your next booking.',
-        q_experience: '1.&nbsp;&nbsp;How would you rate your <em>overall experience</em>?',
-        q_service:    '2.&nbsp;&nbsp;How satisfied were you with our <em>service</em>?',
-        q_venue:      '3.&nbsp;&nbsp;How did you find the <em>atmosphere</em> of the hall?',
-        q_source:     '4.&nbsp;&nbsp;How did you <em>hear</em> about Margel 360°?',
-        q_rebook:     '5.&nbsp;&nbsp;Would you host your <em>next event</em> with us?',
-        scale_low: '1 - poor',
-        scale_high: '4 - excellent',
-        rebook_low: '1 - no',
-        rebook_high: '4 - definitely',
-        comment_optional: 'Comment (optional)',
+        q_organization: '1.&nbsp;&nbsp;How would you rate the <em>organisation</em> before the event?',
+        h_organization: 'The offer, communication, assistance and preparation on our side.',
+        q_website:      '2.&nbsp;&nbsp;How would you rate our <em>website</em>?',
+        h_website:      'Information, design and how easy it is to find what you need.',
+        q_overall:      '3.&nbsp;&nbsp;How would you rate your <em>overall experience</em> and the atmosphere in the venue?',
+        q_cleanliness:  '4.&nbsp;&nbsp;How would you rate the <em>cleanliness</em> and upkeep of the venue?',
+        q_team:         '5.&nbsp;&nbsp;How would you rate the <em>service</em> and attitude of our team during the event?',
+        q_source:       '6.&nbsp;&nbsp;How did you <em>hear</em> about us?',
+        q_improve:      '7.&nbsp;&nbsp;What would you recommend we <em>improve</em>?',
+        h_improve:      'We would be glad to hear your recommendations, ideas or remarks.',
+        star_label: '{n} of 5',
         src_friends: 'Friends',
         src_social: 'Social media',
         src_other: 'Other',
         src_other_label: 'Where exactly?',
-        submit: 'Submit feedback',
+        submit: 'Submit the survey',
         submitting: 'Sending…',
         err_missing: 'Please answer all questions: ',
         err_server: 'Something went wrong. Please try again or write to 360@margel.info.',
-        missing_experience: 'experience', missing_service: 'service', missing_venue: 'venue', missing_rebook: 'rebook', missing_source: 'source',
+        missing_organization: 'organisation', missing_website: 'website', missing_overall: 'experience',
+        missing_cleanliness: 'cleanliness', missing_team: 'service', missing_source: 'how you heard about us',
         preview_banner: 'Preview: this is the survey as customers see it. Answers here are not saved.',
       },
     };
@@ -106,6 +116,8 @@ const SUPABASE_URL = 'https://wlxutsufrobzovdsiecb.supabase.co';
         const k = el.getAttribute('data-i18n-html');
         if (I18N[state.lang][k] !== undefined) el.innerHTML = fillPct(I18N[state.lang][k]);
       });
+      document.querySelectorAll('.star-btn').forEach(b =>
+        b.setAttribute('aria-label', t('star_label').replace('{n}', b.dataset.value)));
       const bgBtn = $('lang-bg'), enBtn = $('lang-en');
       if (bgBtn && enBtn) {
         bgBtn.style.opacity = state.lang === 'bg' ? '1' : '0.4';
@@ -113,39 +125,63 @@ const SUPABASE_URL = 'https://wlxutsufrobzovdsiecb.supabase.co';
       }
     }
 
+    function setLang(lang) {
+      state.lang = lang;
+      try { localStorage.setItem('margel_lang', lang); } catch {}
+      applyI18n();
+    }
+
     function show(id) {
       document.querySelectorAll('.spread').forEach(el => { el.hidden = true; });
       const el = $(id); if (el) el.hidden = false;
     }
 
-    function buildScale(section) {
-      const key = section.dataset.q;
-      const wrap = section.querySelector('.scale');
-      wrap.innerHTML = '';
-      for (let i = 1; i <= 4; i++) {
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.className = 'scale__btn';
-        b.dataset.value = i;
-        b.textContent = i;
-        b.setAttribute('role', 'radio');
-        b.setAttribute('aria-label', `${i} от 4`);
-        wrap.appendChild(b);
-      }
-      wrap.addEventListener('click', evt => {
-        const b = evt.target.closest('button.scale__btn');
-        if (!b) return;
-        const val = parseInt(b.dataset.value, 10);
-        state[key] = val;
-        wrap.querySelectorAll('button').forEach(x => x.classList.toggle('is-on', parseInt(x.dataset.value, 10) === val));
+    // Light up the stars 1..val; frame the chosen one.
+    function paintStars(wrap, val, chosen) {
+      wrap.querySelectorAll('.star-btn').forEach(b => {
+        const v = parseInt(b.dataset.value, 10);
+        b.classList.toggle('is-lit', v <= val);
+        b.classList.toggle('is-on', v === chosen);
+        b.setAttribute('aria-checked', v === chosen ? 'true' : 'false');
+        b.tabIndex = v === (chosen || 1) ? 0 : -1;
       });
     }
 
-    function paintScale(section) {
+    function buildStars(section) {
       const key = section.dataset.q;
-      const val = state[key];
-      section.querySelectorAll('.scale__btn').forEach(b =>
-        b.classList.toggle('is-on', parseInt(b.dataset.value, 10) === val));
+      const wrap = section.querySelector('.stars');
+      wrap.innerHTML = '';
+      for (let i = 1; i <= STARS; i++) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'star-btn';
+        b.dataset.value = i;
+        b.setAttribute('role', 'radio');
+        b.setAttribute('aria-label', t('star_label').replace('{n}', i));
+        b.innerHTML = `<span class="star-btn__icon" aria-hidden="true">★</span><span>${i}</span>`;
+        wrap.appendChild(b);
+      }
+      const choose = val => { state[key] = val; paintStars(wrap, val, val); };
+      wrap.addEventListener('click', evt => {
+        const b = evt.target.closest('button.star-btn');
+        if (b) choose(parseInt(b.dataset.value, 10));
+      });
+      // Hover previews how many stars a click would give.
+      wrap.addEventListener('mouseover', evt => {
+        const b = evt.target.closest('button.star-btn');
+        if (b) paintStars(wrap, parseInt(b.dataset.value, 10), state[key]);
+      });
+      wrap.addEventListener('mouseleave', () => paintStars(wrap, state[key], state[key]));
+      // Radio-group keys: arrows move and choose.
+      wrap.addEventListener('keydown', evt => {
+        const step = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[evt.key];
+        if (!step) return;
+        evt.preventDefault();
+        const val = Math.min(STARS, Math.max(1, (state[key] || 0) + step));
+        choose(val);
+        wrap.querySelector(`.star-btn[data-value="${val}"]`).focus();
+      });
+      paintStars(wrap, state[key], state[key]);
     }
 
     function buildSource() {
@@ -168,24 +204,21 @@ const SUPABASE_URL = 'https://wlxutsufrobzovdsiecb.supabase.co';
     }
 
     function renderForm() {
-      document.querySelectorAll('.question').forEach(sec => {
-        if (sec.dataset.q !== 'source') buildScale(sec);
-      });
+      document.querySelectorAll('.question[data-rating]').forEach(buildStars);
       buildSource();
-      document.querySelectorAll('.question').forEach(sec => {
-        if (sec.dataset.q !== 'source') paintScale(sec);
-      });
       paintSource();
-
       show('state-form');
     }
 
     async function main() {
-      applyI18n();
-      $('lang-bg').addEventListener('click', () => { state.lang = 'bg'; localStorage.setItem('margel_lang','bg'); applyI18n(); });
-      $('lang-en').addEventListener('click', () => { state.lang = 'en'; localStorage.setItem('margel_lang','en'); applyI18n(); });
-
       const params = new URLSearchParams(location.search);
+      // ?lang=en|bg (e.g. the English preview link) sets and remembers the
+      // language; a real survey link then follows the booking's language.
+      const qLang = params.get('lang');
+      if (qLang === 'bg' || qLang === 'en') setLang(qLang);
+      applyI18n();
+      $('lang-bg').addEventListener('click', () => setLang('bg'));
+      $('lang-en').addEventListener('click', () => setLang('en'));
 
       // ?preview=1 — the admin panel's „Преглед на формата“ link: the empty
       // survey as customers see it; nothing is loaded or saved.
@@ -216,18 +249,16 @@ const SUPABASE_URL = 'https://wlxutsufrobzovdsiecb.supabase.co';
         const enqLang = body.enquiry && body.enquiry.lang;
         if (enqLang === 'bg' || enqLang === 'en') { state.lang = enqLang; applyI18n(); }
 
+        // Pre-fill a saved answer to this form. An answer to the older 1-4
+        // form doesn't map onto these questions: only its source carries over.
         const ex = body.existing;
         if (ex) {
-          state.experience = ex.experience_rating || 0;
-          state.service    = ex.service_rating    || 0;
-          state.venue      = ex.venue_rating      || 0;
-          state.rebook     = ex.rebook_rating     || 0;
-          state.source     = ex.source || null;
-          $('c-experience').value   = ex.experience_comment || '';
-          $('c-service').value      = ex.service_comment    || '';
-          $('c-venue').value        = ex.venue_comment      || '';
-          $('c-rebook').value       = ex.rebook_comment     || '';
-          $('c-source-other').value = ex.source_other       || '';
+          if (ex.form_version === FORM_VERSION) {
+            RATINGS.forEach(k => { state[k] = ex[`${k}_rating`] || 0; });
+            $('c-improve').value = ex.improvement_comment || '';
+          }
+          state.source = ex.source || null;
+          $('c-source-other').value = ex.source_other || '';
         }
 
         renderForm();
@@ -243,12 +274,8 @@ const SUPABASE_URL = 'https://wlxutsufrobzovdsiecb.supabase.co';
       const err = $('fb-error');
       err.classList.add('hidden');
 
-      const missing = [];
-      if (!state.experience) missing.push(t('missing_experience'));
-      if (!state.service)    missing.push(t('missing_service'));
-      if (!state.venue)      missing.push(t('missing_venue'));
-      if (!state.rebook)     missing.push(t('missing_rebook'));
-      if (!state.source)     missing.push(t('missing_source'));
+      const missing = RATINGS.filter(k => !state[k]).map(k => t(`missing_${k}`));
+      if (!state.source) missing.push(t('missing_source'));
       if (missing.length) {
         err.textContent = t('err_missing') + missing.join(', ') + '.';
         err.classList.remove('hidden');
@@ -270,17 +297,12 @@ const SUPABASE_URL = 'https://wlxutsufrobzovdsiecb.supabase.co';
 
       const payload = {
         token: state.token,
-        experience_rating: state.experience,
-        experience_comment: $('c-experience').value.trim() || null,
-        service_rating: state.service,
-        service_comment: $('c-service').value.trim() || null,
-        venue_rating: state.venue,
-        venue_comment: $('c-venue').value.trim() || null,
+        form_version: FORM_VERSION,
+        improvement_comment: $('c-improve').value.trim() || null,
         source: state.source,
         source_other: state.source === 'other' ? ($('c-source-other').value.trim() || null) : null,
-        rebook_rating: state.rebook,
-        rebook_comment: $('c-rebook').value.trim() || null,
       };
+      RATINGS.forEach(k => { payload[`${k}_rating`] = state[k]; });
 
       try {
         const r = await fetch(FN_SUB, {

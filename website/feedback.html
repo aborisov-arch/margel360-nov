@@ -19,16 +19,22 @@
     .question__title { font: 500 18px/1.35 'Fraunces', Georgia, serif; color: var(--ink); margin: 0 0 12px; }
     .question__title em { color: #B9894A; font-style: italic; }
 
-    .scale { display: inline-flex; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; }
-    .scale__btn {
-      min-width: 48px; padding: 10px 14px;
-      font: 600 14px/1 'Manrope', sans-serif;
-      background: #fff; border: 1.5px solid rgba(185,137,74,0.45); border-radius: 6px;
-      color: var(--ink); cursor: pointer; transition: all 0.15s ease;
+    .question__hint { display: block; margin: -4px 0 12px; font: 13px/1.5 'Manrope', sans-serif; color: var(--muted, #7A7568); }
+
+    /* 1-5 stars: stars up to the chosen one light up, the chosen one is framed. */
+    .stars { display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 4px; }
+    .star-btn {
+      display: inline-flex; flex-direction: column; align-items: center; gap: 5px;
+      min-width: 54px; padding: 10px 10px 8px;
+      font: 600 13px/1 'Manrope', sans-serif; color: var(--ink);
+      background: #fff; border: 1.5px solid rgba(185,137,74,0.45); border-radius: 8px;
+      cursor: pointer; transition: all 0.15s ease;
     }
-    .scale__btn:hover { border-color: #B9894A; }
-    .scale__btn.is-on { background: #B9894A; color: #FDFBF7; border-color: #B9894A; }
-    .scale__legend { display: flex; justify-content: space-between; font: 11px/1.4 'Manrope', sans-serif; color: var(--muted, #7A7568); margin-bottom: 12px; max-width: 280px; }
+    .star-btn__icon { font-size: 22px; line-height: 1; color: rgba(185,137,74,0.3); transition: color 0.15s ease; }
+    .star-btn:hover { border-color: #B9894A; }
+    .star-btn.is-lit .star-btn__icon { color: #B9894A; }
+    .star-btn.is-on { border-color: #B9894A; background: #F6F1E8; box-shadow: inset 0 0 0 1px #B9894A; }
+    .star-btn:focus-visible { outline: 2px solid #B9894A; outline-offset: 2px; }
 
     .comment-field textarea {
       width: 100%; box-sizing: border-box;
@@ -65,9 +71,8 @@
       .question { padding: 18px 0; }
       .question__title { font-size: 17px; line-height: 1.4; margin-bottom: 14px; }
       .reward { margin: 0 -2px 28px; padding: 16px 18px; font-size: 14px; line-height: 1.55; }
-      .scale { gap: 6px; }
-      .scale__btn { min-width: 44px; padding: 12px 12px; font-size: 15px; }
-      .scale__legend { max-width: none; }
+      .stars { gap: 6px; }
+      .star-btn { min-width: 52px; padding: 10px 8px 8px; }
       .choices { gap: 8px; }
       .choice { padding: 10px 14px; font-size: 13.5px; }
       .comment-field textarea { padding: 12px 14px; font-size: 15px; }
@@ -127,8 +132,8 @@
       <section class="spread" id="state-form" hidden>
         <header class="spread__header">
           <span class="label-caps" data-i18n="form_label">Впечатления · след събитието</span>
-          <h1 class="display display-lg" data-i18n-html="form_title">Една <em>минутка</em> от вашето време.</h1>
-          <p class="lead" data-i18n="form_lead">Споделете впечатленията си - помагате ни да правим всеки следващ празник още по-добър.</p>
+          <h1 class="display display-lg" data-i18n-html="form_title">Вашето мнение е <em>важно</em> за нас</h1>
+          <p class="lead" data-i18n="form_lead">Благодарим Ви, че избрахте нашата зала за Вашето събитие. Анкетата отнема по-малко от 1 минута.</p>
           <hr class="rule-gold">
         </header>
 
@@ -138,43 +143,38 @@
 
         <form id="feedback-form" class="composition" novalidate>
 
-          <!-- Q1 -->
-          <section class="question" data-q="experience">
-            <h2 class="question__title" data-i18n-html="q_experience">1.&nbsp;&nbsp;Как бихте оценили <em>цялостното си преживяване</em>?</h2>
-            <div class="scale" role="radiogroup" aria-label="Оценка"></div>
-            <div class="scale__legend"><span data-i18n="scale_low">1 - лошо</span><span data-i18n="scale_high">4 - отлично</span></div>
-            <div class="comment-field">
-              <label class="comment-label" for="c-experience" data-i18n="comment_optional">Коментар (по желание)</label>
-              <textarea id="c-experience" rows="3" maxlength="2000"></textarea>
-            </div>
+          <!-- 1-5: star ratings (form v2; keys mirror supabase/functions/_shared/feedback-form.ts) -->
+          <section class="question" data-q="organization" data-rating>
+            <h2 class="question__title" id="q-organization" data-i18n-html="q_organization">1.&nbsp;&nbsp;Как оценявате <em>организацията</em> преди събитието?</h2>
+            <p class="question__hint" data-i18n="h_organization">Офертата, комуникацията, съдействието и подготовката от наша страна.</p>
+            <div class="stars" role="radiogroup" aria-labelledby="q-organization"></div>
           </section>
 
-          <!-- Q2 -->
-          <section class="question" data-q="service">
-            <h2 class="question__title" data-i18n-html="q_service">2.&nbsp;&nbsp;Колко доволни останахте от <em>обслужването</em> ни?</h2>
-            <div class="scale" role="radiogroup" aria-label="Оценка"></div>
-            <div class="scale__legend"><span data-i18n="scale_low">1 - лошо</span><span data-i18n="scale_high">4 - отлично</span></div>
-            <div class="comment-field">
-              <label class="comment-label" for="c-service" data-i18n="comment_optional">Коментар (по желание)</label>
-              <textarea id="c-service" rows="3" maxlength="2000"></textarea>
-            </div>
+          <section class="question" data-q="website" data-rating>
+            <h2 class="question__title" id="q-website" data-i18n-html="q_website">2.&nbsp;&nbsp;Как оценявате нашия <em>уебсайт</em>?</h2>
+            <p class="question__hint" data-i18n="h_website">Информация, визия и леснота при намиране на необходимото.</p>
+            <div class="stars" role="radiogroup" aria-labelledby="q-website"></div>
           </section>
 
-          <!-- Q3 -->
-          <section class="question" data-q="venue">
-            <h2 class="question__title" data-i18n-html="q_venue">3.&nbsp;&nbsp;Как ви се стори <em>атмосферата</em> в залата?</h2>
-            <div class="scale" role="radiogroup" aria-label="Оценка"></div>
-            <div class="scale__legend"><span data-i18n="scale_low">1 - лошо</span><span data-i18n="scale_high">4 - отлично</span></div>
-            <div class="comment-field">
-              <label class="comment-label" for="c-venue" data-i18n="comment_optional">Коментар (по желание)</label>
-              <textarea id="c-venue" rows="3" maxlength="2000"></textarea>
-            </div>
+          <section class="question" data-q="overall" data-rating>
+            <h2 class="question__title" id="q-overall" data-i18n-html="q_overall">3.&nbsp;&nbsp;Как оценявате <em>цялостното си преживяване</em> и атмосферата в залата?</h2>
+            <div class="stars" role="radiogroup" aria-labelledby="q-overall"></div>
           </section>
 
-          <!-- Q4 -->
+          <section class="question" data-q="cleanliness" data-rating>
+            <h2 class="question__title" id="q-cleanliness" data-i18n-html="q_cleanliness">4.&nbsp;&nbsp;Как оценявате <em>чистотата</em> и поддръжката на залата?</h2>
+            <div class="stars" role="radiogroup" aria-labelledby="q-cleanliness"></div>
+          </section>
+
+          <section class="question" data-q="team" data-rating>
+            <h2 class="question__title" id="q-team" data-i18n-html="q_team">5.&nbsp;&nbsp;Как оценявате <em>обслужването</em> и отношението на нашия екип по време на събитието?</h2>
+            <div class="stars" role="radiogroup" aria-labelledby="q-team"></div>
+          </section>
+
+          <!-- 6 -->
           <section class="question" data-q="source">
-            <h2 class="question__title" data-i18n-html="q_source">4.&nbsp;&nbsp;Как <em>разбрахте</em> за Маргел 360°?</h2>
-            <div class="choices" id="source-choices" role="radiogroup" aria-label="Източник">
+            <h2 class="question__title" id="q-source" data-i18n-html="q_source">6.&nbsp;&nbsp;<em>Откъде</em> научихте за нас?</h2>
+            <div class="choices" id="source-choices" role="radiogroup" aria-labelledby="q-source">
               <button type="button" class="choice" data-source="friends" data-i18n="src_friends">Приятели</button>
               <button type="button" class="choice" data-source="social" data-i18n="src_social">Социални мрежи</button>
               <button type="button" class="choice" data-source="google">Google</button>
@@ -186,19 +186,17 @@
             </div>
           </section>
 
-          <!-- Q5 -->
-          <section class="question" data-q="rebook">
-            <h2 class="question__title" data-i18n-html="q_rebook">5.&nbsp;&nbsp;Бихте ли организирали и <em>следващото си събитие</em> при нас?</h2>
-            <div class="scale" role="radiogroup" aria-label="Оценка"></div>
-            <div class="scale__legend"><span data-i18n="rebook_low">1 - не</span><span data-i18n="rebook_high">4 - със сигурност</span></div>
+          <!-- 7 -->
+          <section class="question" data-q="improve">
+            <h2 class="question__title" id="q-improve" data-i18n-html="q_improve">7.&nbsp;&nbsp;Какво бихте ни препоръчали да <em>подобрим</em>?</h2>
             <div class="comment-field">
-              <label class="comment-label" for="c-rebook" data-i18n="comment_optional">Коментар (по желание)</label>
-              <textarea id="c-rebook" rows="3" maxlength="2000"></textarea>
+              <label class="question__hint" for="c-improve" data-i18n="h_improve">Ще се радваме да споделите Вашите препоръки, идеи или забележки.</label>
+              <textarea id="c-improve" rows="4" maxlength="4000"></textarea>
             </div>
           </section>
 
           <footer class="composition__actions">
-            <button type="submit" class="btn btn-save" id="btn-submit" data-i18n="submit">Изпрати впечатления</button>
+            <button type="submit" class="btn btn-save" id="btn-submit" data-i18n="submit">Изпрати анкетата</button>
           </footer>
 
           <div id="fb-error" class="alert hidden" role="alert"></div>
@@ -223,7 +221,7 @@
 
   </div>
 
-  <script src="js/feedback.js?v=5"></script>
+  <script src="js/feedback.js?v=6"></script>
 
 </body>
 </html>

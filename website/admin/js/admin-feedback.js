@@ -4,6 +4,23 @@ function esc(s){ return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;
 
     const SOURCE_LABELS = { friends: 'Приятели', social: 'Социални мрежи', google: 'Google', other: 'Друго' };
 
+    // Survey questions [column, label, short label]: v2 (1-5 stars, since
+    // 2026-09-27) and the older v1 form (1-4, a comment each). Mirrors
+    // supabase/functions/_shared/feedback-form.ts.
+    const V2_Q = [
+      ['organization_rating', 'Организация преди събитието', 'Организация'],
+      ['website_rating',      'Уебсайт', 'Уебсайт'],
+      ['overall_rating',      'Преживяване и атмосфера', 'Преживяване'],
+      ['cleanliness_rating',  'Чистота и поддръжка', 'Чистота'],
+      ['team_rating',         'Обслужване от екипа', 'Екип'],
+    ];
+    const V1_Q = [
+      ['experience_rating', 'Преживяване', 'Преживяване', 'experience_comment'],
+      ['service_rating',    'Обслужване', 'Обслужване', 'service_comment'],
+      ['venue_rating',      'Зала', 'Зала', 'venue_comment'],
+      ['rebook_rating',     'Резервация отново', 'Резервация отново', 'rebook_comment'],
+    ];
+
     // ── Survey delivery ── mirrors send-feedback-request: confirmed/completed
     // events get the survey around 12:00 Sofia the day after; a failed run is
     // retried while the event is at most CATCH_UP_DAYS old; one reminder
@@ -100,7 +117,7 @@ function esc(s){ return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;
 
       const [{ data, error }, events] = await Promise.all([
         db.from('event_feedback')
-          .select('id, enquiry_id, experience_rating, experience_comment, service_rating, service_comment, venue_rating, venue_comment, source, source_other, rebook_rating, rebook_comment, submitted_at, enquiries(full_name, event_type, preferred_date, email)')
+          .select('id, enquiry_id, form_version, organization_rating, website_rating, overall_rating, cleanliness_rating, team_rating, improvement_comment, experience_rating, experience_comment, service_rating, service_comment, venue_rating, venue_comment, source, source_other, rebook_rating, rebook_comment, submitted_at, enquiries(full_name, event_type, preferred_date, email)')
           .order('submitted_at', { ascending: false }),
         db.from('enquiries')
           .select('id, enquiry_number, full_name, email, event_type, event_id, preferred_date, feedback_sent_at, feedback_resent_at')
@@ -136,10 +153,11 @@ function esc(s){ return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;
         return;
       }
 
-      const a1 = avg(rows.map(r => r.experience_rating).filter(Boolean));
-      const a2 = avg(rows.map(r => r.service_rating).filter(Boolean));
-      const a3 = avg(rows.map(r => r.venue_rating).filter(Boolean));
-      const a5 = avg(rows.map(r => r.rebook_rating).filter(Boolean));
+      // Averages stay within one form: v2 answers out of 5, old ones out of 4.
+      const v2Rows = rows.filter(r => r.form_version === 2);
+      const v1Rows = rows.filter(r => r.form_version !== 2);
+      const avgCells = (list, qs, max) => qs.map(([k, , short]) =>
+        `<div><span class="lbl">${esc(short)}</span><span class="val">${avg(list.map(r => r[k]).filter(Boolean)).toFixed(1)}<small>/${max}</small></span></div>`).join('');
 
       const srcCounts = { friends: 0, social: 0, google: 0, other: 0 };
       rows.forEach(r => { if (r.source && srcCounts[r.source] != null) srcCounts[r.source]++; });
@@ -147,11 +165,12 @@ function esc(s){ return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;
       sumEl.innerHTML = `
         <div class="feedback-summary">
           <div><span class="lbl">Получени</span><span class="val">${rows.length}</span></div>
-          <div><span class="lbl">Преживяване</span><span class="val">${a1.toFixed(1)}<small>/4</small></span></div>
-          <div><span class="lbl">Обслужване</span><span class="val">${a2.toFixed(1)}<small>/4</small></span></div>
-          <div><span class="lbl">Зала</span><span class="val">${a3.toFixed(1)}<small>/4</small></span></div>
-          <div><span class="lbl">Резервация отново</span><span class="val">${a5.toFixed(1)}<small>/4</small></span></div>
+          ${v2Rows.length ? avgCells(v2Rows, V2_Q, 5) : ''}
         </div>
+        ${v1Rows.length ? `<div class="feedback-summary">
+          <div><span class="lbl">Стара анкета (1–4)</span><span class="val">${v1Rows.length}</span></div>
+          ${avgCells(v1Rows, V1_Q, 4)}
+        </div>` : ''}
         <div class="feedback-summary" style="display:block">
           <span class="lbl" style="display:block;margin-bottom:10px;font-size:0.7rem;letter-spacing:0.14em;color:#888;text-transform:uppercase;font-weight:600">Откъде научиха за нас</span>
           <div class="source-bars">
@@ -165,11 +184,11 @@ function esc(s){ return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;
 
       document.getElementById('list').innerHTML = rows.map(r => {
         const e = r.enquiries || {};
-        const qa = (label, rating, comment) => `
+        const qa = (label, rating, max, comment) => `
           <div class="qa-block">
             <div class="qa-block__q">
               <span class="qa-block__label">${esc(label)}</span>
-              <span class="qa-block__rating">${rating ?? '-'}/4</span>
+              <span class="qa-block__rating">${rating ?? '-'}/${max}</span>
             </div>
             ${comment ? `<div class="qa-block__comment">„${esc(comment)}"</div>` : ''}
           </div>`;
@@ -180,20 +199,26 @@ function esc(s){ return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;
             </div>
             <div class="qa-block__source">${esc(SOURCE_LABELS[r.source] || r.source || '-')}${r.source === 'other' && r.source_other ? `<em>- ${esc(r.source_other)}</em>` : ''}</div>
           </div>`;
+        const v2 = r.form_version === 2;
+        const answers = v2
+          ? V2_Q.map(([k, label]) => qa(label, r[k], 5)).join('') + sourceBlock
+            + (r.improvement_comment ? `
+          <div class="qa-block">
+            <div class="qa-block__q"><span class="qa-block__label">Какво да подобрим</span></div>
+            <div class="qa-block__comment">„${esc(r.improvement_comment)}"</div>
+          </div>` : '')
+          : V1_Q.slice(0, 3).map(([k, label, , c]) => qa(label, r[k], 4, r[c])).join('') + sourceBlock
+            + qa(V1_Q[3][1], r[V1_Q[3][0]], 4, r[V1_Q[3][3]]);
         return `
           <div class="feedback-card">
             <div class="feedback-card__hdr">
               <div>
                 <span class="feedback-card__name">${esc(e.full_name)}</span>
-                <span class="feedback-card__meta"> · ${esc(eventTypeBg(e) || '-')} · ${esc(e.preferred_date || '-')}</span>
+                <span class="feedback-card__meta"> · ${esc(eventTypeBg(e) || '-')} · ${esc(e.preferred_date || '-')}${v2 ? '' : ' · стара анкета (1–4)'}</span>
               </div>
               <span class="feedback-card__meta">${fmt(r.submitted_at)}</span>
             </div>
-            ${qa('Преживяване', r.experience_rating, r.experience_comment)}
-            ${qa('Обслужване', r.service_rating, r.service_comment)}
-            ${qa('Зала', r.venue_rating, r.venue_comment)}
-            ${sourceBlock}
-            ${qa('Резервация отново', r.rebook_rating, r.rebook_comment)}
+            ${answers}
           </div>
         `;
       }).join('');

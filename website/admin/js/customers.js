@@ -104,8 +104,13 @@ function enquiryRef(id) {
   return e ? `№${esc(e.enquiry_number)}${e.preferred_date ? ` (${esc(e.preferred_date)})` : ''}` : 'изтрито запитване';
 }
 
+// The survey's ratings: v2 = five 1-5 stars, v1 (before 2026-09-27) = four 1-4.
 function ratingsText(f) {
-  return [f.experience_rating, f.service_rating, f.venue_rating, f.rebook_rating].map(n => n ?? '-').join('/');
+  const v2 = f.form_version === 2;
+  const vals = v2
+    ? [f.organization_rating, f.website_rating, f.overall_rating, f.cleanliness_rating, f.team_rating]
+    : [f.experience_rating, f.service_rating, f.venue_rating, f.rebook_rating];
+  return `${vals.map(n => n ?? '-').join('/')} от ${v2 ? 5 : 4}`;
 }
 
 // „Анкета и отстъпка“ block of the customer profile: every survey reward
@@ -217,7 +222,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const [{ data, error }, codesRes, fbRes] = await Promise.all([
     db.from('enquiries').select('*').order('created_at', { ascending: false }),
     db.from('discount_codes').select('code, percent, created_at, expires_at, redeemed_at, issued_for_enquiry_id, redeemed_for_enquiry_id'),
-    db.from('event_feedback').select('enquiry_id, submitted_at, experience_rating, service_rating, venue_rating, rebook_rating').order('submitted_at', { ascending: true }),
+    db.from('event_feedback').select('enquiry_id, submitted_at, form_version, organization_rating, website_rating, overall_rating, cleanliness_rating, team_rating, experience_rating, service_rating, venue_rating, rebook_rating').order('submitted_at', { ascending: true }),
   ]);
   perksError = codesRes.error || fbRes.error || null;
   if (perksError) console.error('Survey rewards load failed:', perksError);
