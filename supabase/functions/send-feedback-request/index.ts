@@ -70,6 +70,9 @@ async function sendResend(to: string, subject: string, html: string) {
     method: "POST",
     headers: { Authorization: `Bearer ${RESEND_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify({ from: FROM_EMAIL, to, subject, html }),
+    // A hung request must not stall the whole run: it fails like any send
+    // error (stamp rolled back, the next run retries).
+    signal: AbortSignal.timeout(15_000),
   });
   if (!r.ok) {
     const t = await r.text();
@@ -165,7 +168,8 @@ serve(async (req) => {
       sent++;
     } catch (err) {
       console.error(`failed for enquiry ${e.id}, rolling back stamp:`, err);
-      await sb.from("enquiries").update({ feedback_sent_at: null }).eq("id", e.id);
+      const { error: rbErr } = await sb.from("enquiries").update({ feedback_sent_at: null }).eq("id", e.id);
+      if (rbErr) console.error(`ROLLBACK FAILED for enquiry ${e.id}: marked sent but not delivered:`, rbErr);
     }
   }
 
@@ -196,18 +200,23 @@ serve(async (req) => {
     } else {
       const submitted = new Set((fb ?? []).map(f => f.enquiry_id));
       for (const e of resendData.filter(e => !submitted.has(e.id) && !!e.email)) {
-        // Stamp first so a failed stamp can't cause repeat nudges; roll back
-        // on send failure so a Resend outage retries tomorrow.
-        const { error: stampErr } = await sb.from("enquiries")
-          .update({ feedback_resent_at: new Date().toISOString() }).eq("id", e.id);
+        // Claim first (only while not yet re-asked) so a failed stamp or an
+        // overlapping run can't cause repeat nudges; roll back on send
+        // failure so a Resend outage retries tomorrow.
+        const { data: claimed, error: stampErr } = await sb.from("enquiries")
+          .update({ feedback_resent_at: new Date().toISOString() })
+          .eq("id", e.id).is("feedback_resent_at", null)
+          .select("id").maybeSingle();
         if (stampErr) { console.error(`resend stamp failed for ${e.id}:`, stampErr); continue; }
+        if (!claimed) continue;
         try {
           const { subject, html } = renderFeedbackEmail(e, true);
           await sendResend(e.email!, subject, html);
           resent++;
         } catch (err) {
           console.error(`re-ask send failed for ${e.id}, rolling back stamp:`, err);
-          await sb.from("enquiries").update({ feedback_resent_at: null }).eq("id", e.id);
+          const { error: rbErr } = await sb.from("enquiries").update({ feedback_resent_at: null }).eq("id", e.id);
+          if (rbErr) console.error(`ROLLBACK FAILED for ${e.id}: reminder marked sent but not delivered:`, rbErr);
         }
       }
     }
