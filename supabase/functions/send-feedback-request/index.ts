@@ -80,42 +80,70 @@ async function sendResend(to: string, subject: string, html: string) {
   }
 }
 
-function renderFeedbackEmail(e: { full_name: string; event_type: string; preferred_date: string; feedback_token: string }, isReminder = false) {
+// The invitation and the reminder, in the language of the booking
+// (enquiries.lang). The survey page itself also opens in that language.
+const COPY = {
+  bg: {
+    brand: "Маргел",
+    subject: (date: string) => `Как премина събитието ви в Маргел 360°? · ${date}`,
+    reminderSubject: `Напомняне: вашите ${FEEDBACK_DISCOUNT_PERCENT}% отстъпка ви очакват · Маргел 360°`,
+    title: `Как премина <em style="font-style:italic;color:#B9894A">събитието</em> ви?`,
+    body: (first: string, date: string) => `Здравейте, ${first}. Благодарим, че празнувахте при нас на ${date}. Бихме искали да чуем впечатленията ви — отнема по-малко от минута.`,
+    gift: `<strong style="color:#B9894A">Подарък от нас:</strong> за всяка попълнена анкета получавате <strong>${FEEDBACK_DISCOUNT_PERCENT}% отстъпка</strong> от наема на залата при следващото ви събитие при нас.`,
+    cta: "Споделете впечатления",
+    note: "Анкетата отнема около минута. Отстъпката се валидира автоматично при следваща резервация.",
+    footer: "бул. Околовръстен път 155 · ет. 4 · София",
+  },
+  en: {
+    brand: "Margel",
+    subject: (date: string) => `How was your event at Margel 360°? · ${date}`,
+    reminderSubject: `Reminder: your ${FEEDBACK_DISCOUNT_PERCENT}% discount is waiting · Margel 360°`,
+    title: `How was your <em style="font-style:italic;color:#B9894A">event</em>?`,
+    body: (first: string, date: string) => `Hello, ${first}. Thank you for celebrating with us on ${date}. We would love to hear your impressions — it takes less than a minute.`,
+    gift: `<strong style="color:#B9894A">A gift from us:</strong> complete the survey and receive a <strong>${FEEDBACK_DISCOUNT_PERCENT}% discount</strong> off the venue hire for your next event with us.`,
+    cta: "Share your feedback",
+    note: "The survey takes about a minute. Your discount code is checked automatically when you next book.",
+    footer: "155 Okolovrasten Pat Blvd · floor 4 · Sofia",
+  },
+};
+
+function renderFeedbackEmail(e: { full_name: string; event_type: string; preferred_date: string; feedback_token: string; lang?: string | null }, isReminder = false) {
+  const lang = e.lang === "en" ? "en" : "bg";
+  const c = COPY[lang];
   const first = (e.full_name || "").split(" ")[0] || e.full_name || "";
+  const date = fmtDateBg(e.preferred_date);
   const url = `${SITE_URL}/feedback.html?token=${e.feedback_token}`;
   const SERIF = "Fraunces,Georgia,'Times New Roman',serif";
   const SANS  = "Manrope,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
-  const subject = isReminder
-    ? `Напомняне: вашите ${FEEDBACK_DISCOUNT_PERCENT}% отстъпка ви очакват · Маргел 360°`
-    : `Как премина събитието ви в Маргел 360°? · ${fmtDateBg(e.preferred_date)}`;
-  const html = `<!doctype html><html lang="bg"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(subject)}</title>
+  const subject = isReminder ? c.reminderSubject : c.subject(date);
+  const html = `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(subject)}</title>
 <style>@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..600;1,9..144,400..600&family=Manrope:wght@300;400;500;600;700&display=swap');</style>
 </head><body style="margin:0;padding:0;background:#F6F1E8;font-family:${SANS};color:#1A1815">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F6F1E8;padding:32px 0">
   <tr><td align="center">
     <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="background:#FDFBF7;max-width:600px;width:100%">
       <tr><td style="padding:32px 44px 24px;border-bottom:1px solid rgba(185,137,74,0.35);font:500 18px/1.2 ${SERIF};letter-spacing:0.18em;color:#1A1815;text-transform:uppercase">
-        Маргел&nbsp;<em style="font-style:italic;color:#B9894A;font-weight:400">360°</em>
+        ${c.brand}&nbsp;<em style="font-style:italic;color:#B9894A;font-weight:400">360°</em>
       </td></tr>
       <tr><td style="padding:40px 44px 32px">
-        <h1 style="margin:0 0 12px;font:400 38px/1.1 ${SERIF};color:#1A1815">Как премина <em style="font-style:italic;color:#B9894A">събитието</em> ви?</h1>
+        <h1 style="margin:0 0 12px;font:400 38px/1.1 ${SERIF};color:#1A1815">${c.title}</h1>
         <p style="margin:0 0 24px;font:16px/1.55 ${SANS};color:#2A2620">
-          Здравейте, ${esc(first)}. Благодарим, че празнувахте при нас на ${fmtDateBg(e.preferred_date)}. Бихме искали да чуем впечатленията ви — отнема по-малко от минута.
+          ${c.body(esc(first), date)}
         </p>
         <p style="margin:0 0 24px;padding:14px 18px;border-left:3px solid #B9894A;background:#F6F1E8;font:14px/1.55 ${SANS};color:#1A1815">
-          <strong style="color:#B9894A">Подарък от нас:</strong> за всяка попълнена анкета получавате <strong>${FEEDBACK_DISCOUNT_PERCENT}% отстъпка</strong> от наема на залата при следващото ви събитие при нас.
+          ${c.gift}
         </p>
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 24px"><tr><td>
           <a href="${url}" style="display:inline-block;padding:14px 28px;background:#1A1815;color:#F6F1E8;font:600 12px/1 ${SANS};letter-spacing:0.14em;text-transform:uppercase;text-decoration:none">
-            Споделете впечатления
+            ${c.cta}
           </a>
         </td></tr></table>
         <p style="margin:0;font:12px/1.5 ${SANS};color:#7A7568">
-          Анкетата отнема около минута. Отстъпката се валидира автоматично при следваща резервация.
+          ${c.note}
         </p>
       </td></tr>
       <tr><td style="padding:24px 44px;background:#1A1815;color:#C9A86A;font:11px/1.6 ${SANS}">
-        <strong style="color:#C9A86A;text-transform:uppercase;letter-spacing:0.16em">Маргел 360°</strong> · бул. Околовръстен път 155 · ет. 4 · София<br>
+        <strong style="color:#C9A86A;text-transform:uppercase;letter-spacing:0.16em">${c.brand} 360°</strong> · ${c.footer}<br>
         <a href="mailto:360@margel.info" style="color:#F6F1E8;text-decoration:none">360@margel.info</a>
       </td></tr>
     </table>
@@ -140,7 +168,7 @@ serve(async (req) => {
   // normal day) and that have not been emailed yet.
   const { data, error } = await sb
     .from("enquiries")
-    .select("id, full_name, email, event_type, preferred_date, feedback_token")
+    .select("id, full_name, email, event_type, preferred_date, feedback_token, lang")
     .is("feedback_sent_at", null)
     .in("pipeline_status", EVENT_STATUSES)
     .in("preferred_date", recentEventDates());
@@ -179,7 +207,7 @@ serve(async (req) => {
   const resendFloor  = new Date(Date.now() - RESEND_MAX_AGE_DAYS * 86_400_000).toISOString();
   const { data: resendData, error: resendErr } = await sb
     .from("enquiries")
-    .select("id, full_name, email, event_type, preferred_date, feedback_token")
+    .select("id, full_name, email, event_type, preferred_date, feedback_token, lang")
     .in("pipeline_status", EVENT_STATUSES)
     .not("feedback_sent_at", "is", null)
     .lt("feedback_sent_at", resendCutoff)

@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import { json, preflight } from "../_shared/cors.ts";
 import { eventTypeBg } from "../_shared/labels-bg.ts";
+import { SOURCE_BG, V1_MAX, V1_RATINGS, V2_MAX, V2_RATINGS } from "../_shared/feedback-form.ts";
 
 // Cron-triggered Monday mornings: one KPI email to the owners covering the
 // past 7 days:
@@ -45,13 +46,10 @@ const PIPELINE_BG: Record<string, string> = {
   new: "Нови", contacted: "Свързани", quoted: "Оферирани",
   confirmed: "Потвърдени", completed: "Приключени", lost: "Загубени", archived: "Архив",
 };
-const DIM_BG: Record<string, string> = {
-  experience_rating: "Преживяване", service_rating: "Обслужване",
-  venue_rating: "Зала", rebook_rating: "Повторно",
-};
-const SOURCE_BG: Record<string, string> = {
-  friends: "Приятели", social: "Социални мрежи", google: "Google", other: "Друго",
-};
+// Survey questions of both forms: v2 (1-5, since 2026-09-27) and the older v1
+// (1-4). A row only has the columns of its own form, so every average below
+// stays within one form.
+const DIM_BG: Record<string, string> = Object.fromEntries([...V2_RATINGS, ...V1_RATINGS].map(q => [q.key, q.bg]));
 
 serve(async (req) => {
   const pre = preflight(req); if (pre) return pre;
@@ -68,14 +66,16 @@ serve(async (req) => {
   // NPS baseline: the 28 days BEFORE this week's window.
   const baselineStartIso = new Date(windowStart.getTime() - 28 * 86_400_000).toISOString();
 
-  const FB_COLS = "experience_rating, service_rating, venue_rating, rebook_rating";
+  // A literal (not built from DIM_BG) so supabase-js can type the rows; it
+  // lists every DIM_BG key.
+  const FB_COLS = "form_version, organization_rating, website_rating, overall_rating, cleanliness_rating, team_rating, experience_rating, service_rating, venue_rating, rebook_rating";
   const [{ data: enq, error: enqErr }, { data: fb, error: fbErr }, { data: transitions, error: trErr }, { data: fbPrior }] = await Promise.all([
     sb.from("enquiries")
       .select("id, full_name, event_type, preferred_date, pipeline_status, created_at, offer_sent_at")
       .neq("pipeline_status", "archived")
       .limit(2000),
     sb.from("event_feedback")
-      .select(`${FB_COLS}, experience_comment, service_comment, source, enquiry_id, submitted_at`)
+      .select(`${FB_COLS}, experience_comment, service_comment, improvement_comment, source, enquiry_id, submitted_at`)
       .gte("submitted_at", windowStartIso),
     sb.from("enquiry_status_log")
       .select("enquiry_id, from_status, to_status")
@@ -161,8 +161,21 @@ serve(async (req) => {
     }
   }
 
-  // Testimonials: top-rated (experience+service both 4/4) with a comment.
+  // Testimonials: top-rated (experience+service both 4/4) with a comment -
+  // v1 answers only; the v2 form has no free-text praise field.
   const nameById = new Map((all as { id: string; full_name?: string; event_type?: string }[]).map(e => [e.id, e]));
+  // Improvement suggestions: the v2 form's open question.
+  const suggestions = fbRows
+    .filter(r => Number(r.form_version) === 2 && r.improvement_comment)
+    .slice(0, 5)
+    .map(r => {
+      const en = nameById.get(r.enquiry_id);
+      return {
+        name: (en?.full_name || "").split(" ")[0] || "Гост",
+        type: en?.event_type ? eventTypeBg(en) : "",
+        quote: String(r.improvement_comment),
+      };
+    });
   const testimonials = fbRows
     .filter(r => Number(r.experience_rating) === 4 && Number(r.service_rating) === 4 && (r.experience_comment || r.service_comment))
     .slice(0, 5)
@@ -197,8 +210,14 @@ serve(async (req) => {
     .filter(ps => (snapshot.get(ps) ?? 0) > 0)
     .map(ps => `<tr><td style="padding:5px 0;font:13px/1.4 ${SANS};color:#2A2620">${PIPELINE_BG[ps]}</td><td style="padding:5px 0;font:600 13px/1.4 ${SANS};color:#1A1815;text-align:right">${snapshot.get(ps)}</td></tr>`).join("");
 
+  const avgLine = (qs: readonly { key: string; bg: string }[], max: number) =>
+    `${qs.map(q => `${q.bg} ${avg(q.key) ?? "—"}`).join(" · ")} (от ${max})`;
+  const fbLines = [
+    fbRows.some(r => Number(r.form_version) === 2) ? avgLine(V2_RATINGS, V2_MAX) : "",
+    fbRows.some(r => Number(r.form_version) !== 2) ? `стара анкета: ${avgLine(V1_RATINGS, V1_MAX)}` : "",
+  ].filter(Boolean).map(esc).join("<br>");
   const fbBlock = fbRows.length
-    ? `<p style="margin:0 0 6px;font:13px/1.5 ${SANS};color:#2A2620"><strong>${fbRows.length}</strong> анкети тази седмица — Преживяване ${avg("experience_rating") ?? "—"} · Обслужване ${avg("service_rating") ?? "—"} · Зала ${avg("venue_rating") ?? "—"} · Повторно ${avg("rebook_rating") ?? "—"} (от 4)</p>`
+    ? `<p style="margin:0 0 6px;font:13px/1.5 ${SANS};color:#2A2620"><strong>${fbRows.length}</strong> анкети тази седмица — ${fbLines}</p>`
     : `<p style="margin:0;font:13px/1.5 ${SANS};color:#7A7568">Няма получени анкети тази седмица.</p>`;
   const npsBlock = npsAlerts.length
     ? `<p style="margin:6px 0 0;padding:8px 12px;background:#fdeaea;border-left:3px solid #e05252;font:12px/1.5 ${SANS};color:#a12828">⚠️ Спад спрямо предходните 28 дни: ${npsAlerts.map(esc).join(" · ")}</p>` : "";
@@ -215,10 +234,12 @@ serve(async (req) => {
   const funnelBlock = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${funnelRows}</table>`
     + (winRate != null ? `<p style="margin:6px 0 0;font:12px/1.5 ${SANS};color:#7A7568">Процент спечелени (оферирани→потвърдени): <strong style="color:#B9894A">${winRate}%</strong> · ${wonIds.size}/${winDenom}</p>` : "");
 
-  // Testimonial harvest (pending review before publishing).
-  const testimonialBlock = testimonials.length
-    ? testimonials.map(t => `<div style="margin:0 0 10px;padding:10px 14px;border-left:3px solid #B9894A;background:#F6F1E8"><p style="margin:0 0 4px;font:italic 14px/1.5 ${SERIF};color:#1A1815">„${esc(t.quote)}“</p><p style="margin:0;font:11px/1.4 ${SANS};color:#7A7568">${esc(t.name)}${t.type ? ` · ${esc(t.type)}` : ""}</p></div>`).join("")
-    : "";
+  // Testimonial harvest (pending review before publishing) and improvement
+  // suggestions, as quotes.
+  const quoteBlock = (items: { name: string; type: string; quote: string }[]) => items
+    .map(t => `<div style="margin:0 0 10px;padding:10px 14px;border-left:3px solid #B9894A;background:#F6F1E8"><p style="margin:0 0 4px;font:italic 14px/1.5 ${SERIF};color:#1A1815">„${esc(t.quote)}“</p><p style="margin:0;font:11px/1.4 ${SANS};color:#7A7568">${esc(t.name)}${t.type ? ` · ${esc(t.type)}` : ""}</p></div>`).join("");
+  const testimonialBlock = quoteBlock(testimonials);
+  const suggestionBlock = quoteBlock(suggestions);
 
   const html = `<!doctype html><html lang="bg"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(subject)}</title>
 <style>@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..600&family=Manrope:wght@300;400;500;600;700&display=swap');</style>
@@ -256,10 +277,14 @@ serve(async (req) => {
     <h2 style="margin:0 0 6px;font:500 13px/1.2 ${SANS};letter-spacing:0.14em;text-transform:uppercase;color:#B9894A">Активен пайплайн</h2>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${snapRows}</table>
   </td></tr>
-  <tr><td style="padding:16px 44px ${testimonialBlock ? "8px" : "28px"}">
+  <tr><td style="padding:16px 44px ${testimonialBlock || suggestionBlock ? "8px" : "28px"}">
     <h2 style="margin:0 0 6px;font:500 13px/1.2 ${SANS};letter-spacing:0.14em;text-transform:uppercase;color:#B9894A">Обратна връзка</h2>
     ${fbBlock}${npsBlock}${sourceBlock}
   </td></tr>
+  ${suggestionBlock ? `<tr><td style="padding:8px 44px ${testimonialBlock ? "8px" : "28px"}">
+    <h2 style="margin:0 0 10px;font:500 13px/1.2 ${SANS};letter-spacing:0.14em;text-transform:uppercase;color:#B9894A">Предложения за подобрение</h2>
+    ${suggestionBlock}
+  </td></tr>` : ""}
   ${testimonialBlock ? `<tr><td style="padding:8px 44px 28px">
     <h2 style="margin:0 0 10px;font:500 13px/1.2 ${SANS};letter-spacing:0.14em;text-transform:uppercase;color:#B9894A">Отзиви за публикуване</h2>
     ${testimonialBlock}
