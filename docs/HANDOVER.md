@@ -76,16 +76,16 @@ Version labels below are the last recorded live versions where known; verify the
 | admin-users | **yes** | owner-only admin account listing and password reset; revokes target sessions and writes an audit entry |
 | send-enquiry-summary (v19) | no | owner plain-text + customer branded HTML (requires X-Internal-Secret) |
 | notify-enquiry (v10) | no | plain-text team email (requires X-Internal-Secret) |
-| send-feedback-request (v11) | no | cron-driven feedback emails (requires x-cron-secret): confirmed/completed bookings only, 7-day catch-up, one reminder; each send times out after 15 s and is retried by the next run |
+| send-feedback-request (v12) | no | cron-driven feedback emails (requires x-cron-secret): confirmed/completed bookings only, 7-day catch-up, one reminder, BG/EN by the booking's language; each send times out after 15 s and is retried by the next run |
 | send-team-digest (v1) | no | cron-driven daily team digest to OWNER_EMAILS/TEAM_EMAIL (requires x-cron-secret = TEAM_DIGEST_CRON_SECRET) |
 | send-event-reminders (v2) | no | cron-driven customer reminders: day-before + deposit-due + add-on drip every 3 days after a confirmed booking (`_shared/addon-reminder.ts`, stamps `addons_reminder_count` / `addons_reminder_last_sent_at`, cap 5). Reuses x-cron-secret = TEAM_DIGEST_CRON_SECRET; POST {"dry_run":true} to preview; POST {"preview":{"enquiry_id":"…","to":"you@margel.info"}} emails one rendered add-on reminder to `to` without stamping |
 | send-offer (v1) | **yes** | admin one-click offer: emails the customer a branded cover note + the client-built offer PDF, stamps offer_sent_at. Own email-allowlist check on top of JWT |
 | send-admin-invite | no | sends the branded admin invitation email through an internally authenticated workflow |
 | send-marketing-export (v1) | no | monthly cron: CSV of marketing-consenting customers emailed to owners (x-cron-secret = TEAM_DIGEST_CRON_SECRET; skips when empty) |
-| send-weekly-kpi (v1) | no | Monday cron: weekly KPI report (funnel, NPS trend, testimonials, sources) to owners (x-cron-secret = TEAM_DIGEST_CRON_SECRET) |
+| send-weekly-kpi (v6) | no | Monday cron: weekly KPI report (funnel, survey averages per form version, NPS trend, improvement suggestions, testimonials, sources) to owners (x-cron-secret = TEAM_DIGEST_CRON_SECRET) |
 | send-ops-lifecycle (v1) | no | daily cron: team run sheet + pre-event upsell + 1-year win-back (x-cron-secret = TEAM_DIGEST_CRON_SECRET; dry_run supported) |
-| submit-feedback (v15) | no | stores feedback (one answer per enquiry — a re-submit updates it), mints one 5% hall-rent MG- discount code per enquiry (`_shared/feedback-reward.ts`; unique indexes from `20260927070040`), emails it |
-| get-feedback-by-token (v4) | no | feedback page load |
+| submit-feedback (v16) | no | stores feedback — survey v2 (five 1–5 ratings + improvement comment, `_shared/feedback-form.ts`), still accepts the old v1 payload; one answer per enquiry (a re-submit updates it), mints one 5% hall-rent MG- discount code per enquiry (`_shared/feedback-reward.ts`; unique indexes from `20260927070040`), emails it BG/EN |
+| get-feedback-by-token (v10) | no | feedback page load (booking language + the saved answer, v1 or v2 columns) |
 | validate-discount-code (v4) / redeem-discount-code (v4) | no | promo code check/claim |
 
 Deploy command and the verify_jwt rule: see CLAUDE.md → Deploying.
