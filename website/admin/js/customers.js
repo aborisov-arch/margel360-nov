@@ -104,13 +104,14 @@ function enquiryRef(id) {
   return e ? `№${esc(e.enquiry_number)}${e.preferred_date ? ` (${esc(e.preferred_date)})` : ''}` : 'изтрито запитване';
 }
 
-// The survey's ratings: v2 = five 1-5 stars, v1 (before 2026-09-27) = four 1-4.
+// The survey's ratings on their own scale: v3 = five 1-6 stars, v2 = the same
+// five on 1-5 (a few hours on 2026-09-27), v1 (before that) = four 1-4.
 function ratingsText(f) {
-  const v2 = f.form_version === 2;
-  const vals = v2
+  const max = { 2: 5, 3: 6 }[f.form_version] || 4;
+  const vals = max > 4
     ? [f.organization_rating, f.website_rating, f.overall_rating, f.cleanliness_rating, f.team_rating]
     : [f.experience_rating, f.service_rating, f.venue_rating, f.rebook_rating];
-  return `${vals.map(n => n ?? '-').join('/')} от ${v2 ? 5 : 4}`;
+  return `${vals.map(n => n ?? '-').join('/')} от ${max}`;
 }
 
 // „Анкета и отстъпка“ block of the customer profile: every survey reward

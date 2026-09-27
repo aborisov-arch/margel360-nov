@@ -21,11 +21,12 @@
 
     .question__hint { display: block; margin: -4px 0 12px; font: 13px/1.5 'Manrope', sans-serif; color: var(--muted, #7A7568); }
 
-    /* 1-5 stars: stars up to the chosen one light up, the chosen one is framed. */
-    .stars { display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 4px; }
+    /* 1-6 stars: stars up to the chosen one light up, the chosen one is framed.
+       Equal columns that shrink with the screen, so a row never wraps. */
+    .stars { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px; max-width: 400px; margin: 2px 0 4px; }
     .star-btn {
-      display: inline-flex; flex-direction: column; align-items: center; gap: 5px;
-      min-width: 54px; padding: 10px 10px 8px;
+      display: flex; flex-direction: column; align-items: center; gap: 5px;
+      min-width: 0; padding: 10px 0 8px;
       font: 600 13px/1 'Manrope', sans-serif; color: var(--ink);
       background: #fff; border: 1.5px solid rgba(185,137,74,0.45); border-radius: 8px;
       cursor: pointer; transition: all 0.15s ease;
@@ -71,8 +72,7 @@
       .question { padding: 18px 0; }
       .question__title { font-size: 17px; line-height: 1.4; margin-bottom: 14px; }
       .reward { margin: 0 -2px 28px; padding: 16px 18px; font-size: 14px; line-height: 1.55; }
-      .stars { gap: 6px; }
-      .star-btn { min-width: 52px; padding: 10px 8px 8px; }
+      .stars { gap: 6px; max-width: none; }
       .choices { gap: 8px; }
       .choice { padding: 10px 14px; font-size: 13.5px; }
       .comment-field textarea { padding: 12px 14px; font-size: 15px; }
@@ -143,7 +143,7 @@
 
         <form id="feedback-form" class="composition" novalidate>
 
-          <!-- 1-5: star ratings (form v2; keys mirror supabase/functions/_shared/feedback-form.ts) -->
+          <!-- Questions 1-5: 1-6 stars (form v3; keys mirror supabase/functions/_shared/feedback-form.ts) -->
           <section class="question" data-q="organization" data-rating>
             <h2 class="question__title" id="q-organization" data-i18n-html="q_organization">1.&nbsp;&nbsp;Как оценявате <em>организацията</em> преди събитието?</h2>
             <p class="question__hint" data-i18n="h_organization">Офертата, комуникацията, съдействието и подготовката от наша страна.</p>
@@ -221,7 +221,7 @@
 
   </div>
 
-  <script src="js/feedback.js?v=7"></script>
+  <script src="js/feedback.js?v=8"></script>
 
 </body>
 </html>

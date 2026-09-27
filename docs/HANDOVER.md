@@ -24,7 +24,7 @@ Admin allowlist source of truth: `is_admin()` and `reject_non_admin_signup` in t
 - `INTERNAL_SHARED_SECRET` — shared header (`X-Internal-Secret`) between submit-enquiry/update-* and the email functions. If lost, generate any new random string and set it — nothing else stores it.
 - `FEEDBACK_CRON_SECRET` — required header (`x-cron-secret`) for send-feedback-request. **Also stored in the Supabase Vault as `feedback_cron_secret`** (the cron jobs read it from there). If you rotate it, update BOTH the function secret and the Vault entry.
 - `TEAM_DIGEST_CRON_SECRET` — required header (`x-cron-secret`) for send-team-digest (the daily team digest). **Also stored in the Supabase Vault as `team_digest_cron_secret`** (the cron jobs read it from there). Same rotate-both rule as the feedback secret. The digest is sent to `OWNER_EMAILS` (falling back to `TEAM_EMAIL`). This one secret also guards send-event-reminders, send-marketing-export, send-weekly-kpi.
-- `GOOGLE_REVIEW_URL` — **optional.** The venue's Google review link. When set, submit-feedback emails delighted customers (ratings total ≥14/16) a one-tap review invite. If unset, that branch no-ops; the low-rating internal alert works regardless. Set with `supabase secrets set GOOGLE_REVIEW_URL='https://g.page/r/...'`.
+- `GOOGLE_REVIEW_URL` — **optional.** The venue's Google review link. When set, submit-feedback emails delighted customers a one-tap review invite (on the current 1–6 star survey: nothing below 5 and an average of 5.25+; the rules per form version live in `_shared/feedback-form.ts`). If unset, that branch no-ops; the low-rating internal alert works regardless. Set with `supabase secrets set GOOGLE_REVIEW_URL='https://g.page/r/...'`.
 - `OWNER_EMAILS` (comma-separated owner notification list), `TEAM_EMAIL` (notify-enquiry recipient), `EVENT_HALL_FROM_EMAIL` (optional from-address override), `PUBLIC_SITE_URL`.
 - `SUPABASE_URL` / `SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY` / `SUPABASE_DB_URL` etc. are auto-provided by the platform.
 
@@ -82,10 +82,10 @@ Version labels below are the last recorded live versions where known; verify the
 | send-offer (v1) | **yes** | admin one-click offer: emails the customer a branded cover note + the client-built offer PDF, stamps offer_sent_at. Own email-allowlist check on top of JWT |
 | send-admin-invite | no | sends the branded admin invitation email through an internally authenticated workflow |
 | send-marketing-export (v1) | no | monthly cron: CSV of marketing-consenting customers emailed to owners (x-cron-secret = TEAM_DIGEST_CRON_SECRET; skips when empty) |
-| send-weekly-kpi (v6) | no | Monday cron: weekly KPI report (funnel, survey averages per form version, NPS trend, improvement suggestions, testimonials, sources) to owners (x-cron-secret = TEAM_DIGEST_CRON_SECRET) |
+| send-weekly-kpi (v7) | no | Monday cron: weekly KPI report (funnel, survey averages per form version, NPS trend, improvement suggestions, testimonials, sources) to owners (x-cron-secret = TEAM_DIGEST_CRON_SECRET) |
 | send-ops-lifecycle (v1) | no | daily cron: team run sheet + pre-event upsell + 1-year win-back (x-cron-secret = TEAM_DIGEST_CRON_SECRET; dry_run supported) |
-| submit-feedback (v16) | no | stores feedback — survey v2 (five 1–5 ratings + improvement comment, `_shared/feedback-form.ts`), still accepts the old v1 payload; one answer per enquiry (a re-submit updates it), mints one 5% hall-rent MG- discount code per enquiry (`_shared/feedback-reward.ts`; unique indexes from `20260927070040`), emails it BG/EN |
-| get-feedback-by-token (v10) | no | feedback page load (booking language + the saved answer, v1 or v2 columns) |
+| submit-feedback (v17) | no | stores feedback — survey v3 (five 1–6 ratings + improvement comment, `_shared/feedback-form.ts`), still accepts the v2 (1–5) and v1 (1–4) payloads, each on its own scale; one answer per enquiry (a re-submit updates it), mints one 5% hall-rent MG- discount code per enquiry (`_shared/feedback-reward.ts`; unique indexes from `20260927070040`), emails it BG/EN |
+| get-feedback-by-token (v11) | no | feedback page load (booking language + the saved answer of any form version) |
 | validate-discount-code (v4) / redeem-discount-code (v4) | no | promo code check/claim |
 
 Deploy command and the verify_jwt rule: see CLAUDE.md → Deploying.

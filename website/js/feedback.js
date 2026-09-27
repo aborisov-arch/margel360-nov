@@ -4,11 +4,11 @@ const SUPABASE_URL = 'https://wlxutsufrobzovdsiecb.supabase.co';
     // Survey reward: % off the hall rent only. Mirrors FEEDBACK_DISCOUNT_PERCENT
     // in supabase/functions/_shared/feedback-reward.ts (+ feedback.html defaults).
     const REWARD_PERCENT = 5;
-    // Survey form v2: five questions rated 1-5 stars. The keys mirror
+    // Survey form v3: five questions rated 1-6 stars. The keys mirror
     // supabase/functions/_shared/feedback-form.ts (sent as `${key}_rating`).
-    const FORM_VERSION = 2;
+    const FORM_VERSION = 3;
     const RATINGS = ['organization', 'website', 'overall', 'cleanliness', 'team'];
-    const STARS = 5;
+    const STARS = 6;
 
     const $ = id => document.getElementById(id);
     const storedLang = () => { try { return localStorage.getItem('margel_lang'); } catch { return null; } };
@@ -48,7 +48,7 @@ const SUPABASE_URL = 'https://wlxutsufrobzovdsiecb.supabase.co';
         q_source:       '6.&nbsp;&nbsp;<em>Откъде</em> научихте за нас?',
         q_improve:      '7.&nbsp;&nbsp;Какво бихте ни препоръчали да <em>подобрим</em>?',
         h_improve:      'Ще се радваме да споделите Вашите препоръки, идеи или забележки.',
-        star_label: '{n} от 5',
+        star_label: '{n} от 6',
         src_friends: 'Приятели',
         src_social: 'Социални мрежи',
         src_other: 'Друго',
@@ -92,7 +92,7 @@ const SUPABASE_URL = 'https://wlxutsufrobzovdsiecb.supabase.co';
         q_source:       '6.&nbsp;&nbsp;How did you <em>hear</em> about us?',
         q_improve:      '7.&nbsp;&nbsp;What would you recommend we <em>improve</em>?',
         h_improve:      'We would be glad to hear your recommendations, ideas or remarks.',
-        star_label: '{n} of 5',
+        star_label: '{n} of 6',
         src_friends: 'Friends',
         src_social: 'Social media',
         src_other: 'Other',
@@ -260,14 +260,13 @@ const SUPABASE_URL = 'https://wlxutsufrobzovdsiecb.supabase.co';
         const enqLang = body.enquiry && body.enquiry.lang;
         if (enqLang === 'bg' || enqLang === 'en') { state.lang = enqLang; applyI18n(); }
 
-        // Pre-fill a saved answer to this form. An answer to the older 1-4
-        // form doesn't map onto these questions: only its source carries over.
+        // Pre-fill a saved answer. Stars carry over only from an answer on
+        // this same 1-6 form; the improvement comment also from a v2 answer
+        // (the same questions on 1-5 stars); from a v1 answer only its source.
         const ex = body.existing;
         if (ex) {
-          if (ex.form_version === FORM_VERSION) {
-            RATINGS.forEach(k => { state[k] = ex[`${k}_rating`] || 0; });
-            $('c-improve').value = ex.improvement_comment || '';
-          }
+          if (ex.form_version === FORM_VERSION) RATINGS.forEach(k => { state[k] = ex[`${k}_rating`] || 0; });
+          $('c-improve').value = ex.improvement_comment || '';
           state.source = ex.source || null;
           $('c-source-other').value = ex.source_other || '';
         }

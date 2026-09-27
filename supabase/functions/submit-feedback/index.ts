@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import { json, preflight } from "../_shared/cors.ts";
 import { getIp, rateLimitHit } from "../_shared/rate-limit.ts";
 import { FEEDBACK_DISCOUNT_PERCENT } from "../_shared/feedback-reward.ts";
-import { feedbackRoute, SOURCES, V1_MAX, V1_RATINGS, V2_MAX, V2_RATINGS } from "../_shared/feedback-form.ts";
+import { feedbackRoute, formOf, RATINGS, SOURCES, type SurveyForm, V1_RATINGS } from "../_shared/feedback-form.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -26,27 +26,26 @@ function trimOrNull(v: unknown, max = 4000): string | null {
 }
 
 type Answer = Record<string, string | number | null>;
-type Parsed = { row: Answer; ratings: number[]; max: number };
+type Parsed = { row: Answer; ratings: number[]; form: SurveyForm };
 
 // Every answer column set to null: saving one form version clears the
 // other's, since a re-submit replaces the whole answer.
 const EMPTY_ANSWER: Answer = Object.fromEntries(
-  [...V1_RATINGS, ...V2_RATINGS].map(q => q.key).concat(V1_COMMENTS, ["improvement_comment"]).map(k => [k, null]));
+  [...V1_RATINGS, ...RATINGS].map(q => q.key).concat(V1_COMMENTS, ["improvement_comment"]).map(k => [k, null]));
 
-// The survey page sends form_version 2: five 1-5 ratings and one open
-// question. A page still open from before 2026-09-27 sends the v1 shape (four
-// 1-4 ratings, a comment each); it is still accepted so that submit works.
+// The survey page sends form_version 3: five 1-6 ratings and one open
+// question. A page still open from before sends v2 (the same questions rated
+// 1-5, live a few hours on 2026-09-27) or the v1 shape (four 1-4 ratings, a
+// comment each); both are still accepted, each on its own scale.
 function parseAnswer(p: Record<string, unknown>): Parsed | null {
-  const v2 = p.form_version === 2;
-  const questions = v2 ? V2_RATINGS : V1_RATINGS;
-  const max = v2 ? V2_MAX : V1_MAX;
-  const ratings = questions.map(q => rating(p[q.key], max));
+  const form = formOf(p.form_version === 3 || p.form_version === 2 ? p.form_version : 1);
+  const ratings = form.questions.map(q => rating(p[q.key], form.max));
   if (ratings.some(r => r === null)) return null;
-  const row: Answer = { ...EMPTY_ANSWER, form_version: v2 ? 2 : 1 };
-  questions.forEach((q, i) => { row[q.key] = ratings[i]; });
-  if (v2) row.improvement_comment = trimOrNull(p.improvement_comment);
-  else for (const k of V1_COMMENTS) row[k] = trimOrNull(p[k]);
-  return { row, ratings: ratings as number[], max };
+  const row: Answer = { ...EMPTY_ANSWER, form_version: form.version };
+  form.questions.forEach((q, i) => { row[q.key] = ratings[i]; });
+  if (form.version === 1) for (const k of V1_COMMENTS) row[k] = trimOrNull(p[k]);
+  else row.improvement_comment = trimOrNull(p.improvement_comment);
+  return { row, ratings: ratings as number[], form };
 }
 
 serve(async (req) => {
@@ -179,7 +178,7 @@ async function routeFeedback(
   answer: Parsed,
   lang: Lang,
 ): Promise<{ branch: string } | null> {
-  const branch = feedbackRoute(answer.ratings, answer.max);
+  const branch = feedbackRoute(answer.ratings, answer.form.max);
 
   // ── Delighted → Google review invite
   const reviewUrl = Deno.env.get("GOOGLE_REVIEW_URL") ?? "";
@@ -210,9 +209,9 @@ async function routeFeedback(
     if (!to.length) return { branch: "low_rating_no_recipients" };
     const SITE = (Deno.env.get("PUBLIC_SITE_URL") ?? "https://margel360.bg").replace(/\/$/, "");
     const line = (label: string, n: unknown, c?: unknown) =>
-      `<tr><td style="padding:4px 0;font:13px/1.5 ${SANS};color:#2A2620">${label}: <strong>${n}/${answer.max}</strong>${c ? ` — „${esc(c)}“` : ""}</td></tr>`;
-    const lines = answer.max === V2_MAX
-      ? V2_RATINGS.map(q => line(q.bg, row[q.key])).join("")
+      `<tr><td style="padding:4px 0;font:13px/1.5 ${SANS};color:#2A2620">${label}: <strong>${n}/${answer.form.max}</strong>${c ? ` — „${esc(c)}“` : ""}</td></tr>`;
+    const lines = answer.form.version !== 1
+      ? RATINGS.map(q => line(q.bg, row[q.key])).join("")
         + (row.improvement_comment ? `<tr><td style="padding:8px 0 4px;font:13px/1.5 ${SANS};color:#2A2620">Какво да подобрим: „${esc(row.improvement_comment)}“</td></tr>` : "")
       : V1_RATINGS.map((q, i) => line(q.bg, row[q.key], row[V1_COMMENTS[i]])).join("");
     const total = answer.ratings.reduce((s, v) => s + v, 0);
@@ -220,7 +219,7 @@ async function routeFeedback(
     const html = `<!doctype html><html lang="bg"><body style="margin:0;padding:24px;background:#F6F1E8;font-family:${SANS};color:#1A1815">
   <div style="max-width:600px;margin:0 auto;background:#FDFBF7;padding:28px 32px;border-left:4px solid #e05252">
     <h2 style="margin:0 0 6px;font:500 20px/1.2 ${SERIF}">Изисква внимание</h2>
-    <p style="margin:0 0 14px;font:13px/1.5 ${SANS};color:#7A7568">${esc(e.full_name)} · обща оценка ${total}/${answer.max * answer.ratings.length}</p>
+    <p style="margin:0 0 14px;font:13px/1.5 ${SANS};color:#7A7568">${esc(e.full_name)} · обща оценка ${total}/${answer.form.max * answer.ratings.length}</p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
       ${lines}
     </table>

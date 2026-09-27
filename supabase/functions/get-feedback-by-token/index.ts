@@ -30,8 +30,9 @@ serve(async (req) => {
 
   const { data: existing } = await sb
     .from("event_feedback")
-    // form_version 2 = the current survey (five 1-5 ratings + improvement
-    // comment); 1 = an answer to the older 1-4 form, kept in its own columns.
+    // form_version 3 = the current survey (five 1-6 ratings + improvement
+    // comment); 2 = the same questions rated 1-5; 1 = an answer to the first
+    // 1-4 form, kept in its own columns.
     .select("form_version, organization_rating, website_rating, overall_rating, cleanliness_rating, team_rating, improvement_comment, "
       + "experience_rating, experience_comment, service_rating, service_comment, venue_rating, venue_comment, "
       + "source, source_other, rebook_rating, rebook_comment, submitted_at")

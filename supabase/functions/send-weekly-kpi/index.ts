@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import { json, preflight } from "../_shared/cors.ts";
 import { eventTypeBg } from "../_shared/labels-bg.ts";
-import { SOURCE_BG, V1_MAX, V1_RATINGS, V2_MAX, V2_RATINGS } from "../_shared/feedback-form.ts";
+import { FORMS, SOURCE_BG, type SurveyForm } from "../_shared/feedback-form.ts";
 
 // Cron-triggered Monday mornings: one KPI email to the owners covering the
 // past 7 days:
@@ -46,10 +46,6 @@ const PIPELINE_BG: Record<string, string> = {
   new: "Нови", contacted: "Свързани", quoted: "Оферирани",
   confirmed: "Потвърдени", completed: "Приключени", lost: "Загубени", archived: "Архив",
 };
-// Survey questions of both forms: v2 (1-5, since 2026-09-27) and the older v1
-// (1-4). A row only has the columns of its own form, so every average below
-// stays within one form.
-const DIM_BG: Record<string, string> = Object.fromEntries([...V2_RATINGS, ...V1_RATINGS].map(q => [q.key, q.bg]));
 
 serve(async (req) => {
   const pre = preflight(req); if (pre) return pre;
@@ -66,8 +62,8 @@ serve(async (req) => {
   // NPS baseline: the 28 days BEFORE this week's window.
   const baselineStartIso = new Date(windowStart.getTime() - 28 * 86_400_000).toISOString();
 
-  // A literal (not built from DIM_BG) so supabase-js can type the rows; it
-  // lists every DIM_BG key.
+  // A literal (not built from FORMS) so supabase-js can type the rows; it
+  // lists every rating column of every form version.
   const FB_COLS = "form_version, organization_rating, website_rating, overall_rating, cleanliness_rating, team_rating, experience_rating, service_rating, venue_rating, rebook_rating";
   const [{ data: enq, error: enqErr }, { data: fb, error: fbErr }, { data: transitions, error: trErr }, { data: fbPrior }] = await Promise.all([
     sb.from("enquiries")
@@ -142,7 +138,8 @@ serve(async (req) => {
     const vals = rows.map(r => Number(r[k])).filter(v => v > 0);
     return vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : null;
   };
-  const avg = (k: string) => { const v = avgOf(fbRows, k); return v == null ? null : v.toFixed(1); };
+  // Each form version on its own scale: v3 and v2 share their columns.
+  const ofForm = (rows: Record<string, unknown>[], f: SurveyForm) => rows.filter(r => Number(r.form_version) === f.version);
 
   // Funnel rates (this week's transitions).
   const winDenom = wonIds.size + lostIds.size;
@@ -153,20 +150,23 @@ serve(async (req) => {
   const fbPriorRows = fbPrior ?? [];
   const npsAlerts: string[] = [];
   if (fbRows.length >= 3) {
-    for (const k of Object.keys(DIM_BG)) {
-      const now = avgOf(fbRows, k), base = avgOf(fbPriorRows, k);
-      if (now != null && base != null && base - now > 0.5) {
-        npsAlerts.push(`${DIM_BG[k]} ↓ ${base.toFixed(1)}→${now.toFixed(1)}`);
+    for (const f of FORMS) {
+      const nowRows = ofForm(fbRows, f), baseRows = ofForm(fbPriorRows, f);
+      for (const q of f.questions) {
+        const now = avgOf(nowRows, q.key), base = avgOf(baseRows, q.key);
+        if (now != null && base != null && base - now > 0.5) {
+          npsAlerts.push(`${q.bg}${f.bg ? ` (${f.bg})` : ""} ↓ ${base.toFixed(1)}→${now.toFixed(1)}`);
+        }
       }
     }
   }
 
   // Testimonials: top-rated (experience+service both 4/4) with a comment -
-  // v1 answers only; the v2 form has no free-text praise field.
+  // v1 answers only; the v2/v3 forms have no free-text praise field.
   const nameById = new Map((all as { id: string; full_name?: string; event_type?: string }[]).map(e => [e.id, e]));
-  // Improvement suggestions: the v2 form's open question.
+  // Improvement suggestions: the open question of forms v2/v3.
   const suggestions = fbRows
-    .filter(r => Number(r.form_version) === 2 && r.improvement_comment)
+    .filter(r => Number(r.form_version) >= 2 && r.improvement_comment)
     .slice(0, 5)
     .map(r => {
       const en = nameById.get(r.enquiry_id);
@@ -210,12 +210,13 @@ serve(async (req) => {
     .filter(ps => (snapshot.get(ps) ?? 0) > 0)
     .map(ps => `<tr><td style="padding:5px 0;font:13px/1.4 ${SANS};color:#2A2620">${PIPELINE_BG[ps]}</td><td style="padding:5px 0;font:600 13px/1.4 ${SANS};color:#1A1815;text-align:right">${snapshot.get(ps)}</td></tr>`).join("");
 
-  const avgLine = (qs: readonly { key: string; bg: string }[], max: number) =>
-    `${qs.map(q => `${q.bg} ${avg(q.key) ?? "—"}`).join(" · ")} (от ${max})`;
-  const fbLines = [
-    fbRows.some(r => Number(r.form_version) === 2) ? avgLine(V2_RATINGS, V2_MAX) : "",
-    fbRows.some(r => Number(r.form_version) !== 2) ? `стара анкета: ${avgLine(V1_RATINGS, V1_MAX)}` : "",
-  ].filter(Boolean).map(esc).join("<br>");
+  // One averages line per form version answered this week, current first.
+  const fbLines = FORMS.map(f => {
+    const rows = ofForm(fbRows, f);
+    if (!rows.length) return "";
+    const line = `${f.questions.map(q => { const v = avgOf(rows, q.key); return `${q.bg} ${v == null ? "—" : v.toFixed(1)}`; }).join(" · ")} (от ${f.max})`;
+    return f.bg ? `${f.bg}: ${line}` : line;
+  }).filter(Boolean).map(esc).join("<br>");
   const fbBlock = fbRows.length
     ? `<p style="margin:0 0 6px;font:13px/1.5 ${SANS};color:#2A2620"><strong>${fbRows.length}</strong> анкети тази седмица — ${fbLines}</p>`
     : `<p style="margin:0;font:13px/1.5 ${SANS};color:#7A7568">Няма получени анкети тази седмица.</p>`;

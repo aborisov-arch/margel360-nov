@@ -4,10 +4,12 @@ function esc(s){ return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;
 
     const SOURCE_LABELS = { friends: 'Приятели', social: 'Социални мрежи', google: 'Google', other: 'Друго' };
 
-    // Survey questions [column, label, short label]: v2 (1-5 stars, since
-    // 2026-09-27) and the older v1 form (1-4, a comment each). Mirrors
+    // Survey questions [column, label, short label]: Q for forms v3 (1-6
+    // stars, since 2026-09-27) and v2 (the same questions on 1-5 stars, a few
+    // hours before v3); V1_Q for the first form (1-4, a comment each). Stars
+    // per form version in FORM_MAX. Mirrors
     // supabase/functions/_shared/feedback-form.ts.
-    const V2_Q = [
+    const Q = [
       ['organization_rating', 'Организация преди събитието', 'Организация'],
       ['website_rating',      'Уебсайт', 'Уебсайт'],
       ['overall_rating',      'Преживяване и атмосфера', 'Преживяване'],
@@ -20,6 +22,8 @@ function esc(s){ return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;
       ['venue_rating',      'Зала', 'Зала', 'venue_comment'],
       ['rebook_rating',     'Резервация отново', 'Резервация отново', 'rebook_comment'],
     ];
+    const FORM_MAX = { 1: 4, 2: 5, 3: 6 };
+    const isV1 = r => r.form_version !== 2 && r.form_version !== 3;
 
     // ── Survey delivery ── mirrors send-feedback-request: confirmed/completed
     // events get the survey around 12:00 Sofia the day after; a failed run is
@@ -153,9 +157,11 @@ function esc(s){ return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;
         return;
       }
 
-      // Averages stay within one form: v2 answers out of 5, old ones out of 4.
+      // Averages stay within one form version, each on its own scale: v3 out
+      // of 6, v2 out of 5, the first form out of 4.
+      const v3Rows = rows.filter(r => r.form_version === 3);
       const v2Rows = rows.filter(r => r.form_version === 2);
-      const v1Rows = rows.filter(r => r.form_version !== 2);
+      const v1Rows = rows.filter(isV1);
       const avgCells = (list, qs, max) => qs.map(([k, , short]) =>
         `<div><span class="lbl">${esc(short)}</span><span class="val">${avg(list.map(r => r[k]).filter(Boolean)).toFixed(1)}<small>/${max}</small></span></div>`).join('');
 
@@ -165,8 +171,12 @@ function esc(s){ return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;
       sumEl.innerHTML = `
         <div class="feedback-summary">
           <div><span class="lbl">Получени</span><span class="val">${rows.length}</span></div>
-          ${v2Rows.length ? avgCells(v2Rows, V2_Q, 5) : ''}
+          ${v3Rows.length ? avgCells(v3Rows, Q, 6) : ''}
         </div>
+        ${v2Rows.length ? `<div class="feedback-summary">
+          <div><span class="lbl">Анкета (1–5)</span><span class="val">${v2Rows.length}</span></div>
+          ${avgCells(v2Rows, Q, 5)}
+        </div>` : ''}
         ${v1Rows.length ? `<div class="feedback-summary">
           <div><span class="lbl">Стара анкета (1–4)</span><span class="val">${v1Rows.length}</span></div>
           ${avgCells(v1Rows, V1_Q, 4)}
@@ -199,9 +209,9 @@ function esc(s){ return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;
             </div>
             <div class="qa-block__source">${esc(SOURCE_LABELS[r.source] || r.source || '-')}${r.source === 'other' && r.source_other ? `<em>- ${esc(r.source_other)}</em>` : ''}</div>
           </div>`;
-        const v2 = r.form_version === 2;
-        const answers = v2
-          ? V2_Q.map(([k, label]) => qa(label, r[k], 5)).join('') + sourceBlock
+        const max = FORM_MAX[r.form_version] || 4;
+        const answers = !isV1(r)
+          ? Q.map(([k, label]) => qa(label, r[k], max)).join('') + sourceBlock
             + (r.improvement_comment ? `
           <div class="qa-block">
             <div class="qa-block__q"><span class="qa-block__label">Какво да подобрим</span></div>
@@ -214,7 +224,7 @@ function esc(s){ return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;
             <div class="feedback-card__hdr">
               <div>
                 <span class="feedback-card__name">${esc(e.full_name)}</span>
-                <span class="feedback-card__meta"> · ${esc(eventTypeBg(e) || '-')} · ${esc(e.preferred_date || '-')}${v2 ? '' : ' · стара анкета (1–4)'}</span>
+                <span class="feedback-card__meta"> · ${esc(eventTypeBg(e) || '-')} · ${esc(e.preferred_date || '-')}${r.form_version === 3 ? '' : r.form_version === 2 ? ' · анкета (1–5)' : ' · стара анкета (1–4)'}</span>
               </div>
               <span class="feedback-card__meta">${fmt(r.submitted_at)}</span>
             </div>
