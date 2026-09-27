@@ -4,7 +4,8 @@
 // total spend per event.
 
 let allEnquiries = [];
-let grouped = []; // [{ key, label, contact, count, lastAt, lifetime, events:Set, marketing, enquiries:[...], codes, usedForeign }]
+let grouped = []; // [{ key, label, contact, count, lastAt, lifetime, events:Set, marketing, enquiries:[...], codes, usedElsewhere, activeCode }]
+let enquiryById = new Map();
 // Survey rewards: discount_codes rows (issued_for_enquiry_id = the event the
 // customer reviewed, redeemed_for_enquiry_id = the booking that used it) and
 // each enquiry's first survey answer. Loaded next to the enquiries.
@@ -29,6 +30,15 @@ function customerKey(e) {
   const ph = (e.phone || '').replace(/\D/g, '');
   if (ph) return 'p:' + ph;
   return '';
+}
+
+// Same person when the email or the phone matches (last 9 digits, so +359…
+// and 0… agree) - copy of dashboard.js sameCustomer, keep the two in sync.
+function sameCustomer(a, b) {
+  if (!a || !b) return false;
+  const em = x => (x.email || '').trim().toLowerCase();
+  const ph = x => (x.phone || '').replace(/\D/g, '').slice(-9);
+  return (em(a) !== '' && em(a) === em(b)) || (ph(a).length === 9 && ph(a) === ph(b));
 }
 
 // Very rough event-price estimate from the catalog columns we already have.
@@ -77,8 +87,8 @@ function groupEnquiries(enquiries) {
   groups.forEach(g => {
     const ids = new Set(g.enquiries.map(e => e.id));
     g.codes = discountCodes.filter(c => ids.has(c.issued_for_enquiry_id));
-    // A code earned by someone else but used on this customer's booking.
-    g.usedForeign = discountCodes.filter(c => ids.has(c.redeemed_for_enquiry_id) && !ids.has(c.issued_for_enquiry_id));
+    // A code earned on another profile but used on this customer's booking.
+    g.usedElsewhere = discountCodes.filter(c => ids.has(c.redeemed_for_enquiry_id) && !ids.has(c.issued_for_enquiry_id));
     g.activeCode = g.codes.find(c => codeStatus(c) === 'active') || null;
   });
   return groups;
@@ -90,7 +100,7 @@ function codeStatus(c) {
 }
 
 function enquiryRef(id) {
-  const e = allEnquiries.find(x => x.id === id);
+  const e = enquiryById.get(id);
   return e ? `№${esc(e.enquiry_number)}${e.preferred_date ? ` (${esc(e.preferred_date)})` : ''}` : 'изтрито запитване';
 }
 
@@ -99,8 +109,9 @@ function ratingsText(f) {
 }
 
 // „Анкета и отстъпка“ block of the customer profile: every survey reward
-// code with its status, surveys sent but not answered, and any code of
-// another customer used on this customer's bookings.
+// code with its status, surveys sent but not answered, and any code earned
+// on another profile but used on this customer's bookings (⚠ when that was
+// another person).
 function renderPerks(g) {
   if (perksError) return `<div class="cust-perks"><h3>Анкета и отстъпка</h3><p class="perk-muted">Анкетите и отстъпките не се заредиха.</p></div>`;
   const lines = [];
@@ -126,9 +137,12 @@ function renderPerks(g) {
       lines.push(`<div class="perk-row"><span class="perk-muted">Анкетата за №${esc(e.enquiry_number)} е изпратена ${esc(fmtDate(e.feedback_sent_at))} — без отговор.</span></div>`);
     }
   });
-  g.usedForeign.forEach(c => {
-    const src = allEnquiries.find(x => x.id === c.issued_for_enquiry_id);
-    lines.push(`<div class="perk-row perk-warn">⚠ Използван чужд код <span class="perk-code">${esc(c.code)}</span> (${esc(c.percent)}%) за ${enquiryRef(c.redeemed_for_enquiry_id)} — издаден на ${esc(src ? src.full_name : 'изтрито запитване')}${src ? ` (№${esc(src.enquiry_number)})` : ''}.</div>`);
+  g.usedElsewhere.forEach(c => {
+    const src = enquiryById.get(c.issued_for_enquiry_id);
+    // Same person under another email or phone, or an issuer that was
+    // deleted (unknown), is no reason for a warning.
+    const foreign = src && !sameCustomer(src, enquiryById.get(c.redeemed_for_enquiry_id));
+    lines.push(`<div class="perk-row${foreign ? ' perk-warn' : ''}">${foreign ? '⚠ Използван чужд код' : 'Използван код'} <span class="perk-code">${esc(c.code)}</span> (${esc(c.percent)}%) за ${enquiryRef(c.redeemed_for_enquiry_id)} — издаден на ${esc(src ? src.full_name : 'изтрито запитване')}${src ? ` (№${esc(src.enquiry_number)})` : ''}.</div>`);
   });
   return `
     <div class="cust-perks">
@@ -191,7 +205,7 @@ function applyFilter() {
     (g.contact || '').toLowerCase().includes(q) ||
     Array.from(g.events).some(ev => (ev || '').toLowerCase().includes(q)) ||
     // A code read out over the phone finds whose it is (and who used it).
-    g.codes.concat(g.usedForeign).some(c => c.code.toLowerCase().includes(q))
+    g.codes.concat(g.usedElsewhere).some(c => c.code.toLowerCase().includes(q))
   );
   renderRows(filtered);
 }
@@ -218,6 +232,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   allEnquiries = data || [];
+  enquiryById = new Map(allEnquiries.map(e => [e.id, e]));
   grouped = groupEnquiries(allEnquiries);
   renderRows(grouped);
 

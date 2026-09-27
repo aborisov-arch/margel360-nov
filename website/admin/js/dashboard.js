@@ -1,6 +1,7 @@
 let allEnquiries = [];
 let notesByEnquiry = {}; // enquiry_id -> [{id, body, author_email, created_at}, ...]
 let discountCodes = [];  // survey reward codes: issued_for_enquiry_id = the event that earned it
+let enquiryById = new Map(); // id -> enquiry, for the codes' issuer lookups
 // Tab filter on top of the dashboard. 'unanswered' = inbox view (default,
 // what the team should be acting on next), 'answered' = archive of dealt
 // with rows, 'all' = unfiltered.
@@ -66,6 +67,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   discountCodes = codes || [];
 
   allEnquiries = enquiries || [];
+  enquiryById = new Map(allEnquiries.map(e => [e.id, e]));
   notesByEnquiry = {};
   (notes || []).forEach(n => {
     (notesByEnquiry[n.enquiry_id] ||= []).push(n);
@@ -123,6 +125,16 @@ function customerKey(e) {
   const ph = (e.phone || '').replace(/\D/g, '');
   if (ph) return 'p:' + ph;
   return '';
+}
+
+// Same person when the email or the phone matches (last 9 digits, so +359…
+// and 0… agree): a returning customer may book again under another email.
+// customers.js carries a copy - keep the two in sync.
+function sameCustomer(a, b) {
+  if (!a || !b) return false;
+  const em = x => (x.email || '').trim().toLowerCase();
+  const ph = x => (x.phone || '').replace(/\D/g, '').slice(-9);
+  return (em(a) !== '' && em(a) === em(b)) || (ph(a).length === 9 && ph(a) === ph(b));
 }
 
 // CRM panel: pipeline dropdown, follow-up date input, marketing-consent
@@ -432,6 +444,59 @@ function bindTableHandlers() {
     const totalsEl = btn.closest('tr.detail-row')?.querySelector('.detail-totals');
     if (totalsEl) totalsEl.outerHTML = renderTotals(enquiry);
     showToast(t('discount_saved'), 'success');
+  });
+
+  // Apply the customer's unused survey code to this booking: claim the code
+  // only while it is unused and valid (so it can never be used twice), then
+  // stamp the booking; if that fails, release the claim again.
+  tbody.addEventListener('click', async evt => {
+    const btn = evt.target.closest('.btn-code-apply');
+    if (!btn) return;
+    const id = btn.getAttribute('data-enquiry-id');
+    const code = btn.getAttribute('data-code');
+    const enquiry = allEnquiries.find(x => String(x.id) === String(id));
+    const c = discountCodes.find(x => x.code === code);
+    if (!enquiry || !c) return;
+    const manual = Number(enquiry.applied_discount_percent || 0);
+    if (manual > 0 && !window.confirm(t('code_apply_replace').replace('{pct}', manual))) return;
+    btn.disabled = true;
+    const now = new Date().toISOString();
+    const { data: claimed, error: claimErr } = await db.from('discount_codes')
+      .update({ redeemed_at: now, redeemed_for_enquiry_id: enquiry.id })
+      .eq('code', code).is('redeemed_at', null).gt('expires_at', now)
+      .select('percent').maybeSingle();
+    if (claimErr) {
+      console.error('Code claim failed:', claimErr);
+      btn.disabled = false;
+      showToast(t('code_apply_failed'), 'error');
+      return;
+    }
+    if (!claimed) {
+      // Used or expired meanwhile: stop offering it.
+      c.redeemed_at = c.redeemed_at || now;
+      refreshCodeOffers(code);
+      showToast(t('code_apply_unavailable'), 'error');
+      return;
+    }
+    const { error } = await db.from('enquiries')
+      // stamp so financials' drift banner sees dashboard money edits
+      .update({ applied_discount_code: code, applied_discount_percent: claimed.percent, last_edited_at: now })
+      .eq('id', enquiry.id);
+    if (error) {
+      console.error('Code apply failed:', error);
+      const { error: undoErr } = await db.from('discount_codes')
+        .update({ redeemed_at: null, redeemed_for_enquiry_id: null })
+        .eq('code', code).eq('redeemed_for_enquiry_id', enquiry.id);
+      if (undoErr) console.error('Code release failed:', undoErr);
+      btn.disabled = false;
+      showToast(t('code_apply_failed'), 'error');
+      return;
+    }
+    enquiry.applied_discount_code = code;
+    enquiry.applied_discount_percent = claimed.percent;
+    c.redeemed_at = now;
+    refreshCodeOffers(code);
+    showToast(t('code_applied'), 'success');
   });
 
   // CRM: add note (form submit)
@@ -785,6 +850,7 @@ function bindTableHandlers() {
       summaryRow?.remove();
       const idx = allEnquiries.findIndex(x => String(x.id) === String(id));
       if (idx >= 0) allEnquiries.splice(idx, 1);
+      enquiryById.delete(id);
 
       if (allEnquiries.length === 0) renderEnquiries(allEnquiries);
       return;
@@ -954,23 +1020,37 @@ function computeTotals(e) {
 }
 
 // Survey reward check under the discount field: whose survey earned the code
-// applied here (flagged when it was another customer's), or — when no code
-// is applied — an unused code this customer still holds.
+// applied here (flagged when it was another customer's), or — on an open,
+// upcoming booking with no code — an unused code this customer earned on
+// another booking, with a button that applies it here.
+const CODE_APPLY_STATUSES = new Set(['new', 'contacted', 'quoted', 'confirmed']);
 function codeHint(e) {
-  const issuer = c => allEnquiries.find(x => x.id === c.issued_for_enquiry_id);
   if (e.applied_discount_code) {
     const c = discountCodes.find(x => x.code === e.applied_discount_code);
-    const src = c && issuer(c);
+    const src = c && enquiryById.get(c.issued_for_enquiry_id);
     if (!src) return '';
-    const foreign = customerKey(src) !== customerKey(e);
+    const foreign = !sameCustomer(src, e);
     return `<div class="code-hint${foreign ? ' code-hint--warn' : ''}">${t('code_from_survey')} ${esc(src.full_name)} (№${esc(src.enquiry_number)})${foreign ? ` · ⚠ ${t('code_other_customer')}` : ''}</div>`;
   }
-  const key = customerKey(e);
-  const held = key && discountCodes.find(c => !c.redeemed_at && Date.parse(c.expires_at) > Date.now()
-    && customerKey(issuer(c) || {}) === key);
+  if (!CODE_APPLY_STATUSES.has(e.pipeline_status || 'new')) return '';
+  const [d, m, y] = String(e.preferred_date || '').split('/').map(Number);
+  if (y && new Date(y, m - 1, d + 1) <= new Date()) return '';  // event day is over
+  const held = discountCodes.find(c => !c.redeemed_at && Date.parse(c.expires_at) > Date.now()
+    && c.issued_for_enquiry_id !== e.id && sameCustomer(enquiryById.get(c.issued_for_enquiry_id), e));
   if (!held) return '';
   const until = new Date(held.expires_at).toLocaleDateString('bg-BG', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  return `<div class="code-hint">${t('code_unused_hint')} <strong>${esc(held.code)}</strong> (${esc(held.percent)}% ${t('code_hall_only')}, ${t('code_valid_until')} ${esc(until)})</div>`;
+  return `<div class="code-hint">${t('code_unused_hint')} <strong>${esc(held.code)}</strong> (${esc(held.percent)}% ${t('code_hall_only')}, ${t('code_valid_until')} ${esc(until)})
+    <button type="button" class="btn btn-outline btn-sm btn-code-apply" data-enquiry-id="${esc(e.id)}" data-code="${esc(held.code)}">${t('code_apply')}</button></div>`;
+}
+
+// Re-render every totals block that offers this code - this booking and the
+// customer's other open ones - after it was used.
+function refreshCodeOffers(code) {
+  document.querySelectorAll(`.btn-code-apply[data-code="${CSS.escape(code)}"]`).forEach(b => {
+    const en = allEnquiries.find(x => String(x.id) === b.getAttribute('data-enquiry-id'));
+    const el = b.closest('.detail-totals');
+    if (en && el) el.outerHTML = renderTotals(en);
+  });
 }
 
 function renderTotals(e) {
