@@ -60,6 +60,11 @@ const SUPABASE_URL = 'https://wlxutsufrobzovdsiecb.supabase.co';
         missing_organization: 'организация', missing_website: 'уебсайт', missing_overall: 'преживяване',
         missing_cleanliness: 'чистота', missing_team: 'обслужване', missing_source: 'откъде научихте за нас',
         preview_banner: 'Преглед: така клиентът вижда анкетата. Отговорите тук не се записват.',
+        doc_title: 'Впечатления · Маргел 360°',
+        wordmark: 'МАРГЕЛ&nbsp;<em>360°</em>',
+        footer_brand: 'Маргел\u00a0360°',
+        footer_address: 'бул. Околовръстен път 155 · ет. 4 · София 1618',
+        footer_contact: 'Контакт',
       },
       en: {
         loading_label: 'Loading',
@@ -99,6 +104,11 @@ const SUPABASE_URL = 'https://wlxutsufrobzovdsiecb.supabase.co';
         missing_organization: 'organisation', missing_website: 'website', missing_overall: 'experience',
         missing_cleanliness: 'cleanliness', missing_team: 'service', missing_source: 'how you heard about us',
         preview_banner: 'Preview: this is the survey as customers see it. Answers here are not saved.',
+        doc_title: 'Feedback · Margel 360°',
+        wordmark: 'MARGEL&nbsp;<em>360°</em>',
+        footer_brand: 'Margel\u00a0360°',
+        footer_address: '155 Okolovrasten Pat Blvd · floor 4 · Sofia 1618',
+        footer_contact: 'Contact',
       },
     };
 
@@ -108,6 +118,7 @@ const SUPABASE_URL = 'https://wlxutsufrobzovdsiecb.supabase.co';
 
     function applyI18n() {
       document.documentElement.lang = state.lang;
+      document.title = t('doc_title');
       document.querySelectorAll('[data-i18n]').forEach(el => {
         const k = el.getAttribute('data-i18n');
         if (I18N[state.lang][k] !== undefined) el.textContent = fillPct(I18N[state.lang][k]);
