@@ -76,7 +76,7 @@ Version labels below are the last recorded live versions where known; verify the
 | admin-users | **yes** | owner-only admin account listing and password reset; revokes target sessions and writes an audit entry |
 | send-enquiry-summary (v19) | no | owner plain-text + customer branded HTML (requires X-Internal-Secret) |
 | notify-enquiry (v10) | no | plain-text team email (requires X-Internal-Secret) |
-| send-feedback-request (v6) | no | cron-driven feedback emails (requires x-cron-secret) |
+| send-feedback-request (v11) | no | cron-driven feedback emails (requires x-cron-secret): confirmed/completed bookings only, 7-day catch-up, one reminder; each send times out after 15 s and is retried by the next run |
 | send-team-digest (v1) | no | cron-driven daily team digest to OWNER_EMAILS/TEAM_EMAIL (requires x-cron-secret = TEAM_DIGEST_CRON_SECRET) |
 | send-event-reminders (v2) | no | cron-driven customer reminders: day-before + deposit-due + add-on drip every 3 days after a confirmed booking (`_shared/addon-reminder.ts`, stamps `addons_reminder_count` / `addons_reminder_last_sent_at`, cap 5). Reuses x-cron-secret = TEAM_DIGEST_CRON_SECRET; POST {"dry_run":true} to preview; POST {"preview":{"enquiry_id":"…","to":"you@margel.info"}} emails one rendered add-on reminder to `to` without stamping |
 | send-offer (v1) | **yes** | admin one-click offer: emails the customer a branded cover note + the client-built offer PDF, stamps offer_sent_at. Own email-allowlist check on top of JWT |
