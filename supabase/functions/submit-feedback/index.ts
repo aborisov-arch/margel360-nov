@@ -65,23 +65,33 @@ serve(async (req) => {
   if (lookupErr) { console.error(lookupErr); return json({ error: "server_error" }, 500); }
   if (!e) return json({ error: "not_found" }, 404);
 
-  const { error: insErr } = await sb.from("event_feedback").insert({ enquiry_id: e.id, ...row });
-  if (insErr) { console.error(insErr); return json({ error: "save_failed" }, 500); }
+  // One answer per enquiry (unique enquiry_id): the page pre-fills the saved
+  // answers, so a re-submit updates that row instead of adding another.
+  let firstAnswer = true;
+  let { error: saveErr } = await sb.from("event_feedback").insert({ enquiry_id: e.id, ...row });
+  if (saveErr?.code === "23505") {
+    firstAnswer = false;
+    ({ error: saveErr } = await sb.from("event_feedback").update(row).eq("enquiry_id", e.id));
+  }
+  if (saveErr) { console.error(saveErr); return json({ error: "save_failed" }, 500); }
 
   // Issue a hall-rent discount code if this enquiry hasn't already received
   // one. Idempotent: re-submitting feedback returns the same code (at the
   // percent it was minted with) rather than generating a new one each time.
-  const { code, percent } = await issueDiscountCode(e.id);
-  const emailDelivered = await sendDiscountEmail(e.email, e.full_name, code, percent);
+  const { code, percent, minted } = await issueDiscountCode(e.id);
+  // The code email and the routing below go out once: with the first answer,
+  // or with the request that minted the code (a retry after a failed mint).
+  const fresh = firstAnswer || minted;
+  const emailDelivered = fresh ? await sendDiscountEmail(e.email, e.full_name, code, percent) : true;
 
-  // Reputation routing — fires once because feedback is one-per-enquiry:
+  // Reputation routing — fires once, with the code email:
   //  - delighted (total ≥ 14/16): invite the customer to leave a public
   //    Google review (review-gating the solicitation, never the submission).
   //  - unhappy (any single 1, or total ≤ 9): alert the team for service
   //    recovery with the verbatim comments instead.
-  const routing = await routeFeedback(e, row).catch(err => {
+  const routing = fresh ? await routeFeedback(e, row).catch(err => {
     console.error("feedback routing failed (non-fatal):", err); return null;
-  });
+  }) : null;
 
   return json({ success: true, discount_code: code, discount_percent: percent, email_delivered: emailDelivered, routing });
 });
@@ -171,10 +181,18 @@ async function routeFeedback(
   return { branch: "none" };
 }
 
-async function issueDiscountCode(enquiryId: string): Promise<{ code: string; percent: number }> {
-  const { data: existing } = await sb
-    .from("discount_codes").select("code, percent").eq("issued_for_enquiry_id", enquiryId).maybeSingle();
-  if (existing?.code) return { code: existing.code, percent: existing.percent };
+async function existingCode(enquiryId: string): Promise<{ code: string; percent: number } | null> {
+  const { data, error } = await sb.from("discount_codes").select("code, percent")
+    .eq("issued_for_enquiry_id", enquiryId).order("created_at", { ascending: true }).limit(1);
+  // Never fall through to minting when the lookup itself failed.
+  if (error) { console.error("code lookup failed:", error); throw new Error("code_lookup_failed"); }
+  return data?.[0] ?? null;
+}
+
+// minted = this call created the code (the caller sends the code email then).
+async function issueDiscountCode(enquiryId: string): Promise<{ code: string; percent: number; minted: boolean }> {
+  const existing = await existingCode(enquiryId);
+  if (existing) return { ...existing, minted: false };
 
   // Format: MG-XXXX-YYYY where each block is 4 chars from an unambiguous
   // alphabet (no 0/O, 1/I). 32^8 = 1.1 trillion combos, more than enough.
@@ -188,11 +206,16 @@ async function issueDiscountCode(enquiryId: string): Promise<{ code: string; per
     const { error } = await sb.from("discount_codes").insert({
       code, percent: FEEDBACK_DISCOUNT_PERCENT, issued_for_enquiry_id: enquiryId,
     });
-    if (!error) return { code, percent: FEEDBACK_DISCOUNT_PERCENT };
-    if (!/duplicate|unique/i.test(error.message ?? "")) {
+    if (!error) return { code, percent: FEEDBACK_DISCOUNT_PERCENT, minted: true };
+    if (error.code !== "23505") {
       console.error("code insert failed:", error);
       throw new Error("code_insert_failed");
     }
+    // Unique violation: either a parallel submit already minted this
+    // enquiry's code (one per enquiry) — hand that one back — or the random
+    // code itself collided, so try another.
+    const raced = await existingCode(enquiryId);
+    if (raced) return { ...raced, minted: false };
   }
   throw new Error("code_collision");
 }
