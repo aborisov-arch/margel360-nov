@@ -47,3 +47,10 @@ export const PIPELINE_BG: Record<string, string> = {
   confirmed: "Потвърдени", completed: "Приключени", lost: "Загубени", archived: "Архив",
 };
 export function pipelineBg(v: string | null | undefined): string { return PIPELINE_BG[v ?? ""] ?? String(v ?? ""); }
+
+// Customer emails are Bulgarian for every customer (owner decision
+// 2026-10-06), whatever language they used on the site. The English copy
+// stays in the templates; return stored === "en" ? "en" : "bg" to restore it.
+export function customerEmailLang(_stored?: string | null): "bg" | "en" {
+  return "bg";
+}

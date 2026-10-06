@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import { json, preflight } from "../_shared/cors.ts";
 import { ADDON_DRIP, addonDripDecision, bookingAddonLines, daysBetween, isInternalRecipient, missingAddons, parsePreferredDate, sofiaDay, tokenExpiryFor, type ReminderAddon } from "../_shared/addon-reminder.ts";
 import { renderAddonReminder } from "../_shared/addon-reminder-email.ts";
+import { customerEmailLang } from "../_shared/labels-bg.ts";
 
 // Cron-triggered each morning (Europe/Sofia). Sends customer-facing reminders,
 // each guarded by its own idempotency stamp:
@@ -99,7 +100,7 @@ async function loadReminderCatalog(): Promise<ReminderAddon[]> {
 }
 
 function buildAddonReminder(e: Enquiry, catalog: ReminderAddon[], daysToEvent: number) {
-  const lang: "bg" | "en" = e.lang === "en" ? "en" : "bg";
+  const lang = customerEmailLang(e.lang);
   const addons = Array.isArray(e.addons) ? e.addons : [];
   const drinks = Array.isArray(e.drinks) ? e.drinks : [];
   const missing = missingAddons(addons, catalog);
