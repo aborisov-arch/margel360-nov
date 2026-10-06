@@ -36,6 +36,13 @@ with sync_playwright() as p:
  assert page.locator('#sum-income-eur').inner_text()=='€1083.33'
  assert page.locator('[data-chart-total="income"]').inner_text()=='€1083.33'
  assert page.locator('#sum-expense-eur').inner_text()=='€50.00'
+ # Profit follows the toggle: revenue without VAT − expenses (1083.33 − 50).
+ assert page.locator('#sum-profit-eur').inner_text()=='€1033.33'
+ assert 'печалба' in page.locator('#fin-vat-toggle').inner_text().lower()
+ page.evaluate("openMetricBreakdown('profit')")
+ assert 'без ДДС' in page.locator('#drill-title').inner_text()
+ assert '€1033.33' in page.locator('#drill-body').inner_text()
+ page.evaluate('closeDrill()')
  page.locator('#income-cat-breakdown [data-cat="overtime"]').click()
  assert 'без ДДС' in page.locator('#drill-title').inner_text()
  assert '€250.00' in page.locator('#drill-body').inner_text()
@@ -43,6 +50,7 @@ with sync_playwright() as p:
  assert saved_before==page.evaluate('JSON.stringify([...financialEventsById.values()])')
  page.locator('#fin-vat-toggle').click()
  assert page.locator('[data-chart-total="income"]').inner_text()=='€1300.00'
+ assert page.locator('#sum-profit-eur').inner_text()=='€1250.00'
  assert page.locator('[data-chart-total="expense"]').inner_text()=='€50.00'
  page.locator('#finance-charts').screenshot(path='/tmp/m360-donut-desktop.png')
  page.locator('[data-chart-cat="overtime"]').click()

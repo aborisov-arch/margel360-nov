@@ -119,10 +119,12 @@ document.addEventListener('click', event => {
   revenueWithoutVat = !revenueWithoutVat;
   const button = document.getElementById('fin-vat-toggle');
   button.setAttribute('aria-pressed', String(revenueWithoutVat));
-  button.textContent = revenueWithoutVat ? 'Приходи: без ДДС' : 'Приходи: с ДДС';
+  button.textContent = revenueWithoutVat ? 'Приходи и печалба: без ДДС' : 'Приходи и печалба: с ДДС';
   document.getElementById('fin-vat-note').textContent =
-    (revenueWithoutVat ? 'Приходите са без ДДС 20% (сума ÷ 1,20).' : 'Приходите включват ДДС 20%.') +
-    ' Плащанията, разходите и печалбата са по записаните суми.';
+    (revenueWithoutVat
+      ? 'Приходите са без ДДС 20% (сума ÷ 1,20); печалбата = приходи без ДДС − разходи.'
+      : 'Приходите и печалбата включват ДДС 20%.') +
+    ' Плащанията и разходите са по записаните суми.';
   renderMonthSummary();
 });
 function esc(s) {
@@ -508,7 +510,8 @@ function renderMonthSummary() {
   expByCat.staff_service += managerPayTotal();
   renderElectricity();
   const income = rent + drinks + addons + overtime + dj + employees;
-  const profit = income - expense;
+  // Profit follows the VAT toggle: displayed revenue (with or without VAT) − expenses.
+  const profit = revenueForDisplay(income) - expense;
   const realizedCount = scopeFes.length - upcomingCount;
   const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
   set('sum-month-label', monthLabel(monthFilter));
@@ -2174,7 +2177,7 @@ function openMetricBreakdown(metric) {
       case 'upcoming': return !past ? revenueForDisplay(feIncome(fe).total) : null;
       case 'paid':     return fePaid(fe) || null;
       case 'expense':  return past  ? (feExpenseTotal(fe) || null) : null;
-      case 'profit':   return past  ? (feIncome(fe).total - feExpenseTotal(fe)) : null;
+      case 'profit':   return past  ? (revenueForDisplay(feIncome(fe).total) - feExpenseTotal(fe)) : null;
       default:         return null;
     }
   };
@@ -2187,7 +2190,7 @@ function openMetricBreakdown(metric) {
   const overheadRows = ['expense','profit'].includes(metric) ? electricityDrillRows(metric==='profit'?-1:1) + managerPayDrillRows(metric==='profit'?-1:1) : '';
   const total = rows.reduce((s, r) => s + r.amt, 0) + overhead;
   const title = document.getElementById('drill-title');
-  if (title) title.textContent = `${TITLES[metric] || 'Разбивка'}${['income','upcoming'].includes(metric) ? (revenueWithoutVat ? ' · без ДДС' : ' · с ДДС') : ''} · ${monthLabel(monthFilter)}`;
+  if (title) title.textContent = `${TITLES[metric] || 'Разбивка'}${['income','upcoming','profit'].includes(metric) ? (revenueWithoutVat ? ' · без ДДС' : ' · с ДДС') : ''} · ${monthLabel(monthFilter)}`;
   const body = document.getElementById('drill-body');
   if (body) {
     body.innerHTML = rows.length || overheadRows
