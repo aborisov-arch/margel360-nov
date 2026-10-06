@@ -126,6 +126,7 @@ document.addEventListener('click', event => {
       : 'Приходите и печалбата включват ДДС 20%.') +
     ' Плащанията и разходите са по записаните суми.';
   renderMonthSummary();
+  updateDetailTotals();
 });
 function esc(s) {
   if (s == null) return '';
@@ -1164,19 +1165,22 @@ function updateDetailTotals() {
   const inc = liveIncomeTotals(fe);
   const expense = liveExpenseTotal(fe);
   const paid = livePaid(fe);
-  const balance = inc.total - paid;
-  const net = inc.total - expense;
+  const balance = inc.total - paid;   // what the client owes: always as entered (with VAT)
+  // Revenue, net and margin follow the VAT toggle; expenses stay as entered.
+  const shownIncome = revenueForDisplay(inc.total);
+  const net = shownIncome - expense;
   const costMissing=eventBottleCost(fe,true).missing;
-  const margin = inc.total > 0 && !costMissing ? Math.round((net / inc.total) * 100) : null;
+  const margin = shownIncome > 0 && !costMissing ? Math.round((net / shownIncome) * 100) : null;
+  const vatTag = revenueWithoutVat ? ' без ДДС' : '';
 
   const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
-  set('pnl-income-total',  fmtEur(inc.total));
-  set('pnl-drinks-total',  fmtEur(drinksTotalOf(getWorkingDrinks())));
-  set('pnl-services-total', fmtEur(liveAddonsTotal(fe)));
+  set('pnl-income-total',  fmtRevenue(inc.total) + vatTag);
+  set('pnl-drinks-total',  fmtRevenue(drinksTotalOf(getWorkingDrinks())));
+  set('pnl-services-total', fmtRevenue(liveAddonsTotal(fe)));
   set('pnl-expense-total', fmtEur(expense));
   set('pnl-paid-total',    fmtEur(paid));
   set('pnl-balance',       fmtEur(balance));
-  set('pnl-net-eur',       fmtEur(net));
+  set('pnl-net-eur',       fmtEur(net) + vatTag);
   renderBottleCostSummary(fe);
   const staffHost=document.getElementById('event-staff-taken');
   if(staffHost){const staff=(prefix)=>(expensesByEvent.get(fe?.id)||[]).filter(r=>[prefix+'_fee',prefix+'_overtime'].includes(expFieldValue(r,'category'))).reduce((s,r)=>s+Number(expFieldValue(r,'amount_eur')||0),0);staffHost.textContent=`Получено за вечерта — Иван: ${fmtEur(staff('ivan'))} · Ели: ${fmtEur(staff('eli'))}. Сумите са включени в разходите по-долу.`;}

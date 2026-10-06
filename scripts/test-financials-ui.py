@@ -143,6 +143,15 @@ with sync_playwright() as p:
  page.wait_for_function("fixtures.financial_expenses.some(r=>r.category==='ivan_fee' && Number(r.amount_eur)===80)")
  assert '€80.00' in page.locator('[data-staff-category="ivan_fee"]').inner_text()
  assert page.locator('#sum-expense-eur').inner_text()=='€310.00'
+ # Event P&L follows the VAT toggle too (income 1300, event expenses 50 + 80 − 20 correction).
+ assert page.locator('#pnl-net-eur').inner_text()=='€1190.00'
+ balance_before=page.locator('#pnl-balance').inner_text()
+ page.locator('#fin-vat-toggle').click()
+ assert page.locator('#pnl-income-total').inner_text()=='€1083.33 без ДДС'
+ assert page.locator('#pnl-net-eur').inner_text()=='€973.33 без ДДС'
+ assert page.locator('#pnl-balance').inner_text()==balance_before
+ page.locator('#fin-vat-toggle').click()
+ assert page.locator('#pnl-net-eur').inner_text()=='€1190.00'
  page.locator('[data-staff-category="ivan_fee"] button').click()
  assert '€80.00' in page.locator('#drill-body').inner_text()
  page.evaluate('closeDrill()')
