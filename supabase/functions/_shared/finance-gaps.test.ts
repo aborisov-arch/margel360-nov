@@ -37,3 +37,13 @@ Deno.test("financeGaps lists electricity per month and held events only", () => 
     "2026-07 18.07.2026 · Иван: липсва покупна цена за 1 напитка",
   ]);
 });
+
+Deno.test("glasswareGap flags booked glassware without a purchase price", async () => {
+  const { glasswareGap } = await import("./finance-gaps.ts");
+  const ids = new Set(["glass-wine"]);
+  assertEquals(glasswareGap([{ id: "glass-wine", qty: 50 }], ids, new Map()), "Посуда: липсва покупна цена за 1 вид (Каталог → Посуда)");
+  assertEquals(glasswareGap([{ id: "glass-wine", qty: 50 }], ids, new Map([["glass-wine", 0.3]])), null);
+  // Stamped category counts even when the item is no longer in the catalog.
+  assertEquals(glasswareGap([{ id: "old", qty: 2, category: "glassware" }, { id: "dj" }], ids, new Map()), "Посуда: липсва покупна цена за 1 вид (Каталог → Посуда)");
+  assertEquals(glasswareGap([{ id: "dj", qty: 1 }], ids, new Map()), null);
+});

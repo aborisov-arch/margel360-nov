@@ -1,10 +1,10 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import { json, preflight } from "../_shared/cors.ts";
-import { financeGaps, type DrinkLine, type FinEvent } from "../_shared/finance-gaps.ts";
+import { financeGaps, type BookedAddon, type DrinkLine, type FinEvent } from "../_shared/finance-gaps.ts";
 
 // Month-end reminder to fill in missing finance data (electricity bills,
-// bottle purchase prices). Cron runs daily on the 28th–31st; the function
+// bottle and glassware purchase prices). Cron runs daily on the 28th–31st; the function
 // only sends on the LAST day of the month (Sofia time) unless the body has
 // {"force": true}. The list matches „Липсващи данни“ on admin/financials.html.
 
@@ -47,16 +47,18 @@ serve(async (req) => {
   const recipients = [...new Set([...OWNER_EMAILS.split(","), ...TEAM_EMAIL.split(",")].map(s => s.trim()).filter(Boolean))];
   if (!recipients.length) return json({ error: "no_recipients" }, 500);
 
-  const [fes, elec, exp, enq] = await Promise.all([
+  const [fes, elec, exp, enq, glass, glassCost] = await Promise.all([
     sb.from("financial_events").select("id, month, event_date, customer_name, enquiry_id, drinks_cost_in_expenses, income_drinks_eur, pnl_drinks"),
     sb.from("monthly_electricity").select("month"),
     sb.from("financial_expenses").select("event_id").eq("category", "drinks"),
-    sb.from("enquiries").select("id, full_name, drinks"),
+    sb.from("enquiries").select("id, full_name, drinks, addons"),
+    sb.from("addon_services").select("id").eq("category", "glassware"),
+    sb.from("addon_purchase_prices").select("addon_id, cost_eur"),
   ]);
-  const err = fes.error || elec.error || exp.error || enq.error;
+  const err = fes.error || elec.error || exp.error || enq.error || glass.error || glassCost.error;
   if (err) { console.error("load failed:", err); return json({ error: "load_failed" }, 500); }
 
-  type Enq = { id: string; full_name: string | null; drinks: unknown };
+  type Enq = { id: string; full_name: string | null; drinks: unknown; addons: unknown };
   const enquiries = (enq.data ?? []) as Enq[];
   const gaps = financeGaps({
     events: (fes.data ?? []) as FinEvent[],
@@ -65,6 +67,9 @@ serve(async (req) => {
     enquiryDrinks: new Map(enquiries.map(e => [e.id, (Array.isArray(e.drinks) ? e.drinks : []) as DrinkLine[]])),
     eventsWithDrinksExpense: new Set(((exp.data ?? []) as { event_id: string | null }[]).map(r => r.event_id).filter((id): id is string => !!id)),
     names: new Map(enquiries.map(e => [e.id, e.full_name ?? ""])),
+    enquiryAddons: new Map(enquiries.map(e => [e.id, (Array.isArray(e.addons) ? e.addons : []) as BookedAddon[]])),
+    glasswareIds: new Set(((glass.data ?? []) as { id: string }[]).map(r => r.id)),
+    glasswareCosts: new Map(((glassCost.data ?? []) as { addon_id: string; cost_eur: number }[]).map(r => [r.addon_id, Number(r.cost_eur)])),
   });
   if (!gaps.length) return json({ sent: 0, gaps: 0 });
 

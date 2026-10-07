@@ -82,6 +82,9 @@ const EXPENSE_CATS = [
   { id: 'maintenance',   label: 'Поддръжка' },
   { id: 'marketing',     label: 'Маркетинг / реклама' },
   { id: 'other',         label: 'Други' },
+  // Automatic, not a stored expense row (no CHECK value): glassware cost of
+  // goods from glassware-costs.js. Never offered in the expense dropdown.
+  { id: 'glassware',     label: 'Посуда (себестойност)', auto: true },
 ];
 
 // Income category labels - shared by the summary pills and the category
@@ -306,7 +309,7 @@ function fePaid(fe) {
 function feExpenseTotal(fe) {
   if (!fe) return 0;
   const rows = expensesByEvent.get(fe.id) || [];
-  return rows.reduce((s, x) => s + Number(x.amount_eur || 0), 0) + eventBottleCost(fe).auto;
+  return rows.reduce((s, x) => s + Number(x.amount_eur || 0), 0) + eventBottleCost(fe).auto + eventGlasswareCost(fe).auto;
 }
 
 // ────────────────────────────────────────────────────────────────
@@ -490,6 +493,9 @@ function renderMonthSummary() {
       const bottleCost=eventBottleCost(fe);
       expense+=bottleCost.auto;
       expByCat.drinks+=bottleCost.auto;
+      const glassCost=eventGlasswareCost(fe);
+      expense+=glassCost.auto;
+      expByCat.glassware+=glassCost.auto;
       // Expenses count only once the event has happened too, so profit is
       // a realized figure (realized income − realized expense).
       const rows = expensesByEvent.get(fe.id) || [];
@@ -595,7 +601,7 @@ function renderEventsList(filter = '') {
     const inc = fe ? feIncome(fe).total : null;
     const exp = fe ? feExpenseTotal(fe) : 0;
     const net = inc != null ? (inc - exp) : null;
-    const margin = (inc != null && inc > 0 && !eventBottleCost(fe).missing) ? Math.round((net / inc) * 100) : null;
+    const margin = (inc != null && inc > 0 && !eventBottleCost(fe).missing && !eventGlasswareCost(fe).missing) ? Math.round((net / inc) * 100) : null;
     const selected = e.id === selectedEnquiryId ? ' is-selected' : '';
     const marginClass = margin == null ? '' : (margin >= 0 ? ' is-positive' : ' is-negative');
     const iso = parsePreferredDate(e.preferred_date);
@@ -612,7 +618,7 @@ function renderEventsList(filter = '') {
     const inc = feIncome(fe).total;
     const exp = feExpenseTotal(fe);
     const net = inc - exp;
-    const margin = inc > 0 && !eventBottleCost(fe).missing ? Math.round((net / inc) * 100) : null;
+    const margin = inc > 0 && !eventBottleCost(fe).missing && !eventGlasswareCost(fe).missing ? Math.round((net / inc) * 100) : null;
     const selected = fe.id === selectedManualFeId ? ' is-selected' : '';
     const marginClass = margin == null ? '' : (margin >= 0 ? ' is-positive' : ' is-negative');
     return `
@@ -703,7 +709,7 @@ function livePaid(fe) {
 function liveExpenseTotal(fe) {
   if (!fe) return 0;
   const rows = expensesByEvent.get(fe.id) || [];
-  return rows.reduce((s, r) => s + Number(expFieldValue(r, 'amount_eur') || 0), 0) + eventBottleCost(fe,true).auto;
+  return rows.reduce((s, r) => s + Number(expFieldValue(r, 'amount_eur') || 0), 0) + eventBottleCost(fe,true).auto + eventGlasswareCost(fe).auto;
 }
 
 // ────────────────────────────────────────────────────────────────
@@ -1132,7 +1138,7 @@ function renderDetail() {
         const cat   = expFieldValue(x, 'category');
         const amt   = expFieldValue(x, 'amount_eur');
         const notes = expFieldValue(x, 'notes');
-        const opts = EXPENSE_CATS.map(c =>
+        const opts = EXPENSE_CATS.filter(c => !c.auto).map(c =>
           `<option value="${c.id}" ${cat === c.id ? 'selected' : ''}>${esc(c.label)}</option>`
         ).join('');
         return `
@@ -1169,7 +1175,7 @@ function updateDetailTotals() {
   // Revenue, net and margin follow the VAT toggle; expenses stay as entered.
   const shownIncome = revenueForDisplay(inc.total);
   const net = shownIncome - expense;
-  const costMissing=eventBottleCost(fe,true).missing;
+  const costMissing=eventBottleCost(fe,true).missing || eventGlasswareCost(fe).missing;
   const margin = shownIncome > 0 && !costMissing ? Math.round((net / shownIncome) * 100) : null;
   const vatTag = revenueWithoutVat ? ' без ДДС' : '';
 
@@ -1182,6 +1188,7 @@ function updateDetailTotals() {
   set('pnl-balance',       fmtEur(balance));
   set('pnl-net-eur',       fmtEur(net) + vatTag);
   renderBottleCostSummary(fe);
+  renderGlasswareNote(fe);
   const staffHost=document.getElementById('event-staff-taken');
   if(staffHost){const staff=(prefix)=>(expensesByEvent.get(fe?.id)||[]).filter(r=>[prefix+'_fee',prefix+'_overtime'].includes(expFieldValue(r,'category'))).reduce((s,r)=>s+Number(expFieldValue(r,'amount_eur')||0),0);staffHost.textContent=`Получено за вечерта — Иван: ${fmtEur(staff('ivan'))} · Ели: ${fmtEur(staff('eli'))}. Сумите са включени в разходите по-долу.`;}
   const marginEl = document.getElementById('pnl-margin');
@@ -2262,6 +2269,7 @@ function openCategoryBreakdown(kind, catId) {
   const title = document.getElementById('drill-title');
   if (title) title.textContent = `${label}${kind === 'income' ? (revenueWithoutVat ? ' · без ДДС' : ' · с ДДС') : ''} · ${monthLabel(monthFilter)}`;
   if(kind==='expense'&&catId==='drinks'){scopeFes.forEach(fe=>{const cost=eventBottleCost(fe);if(cost.auto){rowsHtml+=bottleCostDrillRow(fe);total+=cost.auto;lineCount++;eventIds.add(fe.id);}});}
+  if(kind==='expense'&&catId==='glassware'){scopeFes.filter(eventHasHappened).forEach(fe=>{const cost=eventGlasswareCost(fe);if(cost.auto){rowsHtml+=glasswareDrillRow(fe);total+=cost.auto;lineCount++;eventIds.add(fe.id);}});}
   if(kind==='expense' && catId==='utilities'){rowsHtml+=electricityDrillRows();total+=electricityTotal();lineCount+=electricityScope().filter(r=>Number(r.amount_eur)!==0).length;}
   if(kind==='expense' && catId==='staff_service'){rowsHtml+=managerPayDrillRows();total+=managerPayTotal();lineCount+=managerPayScope().filter(r=>managerPayAmount(r)!==0).length;}
   const body = document.getElementById('drill-body');
@@ -2588,6 +2596,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadManagerPay();
   await loadElectricity();
   await loadDrinkPurchasePrices();
+  await loadAddonPurchasePrices();
   const now = new Date();
   monthFilter = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   const monthInp = document.getElementById('fin-month');
