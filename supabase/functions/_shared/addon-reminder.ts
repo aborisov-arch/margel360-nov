@@ -37,6 +37,7 @@ export type ReminderAddon = {
   max_qty: number | null;
   active: boolean;
   sort_order: number;
+  category?: string | null;
 };
 
 export type BookingAddon = { id: string; name?: string | null; price: number; qty?: number };
@@ -85,11 +86,12 @@ export function addonDripDecision(e: DripEnquiry, today: Date, cfg: DripConfig =
 }
 
 // Active catalog add-ons the booking does not contain. `cleaning` is auto-added
-// to every booking (and DB-protected), so it is never "missing".
+// to every booking (and DB-protected), so it is never "missing". Glassware
+// (category 'glassware') is a per-piece rental, not a service to pitch.
 export function missingAddons(booking: { id: string }[], catalog: ReminderAddon[]): ReminderAddon[] {
   const chosen = new Set(booking.map(a => a.id));
   return catalog
-    .filter(a => a.active && a.id !== "cleaning" && !chosen.has(a.id))
+    .filter(a => a.active && a.id !== "cleaning" && (a.category ?? "service") === "service" && !chosen.has(a.id))
     .sort((a, b) => (a.sort_order - b.sort_order) || a.name_en.localeCompare(b.name_en));
 }
 

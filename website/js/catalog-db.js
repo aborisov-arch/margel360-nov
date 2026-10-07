@@ -31,7 +31,7 @@
     if (!cached) {
       cached = Promise.all([
         fetchTable('drinks?select=id,cat,name_bg,name_en,price_eur,img&active=is.true&order=cat.asc,sort_order.asc'),
-        fetchTable('addon_services?select=id,name_bg,name_en,price_eur,hint_bg,hint_en,free_until,max_qty,img&active=is.true&order=sort_order.asc'),
+        fetchTable('addon_services?select=id,name_bg,name_en,price_eur,hint_bg,hint_en,free_until,max_qty,img,category&active=is.true&order=sort_order.asc'),
       ]).then(function (results) {
         window.drinkCategories = CATEGORY_LABELS;
         window.drinks = results[0].map(function (r) {
@@ -39,8 +39,12 @@
                    price_eur: r.price_eur == null ? null : Number(r.price_eur), img: resolveImg(r.img) };
         });
         window.addonServices = results[1].map(function (r) {
+          // category: 'service' (Услуги) or 'glassware' (Посуда). Both stay in
+          // addonServices so price/qty lookups by id keep working everywhere;
+          // renderers filter by category.
           const o = { id: r.id, name_bg: r.name_bg, name_en: r.name_en,
-                      price: Number(r.price_eur), img: resolveImg(r.img) };
+                      price: Number(r.price_eur), img: resolveImg(r.img),
+                      category: r.category || 'service' };
           if (r.hint_bg) o.hint_bg = r.hint_bg;
           if (r.hint_en) o.hint_en = r.hint_en;
           if (r.free_until != null) o.freeUntil = Number(r.free_until);

@@ -41,8 +41,8 @@ serve(async (req) => {
     };
 
     const addonsText = Array.isArray(record.addons) && record.addons.length
-      ? record.addons.map((a: { id: string; name: string; price: number }) =>
-          `  - ${itemNameBg(a)}: €${addonEur(a.id, a.price).toFixed(2)}`
+      ? record.addons.map((a: { id: string; name: string; name_bg?: string; price: number; qty?: number }) =>
+          `  - ${itemNameBg(a)}${typeof a.qty === "number" ? ` × ${a.qty}` : ""}: €${addonEur(a.id, a.price).toFixed(2)}`
         ).join("\n")
       : null;
 

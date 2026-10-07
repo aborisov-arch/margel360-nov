@@ -202,3 +202,12 @@ Deno.test("render: manager phone is a tap-to-call link in both languages, also w
     assertStringIncludes(html, "+359 888 100 042");
   }
 });
+
+Deno.test("missingAddons never suggests glassware", () => {
+  const base = { name_bg: "x", name_en: "x", price_eur: 1, hint_bg: null, hint_en: null, free_until: null, max_qty: null, active: true, sort_order: 1 };
+  const out = missingAddons([], [
+    { ...base, id: "dj" },
+    { ...base, id: "glass1", category: "glassware", max_qty: 999 },
+  ]);
+  assertEquals(out.map(a => a.id), ["dj"]);
+});

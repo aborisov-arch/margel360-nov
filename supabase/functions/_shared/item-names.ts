@@ -100,7 +100,10 @@ export const ITEM_NAMES: Record<string, { bg: string; en: string }> = {
   "wardrobe": { bg: "Гардеробиер за 5 часа", en: "Wardrobe attendant 5h" },
 };
 
-export function localizedItemName(item: { id?: string | null; name?: string | null }, lang: "bg" | "en"): string {
+export function localizedItemName(item: { id?: string | null; name?: string | null; name_bg?: string | null }, lang: "bg" | "en"): string {
+  // Catalog-stamped Bulgarian name (repriceAddons) wins: covers items added
+  // from the admin catalog after this table was generated (e.g. glassware).
+  if (lang === "bg" && item && item.name_bg) return item.name_bg;
   const entry = item && item.id ? ITEM_NAMES[item.id] : undefined;
   return entry ? entry[lang] : String((item && item.name) ?? (item && item.id) ?? "");
 }

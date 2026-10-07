@@ -33,7 +33,7 @@ export function eventTypeBg(e: { event_id?: string | null; event_type?: string |
 export const PAYMENT_BG: Record<string, string> = { cash: "В брой", transfer: "Банков превод", card: "Карта" };
 export function paymentBg(v: string | null | undefined): string { return PAYMENT_BG[v ?? ""] ?? String(v ?? "—"); }
 
-export function itemNameBg(item: { id?: string | null; name?: string | null }): string {
+export function itemNameBg(item: { id?: string | null; name?: string | null; name_bg?: string | null }): string {
   return localizedItemName(item, "bg");
 }
 

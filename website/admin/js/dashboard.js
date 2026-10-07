@@ -1153,7 +1153,8 @@ function fmtAddons(addons) {
   const items = addons.map(a => {
     const price = Number(a?.price);
     const priceStr = Number.isFinite(price) ? addonPriceEur(a?.id, price).toFixed(2) : '-';
-    return `<li>${esc(itemNameBg(a))} - €${priceStr}</li>`;
+    const qty = Number.isInteger(a?.qty) ? ` × ${a.qty}` : '';
+    return `<li>${esc(itemNameBg(a))}${qty} - €${priceStr}</li>`;
   }).join('');
   return `<div class="detail-section"><strong>${t('detail_addons')}:</strong><ul>${items}</ul></div>`;
 }

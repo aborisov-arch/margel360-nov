@@ -94,7 +94,7 @@ const ENQUIRY_COLS = "id, full_name, email, event_type, preferred_date, arrival_
 
 async function loadReminderCatalog(): Promise<ReminderAddon[]> {
   const { data, error } = await sb.from("addon_services")
-    .select("id, name_bg, name_en, price_eur, hint_bg, hint_en, free_until, max_qty, active, sort_order");
+    .select("id, name_bg, name_en, price_eur, hint_bg, hint_en, free_until, max_qty, active, sort_order, category");
   if (error) throw new Error(`addon catalog load failed: ${error.message}`);
   return (data ?? []).map((r: ReminderAddon) => ({ ...r, price_eur: Number(r.price_eur), sort_order: Number(r.sort_order) }));
 }

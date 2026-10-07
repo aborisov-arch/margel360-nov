@@ -77,14 +77,14 @@ type Enquiry = {
   id: string; full_name: string | null; email: string | null; event_type: string | null;
   preferred_date: string | null; arrival_time: string | null; guests: number | null;
   pipeline_status: string | null; marketing_consent: boolean | null;
-  addons: { id: string; name?: string }[] | null; drinks: { id: string; qty?: number }[] | null;
+  addons: { id: string; name?: string; name_bg?: string; qty?: number }[] | null; drinks: { id: string; qty?: number }[] | null;
   run_sheet_sent_at: string | null; winback_sent_at: string | null;
 };
 
 function runSheetHtml(e: Enquiry): string {
   const addons = Array.isArray(e.addons) ? e.addons : [];
   const drinks = Array.isArray(e.drinks) ? e.drinks : [];
-  const addonList = addons.length ? addons.map(a => esc(itemNameBg(a))).join(", ") : "—";
+  const addonList = addons.length ? addons.map(a => esc(itemNameBg(a)) + (typeof a.qty === "number" ? ` × ${a.qty}` : "")).join(", ") : "—";
   const drinkList = drinks.length ? drinks.map(d => `${esc(itemNameBg(d))} × ${esc(d.qty ?? 1)}`).join(", ") : "—";
   const row = (l: string, v: string) => `<tr><td style="padding:5px 0;font:12px/1.4 ${SANS};color:#7A7568;width:120px">${l}</td><td style="padding:5px 0;font:13px/1.5 ${SANS};color:#1A1815">${v}</td></tr>`;
   return `<div style="margin:0 0 18px;padding:14px 16px;border-left:3px solid #B9894A;background:#F6F1E8">

@@ -9,11 +9,13 @@
 // deactivating an item would 400 every edit of bookings that contain it.
 
 export type CatalogDrink = { id: string; cat: number; name_en: string; price_eur: number; active: boolean };
-export type CatalogAddon = { id: string; name_en: string; price_eur: number; free_until: number | null; max_qty: number | null; active: boolean };
+export type CatalogAddon = { id: string; name_en: string; name_bg?: string | null; category?: string | null; price_eur: number; free_until: number | null; max_qty: number | null; active: boolean };
 export type Catalog = { drinks: Map<string, CatalogDrink>; addons: Map<string, CatalogAddon> };
 
 export type DrinkItem = { id: string; name: string; qty: number; price_eur: number | null };
-export type AddonItem = { id: string; name: string; price: number; qty?: number };
+// name_bg / category are stamped from the catalog so emails and the admin can show
+// Bulgarian names and group glassware even for ids absent from item-names.ts.
+export type AddonItem = { id: string; name: string; price: number; qty?: number; name_bg?: string; category?: string };
 export type RepriceResult<T> = { ok: true; value: T[] } | { ok: false; error: string };
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
@@ -22,7 +24,7 @@ const round2 = (n: number) => Math.round(n * 100) / 100;
 export async function loadCatalog(sb: any): Promise<Catalog> {
   const [dRes, aRes] = await Promise.all([
     sb.from("drinks").select("id, cat, name_en, price_eur, active"),
-    sb.from("addon_services").select("id, name_en, price_eur, free_until, max_qty, active"),
+    sb.from("addon_services").select("id, name_en, name_bg, category, price_eur, free_until, max_qty, active"),
   ]);
   if (dRes.error) throw new Error(`drinks catalog load failed: ${dRes.error.message}`);
   if (aRes.error) throw new Error(`addon catalog load failed: ${aRes.error.message}`);
@@ -60,6 +62,13 @@ export function repriceDrinks(items: DrinkItem[], catalog: Catalog, stored: Drin
   return { ok: true, value: out };
 }
 
+function catalogLabels(c: CatalogAddon): { name_bg?: string; category?: string } {
+  return {
+    ...(c.name_bg ? { name_bg: c.name_bg } : {}),
+    ...(c.category && c.category !== "service" ? { category: c.category } : {}),
+  };
+}
+
 export function repriceAddons(items: AddonItem[], catalog: Catalog, stored: AddonItem[] = []): RepriceResult<AddonItem> {
   const storedById = new Map(stored.map((a) => [a.id, a]));
   const seen = new Set<string>();
@@ -80,9 +89,9 @@ export function repriceAddons(items: AddonItem[], catalog: Catalog, stored: Addo
         const line = c.free_until != null
           ? Math.max(0, item.qty - c.free_until) * c.price_eur
           : item.qty * c.price_eur;
-        out.push({ id: item.id, name: c.name_en, price: round2(line), qty: item.qty });
+        out.push({ id: item.id, name: c.name_en, price: round2(line), qty: item.qty, ...catalogLabels(c) });
       } else {
-        out.push({ id: item.id, name: c.name_en, price: round2(c.price_eur) });
+        out.push({ id: item.id, name: c.name_en, price: round2(c.price_eur), ...catalogLabels(c) });
       }
       continue;
     }

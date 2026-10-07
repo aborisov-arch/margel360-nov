@@ -6,7 +6,7 @@
 
 // ── State ──
 let currentStep = 0;
-const TOTAL_STEPS = 7;
+const TOTAL_STEPS = 8;
 // `addons` is keyed by svc.id; the value is the integer qty (0 = unselected).
 // Furniture items (freeUntil) and heater items have a typeable stepper; every
 // other addon behaves as a checkbox where qty toggles between 0 and 1.
@@ -52,8 +52,11 @@ function getLang() { return localStorage.getItem('margel_lang') || 'bg'; }
 // Display helpers - EUR throughout. Services are stored as integers, drinks as decimals.
 function fmtSvc(eur) {
   if (eur == null) return getLang() === 'bg' ? 'По запитване' : 'On request';
-  return '€' + eur;
+  return '€' + fmtAmount(eur);
 }
+// Whole euros stay whole (€300); sub-euro glassware keeps its cents (€0.80).
+function fmtAmount(eur) { return Number.isInteger(eur) ? String(eur) : eur.toFixed(2); }
+function isGlassware(svc) { return svc && svc.category === 'glassware'; }
 function fmtDrink(eur) {
   if (eur == null) return getLang() === 'bg' ? 'По запитване' : 'On request';
   return '€' + eur.toFixed(2);
@@ -74,8 +77,9 @@ function goToStep(n) {
   if (n === 1) renderStep2VariantPicker();
   if (n === 2) renderAddons();
   if (n === 3) renderDrinks();
-  if (n === 4) renderPartners();
-  if (n === 6) renderSummary();
+  if (n === 4) renderGlassware();
+  if (n === 5) renderPartners();
+  if (n === 7) renderSummary();
 }
 
 function updateProgress() {
@@ -421,13 +425,30 @@ function renderAddons() {
   if (!grid) return;
   grid.innerHTML = '';
 
-  addonServices.forEach(svc => {
+  addonServices.filter(svc => !isGlassware(svc)).forEach(svc => {
     if (isQtyAddon(svc)) {
       renderQtyAddon(grid, svc, l);
     } else {
       renderCheckboxAddon(grid, svc, l);
     }
   });
+  updateAddonsTotal();
+}
+
+// Посуда step (after Напитки): glassware rented per piece. Same booking.addons
+// map and payload as the add-ons step; only the rendering is separate.
+function renderGlassware() {
+  const l = getLang();
+  const grid = document.getElementById('glassware-grid');
+  if (!grid || typeof addonServices === 'undefined') return;
+  grid.innerHTML = '';
+  const items = addonServices.filter(isGlassware);
+  if (!items.length) {
+    const empty = document.createElement('p'); empty.className = 'step-sub';
+    empty.textContent = l === 'bg' ? 'В момента няма посуда за наем. Продължете напред.' : 'No glassware is available for rent right now. Please continue.';
+    grid.appendChild(empty);
+  }
+  items.forEach(svc => renderQtyAddon(grid, svc, l));
   updateAddonsTotal();
 }
 
@@ -439,7 +460,7 @@ function renderCheckboxAddon(grid, svc, l) {
 
   const visual = document.createElement('div');
   if (svc.img) { visual.className = 'addon-img'; const i = document.createElement('img'); i.src = svc.img; i.alt = ''; visual.appendChild(i); }
-  else { visual.className = 'addon-emoji'; visual.textContent = svc.emoji || '⭐'; visual.setAttribute('aria-hidden', 'true'); }
+  else { visual.className = 'addon-emoji'; visual.textContent = svc.emoji || (isGlassware(svc) ? '🥂' : '⭐'); visual.setAttribute('aria-hidden', 'true'); }
 
   const info = document.createElement('div'); info.className = 'addon-info';
   const name = document.createElement('div'); name.className = 'addon-name'; name.textContent = l === 'bg' ? svc.name_bg : svc.name_en;
@@ -465,12 +486,12 @@ function renderQtyAddon(grid, svc, l) {
 
   const visual = document.createElement('div');
   if (svc.img) { visual.className = 'addon-img'; const i = document.createElement('img'); i.src = svc.img; i.alt = ''; visual.appendChild(i); }
-  else { visual.className = 'addon-emoji'; visual.textContent = svc.emoji || '⭐'; visual.setAttribute('aria-hidden', 'true'); }
+  else { visual.className = 'addon-emoji'; visual.textContent = svc.emoji || (isGlassware(svc) ? '🥂' : '⭐'); visual.setAttribute('aria-hidden', 'true'); }
 
   const info = document.createElement('div'); info.className = 'addon-info';
   const name = document.createElement('div'); name.className = 'addon-name'; name.textContent = l === 'bg' ? svc.name_bg : svc.name_en;
   const price = document.createElement('div'); price.className = 'addon-price';
-  price.textContent = '€' + Math.round(svc.price) + (l === 'bg' ? ' / бр.' : ' / pc');
+  price.textContent = '€' + fmtAmount(svc.price) + (l === 'bg' ? ' / бр.' : ' / pc');
   info.appendChild(name); info.appendChild(price);
 
   if (svc.freeUntil != null) {
@@ -505,13 +526,17 @@ function renderQtyAddon(grid, svc, l) {
 function updateAddonsTotal() {
   // langChange can fire before loadCatalog() resolves (main.js dispatches it at startup)
   if (typeof addonServices === 'undefined') return;
-  let total = 0;
+  let total = 0, glassTotal = 0;
   for (const [id, qty] of Object.entries(booking.addons)) {
     const svc = addonServices.find(s => s.id === id);
-    if (svc) total += addonLinePrice(svc, qty);
+    if (!svc) continue;
+    if (isGlassware(svc)) glassTotal += addonLinePrice(svc, qty);
+    else total += addonLinePrice(svc, qty);
   }
   const el = document.getElementById('addons-total-val');
   if (el) el.textContent = '€' + total.toFixed(total % 1 ? 2 : 0);
+  const gel = document.getElementById('glassware-total-val');
+  if (gel) gel.textContent = '€' + glassTotal.toFixed(glassTotal % 1 ? 2 : 0);
 }
 
 // ── Drinks prompt (between add-ons and drinks) ──
@@ -532,8 +557,8 @@ function showDrinksPrompt() {
   prompt.style.display = 'flex';
 
   yesBtn.onclick = function() { prompt.style.display = 'none'; goToStep(3); };
-  // "Skip drinks" still lands on the Partners step (4) - skipping the drinks
-  // menu must not skip partners.
+  // "Skip drinks" lands on the Посуда step (4), then Partners - skipping the
+  // drinks menu must not skip glassware or partners.
   noBtn.onclick = function() { prompt.style.display = 'none'; goToStep(4); };
 }
 
@@ -651,7 +676,7 @@ async function loadPartners() {
     console.warn('Partners fetch failed:', err);
     _partnersList = [];
   }
-  if (currentStep === 4) renderPartners();
+  if (currentStep === 5) renderPartners();
 }
 
 function partnerImgUrl(path) {
@@ -983,7 +1008,7 @@ function setupStep5() {
     booking.phone = `${dial?.value || '+359'} ${phone.value.trim().replace(/\D/g,'')}`;
     booking.guests = guests.value;
     booking.notes = document.getElementById('res-message')?.value.trim() || '';
-    goToStep(6);
+    goToStep(7);
   });
 }
 
@@ -1029,10 +1054,12 @@ function renderSummary() {
   // Price breakdown - all in EUR
   if (priceSummary) {
     priceSummary.innerHTML = '';
-    let addonsTotal = 0;
+    let addonsTotal = 0, glasswareTotal = 0;
     for (const [id, q] of Object.entries(booking.addons)) {
       const svc = addonServices.find(s => s.id === id);
-      if (svc) addonsTotal += addonLinePrice(svc, q);
+      if (!svc) continue;
+      if (isGlassware(svc)) glasswareTotal += addonLinePrice(svc, q);
+      else addonsTotal += addonLinePrice(svc, q);
     }
     // Auto-include mandatory cleaning on every event, on top of the selected
     // addons. Adds to total + shown as a separate summary line.
@@ -1048,13 +1075,14 @@ function renderSummary() {
     const discountPercent = booking.discountPercent || 0;
     const discountAmount = discountPercent > 0 ? venuePrice * (discountPercent / 100) : 0;
     const discountLabel = l==='bg' ? 'Отстъпка' : 'Discount';
-    const grandTotal = venuePrice + extraGuestsCost + addonsTotal + drinksTotal - discountAmount;
+    const grandTotal = venuePrice + extraGuestsCost + addonsTotal + glasswareTotal + drinksTotal - discountAmount;
     const rows = [
       { label: (l==='bg'?'Наем на зала':'Venue rental') + ` (${l==='bg'?'до':'up to'} ${VENUE_MIN_GUESTS} ${l==='bg'?'гости':'guests'})`, value: '€' + venuePrice.toFixed(2) },
       ...(extraGuests > 0 ? [{ label: (l==='bg'?`+${extraGuests} допълнителни гости`:`+${extraGuests} extra guests`) + ` (× €${EXTRA_GUEST_FEE_EUR})`, value: '€' + extraGuestsCost.toFixed(2) }] : []),
       ...(addonsTotal > 0 ? [{ label: l==='bg'?'Допълнителни услуги':'Add-on services', value: '€' + addonsTotal.toFixed(2) }] : []),
       ...(autoClean ? [{ label: (l==='bg' ? `${autoClean.name_bg} (задължително)` : `${autoClean.name_en} (mandatory)`), value: '€' + autoClean.price.toFixed(2), sub: true }] : []),
       ...(drinksTotal > 0 ? [{ label: l==='bg'?'Напитки':'Drinks', value: '€' + drinksTotal.toFixed(2) }] : []),
+      ...(glasswareTotal > 0 ? [{ label: l==='bg'?'Посуда':'Glassware', value: '€' + glasswareTotal.toFixed(2) }] : []),
       ...(discountAmount > 0 ? [{ label: `${discountLabel} (${discountPercent}%)`, value: '−€' + discountAmount.toFixed(2), discount: true }] : []),
       { label: l==='bg'?'Обща сума':'Total', value: '€' + grandTotal.toFixed(2), total: true },
     ];
@@ -1331,7 +1359,7 @@ function setupSubmit() {
     } catch (e) { console.warn('fbq lead failed:', e); }
 
     // Success - show confirmation
-    document.getElementById('step-6')?.classList.remove('active');
+    document.getElementById('step-7')?.classList.remove('active');
     document.querySelector('.wizard-progress').style.display = 'none';
     document.getElementById('form-success').style.display = 'block';
     window.scrollTo({ top: document.querySelector('.wizard-section').offsetTop - 90, behavior: 'smooth' });
@@ -1344,8 +1372,9 @@ document.addEventListener('langChange', () => {
   if (currentStep === 1) renderStep2VariantPicker();
   if (currentStep === 2) renderAddons();
   if (currentStep === 3) renderDrinks();
-  if (currentStep === 4) renderPartners();
-  if (currentStep === 6) renderSummary();
+  if (currentStep === 4) renderGlassware();
+  if (currentStep === 5) renderPartners();
+  if (currentStep === 7) renderSummary();
   updateSeasonalHint();
   updatePreview();
   updateAddonsTotal();
