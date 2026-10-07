@@ -1,6 +1,6 @@
 import type { DiffEntry } from "./diff.ts";
 import { localizedItemName } from "./item-names.ts";
-import { eventTypeBg, itemNameBg, paymentBg, timeOfDayBg } from "./labels-bg.ts";
+import { customerEmailLang, eventTypeBg, itemNameBg, paymentBg, timeOfDayBg } from "./labels-bg.ts";
 
 type Enquiry = {
   id: string;
@@ -27,7 +27,7 @@ type Enquiry = {
 };
 
 // Customer-email copy in both languages. The customer email is rendered in the
-// language the customer used on the site (e.lang); item names come from the
+// language from customerEmailLang() (Bulgarian for everyone); item names come from the
 // shared catalog (localizedItemName). Owner/team emails are Bulgarian (labels-bg.ts).
 const EMAIL_T = {
   bg: {
@@ -89,7 +89,7 @@ export function partnerCategoryLabel(category: string, lang: "bg" | "en"): strin
 
 function localizedEventType(e: { event_id?: string | null; event_type: string }, lang: "bg" | "en"): string {
   const entry = e.event_id ? EVENT_TITLES[e.event_id] : undefined;
-  return entry ? entry[lang] : e.event_type;
+  return entry ? entry[lang] : (lang === "bg" ? eventTypeBg(e) : e.event_type);
 }
 
 // Venue base prices (EUR) keyed by event_id, mirroring the public reservation
@@ -189,7 +189,7 @@ function fmtExpiry(iso: string | null, locale: string): string {
  * Reads like a hand-written invitation from the venue manager.
  */
 export function renderCustomerEmail(e: Enquiry, siteUrl: string): { subject: string; html: string } {
-  const lang: "bg" | "en" = e.lang === "en" ? "en" : "bg";
+  const lang = customerEmailLang(e.lang);
   const t = EMAIL_T[lang];
   const site = siteUrl.replace(/\/$/, "");
   const editUrl = `${site}/edit.html?token=${e.edit_token}`;

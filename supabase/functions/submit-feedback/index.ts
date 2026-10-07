@@ -4,6 +4,7 @@ import { json, preflight } from "../_shared/cors.ts";
 import { getIp, rateLimitHit } from "../_shared/rate-limit.ts";
 import { FEEDBACK_DISCOUNT_PERCENT } from "../_shared/feedback-reward.ts";
 import { feedbackRoute, formOf, RATINGS, SOURCES, type SurveyForm, V1_RATINGS } from "../_shared/feedback-form.ts";
+import { customerEmailLang } from "../_shared/labels-bg.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -77,7 +78,7 @@ serve(async (req) => {
     .from("enquiries").select("id, full_name, email, lang").eq("feedback_token", token).maybeSingle();
   if (lookupErr) { console.error(lookupErr); return json({ error: "server_error" }, 500); }
   if (!e) return json({ error: "not_found" }, 404);
-  const lang: Lang = e.lang === "en" ? "en" : "bg";
+  const lang: Lang = customerEmailLang(e.lang);
 
   // One answer per enquiry (unique enquiry_id): the page pre-fills the saved
   // answers, so a re-submit updates that row instead of adding another.

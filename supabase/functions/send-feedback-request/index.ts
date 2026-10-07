@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import { json, preflight } from "../_shared/cors.ts";
 import { FEEDBACK_DISCOUNT_PERCENT } from "../_shared/feedback-reward.ts";
+import { customerEmailLang } from "../_shared/labels-bg.ts";
 
 // Cron-triggered, two passes, confirmed/completed bookings only:
 //  1. First ask  — events whose preferred_date was yesterday (Sofia time)
@@ -108,7 +109,7 @@ const COPY = {
 };
 
 function renderFeedbackEmail(e: { full_name: string; event_type: string; preferred_date: string; feedback_token: string; lang?: string | null }, isReminder = false) {
-  const lang = e.lang === "en" ? "en" : "bg";
+  const lang = customerEmailLang(e.lang);
   const c = COPY[lang];
   const first = (e.full_name || "").split(" ")[0] || e.full_name || "";
   const date = fmtDateBg(e.preferred_date);
