@@ -9,6 +9,18 @@ export type FinEvent = {
   income_drinks_eur: number | string | null; pnl_drinks: DrinkLine[] | null;
 };
 export type Gap = { month: string; text: string };
+export type BookedAddon = { id?: string; qty?: number | string | null; category?: string | null };
+
+// Посуда on a booking whose purchase price per piece is not set (admin
+// catalog → Посуда). Same rule as glassware-costs.js on the finance page.
+export function glasswareGap(addons: BookedAddon[] | null, glasswareIds: Set<string>, costs: Map<string, number>): string | null {
+  const missing = new Set((addons ?? [])
+    .filter(a => a.id && (Number(a.qty) || 0) > 0 && (a.category === "glassware" || glasswareIds.has(a.id)))
+    .filter(a => !costs.has(a.id!))
+    .map(a => a.id!));
+  const n = missing.size;
+  return n ? `Посуда: липсва покупна цена за ${n} ${n === 1 ? "вид" : "вида"} (Каталог → Посуда)` : null;
+}
 
 export function nextMonth(m: string): string {
   const [y, mo] = m.split("-").map(Number);
@@ -42,6 +54,7 @@ export function fmtDateBg(iso: string | null): string {
 export function financeGaps(opts: {
   events: FinEvent[]; today: string; nowMonth: string; electricityMonths: Set<string>;
   enquiryDrinks: Map<string, DrinkLine[]>; eventsWithDrinksExpense: Set<string>; names: Map<string, string>;
+  enquiryAddons?: Map<string, BookedAddon[]>; glasswareIds?: Set<string>; glasswareCosts?: Map<string, number>;
 }): Gap[] {
   const { events, today, nowMonth, electricityMonths } = opts;
   const held = events.filter(fe => !fe.event_date || fe.event_date < today);
@@ -56,7 +69,12 @@ export function financeGaps(opts: {
     .slice().sort((a, b) => (a.event_date ?? "").localeCompare(b.event_date ?? ""))
     .forEach(fe => {
       const g = bottleGap(fe, fe.enquiry_id ? opts.enquiryDrinks.get(fe.enquiry_id) ?? null : null, opts.eventsWithDrinksExpense.has(fe.id));
-      if (g && fe.month) gaps.push({ month: fe.month, text: `${fmtDateBg(fe.event_date)} · ${fe.customer_name || (fe.enquiry_id && opts.names.get(fe.enquiry_id)) || "Събитие"}: ${g}` });
+      const label = `${fmtDateBg(fe.event_date)} · ${fe.customer_name || (fe.enquiry_id && opts.names.get(fe.enquiry_id)) || "Събитие"}`;
+      if (g && fe.month) gaps.push({ month: fe.month, text: `${label}: ${g}` });
+      const gg = fe.enquiry_id
+        ? glasswareGap(opts.enquiryAddons?.get(fe.enquiry_id) ?? null, opts.glasswareIds ?? new Set(), opts.glasswareCosts ?? new Map())
+        : null;
+      if (gg && fe.month) gaps.push({ month: fe.month, text: `${label}: ${gg}` });
     });
   return gaps;
 }

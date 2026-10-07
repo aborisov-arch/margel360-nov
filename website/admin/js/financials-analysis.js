@@ -184,6 +184,11 @@ function financeGaps(){
     .filter(fe=>(!monthFilter||fe.month===monthFilter)&&eventHasHappened(fe)&&eventBottleCost(fe).missing)
     .sort((a,b)=>(a.event_date||'').localeCompare(b.event_date||''))
     .forEach(fe=>gaps.push({text:`${fmtDateBg(fe.event_date)} · ${fe.customer_name||allEnquiries.find(e=>e.id===fe.enquiry_id)?.full_name||'Събитие'}: ${bottleGapText(fe)}`,attr:`data-bottle-event="${esc(fe.id)}"`}));
+  // Посуда booked on held events whose purchase price per piece is not set.
+  Array.from(financialEventsById.values())
+    .filter(fe=>(!monthFilter||fe.month===monthFilter)&&eventHasHappened(fe)&&eventGlasswareCost(fe).missing)
+    .sort((a,b)=>(a.event_date||'').localeCompare(b.event_date||''))
+    .forEach(fe=>gaps.push({text:`${fmtDateBg(fe.event_date)} · ${fe.customer_name||allEnquiries.find(e=>e.id===fe.enquiry_id)?.full_name||'Събитие'}: ${glasswareGapText(fe)}`,attr:`data-glassware-event="${esc(fe.id)}"`}));
   return gaps;
 }
 function renderFinanceGaps(){
