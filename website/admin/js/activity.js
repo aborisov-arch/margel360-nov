@@ -17,6 +17,7 @@ const TABLE_LABELS = {
     manager_event_overtime: 'Извънреден труд (управител)',
     monthly_electricity:    'Сметка за ток',
     drink_purchase_prices:  'Покупна цена на напитка',
+    addon_purchase_prices:  'Покупна цена на посуда',
   },
   en: {
     financial_events:       'Financial event (P&L)',

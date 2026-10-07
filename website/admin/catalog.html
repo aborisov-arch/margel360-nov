@@ -96,6 +96,7 @@
         <div id="catalog-tabs" role="group" aria-label="Раздел на каталога">
           <button class="btn btn-outline btn-sm cat-tab active" data-tab="drinks" data-i18n="cat_tab_drinks">Напитки</button>
           <button class="btn btn-outline btn-sm cat-tab" data-tab="services" data-i18n="cat_tab_services">Услуги</button>
+          <button class="btn btn-outline btn-sm cat-tab" data-tab="glassware" data-i18n="cat_tab_glassware">Посуда</button>
         </div>
         <button class="btn btn-primary btn-sm" id="cat-add-btn" style="margin-left:auto">Добави напитка</button>
       </div>
@@ -131,23 +132,23 @@
             <label for="cf-hint-en" data-i18n="cat_f_hint_en">Бележка (EN, незадължителна)</label>
             <input type="text" id="cf-hint-en" maxlength="200" placeholder="Each additional hour - €60">
           </div>
-          <div class="form-group" style="display:flex;gap:8px;align-items:center">
+          <div class="form-group" id="cf-qty-toggle" style="display:flex;gap:8px;align-items:center">
             <input type="checkbox" id="cf-qty-item" style="width:18px;height:18px">
             <label for="cf-qty-item" style="margin:0" data-i18n="cat_f_qty_item">Артикул с количество (клиентът избира брой)</label>
           </div>
           <div id="cf-qty-detail" style="display:none">
             <div class="form-group">
-              <label for="cf-max-qty" data-i18n="cat_f_max_qty">Максимално количество (наличност, празно = без лимит)</label>
+              <label for="cf-max-qty" id="cf-max-qty-label">Максимално количество (наличност, празно = без лимит)</label>
               <input type="number" id="cf-max-qty" min="1" max="999" step="1">
             </div>
-            <div class="form-group">
+            <div class="form-group" id="cf-free-until-group">
               <label for="cf-free-until" data-i18n="cat_f_free_until">Безплатни бройки, включени в наема (мебели)</label>
               <input type="number" id="cf-free-until" min="0" max="999" step="1">
             </div>
           </div>
         </div>
         <div class="form-group">
-          <label for="cf-price" data-i18n="cat_f_price">Цена (EUR)</label>
+          <label for="cf-price" id="cf-price-label">Цена (EUR)</label>
           <input type="number" id="cf-price" min="0" max="50000" step="0.01">
           <div id="cf-bgn-view" style="margin-top:6px;color:#777;font-size:0.85rem"></div>
         </div>
@@ -179,8 +180,8 @@
             <th data-i18n="cat_col_name">Име</th>
             <th data-i18n="cat_col_details">Детайли</th>
             <th data-i18n="cat_col_price">Цена</th>
-            <th data-purchase-header hidden>Покупна цена / бутилка</th>
-            <th data-purchase-header hidden>Печалба / бутилка</th>
+            <th data-purchase-header="Покупна цена / {unit}" hidden>Покупна цена / бутилка</th>
+            <th data-purchase-header="Печалба / {unit}" hidden>Печалба / бутилка</th>
             <th data-purchase-header hidden title="(Продажна − покупна цена) ÷ продажна цена × 100">Марж</th>
             <th data-i18n="cat_col_sort">Ред</th>
             <th data-i18n="cat_col_actions">Действия</th>
@@ -190,16 +191,16 @@
       </table>
       </div>
     </div>
-    <p id="catalog-cost-note" hidden style="color:#68645c;font-size:13px;line-height:1.6">Покупните цени са видими само за финансовия екип. Марж = (продажна − покупна цена) ÷ продажна цена × 100, преди останалите разходи. Въвеждайте покупната и продажната цена на една и съща ДДС основа. Изчислението се обновява при въвеждане; натиснете „Запази“, за да се използва цената за нови бутилки в събитията. Старите събития запазват своите цени.</p>
+    <p id="catalog-cost-note" hidden style="color:#68645c;font-size:13px;line-height:1.6">Покупните цени са видими само за финансовия екип. Марж = (продажна − покупна цена) ÷ продажна цена × 100, преди останалите разходи. Въвеждайте покупната и продажната цена на една и съща ДДС основа. Изчислението се обновява при въвеждане; натиснете „Запази“, за да се запази. При напитките цената се използва за нови бутилки в събитията; старите събития запазват своите цени.</p>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7" integrity="sha384-tD6X9wDfTRdKpuPoHFZrVW2RXjSYSWjLBPWXxpHprWWl9eaHlwl05aRjHsiKF97n" crossorigin="anonymous" defer></script>
   <script src="js/supabase-client.js?v=4" defer></script>
-  <script src="js/admin-i18n.js?v=31" defer></script>
+  <script src="js/admin-i18n.js?v=32" defer></script>
   <script src="js/auth.js?v=8" defer></script>
   <script src="js/toast.js?v=2" defer></script>
-  <script src="js/catalog-purchase.js?v=1" defer></script>
-  <script src="js/catalog.js?v=3" defer></script>
+  <script src="js/catalog-purchase.js?v=2" defer></script>
+  <script src="js/catalog.js?v=4" defer></script>
   <script src="js/admin-mobile.js?v=1" defer></script>
 </body>
 </html>

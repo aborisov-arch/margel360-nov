@@ -27,5 +27,7 @@ const ITEM_NAMES_BG = { "arch": "Декоративна арка с осветл
 function itemNameBg(item) {
   const id = item && item.id;
   const cat = id && ((window.addonServices || []).find(a => a.id === id) || (window.drinks || []).find(d => d.id === id));
-  return (cat && cat.name_bg) || (id && ITEM_NAMES_BG[id]) || (item && item.name) || id || '';
+  // item.name_bg is stamped by the server from the catalog (covers items the
+  // manager adds later, e.g. Посуда, that are not in ITEM_NAMES_BG).
+  return (cat && cat.name_bg) || (item && item.name_bg) || (id && ITEM_NAMES_BG[id]) || (item && item.name) || id || '';
 }

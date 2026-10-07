@@ -14,7 +14,7 @@ type Enquiry = {
   time_of_day: string;
   arrival_time?: string | null;
   guests: number | null;
-  addons: Array<{ id: string; name: string; price: number }> | null;
+  addons: Array<{ id: string; name: string; price: number; qty?: number; name_bg?: string; category?: string }> | null;
   drinks: Array<{ id: string; name: string; qty: number; price_eur?: number | null }> | null;
   partner_interest?: Array<{ id: string; name: string; category: string }> | null;
   payment_method: string;
@@ -214,7 +214,7 @@ export function renderCustomerEmail(e: Enquiry, siteUrl: string): { subject: str
   const rowPrice = `padding:9px 0;border-bottom:1px dashed ${GOLD_DASH};font:italic 14px/1.4 ${SERIF};color:${GOLD};text-align:right;white-space:nowrap`;
 
   const addonRows = (e.addons ?? []).map(a =>
-    `<tr><td style="${rowCell}">${esc(localizedItemName(a, lang))}</td><td style="${rowPrice}">${fmtEur(a.price, a.id)}</td></tr>`
+    `<tr><td style="${rowCell}">${esc(localizedItemName(a, lang))}${typeof a.qty === "number" ? ` × ${a.qty}` : ""}</td><td style="${rowPrice}">${fmtEur(a.price, a.id)}</td></tr>`
   ).join("");
 
   const drinkRows = (e.drinks ?? []).map(d => {
@@ -470,7 +470,7 @@ export function renderOwnerEmail(
   const refNo = e.enquiry_number != null ? `#${e.enquiry_number} ` : "";
   const subject = `${subjectPrefix}${refNo}${e.full_name} — ${eventTypeBg(e)} — ${e.preferred_date} — €${totals.total.toFixed(2)}`;
 
-  const addonsText = (e.addons ?? []).map(a => `  - ${itemNameBg(a)}: ${fmtEur(a.price, a.id)}`).join("\n");
+  const addonsText = (e.addons ?? []).map(a => `  - ${itemNameBg(a)}${typeof a.qty === "number" ? ` × ${a.qty}` : ""}: ${fmtEur(a.price, a.id)}`).join("\n");
   const drinksText = (e.drinks ?? []).map(d => {
     const line = (Number(d.price_eur) || 0) * (Number(d.qty) || 0);
     return line > 0

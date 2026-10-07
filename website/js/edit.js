@@ -256,9 +256,18 @@ function initDatePicker() {
   });
 }
 
+// Whole euros stay whole (€300); sub-euro glassware keeps its cents (€0.80).
+function fmtAmount(eur) { return Number.isInteger(eur) ? String(eur) : Number(eur).toFixed(2); }
+
 function renderAddons() {
-  const grid = $('addon-grid');
-  grid.innerHTML = '';
+  const addonGrid = $('addon-grid');
+  addonGrid.innerHTML = '';
+  // Посуда (category 'glassware') renders in its own section; same state and
+  // save path as the other add-ons.
+  const glassGrid = $('glassware-grid');
+  if (glassGrid) glassGrid.innerHTML = '';
+  const hasGlassware = addonServices.some(s => s.category === 'glassware');
+  if ($('glassware-section')) $('glassware-section').hidden = !hasGlassware;
 
   // Seed state.addonQtys from saved enquiry once. Stepper rows persist qty
   // explicitly; older checkbox rows are treated as qty=1 when present. Clamp
@@ -272,6 +281,7 @@ function renderAddons() {
   }
 
   addonServices.forEach(svc => {
+    const grid = svc.category === 'glassware' && glassGrid ? glassGrid : addonGrid;
     const li = document.createElement('li');
     const qty = state.addonQtys[svc.id] || 0;
 
@@ -291,7 +301,7 @@ function renderAddons() {
       info.className = 'addon-card__info';
       info.innerHTML = `
         <span class="addon-card__name">${esc(svc.name_bg)}</span>
-        <span class="addon-card__price">€${Math.round(svc.price)} / бр.</span>
+        <span class="addon-card__price">€${fmtAmount(svc.price)} / бр.</span>
         ${svc.freeUntil != null ? `<span class="addon-card__hint">Първите ${svc.freeUntil} са включени</span>` : ''}
       `;
 
@@ -345,7 +355,7 @@ function renderAddons() {
     info.className = 'addon-card__info';
     info.innerHTML = `
       <span class="addon-card__name">${esc(svc.name_bg)}</span>
-      <span class="addon-card__price">€${Math.round(svc.price)}</span>
+      <span class="addon-card__price">€${fmtAmount(svc.price)}</span>
     `;
 
     label.append(input, visual, info);
@@ -361,6 +371,7 @@ function renderAddons() {
   // (deleted/hidden by the manager). Rendered from the payload snapshot as
   // keep-or-remove cards - the server accepts them only unchanged.
   const knownAddonIds = new Set(addonServices.map(s => s.id));
+  const grid = addonGrid;
   (state.enquiry.addons ?? []).filter(a => !knownAddonIds.has(a.id)).forEach(a => {
     const qty = state.addonQtys[a.id] || 0;
     const li = document.createElement('li');
@@ -372,7 +383,7 @@ function renderAddons() {
     const info = document.createElement('span');
     info.className = 'addon-card__info';
     info.innerHTML = `
-      <span class="addon-card__name">${esc(a.name)}</span>
+      <span class="addon-card__name">${esc(a.name_bg || a.name)}</span>
       <span class="addon-card__price">€${Math.round(Number(a.price) || 0)}</span>
       <span class="addon-card__hint">Вече не се предлага - може да я запазите или премахнете</span>
     `;

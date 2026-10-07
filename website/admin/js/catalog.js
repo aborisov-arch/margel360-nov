@@ -11,8 +11,11 @@ const IMAGE_EXT = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp
 const BGN_RATE = 1.95583;     // fixed legal peg - never fetch this
 const MAX_PRICE_EUR = 50000;  // matches the server-side MAX_ADDON_PRICE bound
 
-let activeTab = 'drinks';     // 'drinks' | 'services'
-let rows = { drinks: [], services: [] };
+let activeTab = 'drinks';     // 'drinks' | 'services' | 'glassware'
+// Посуда (glassware) rows are addon_services with category 'glassware':
+// always per piece (max_qty set), shown on the Services page and in the
+// booking wizard step after Напитки.
+let rows = { drinks: [], services: [], glassware: [] };
 let editingId = null;
 let editingImagePath = null;
 let pendingFile = null;
@@ -46,12 +49,20 @@ async function loadRows() {
     showToast(t('cat_load_failed'), 'error');
     return;
   }
-  rows = { drinks: dr.data || [], services: sv.data || [] };
+  const addons = sv.data || [];
+  rows = {
+    drinks: dr.data || [],
+    services: addons.filter(r => (r.category || 'service') !== 'glassware'),
+    glassware: addons.filter(r => r.category === 'glassware'),
+  };
   renderTable();
 }
 
 function detailsCell(r) {
   if (activeTab === 'drinks') return esc(t('cat_cat_' + r.cat));
+  if (activeTab === 'glassware') {
+    return esc(r.max_qty != null && r.max_qty < 999 ? `${t('cat_badge_stock')} ${r.max_qty}` : t('cat_badge_per_piece'));
+  }
   const bits = [];
   if (r.id === 'cleaning') bits.push(`<span style="color:#8a6d1a;font-size:0.78rem">${esc(t('cat_mandatory_badge'))}</span>`);
   if (r.max_qty != null) bits.push(esc(`${t('cat_badge_maxqty')} ${r.max_qty}`));
@@ -62,18 +73,18 @@ function detailsCell(r) {
 function renderTable() {
   syncCatalogCostHeaders();
   document.querySelectorAll('.cat-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === activeTab));
-  document.getElementById('cat-add-btn').textContent = t(activeTab === 'drinks' ? 'cat_add_drink' : 'cat_add_service');
+  document.getElementById('cat-add-btn').textContent = t(activeTab === 'drinks' ? 'cat_add_drink' : activeTab === 'glassware' ? 'cat_add_glassware' : 'cat_add_service');
   const tbody = document.getElementById('catalog-body');
   const list = rows[activeTab];
   if (!list.length) {
-    tbody.innerHTML = `<tr><td colspan="${catalogCosts.allowed && activeTab === 'drinks' ? 9 : 6}" style="text-align:center;color:#777;padding:28px">${esc(t('cat_empty'))}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="${catalogCosts.allowed && costTab() ? 9 : 6}" style="text-align:center;color:#777;padding:28px">${esc(t('cat_empty'))}</td></tr>`;
     return;
   }
   tbody.innerHTML = list.map(r => `
     <tr data-id="${esc(r.id)}"${r.active ? '' : ' style="opacity:0.55"'}>
       <td>${r.img
         ? `<img src="${esc(imgUrl(r.img))}" alt="" style="width:56px;height:40px;object-fit:cover;border-radius:6px">`
-        : `<span style="display:inline-flex;width:56px;height:40px;border-radius:6px;background:#eee;align-items:center;justify-content:center" aria-hidden="true">${activeTab === 'drinks' ? '🍷' : '🎈'}</span>`}</td>
+        : `<span style="display:inline-flex;width:56px;height:40px;border-radius:6px;background:#eee;align-items:center;justify-content:center" aria-hidden="true">${activeTab === 'drinks' ? '🍷' : activeTab === 'glassware' ? '🥂' : '🎈'}</span>`}</td>
       <td><strong>${esc(r.name_bg)}</strong><br><span style="color:#777;font-size:0.82rem">${esc(r.name_en)}</span>${r.active ? '' : ` <span style="color:#c62828;font-size:0.78rem">(${esc(t('cat_hidden'))})</span>`}</td>
       <td>${detailsCell(r)}</td>
       <td style="white-space:nowrap">€${Number(r.price_eur).toFixed(2)}<br><span style="color:#777;font-size:0.8rem">${bgn(r.price_eur)} лв.</span></td>
@@ -98,17 +109,28 @@ function syncBgnView() {
     Number.isFinite(price) && price >= 0 ? `= ${bgn(price)} лв.` : '';
 }
 
+function formTitleKey(isEdit) {
+  if (activeTab === 'drinks') return isEdit ? 'cat_form_edit_drink' : 'cat_form_add_drink';
+  if (activeTab === 'glassware') return isEdit ? 'cat_form_edit_glassware' : 'cat_form_add_glassware';
+  return isEdit ? 'cat_form_edit_service' : 'cat_form_add_service';
+}
+
 function openForm(row) {
   const isDrinks = activeTab === 'drinks';
+  const isGlass = activeTab === 'glassware';
   editingId = row ? row.id : null;
   editingImagePath = row ? row.img : null;
   pendingFile = null;
 
   document.getElementById('cf-drink-fields').style.display = isDrinks ? '' : 'none';
   document.getElementById('cf-service-fields').style.display = isDrinks ? 'none' : '';
-  document.getElementById('catalog-form-title').textContent =
-    t(isDrinks ? (row ? 'cat_form_edit_drink' : 'cat_form_add_drink')
-               : (row ? 'cat_form_edit_service' : 'cat_form_add_service'));
+  document.getElementById('catalog-form-title').textContent = t(formTitleKey(!!row));
+  // Glassware is always sold per piece: no on/off checkbox and no free
+  // pieces, only an optional stock limit.
+  document.getElementById('cf-qty-toggle').style.display = isGlass ? 'none' : '';
+  document.getElementById('cf-free-until-group').style.display = isGlass ? 'none' : '';
+  document.getElementById('cf-price-label').textContent = t(isGlass ? 'cat_f_price_piece' : 'cat_f_price');
+  document.getElementById('cf-max-qty-label').textContent = t(isGlass ? 'cat_f_stock' : 'cat_f_max_qty');
 
   document.getElementById('cf-name-bg').value = row ? row.name_bg : '';
   document.getElementById('cf-name-en').value = row ? row.name_en : '';
@@ -126,9 +148,9 @@ function openForm(row) {
   } else {
     document.getElementById('cf-hint-bg').value = row?.hint_bg || '';
     document.getElementById('cf-hint-en').value = row?.hint_en || '';
-    document.getElementById('cf-qty-item').checked = !!row && (row.max_qty != null || row.free_until != null);
-    document.getElementById('cf-max-qty').value = row?.max_qty ?? '';
-    document.getElementById('cf-free-until').value = row?.free_until ?? '';
+    document.getElementById('cf-qty-item').checked = isGlass || (!!row && (row.max_qty != null || row.free_until != null));
+    document.getElementById('cf-max-qty').value = row?.max_qty != null && !(isGlass && row.max_qty >= 999) ? row.max_qty : '';
+    document.getElementById('cf-free-until').value = isGlass ? '' : (row?.free_until ?? '');
 
     const qtyBox = document.getElementById('cf-qty-item');
     qtyBox.disabled = isCleaning;   // cleaning is auto-added without qty - a qty flip would 400 every booking
@@ -215,6 +237,8 @@ async function saveItem() {
           // let it carry qty columns regardless of UI state (belt-and-braces
           // alongside the DB trigger and the disabled checkbox above).
           ...(editingId === 'cleaning' ? { free_until: null, max_qty: null } : serviceQtyColumns()),
+          // Glassware: per piece, never free pieces (DB also requires max_qty).
+          ...(activeTab === 'glassware' ? { category: 'glassware', free_until: null } : {}),
         };
 
     const table = tableFor(activeTab);
@@ -327,9 +351,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 function rerenderPage() {
   renderTable();
   if (document.getElementById('catalog-form').style.display !== 'none') {
-    const isDrinks = activeTab === 'drinks';
-    document.getElementById('catalog-form-title').textContent =
-      t(isDrinks ? (editingId ? 'cat_form_edit_drink' : 'cat_form_add_drink')
-                 : (editingId ? 'cat_form_edit_service' : 'cat_form_add_service'));
+    document.getElementById('catalog-form-title').textContent = t(formTitleKey(!!editingId));
   }
 }

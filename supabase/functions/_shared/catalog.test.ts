@@ -89,3 +89,19 @@ Deno.test("repriceAddons: unknown id rejected at submit, grandfathered unchanged
     { ok: true, value: [{ id: "nope", name: "Old svc", price: 50, qty: 2 }] });
   assertEquals(repriceAddons([{ id: "nope", name: "Old svc", price: 50, qty: 1 }], cat(), stored).ok, false);
 });
+
+Deno.test("repriceAddons stamps name_bg and the glassware category", () => {
+  const cat = {
+    drinks: new Map(),
+    addons: new Map([
+      ["glass1", { id: "glass1", name_en: "Wine glass", name_bg: "Чаша за вино", category: "glassware", price_eur: 0.8, free_until: null, max_qty: 999, active: true }],
+      ["dj", { id: "dj", name_en: "DJ", name_bg: "DJ за 5 часа", category: "service", price_eur: 300, free_until: null, max_qty: null, active: true }],
+    ]),
+  };
+  const r = repriceAddons([{ id: "glass1", name: "x", price: 0, qty: 50 }, { id: "dj", name: "x", price: 0 }], cat);
+  if (!r.ok) throw new Error(r.error);
+  assertEquals(r.value, [
+    { id: "glass1", name: "Wine glass", price: 40, qty: 50, name_bg: "Чаша за вино", category: "glassware" },
+    { id: "dj", name: "DJ", price: 300, name_bg: "DJ за 5 часа" },
+  ]);
+});
