@@ -119,11 +119,14 @@ document.addEventListener('click', event => {
   revenueWithoutVat = !revenueWithoutVat;
   const button = document.getElementById('fin-vat-toggle');
   button.setAttribute('aria-pressed', String(revenueWithoutVat));
-  button.textContent = revenueWithoutVat ? 'Приходи: без ДДС' : 'Приходи: с ДДС';
+  button.textContent = revenueWithoutVat ? 'Приходи и печалба: без ДДС' : 'Приходи и печалба: с ДДС';
   document.getElementById('fin-vat-note').textContent =
-    (revenueWithoutVat ? 'Приходите са без ДДС 20% (сума ÷ 1,20).' : 'Приходите включват ДДС 20%.') +
-    ' Плащанията, разходите и печалбата са по записаните суми.';
+    (revenueWithoutVat
+      ? 'Приходите са без ДДС 20% (сума ÷ 1,20); печалбата = приходи без ДДС − разходи.'
+      : 'Приходите и печалбата включват ДДС 20%.') +
+    ' Плащанията и разходите са по записаните суми.';
   renderMonthSummary();
+  updateDetailTotals();
 });
 function esc(s) {
   if (s == null) return '';
@@ -508,7 +511,8 @@ function renderMonthSummary() {
   expByCat.staff_service += managerPayTotal();
   renderElectricity();
   const income = rent + drinks + addons + overtime + dj + employees;
-  const profit = income - expense;
+  // Profit follows the VAT toggle: displayed revenue (with or without VAT) − expenses.
+  const profit = revenueForDisplay(income) - expense;
   const realizedCount = scopeFes.length - upcomingCount;
   const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
   set('sum-month-label', monthLabel(monthFilter));
@@ -1161,19 +1165,22 @@ function updateDetailTotals() {
   const inc = liveIncomeTotals(fe);
   const expense = liveExpenseTotal(fe);
   const paid = livePaid(fe);
-  const balance = inc.total - paid;
-  const net = inc.total - expense;
+  const balance = inc.total - paid;   // what the client owes: always as entered (with VAT)
+  // Revenue, net and margin follow the VAT toggle; expenses stay as entered.
+  const shownIncome = revenueForDisplay(inc.total);
+  const net = shownIncome - expense;
   const costMissing=eventBottleCost(fe,true).missing;
-  const margin = inc.total > 0 && !costMissing ? Math.round((net / inc.total) * 100) : null;
+  const margin = shownIncome > 0 && !costMissing ? Math.round((net / shownIncome) * 100) : null;
+  const vatTag = revenueWithoutVat ? ' без ДДС' : '';
 
   const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
-  set('pnl-income-total',  fmtEur(inc.total));
-  set('pnl-drinks-total',  fmtEur(drinksTotalOf(getWorkingDrinks())));
-  set('pnl-services-total', fmtEur(liveAddonsTotal(fe)));
+  set('pnl-income-total',  fmtRevenue(inc.total) + vatTag);
+  set('pnl-drinks-total',  fmtRevenue(drinksTotalOf(getWorkingDrinks())));
+  set('pnl-services-total', fmtRevenue(liveAddonsTotal(fe)));
   set('pnl-expense-total', fmtEur(expense));
   set('pnl-paid-total',    fmtEur(paid));
   set('pnl-balance',       fmtEur(balance));
-  set('pnl-net-eur',       fmtEur(net));
+  set('pnl-net-eur',       fmtEur(net) + vatTag);
   renderBottleCostSummary(fe);
   const staffHost=document.getElementById('event-staff-taken');
   if(staffHost){const staff=(prefix)=>(expensesByEvent.get(fe?.id)||[]).filter(r=>[prefix+'_fee',prefix+'_overtime'].includes(expFieldValue(r,'category'))).reduce((s,r)=>s+Number(expFieldValue(r,'amount_eur')||0),0);staffHost.textContent=`Получено за вечерта — Иван: ${fmtEur(staff('ivan'))} · Ели: ${fmtEur(staff('eli'))}. Сумите са включени в разходите по-долу.`;}
@@ -2174,7 +2181,7 @@ function openMetricBreakdown(metric) {
       case 'upcoming': return !past ? revenueForDisplay(feIncome(fe).total) : null;
       case 'paid':     return fePaid(fe) || null;
       case 'expense':  return past  ? (feExpenseTotal(fe) || null) : null;
-      case 'profit':   return past  ? (feIncome(fe).total - feExpenseTotal(fe)) : null;
+      case 'profit':   return past  ? (revenueForDisplay(feIncome(fe).total) - feExpenseTotal(fe)) : null;
       default:         return null;
     }
   };
@@ -2187,7 +2194,7 @@ function openMetricBreakdown(metric) {
   const overheadRows = ['expense','profit'].includes(metric) ? electricityDrillRows(metric==='profit'?-1:1) + managerPayDrillRows(metric==='profit'?-1:1) : '';
   const total = rows.reduce((s, r) => s + r.amt, 0) + overhead;
   const title = document.getElementById('drill-title');
-  if (title) title.textContent = `${TITLES[metric] || 'Разбивка'}${['income','upcoming'].includes(metric) ? (revenueWithoutVat ? ' · без ДДС' : ' · с ДДС') : ''} · ${monthLabel(monthFilter)}`;
+  if (title) title.textContent = `${TITLES[metric] || 'Разбивка'}${['income','upcoming','profit'].includes(metric) ? (revenueWithoutVat ? ' · без ДДС' : ' · с ДДС') : ''} · ${monthLabel(monthFilter)}`;
   const body = document.getElementById('drill-body');
   if (body) {
     body.innerHTML = rows.length || overheadRows

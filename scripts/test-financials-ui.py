@@ -36,6 +36,13 @@ with sync_playwright() as p:
  assert page.locator('#sum-income-eur').inner_text()=='€1083.33'
  assert page.locator('[data-chart-total="income"]').inner_text()=='€1083.33'
  assert page.locator('#sum-expense-eur').inner_text()=='€50.00'
+ # Profit follows the toggle: revenue without VAT − expenses (1083.33 − 50).
+ assert page.locator('#sum-profit-eur').inner_text()=='€1033.33'
+ assert 'печалба' in page.locator('#fin-vat-toggle').inner_text().lower()
+ page.evaluate("openMetricBreakdown('profit')")
+ assert 'без ДДС' in page.locator('#drill-title').inner_text()
+ assert '€1033.33' in page.locator('#drill-body').inner_text()
+ page.evaluate('closeDrill()')
  page.locator('#income-cat-breakdown [data-cat="overtime"]').click()
  assert 'без ДДС' in page.locator('#drill-title').inner_text()
  assert '€250.00' in page.locator('#drill-body').inner_text()
@@ -43,6 +50,7 @@ with sync_playwright() as p:
  assert saved_before==page.evaluate('JSON.stringify([...financialEventsById.values()])')
  page.locator('#fin-vat-toggle').click()
  assert page.locator('[data-chart-total="income"]').inner_text()=='€1300.00'
+ assert page.locator('#sum-profit-eur').inner_text()=='€1250.00'
  assert page.locator('[data-chart-total="expense"]').inner_text()=='€50.00'
  page.locator('#finance-charts').screenshot(path='/tmp/m360-donut-desktop.png')
  page.locator('[data-chart-cat="overtime"]').click()
@@ -135,6 +143,15 @@ with sync_playwright() as p:
  page.wait_for_function("fixtures.financial_expenses.some(r=>r.category==='ivan_fee' && Number(r.amount_eur)===80)")
  assert '€80.00' in page.locator('[data-staff-category="ivan_fee"]').inner_text()
  assert page.locator('#sum-expense-eur').inner_text()=='€310.00'
+ # Event P&L follows the VAT toggle too (income 1300, event expenses 50 + 80 − 20 correction).
+ assert page.locator('#pnl-net-eur').inner_text()=='€1190.00'
+ balance_before=page.locator('#pnl-balance').inner_text()
+ page.locator('#fin-vat-toggle').click()
+ assert page.locator('#pnl-income-total').inner_text()=='€1083.33 без ДДС'
+ assert page.locator('#pnl-net-eur').inner_text()=='€973.33 без ДДС'
+ assert page.locator('#pnl-balance').inner_text()==balance_before
+ page.locator('#fin-vat-toggle').click()
+ assert page.locator('#pnl-net-eur').inner_text()=='€1190.00'
  page.locator('[data-staff-category="ivan_fee"] button').click()
  assert '€80.00' in page.locator('#drill-body').inner_text()
  page.evaluate('closeDrill()')
