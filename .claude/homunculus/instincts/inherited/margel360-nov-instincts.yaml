@@ -1,0 +1,426 @@
+# Instincts generated from https://github.com/aborisov-arch/margel360-nov
+# Generated: 2026-06-28T15:44:17.605Z
+# Version: 2.0
+# NOTE: This file supplements (does not replace) any existing curated instincts.
+# High-confidence manually curated instincts should be preserved alongside these.
+
+---
+id: margel360-nov-commit-conventional
+trigger: "when writing a commit message"
+confidence: 0.85
+domain: git
+source: repo-analysis
+source_repo: https://github.com/aborisov-arch/margel360-nov
+---
+
+# Margel360 Nov Commit Conventional
+
+## Action
+
+Use conventional commit format with prefixes: fix, feat, security
+
+## Evidence
+
+- 4 commits analyzed
+- Detected conventional commit pattern
+- Examples: fix(security): SRI pins, admin idle-logout, cookie-consent expiry, COOP/CORP; i18n + sitemap fixes, feat(edit): full EN/BG internationalisation of the customer edit page
+
+---
+id: margel360-nov-commit-length
+trigger: "when writing a commit message"
+confidence: 0.6
+domain: git
+source: repo-analysis
+source_repo: https://github.com/aborisov-arch/margel360-nov
+---
+
+# Margel360 Nov Commit Length
+
+## Action
+
+Write moderate-length commit messages (~83 characters)
+
+## Evidence
+
+- Average commit message length: 83 chars
+- Based on 4 commits
+
+---
+id: margel360-nov-naming-files
+trigger: "when creating a new file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/aborisov-arch/margel360-nov
+---
+
+# Margel360 Nov Naming Files
+
+## Action
+
+Use camelCase naming convention
+
+## Evidence
+
+- Analyzed file naming patterns in repository
+- Dominant pattern: camelCase
+
+---
+id: margel360-nov-import-relative
+trigger: "when importing modules"
+confidence: 0.75
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/aborisov-arch/margel360-nov
+---
+
+# Margel360 Nov Import Relative
+
+## Action
+
+Use relative imports for project files
+
+## Evidence
+
+- Import analysis shows relative import pattern
+- Example: import { x } from '../lib/x'
+
+---
+id: margel360-nov-export-style
+trigger: "when exporting from a module"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/aborisov-arch/margel360-nov
+---
+
+# Margel360 Nov Export Style
+
+## Action
+
+Prefer named exports
+
+## Evidence
+
+- Export pattern analysis
+- Dominant style: named
+
+---
+id: margel360-nov-test-separate
+trigger: "when writing tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/aborisov-arch/margel360-nov
+---
+
+# Margel360 Nov Test Separate
+
+## Action
+
+Place tests in the tests/ or __tests__/ directory, mirroring src structure
+
+## Evidence
+
+- Separate test directory pattern detected
+- Tests live in dedicated test folders
+
+---
+id: margel360-nov-workflow-security-header-policy-update
+trigger: "when doing security header policy update"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/aborisov-arch/margel360-nov
+---
+
+# Margel360 Nov Workflow Security Header Policy Update
+
+## Action
+
+Follow the security-header-policy-update workflow:
+1. Edit netlify.toml to adjust security headers (e.g., CSP, COOP, CORP, SRI).
+2. Document rationale and risk in commit message.
+3. Verify that changes do not break existing site functionality.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: netlify.toml
+
+---
+id: margel360-nov-workflow-internationalization-of-existing-page
+trigger: "when doing internationalization of existing page"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/aborisov-arch/margel360-nov
+---
+
+# Margel360 Nov Workflow Internationalization Of Existing Page
+
+## Action
+
+Follow the internationalization-of-existing-page workflow:
+1. Add or update translations JS file (e.g., translations-edit.js, translations-reservation.js).
+2. Update the HTML file to use data-i18n attributes for all static and dynamic text.
+3. Update the relevant JS logic to wire up the i18n engine and handle language toggling.
+4. Bump version numbers for cache busting if needed.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: website/js/translations-*.js, website/*.html, website/js/*.js
+
+---
+id: margel360-nov-instinct-file-naming
+trigger: "When creating a new file in the codebase"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: aborisov-arch/margel360-nov
+---
+
+# Margel360 Nov Instinct File Naming
+
+## Action
+
+Name the file using camelCase
+
+## Evidence
+
+- Pattern in namingConventions.files: camelCase
+
+---
+id: margel360-nov-instinct-function-naming
+trigger: "When defining a new function"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: aborisov-arch/margel360-nov
+---
+
+# Margel360 Nov Instinct Function Naming
+
+## Action
+
+Name the function using camelCase
+
+## Evidence
+
+- Pattern in namingConventions.functions: camelCase
+
+---
+id: margel360-nov-instinct-class-naming
+trigger: "When defining a new class"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: aborisov-arch/margel360-nov
+---
+
+# Margel360 Nov Instinct Class Naming
+
+## Action
+
+Name the class using PascalCase
+
+## Evidence
+
+- Pattern in namingConventions.classes: PascalCase
+
+---
+id: margel360-nov-instinct-constant-naming
+trigger: "When declaring a constant"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: aborisov-arch/margel360-nov
+---
+
+# Margel360 Nov Instinct Constant Naming
+
+## Action
+
+Name the constant using SCREAMING_SNAKE_CASE
+
+## Evidence
+
+- Pattern in namingConventions.constants: SCREAMING_SNAKE_CASE
+
+---
+id: margel360-nov-instinct-import-style
+trigger: "When importing modules"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: aborisov-arch/margel360-nov
+---
+
+# Margel360 Nov Instinct Import Style
+
+## Action
+
+Use relative import paths
+
+## Evidence
+
+- Pattern in importStyle: relative
+
+---
+id: margel360-nov-instinct-export-style
+trigger: "When exporting functions or objects"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: aborisov-arch/margel360-nov
+---
+
+# Margel360 Nov Instinct Export Style
+
+## Action
+
+Use named exports
+
+## Evidence
+
+- Pattern in exportStyle: named
+
+---
+id: margel360-nov-instinct-test-location
+trigger: "When adding or updating tests"
+confidence: 0.7
+domain: testing
+source: repo-analysis
+source_repo: aborisov-arch/margel360-nov
+---
+
+# Margel360 Nov Instinct Test Location
+
+## Action
+
+Place test files in a separate directory from source code
+
+## Evidence
+
+- architecture.folderStructure.testLocation: separate
+
+---
+id: margel360-nov-instinct-error-handling
+trigger: "When handling errors in JavaScript code"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: aborisov-arch/margel360-nov
+---
+
+# Margel360 Nov Instinct Error Handling
+
+## Action
+
+Use try-catch blocks for error handling
+
+## Evidence
+
+- errorHandling.style: try-catch
+
+---
+id: margel360-nov-instinct-global-error-handler
+trigger: "When setting up error handling for the application"
+confidence: 0.7
+domain: architecture
+source: repo-analysis
+source_repo: aborisov-arch/margel360-nov
+---
+
+# Margel360 Nov Instinct Global Error Handler
+
+## Action
+
+Implement a global error handler
+
+## Evidence
+
+- errorHandling.globalHandler: true
+
+---
+id: margel360-nov-instinct-git-commit-format
+trigger: "When writing a commit message"
+confidence: 0.9
+domain: git
+source: repo-analysis
+source_repo: aborisov-arch/margel360-nov
+---
+
+# Margel360 Nov Instinct Git Commit Format
+
+## Action
+
+Use conventional commit prefixes: fix, feat, or security, followed by scope and colon
+
+## Evidence
+
+- Pattern in commits.prefixes: fix, feat, security
+- Examples: fix(security): SRI pins, admin idle-logout, cookie-consent expiry, COOP/CORP; i18n + sitemap fixes
+
+---
+id: margel360-nov-instinct-commit-length
+trigger: "When writing a commit message"
+confidence: 0.7
+domain: git
+source: repo-analysis
+source_repo: aborisov-arch/margel360-nov
+---
+
+# Margel360 Nov Instinct Commit Length
+
+## Action
+
+Write a detailed commit message averaging around 80 characters
+
+## Evidence
+
+- commits.averageLength: 83
+
+---
+id: margel360-nov-instinct-security-header-policy-update
+trigger: "When someone wants to improve or audit site security by changing HTTP headers or related config"
+confidence: 0.95
+domain: workflow
+source: repo-analysis
+source_repo: aborisov-arch/margel360-nov
+---
+
+# Margel360 Nov Instinct Security Header Policy Update
+
+## Action
+
+Edit netlify.toml to adjust security headers (CSP, COOP, CORP, SRI), document rationale and risk in commit message, and verify that changes do not break existing site functionality
+
+## Evidence
+
+- Workflow: security-header-policy-update
+- Example commits: fix(security): tighten CSP img-src from any-https to a Google ad/analytics allowlist
+
+---
+id: margel360-nov-instinct-i18n-existing-page
+trigger: "When someone wants to make a previously single-language page support multiple languages"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: aborisov-arch/margel360-nov
+---
+
+# Margel360 Nov Instinct I18n Existing Page
+
+## Action
+
+Add or update translations JS file, update HTML with data-i18n attributes, update JS logic for i18n engine, and bump version numbers for cache busting if needed
+
+## Evidence
+
+- Workflow: internationalization-of-existing-page
+- Example commits: feat(edit): full EN/BG internationalisation of the customer edit page
+
