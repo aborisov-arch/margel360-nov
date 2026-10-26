@@ -2,8 +2,10 @@
 // addon_services rows. Drinks: drink_purchase_prices (per bottle, used for
 // event bottle costs). Посуда: addon_purchase_prices (per piece).
 const COST_TABLES={
-  drinks:{table:'drink_purchase_prices',key:'drink_id',unit:'бутилка',unitShort:'€/бутилка'},
-  glassware:{table:'addon_purchase_prices',key:'addon_id',unit:'брой',unitShort:'€/брой'},
+  drinks:{table:'drink_purchase_prices',key:'drink_id',unit:'бутилка',unitShort:'€/бутилка',
+    saved:'Покупната цена е запазена. Цената за клиента не се променя; във Финанси тя важи за всички бутилки без ръчно въведена цена на реда.'},
+  glassware:{table:'addon_purchase_prices',key:'addon_id',unit:'брой',unitShort:'€/брой',
+    saved:'Покупната цена е запазена. Цената за клиента не се променя; във Финанси тя важи за наетата посуда във всички проведени събития.'},
 };
 const catalogCosts={allowed:false,error:false,prices:{drinks:new Map(),glassware:new Map()},drafts:new Map(),saving:new Set()};
 function costTab(){return COST_TABLES[activeTab]?activeTab:null;}
@@ -59,7 +61,7 @@ document.addEventListener('click',async event=>{
   try{
     const {error}=await db.from(c.table).upsert({[c.key]:id,cost_eur:cost},{onConflict:c.key});if(error)throw error;
     catalogCosts.prices[tab].set(id,cost);if(catalogCosts.drafts.get(draftKey)===raw)catalogCosts.drafts.delete(draftKey);
-    showToast('Покупната цена е запазена. Цената за клиента и старите събития не са променени.');
+    showToast(c.saved);
   }catch(error){showToast('Покупната цена не беше запазена. Опитайте отново.','error');}
   finally{catalogCosts.saving.delete(draftKey);renderTable();}
 });

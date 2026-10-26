@@ -793,7 +793,9 @@ function setDrinkSelect(index, drinkId) {
   const c = drinkCatalogById.get(drinkId);
   arr[index].id = drinkId;
   arr[index].manual = false;
-  arr[index].unit_cost_eur = drinkPurchasePrices.get(drinkId) ?? null;
+  // No per-event cost: the line follows the catalog purchase price of the
+  // newly chosen drink (drinkUnitCost) until the bookkeeper types one.
+  arr[index].unit_cost_eur = null;
   if (c) { arr[index].name = c.name_bg; arr[index].unit_price_eur = Number(c.price_eur); }
   stageDrinks(arr);
   renderDrinks();
@@ -812,7 +814,7 @@ function addCatalogDrink() {
   const arr = ensureDrinksDraft();
   const first = (typeof drinks !== 'undefined' && Array.isArray(drinks) && drinks[0]) ? drinks[0] : null;
   arr.push(first
-    ? { id: first.id, name: first.name_bg, qty: 1, unit_price_eur: Number(first.price_eur), unit_cost_eur:drinkPurchasePrices.get(first.id)??null, manual: false }
+    ? { id: first.id, name: first.name_bg, qty: 1, unit_price_eur: Number(first.price_eur), unit_cost_eur: null, manual: false }
     : { id: null, name: '', qty: 1, unit_price_eur: 0, manual: true });
   stageDrinks(arr);
   renderDrinks();
@@ -859,7 +861,13 @@ function renderDrinks() {
   }
   wrap.innerHTML = arr.map((l, i) => {
     const lineEur = fmtEur(drinkLineTotal(l));
-    const costInput=`<label class="pay-note">Покупна цена · €/бутилка <input type="number" min="0" step="0.01" data-bottle-cost="${i}" value="${esc(l.unit_cost_eur??'')}" placeholder="Не е зададена" aria-label="Покупна цена за бутилка"></label>`;
+    // Empty input = the line follows the current catalog purchase price
+    // (shown as the placeholder); a typed value is this event's own cost.
+    const catalogCost=drinkCatalogCost(l);
+    const [costPlaceholder,costTitle]=catalogCost!=null?['Каталог: '+fmtEur(catalogCost),'Празно = текущата цена от Каталог → Напитки']
+      :drinkPurchaseError?['Не се зареди','Покупните цени не се заредиха — презаредете страницата']
+      :['Не е зададена','Няма покупна цена в каталога — въведете я тук или в Каталог → Напитки'];
+    const costInput=`<label class="pay-note">Покупна цена · €/бутилка <input type="number" min="0" step="0.01" data-bottle-cost="${i}" value="${esc(l.unit_cost_eur??'')}" placeholder="${costPlaceholder}" title="${costTitle}" aria-label="Покупна цена за бутилка"></label>`;
     // Keep the <select>, the priced unit, and the stored id in agreement even
     // for a drink that has since left the catalog - otherwise the browser
     // silently auto-selects the first option while pricing the stored fallback.

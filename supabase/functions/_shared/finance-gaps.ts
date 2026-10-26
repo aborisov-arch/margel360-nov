@@ -2,7 +2,7 @@
 // (website/admin/js/financials-analysis.js financeGaps + drink-costs.js
 // bottleGapText). Pure functions so send-finance-reminder stays testable.
 
-export type DrinkLine = { qty?: number | string | null; unit_cost_eur?: number | string | null };
+export type DrinkLine = { id?: string | null; qty?: number | string | null; unit_cost_eur?: number | string | null };
 export type FinEvent = {
   id: string; month: string | null; event_date: string | null; customer_name: string | null;
   enquiry_id: string | null; drinks_cost_in_expenses: boolean | null;
@@ -27,21 +27,28 @@ export function nextMonth(m: string): string {
   return mo === 12 ? `${y + 1}-01` : `${y}-${String(mo + 1).padStart(2, "0")}`;
 }
 
-function missingCosts(lines: DrinkLine[]): number {
-  return lines.filter(l => {
-    if (!(Number(l.qty) || 0)) return false;
-    const u = l.unit_cost_eur;
-    return u == null || u === "" || !Number.isFinite(Number(u)) || Number(u) < 0;
-  }).length;
+// Purchase cost of one P&L line: the cost entered for the event wins; a line
+// without one follows the CURRENT catalog purchase price (drink_purchase_prices)
+// by drink id - the same rule as drink-costs.js drinkUnitCost(). null = unknown.
+function lineCost(l: DrinkLine, costs: Map<string, number>): number | null {
+  const u = l.unit_cost_eur;
+  if (u != null && u !== "" && Number.isFinite(Number(u)) && Number(u) >= 0) return Number(u);
+  if (l.id && costs.has(l.id)) return costs.get(l.id)!;
+  return null;
+}
+function missingCosts(lines: DrinkLine[], costs: Map<string, number>): number {
+  return lines.filter(l => (Number(l.qty) || 0) !== 0 && lineCost(l, costs) == null).length;   // nonzero qty, as bottleCostOf()
 }
 
 // Text for an event whose bottle cost is incomplete, or null when complete.
-export function bottleGap(fe: FinEvent, enquiryDrinks: DrinkLine[] | null, hasDrinksExpense: boolean): string | null {
+// `costs` = drink_id → current catalog purchase price per bottle.
+export function bottleGap(fe: FinEvent, enquiryDrinks: DrinkLine[] | null, hasDrinksExpense: boolean, costs: Map<string, number> = new Map()): string | null {
   if (fe.drinks_cost_in_expenses) return hasDrinksExpense ? null : "няма въведен разход „Напитки / алкохол“";
-  // Unsaved P&L drinks are seeded from the order without purchase costs.
-  const lines = fe.pnl_drinks ?? (enquiryDrinks ?? []).map(d => ({ qty: d.qty, unit_cost_eur: null }));
+  // Unsaved P&L drinks are seeded from the order: no per-line cost, so each
+  // ordered bottle resolves through the catalog by id.
+  const lines = fe.pnl_drinks ?? (enquiryDrinks ?? []).map(d => ({ id: d.id ?? null, qty: d.qty, unit_cost_eur: null }));
   if (!lines.length) return Number(fe.income_drinks_eur || 0) !== 0 ? "липсва разбивка на продадените напитки" : null;
-  const n = missingCosts(lines);
+  const n = missingCosts(lines, costs);
   return n ? `липсва покупна цена за ${n} ${n === 1 ? "напитка" : "напитки"}` : null;
 }
 
@@ -55,6 +62,7 @@ export function financeGaps(opts: {
   events: FinEvent[]; today: string; nowMonth: string; electricityMonths: Set<string>;
   enquiryDrinks: Map<string, DrinkLine[]>; eventsWithDrinksExpense: Set<string>; names: Map<string, string>;
   enquiryAddons?: Map<string, BookedAddon[]>; glasswareIds?: Set<string>; glasswareCosts?: Map<string, number>;
+  drinkCosts?: Map<string, number>;
 }): Gap[] {
   const { events, today, nowMonth, electricityMonths } = opts;
   const held = events.filter(fe => !fe.event_date || fe.event_date < today);
@@ -68,7 +76,7 @@ export function financeGaps(opts: {
   held
     .slice().sort((a, b) => (a.event_date ?? "").localeCompare(b.event_date ?? ""))
     .forEach(fe => {
-      const g = bottleGap(fe, fe.enquiry_id ? opts.enquiryDrinks.get(fe.enquiry_id) ?? null : null, opts.eventsWithDrinksExpense.has(fe.id));
+      const g = bottleGap(fe, fe.enquiry_id ? opts.enquiryDrinks.get(fe.enquiry_id) ?? null : null, opts.eventsWithDrinksExpense.has(fe.id), opts.drinkCosts ?? new Map());
       const label = `${fmtDateBg(fe.event_date)} · ${fe.customer_name || (fe.enquiry_id && opts.names.get(fe.enquiry_id)) || "Събитие"}`;
       if (g && fe.month) gaps.push({ month: fe.month, text: `${label}: ${g}` });
       const gg = fe.enquiry_id
