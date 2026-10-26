@@ -23,8 +23,16 @@ function feedBaseUrl() {
   return `${SUPABASE_URL}/functions/v1/calendar-feed?token=`;
 }
 
+// Never lets a card problem reach the calendar page: any failure degrades to
+// the "status unavailable" state.
 async function initCalendarFeedCard(_session) {
-  await loadFeedRow();
+  try {
+    await loadFeedRow();
+  } catch (err) {
+    console.error('Calendar feed card failed to load:', err);
+    feedLoadFailed = true;
+    feedRow = null;
+  }
   renderFeedCard();
 }
 
@@ -49,13 +57,15 @@ async function loadFeedRow() {
 function renderFeedCard() {
   const body = document.getElementById('gcal-body');
   if (!body) return;
-  if (feedLoadFailed) {
-    body.innerHTML = `<p class="gcal-status">${esc(t('gcal_load_failed'))}</p>`;
-    return;
-  }
+  // A URL minted in this page load is shown whatever the status reload did -
+  // it is the only time the admin will ever see it.
   if (feedFreshUrl) {
     body.innerHTML = feedFreshHtml(feedFreshUrl);
     document.getElementById('gcal-copy').addEventListener('click', copyFeedUrl);
+    return;
+  }
+  if (feedLoadFailed) {
+    body.innerHTML = `<p class="gcal-status">${esc(t('gcal_load_failed'))}</p>`;
     return;
   }
   if (feedRow) {
@@ -139,7 +149,11 @@ async function mintFeedUrl() {
     return;
   }
   feedFreshUrl = feedBaseUrl() + data;
-  await loadFeedRow();
+  try {
+    await loadFeedRow();
+  } catch (err) {
+    console.error('Calendar feed status reload failed:', err);
+  }
   renderFeedCard();
   showToast(t('gcal_created_toast'));
 }

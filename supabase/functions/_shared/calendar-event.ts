@@ -130,8 +130,13 @@ function allDayRange(ymd: Ymd): { start: Date; end: Date } {
   return { start: new Date(Date.UTC(ymd.y, ymd.m - 1, ymd.d)), end: new Date(Date.UTC(ymd.y, ymd.m - 1, ymd.d + 1)) };
 }
 
+// C0/DEL control characters are not valid iCalendar TEXT and one stray byte
+// would make a client reject the whole feed; tabs and line breaks stay (the
+// renderer escapes them).
+const CONTROL_CHARS_RE = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g;
+
 function cleanText(s: string | null | undefined): string {
-  return (s ?? "").trim();
+  return (s ?? "").replace(CONTROL_CHARS_RE, "").trim();
 }
 
 function truncateChars(s: string, max: number): string {

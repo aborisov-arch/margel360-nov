@@ -12,7 +12,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Google Calendar subscription card (js/calendar-feed.js) - loads its own
   // row in parallel with the grid data.
-  const feedCard = typeof initCalendarFeedCard === 'function' ? initCalendarFeedCard(session) : Promise.resolve();
+  const feedCard = typeof initCalendarFeedCard === 'function'
+    ? initCalendarFeedCard(session).catch(err => console.error('Calendar feed card failed:', err))
+    : Promise.resolve();
   await Promise.all([loadOccupiedDates(), loadBookings(), feedCard]);
   renderCalendar();
   renderSidePanel();

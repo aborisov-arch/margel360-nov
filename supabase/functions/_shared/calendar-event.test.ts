@@ -100,6 +100,15 @@ Deno.test("empty phone or notes are omitted, long notes are cut, completed reads
   assertEquals(notesLine, "Бележки: " + "х".repeat(500) + "…");
 });
 
+Deno.test("control characters in customer text are stripped so one bad note cannot invalidate the feed", () => {
+  const ev = bookingToEvent(enquiry({ full_name: "Иван\x07 Петров", notes: "Торта\x00 в 22:00\x1f", phone: "+359\x7f888" }), { siteUrl: SITE })!;
+  assertEquals(ev.summary, "Вечерно събитие — Иван Петров");
+  assertStringIncludes(ev.description, "Бележки: Торта в 22:00\n");
+  assertStringIncludes(ev.description, "Телефон: +359888\n");
+  // Tabs and line breaks are legitimate text and stay (the renderer escapes them).
+  assertStringIncludes(bookingToEvent(enquiry({ notes: "ред 1\nред\t2" }), { siteUrl: SITE })!.description, "Бележки: ред 1\nред\t2");
+});
+
 Deno.test("lastModified prefers last_edited_at, falls back to created_at; bad dates yield null", () => {
   assertEquals(bookingToEvent(enquiry(), { siteUrl: SITE })!.lastModified.toISOString(), "2026-10-20T09:00:00.000Z");
   assertEquals(bookingToEvent(enquiry({ last_edited_at: null }), { siteUrl: SITE })!.lastModified.toISOString(), "2026-10-01T10:00:00.000Z");

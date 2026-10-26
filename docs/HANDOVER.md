@@ -12,7 +12,7 @@ Last verified against live infrastructure: **2026-06-12**. Companion to [CLAUDE.
 | **Cloudflare** | Turnstile CAPTCHA widget (account only — DNS is NOT on Cloudflare) | widget for margel360.bg / www / margell360.netlify.app, Managed mode |
 | **Resend** | Transactional email, sender domain margel360.bg | sender `Margel360 <enquiries@margel360.bg>` |
 
-Admin allowlist source of truth: `is_admin()` and `reject_non_admin_signup` in the latest migration. Do not maintain a duplicate email list in this runbook; see `CLAUDE.md` for the owner, finance-admin, and blog-editor tiers.
+Admin allowlist source of truth: `is_finance_admin_email(text)` and `is_admin_email(text)` in the latest migration (`is_admin()`, `is_finance_admin()`, the `reject_non_admin_signup` trigger and the calendar feed all read them). Do not maintain a duplicate email list in this runbook; see `CLAUDE.md` for the owner, finance-admin, and blog-editor tiers.
 
 ## 2. Secrets — names, where they live, how to restore
 

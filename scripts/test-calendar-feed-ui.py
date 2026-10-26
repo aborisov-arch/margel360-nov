@@ -29,9 +29,14 @@ const db={
  },
  from(table){
   const rows=()=>table==='calendar_feed_tokens'?window.feedRows:[];
+  // 'error' = the status select answers {error}; 'throw' = it throws (simulated client fault)
+  const mode=()=>window.feedSelectMode||localStorage.getItem('qa_feed_select')||'';
   const q=new Proxy({},{get(_,key){
    if(key==='then')return resolve=>Promise.resolve(resolve({data:rows(),error:null}));
-   if(key==='maybeSingle')return async()=>({data:rows()[0]??null,error:null});
+   if(key==='maybeSingle')return async()=>{
+    if(table==='calendar_feed_tokens'&&mode()==='throw')throw new Error('simulated client fault');
+    if(table==='calendar_feed_tokens'&&mode()==='error')return {data:null,error:{message:'simulated select error'}};
+    return {data:rows()[0]??null,error:null};};
    return ()=>q}});
   return q}};
 window.db=db;
@@ -119,6 +124,24 @@ with sync_playwright() as p:
     page.wait_for_timeout(200)
     assert page.locator('#gcal-rotate').count() == 1
     assert page.evaluate("window.rpcCalls.filter(n=>n==='revoke_calendar_feed_token').length") == 0
+
+    # (e) a failed status reload right after minting must not hide the fresh URL
+    page.evaluate("localStorage.removeItem('qa_feed_row')")
+    page.reload(wait_until='networkidle')
+    page.wait_for_selector('#gcal-create')
+    page.evaluate("window.feedSelectMode='error'")
+    page.locator('#gcal-create').click()
+    page.wait_for_selector('#gcal-url')
+    assert page.locator('#gcal-url').input_value() == FEED_BASE + '0' * 63 + '1'
+
+    # (f) a throwing status load degrades the card only - the calendar grid still renders
+    page.evaluate("localStorage.setItem('qa_feed_select','throw')")
+    page.reload(wait_until='networkidle')
+    page.wait_for_selector('#gcal-body .gcal-status')
+    assert 'не може да се зареди' in page.locator('#gcal-body').inner_text()
+    assert page.locator('#calendar-grid .cal-cell').count() > 20
+    page.evaluate("localStorage.removeItem('qa_feed_select')")
+    page.evaluate("localStorage.setItem('qa_feed_row', JSON.stringify({token_prefix:'abcd1234',created_at:new Date().toISOString(),last_fetched_at:null,fetch_count:0,revoked_at:null}))")
 
     # phone width: no horizontal overflow in either state
     for width in (320, 390):
