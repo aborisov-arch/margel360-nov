@@ -27,17 +27,26 @@ export function nextMonth(m: string): string {
   return mo === 12 ? `${y + 1}-01` : `${y}-${String(mo + 1).padStart(2, "0")}`;
 }
 
-// Purchase cost of one P&L line: the cost entered for the event wins; a line
-// without one follows the CURRENT catalog purchase price (drink_purchase_prices)
-// by drink id - the same rule as drink-costs.js drinkUnitCost(). null = unknown.
+// Purchase cost of one P&L line - the same rule as drink-costs.js drinkUnitCost():
+// a catalog drink (has an id) takes the CURRENT catalog purchase price
+// (drink_purchase_prices) and nothing else; a manual line (no id) takes the
+// cost typed on it. null = unknown.
 function lineCost(l: DrinkLine, costs: Map<string, number>): number | null {
+  if (l.id) return costs.has(l.id) ? costs.get(l.id)! : null;
   const u = l.unit_cost_eur;
-  if (u != null && u !== "" && Number.isFinite(Number(u)) && Number(u) >= 0) return Number(u);
-  if (l.id && costs.has(l.id)) return costs.get(l.id)!;
-  return null;
+  return u != null && u !== "" && Number.isFinite(Number(u)) && Number(u) >= 0 ? Number(u) : null;
 }
-function missingCosts(lines: DrinkLine[], costs: Map<string, number>): number {
-  return lines.filter(l => (Number(l.qty) || 0) !== 0 && lineCost(l, costs) == null).length;   // nonzero qty, as bottleCostOf()
+// Lines with a nonzero qty (as bottleCostOf()) and no cost, split by where the price belongs.
+function missingCosts(lines: DrinkLine[], costs: Map<string, number>): { catalog: number; manual: number } {
+  const missing = lines.filter(l => (Number(l.qty) || 0) !== 0 && lineCost(l, costs) == null);
+  return { catalog: missing.filter(l => !!l.id).length, manual: missing.filter(l => !l.id).length };
+}
+// Same wording as missingCostText() in drink-costs.js.
+export function missingCostText(catalog: number, manual: number): string {
+  const n = catalog + manual;
+  if (catalog && manual) return `липсва покупна цена за ${n} напитки (${catalog} в Каталог → Напитки, ${manual} ${manual === 1 ? "ръчна" : "ръчни"} на реда)`;
+  if (catalog) return `липсва покупна цена за ${catalog} ${catalog === 1 ? "напитка" : "напитки"} (Каталог → Напитки)`;
+  return `липсва покупна цена за ${manual} ${manual === 1 ? "ръчна напитка" : "ръчни напитки"} (въведете я на реда)`;
 }
 
 // Text for an event whose bottle cost is incomplete, or null when complete.
@@ -48,8 +57,8 @@ export function bottleGap(fe: FinEvent, enquiryDrinks: DrinkLine[] | null, hasDr
   // ordered bottle resolves through the catalog by id.
   const lines = fe.pnl_drinks ?? (enquiryDrinks ?? []).map(d => ({ id: d.id ?? null, qty: d.qty, unit_cost_eur: null }));
   if (!lines.length) return Number(fe.income_drinks_eur || 0) !== 0 ? "липсва разбивка на продадените напитки" : null;
-  const n = missingCosts(lines, costs);
-  return n ? `липсва покупна цена за ${n} ${n === 1 ? "напитка" : "напитки"}` : null;
+  const m = missingCosts(lines, costs);
+  return m.catalog + m.manual ? missingCostText(m.catalog, m.manual) : null;
 }
 
 export function fmtDateBg(iso: string | null): string {

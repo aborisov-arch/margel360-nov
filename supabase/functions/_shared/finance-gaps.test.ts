@@ -14,10 +14,10 @@ Deno.test("nextMonth rolls the year", () => {
 Deno.test("bottleGap cases", () => {
   assertEquals(bottleGap(fe({}), null, false), null);
   assertEquals(bottleGap(fe({ income_drinks_eur: 198 }), null, false), "липсва разбивка на продадените напитки");
-  assertEquals(bottleGap(fe({ pnl_drinks: [{ qty: 2, unit_cost_eur: 10 }, { qty: 1, unit_cost_eur: null }] }), null, false), "липсва покупна цена за 1 напитка");
+  assertEquals(bottleGap(fe({ pnl_drinks: [{ qty: 2, unit_cost_eur: 10 }, { qty: 1, unit_cost_eur: null }] }), null, false), "липсва покупна цена за 1 ръчна напитка (въведете я на реда)");
   assertEquals(bottleGap(fe({ pnl_drinks: [{ qty: 0, unit_cost_eur: null }] }), null, false), null);
-  // Unsaved P&L: seeded from the order, so every ordered bottle lacks a cost.
-  assertEquals(bottleGap(fe({}), [{ qty: 3 }, { qty: 1 }], false), "липсва покупна цена за 2 напитки");
+  // Unsaved P&L: seeded from the order; without catalog prices every ordered bottle lacks a cost.
+  assertEquals(bottleGap(fe({}), [{ id: "cola", qty: 3 }, { id: "panna50", qty: 1 }], false), "липсва покупна цена за 2 напитки (Каталог → Напитки)");
   assertEquals(bottleGap(fe({ drinks_cost_in_expenses: true }), null, false), "няма въведен разход „Напитки / алкохол“");
   assertEquals(bottleGap(fe({ drinks_cost_in_expenses: true }), null, true), null);
 });
@@ -34,7 +34,7 @@ Deno.test("financeGaps lists electricity per month and held events only", () => 
   assertEquals(gaps.map(g => `${g.month} ${g.text}`), [
     "2026-07 Ток: няма въведена месечна сметка",
     "2026-09 Ток: няма въведена месечна сметка",
-    "2026-07 18.07.2026 · Иван: липсва покупна цена за 1 напитка",
+    "2026-07 18.07.2026 · Иван: липсва покупна цена за 1 ръчна напитка (въведете я на реда)",
   ]);
 });
 
@@ -52,18 +52,22 @@ Deno.test("bottleGap falls back to the catalog purchase price for lines without 
   const costs = new Map([["cola", 0.75], ["panna50", 0.49]]);
   // Saved P&L lines without a per-line cost follow the catalog.
   assertEquals(bottleGap(fe({ pnl_drinks: [{ id: "cola", qty: 10, unit_cost_eur: null }, { id: "panna50", qty: 5 }] }), null, false, costs), null);
-  // A drink with no catalog price is still a gap; so is a manual line (no id).
-  assertEquals(bottleGap(fe({ pnl_drinks: [{ id: "cheval_sb", qty: 5 }, { id: "cola", qty: 1 }] }), null, false, costs), "липсва покупна цена за 1 напитка");
-  assertEquals(bottleGap(fe({ pnl_drinks: [{ id: null, qty: 1, unit_cost_eur: null }] }), null, false, costs), "липсва покупна цена за 1 напитка");
-  // A cost entered for the event (even 0) wins over the catalog.
-  assertEquals(bottleGap(fe({ pnl_drinks: [{ id: "cheval_sb", qty: 5, unit_cost_eur: 0 }] }), null, false, costs), null);
+  // A drink with no catalog price is a gap that points at the catalog; a manual line (no id) at its own row.
+  assertEquals(bottleGap(fe({ pnl_drinks: [{ id: "cheval_sb", qty: 5 }, { id: "cola", qty: 1 }] }), null, false, costs), "липсва покупна цена за 1 напитка (Каталог → Напитки)");
+  assertEquals(bottleGap(fe({ pnl_drinks: [{ id: null, qty: 1, unit_cost_eur: null }] }), null, false, costs), "липсва покупна цена за 1 ръчна напитка (въведете я на реда)");
+  assertEquals(bottleGap(fe({ pnl_drinks: [{ id: "cheval_sb", qty: 1 }, { id: null, qty: 1 }] }), null, false, costs), "липсва покупна цена за 2 напитки (1 в Каталог → Напитки, 1 ръчна на реда)");
+  // Catalog drinks take the catalog price only: a cost stored on the line (even 0) does not stand in for it.
+  assertEquals(bottleGap(fe({ pnl_drinks: [{ id: "cheval_sb", qty: 5, unit_cost_eur: 0 }] }), null, false, costs), "липсва покупна цена за 1 напитка (Каталог → Напитки)");
+  // A manual line's typed cost (even 0) counts.
+  assertEquals(bottleGap(fe({ pnl_drinks: [{ id: null, qty: 2, unit_cost_eur: 0 }] }), null, false, costs), null);
   // Unsaved P&L seeded from the order: the ordered ids resolve through the catalog too.
-  assertEquals(bottleGap(fe({}), [{ id: "cola", qty: 3 }, { id: "unknown", qty: 1 }], false, costs), "липсва покупна цена за 1 напитка");
+  assertEquals(bottleGap(fe({}), [{ id: "cola", qty: 3 }, { id: "unknown", qty: 1 }], false, costs), "липсва покупна цена за 1 напитка (Каталог → Напитки)");
   assertEquals(bottleGap(fe({}), [{ id: "cola", qty: 3 }], false, costs), null);
   // Parity with drinkUnitCost(): "", negative and non-numeric entries are not costs - the catalog fills in.
   assertEquals(bottleGap(fe({ pnl_drinks: [{ id: "cola", qty: 2, unit_cost_eur: "" }, { id: "cola", qty: 2, unit_cost_eur: -1 }, { id: "cola", qty: 2, unit_cost_eur: "abc" }] }), null, false, costs), null);
   // ...and without a catalog price they stay missing; any nonzero qty counts, as on the page.
-  assertEquals(bottleGap(fe({ pnl_drinks: [{ id: "cheval_sb", qty: 2, unit_cost_eur: "" }, { id: "cheval_sb", qty: -1 }] }), null, false, costs), "липсва покупна цена за 2 напитки");
+  assertEquals(bottleGap(fe({ pnl_drinks: [{ id: "cheval_sb", qty: 2, unit_cost_eur: "" }, { id: "cheval_sb", qty: -1 }] }), null, false, costs), "липсва покупна цена за 2 напитки (Каталог → Напитки)");
+  assertEquals(bottleGap(fe({ pnl_drinks: [{ id: null, qty: 2, unit_cost_eur: "" }, { id: null, qty: 1, unit_cost_eur: "abc" }] }), null, false, costs), "липсва покупна цена за 2 ръчни напитки (въведете я на реда)");
 });
 
 Deno.test("financeGaps resolves bottle costs through the catalog purchase prices", () => {
@@ -73,5 +77,5 @@ Deno.test("financeGaps resolves bottle costs through the catalog purchase prices
     enquiryDrinks: new Map(), eventsWithDrinksExpense: new Set(), names: new Map(),
     drinkCosts: new Map([["cola", 0.75]]),
   });
-  assertEquals(gaps.map(g => g.text), ["21.10.2026 · Иван: липсва покупна цена за 1 напитка"]);
+  assertEquals(gaps.map(g => g.text), ["21.10.2026 · Иван: липсва покупна цена за 1 напитка (Каталог → Напитки)"]);
 });

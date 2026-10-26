@@ -195,7 +195,9 @@ with sync_playwright() as p:
  page.locator('[data-drink-f="unit_price_eur"]').fill('40')
  page.locator('[data-drink-f="qty"]').fill('3')
  assert page.locator('#pnl-net-eur').inner_text().startswith('€')
- assert 'липсва покупна цена за 1 напитка' in page.locator('#event-bottle-expense').inner_text()
+ # A manual line has no catalog: its purchase cost is typed on the line.
+ assert 'липсва покупна цена за 1 ръчна напитка' in page.locator('#event-bottle-expense').inner_text()
+ assert page.locator('[data-bottle-cost="0"]').count()==1
  page.locator('[data-bottle-cost="0"]').fill('20')
  assert '€60.00' in page.locator('#bottle-cost-summary').inner_text()
  page.locator('#btn-save-pnl').click()
@@ -205,44 +207,46 @@ with sync_playwright() as p:
  page.locator('#finance-charts [data-chart-cat="drinks"][data-chart-kind="expense"]').click()
  page.locator('[data-bottle-event]').click()
  assert page.locator('#pnl-drinks-lines.finance-focus').count()==1
- page.evaluate("const fe=financialEventsById.get('11111111-1111-4111-8111-111111111111');fe.pnl_drinks[0].manual=false;fe.pnl_drinks[0].id='qa-bottle';drinkCatalogById.set('qa-bottle',{id:'qa-bottle',name_bg:'QA bottle',price_eur:50});drinkPurchasePrices.set('qa-bottle',30)")
+ # The same line as a catalog drink: sale price AND purchase price come from the catalog
+ # (sale 50 × 3, cost 30 × 3); the stored price 40 and the cost typed earlier no longer apply.
+ page.evaluate("const fe=financialEventsById.get('11111111-1111-4111-8111-111111111111');fe.pnl_drinks[0].manual=false;fe.pnl_drinks[0].id='qa-bottle';drinkCatalogById.set('qa-bottle',{id:'qa-bottle',name_bg:'QA bottle',price_eur:50});drinkPurchasePrices.set('qa-bottle',30);renderMonthSummary();renderDetail()")
  page.wait_for_function("drinkPurchasePrices.get('qa-bottle')===30")
- assert page.evaluate("eventBottleCost(currentSelection().fe).cost") == 60
- assert page.evaluate("savedDrinksTotal(currentSelection().fe)") == 120
- # Clearing the per-line cost makes the line follow the catalog purchase price (30 × 3 bottles).
- page.locator('[data-bottle-cost="0"]').fill('')
- page.locator('#btn-save-pnl').click()
- page.wait_for_function("eventBottleCost(currentSelection().fe).cost===90 && eventBottleCost(currentSelection().fe).missing===0")
- assert page.locator('#sum-expense-eur').inner_text()=='€400.00'
- assert page.locator('#sum-profit-eur').inner_text()=='€1020.00'
- assert 'покупна цена' not in (page.locator('#finance-gaps').inner_text() or '')
+ assert page.evaluate("eventBottleCost(currentSelection().fe).cost") == 90
+ assert page.evaluate("savedDrinksTotal(currentSelection().fe)") == 150
+ assert page.locator('#pnl-drink-unit-0').inner_text()=='€50.00'
+ assert page.locator('[data-bottle-cost]').count()==0
  assert page.locator('#apply-bottle-costs').count()==0
- page.evaluate('renderDrinks()')
- assert page.locator('[data-bottle-cost="0"]').input_value()==''
- assert page.locator('[data-bottle-cost="0"]').get_attribute('placeholder')=='Каталог: €30.00'
- # Picking a catalog drink in the P&L leaves the cost empty (follows the catalog) instead of copying it.
+ assert page.locator('#sum-income-eur').inner_text()=='€1450.00'
+ assert page.locator('#sum-expense-eur').inner_text()=='€400.00'
+ assert page.locator('#sum-profit-eur').inner_text()=='€1050.00'
+ assert 'покупна цена' not in (page.locator('#finance-gaps').inner_text() or '')
+ # A sale-price edit in the catalog reaches the event too.
+ page.evaluate("drinkCatalogById.get('qa-bottle').price_eur=55;renderMonthSummary();renderDetail()")
+ assert page.locator('#sum-income-eur').inner_text()=='€1465.00'
+ assert page.locator('#pnl-drink-unit-0').inner_text()=='€55.00'
+ page.evaluate("drinkCatalogById.get('qa-bottle').price_eur=50;renderMonthSummary();renderDetail()")
+ # Picking a catalog drink in the P&L adds a line priced from the catalog, with no cost box.
  page.evaluate("window.drinks=[{id:'qa-bottle',cat:0,name_bg:'QA bottle',price_eur:50}]")
  page.locator('#btn-add-drink').click()
  assert page.evaluate("getWorkingDrinks()[1].unit_cost_eur") is None
- assert page.locator('[data-bottle-cost="1"]').get_attribute('placeholder')=='Каталог: €30.00'
+ assert page.locator('[data-bottle-cost]').count()==0
  page.locator('[data-del-drink="1"]').click()
  assert page.evaluate("getWorkingDrinks().length")==1
- # A catalog price changed later reaches this event too (no per-event snapshot).
+ # A purchase-price edit in the catalog reaches this event too (no per-event snapshot).
  page.evaluate("drinkPurchasePrices.set('qa-bottle',25);renderMonthSummary();renderDetail()")
  assert page.locator('#sum-expense-eur').inner_text()=='€385.00'
  assert '€75.00' in page.locator('#bottle-cost-summary').inner_text()
- # Without a catalog price the line is a gap again.
+ # Without a catalog purchase price the line is a gap that points at the catalog.
  page.evaluate("drinkPurchasePrices.delete('qa-bottle');renderMonthSummary();renderDetail()")
  page.wait_for_function("eventBottleCost(currentSelection().fe).missing===1")
- assert page.locator('#sum-profit-eur').inner_text()=='€1110.00'
+ assert page.locator('#sum-profit-eur').inner_text()=='€1140.00'
  assert 'липсващ' in page.locator('#sum-profit-sub').inner_text()
- assert 'липсва покупна цена за 1 напитка' in page.locator('#finance-gaps').inner_text()
+ assert 'липсва покупна цена за 1 напитка (Каталог → Напитки)' in page.locator('#finance-gaps').inner_text()
  page.locator('#finance-gaps [data-bottle-event]').click()
  assert page.locator('#pnl-drinks-lines.finance-focus').count()==1
  # A failed price load is reported as such, not as "no catalog price".
  page.evaluate("drinkPurchaseError=true;renderMonthSummary();renderDetail()")
  assert 'не се заредиха' in page.locator('#finance-gaps').inner_text()
- assert page.locator('[data-bottle-cost="0"]').get_attribute('placeholder')=='Не се зареди'
  page.evaluate("drinkPurchaseError=false;renderMonthSummary();renderDetail()")
  page.wait_for_timeout(800)
  ring=page.locator('[data-chart-total="expense"]').locator('xpath=../..').bounding_box()
@@ -252,16 +256,16 @@ with sync_playwright() as p:
  page.locator('#finance-charts').screenshot(path='/tmp/m360-incomplete-centered.png')
  page.evaluate("document.querySelector('.toast-stack')?.remove()")
  page.locator('[data-chart-total="expense"]').locator('xpath=../../..').screenshot(path='/tmp/m360-expense-donut-phone.png')
- page.locator('[data-bottle-cost="0"]').fill('0')
- page.locator('#btn-save-pnl').click()
+ # A catalog purchase price of 0 is a price, not a gap.
+ page.evaluate("drinkPurchasePrices.set('qa-bottle',0);renderMonthSummary();renderDetail()")
  page.wait_for_function("eventBottleCost(currentSelection().fe).missing===0")
- assert page.locator('#sum-profit-eur').inner_text()=='€1110.00'
+ assert page.locator('#sum-profit-eur').inner_text()=='€1140.00'
  page.evaluate("expensesByEvent.get(currentSelection().fe.id).push({id:'bottle-manual-cost',category:'drinks',amount_eur:60});renderDetail()")
  page.locator('#bottle-cost-manual').check()
  page.locator('#btn-save-pnl').click()
  page.wait_for_function("currentSelection().fe.drinks_cost_in_expenses===true")
  assert page.locator('#sum-expense-eur').inner_text()=='€370.00'
- assert page.locator('#sum-profit-eur').inner_text()=='€1050.00'
+ assert page.locator('#sum-profit-eur').inner_text()=='€1080.00'
  assert not errors,errors
  page.evaluate("financialEventsById.set('correction-event',{id:'correction-event',month:'2026-09',event_date:'2026-09-02',customer_name:'Correction QA',pnl_drinks:[]});expensesByEvent.set('correction-event',[{id:'negative-expense',category:'other',amount_eur:-25}]);renderMonthSummary();openMetricBreakdown('expense')")
  assert page.locator('#sum-expense-eur').inner_text()=='€345.00'

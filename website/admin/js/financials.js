@@ -747,11 +747,13 @@ function ensureDrinksDraft() {
   return dirtyFe.pnl_drinks;
 }
 function drinkUnitPrice(line) {
-  // Keep the sale price actually used for this event, not today's catalog price.
-  if(line.unit_price_eur!=null)return Number(line.unit_price_eur)||0;
-  if (line.manual) return Number(line.unit_price_eur) || 0;
+  // Catalog drinks sell at the CURRENT catalog price, so a price edit in
+  // Каталог → Напитки reaches every event (the owner's rule, as for the venue
+  // price: the old price is never shown). Manual lines, and drinks that have
+  // since left the catalog, keep the price stored on the line.
+  if (line.manual || !line.id) return Number(line.unit_price_eur) || 0;
   const c = drinkCatalogById.get(line.id);
-  if (c) return Number(c.price_eur) || 0;
+  if (c && c.price_eur != null) return Number(c.price_eur) || 0;
   return Number(line.unit_price_eur) || 0;
 }
 function drinkLineTotal(line) { return drinkUnitPrice(line) * (Number(line.qty) || 0); }
@@ -762,7 +764,9 @@ function drinksTotalOf(arr) {
 
 // Stage the draft array + recomputed cached total into dirtyFe.
 function stageDrinks(arr) {
-  arr.forEach(l=>{if(l.unit_price_eur==null)l.unit_price_eur=drinkUnitPrice(l);});
+  // Keep the stored price current for catalog lines (it is the fallback once a
+  // drink leaves the catalog) and fill it where missing.
+  arr.forEach(l=>{if(l.unit_price_eur==null||(!l.manual&&l.id&&drinkCatalogById.has(l.id)))l.unit_price_eur=drinkUnitPrice(l);});
   dirtyFe.pnl_drinks = arr;
   dirtyFe.income_drinks_eur = drinksTotalOf(arr);
 }
@@ -793,8 +797,8 @@ function setDrinkSelect(index, drinkId) {
   const c = drinkCatalogById.get(drinkId);
   arr[index].id = drinkId;
   arr[index].manual = false;
-  // No per-event cost: the line follows the catalog purchase price of the
-  // newly chosen drink (drinkUnitCost) until the bookkeeper types one.
+  // A catalog drink takes its cost from the catalog; drop any cost typed
+  // while the line was manual.
   arr[index].unit_cost_eur = null;
   if (c) { arr[index].name = c.name_bg; arr[index].unit_price_eur = Number(c.price_eur); }
   stageDrinks(arr);
@@ -861,13 +865,9 @@ function renderDrinks() {
   }
   wrap.innerHTML = arr.map((l, i) => {
     const lineEur = fmtEur(drinkLineTotal(l));
-    // Empty input = the line follows the current catalog purchase price
-    // (shown as the placeholder); a typed value is this event's own cost.
-    const catalogCost=drinkCatalogCost(l);
-    const [costPlaceholder,costTitle]=catalogCost!=null?['Каталог: '+fmtEur(catalogCost),'Празно = текущата цена от Каталог → Напитки']
-      :drinkPurchaseError?['Не се зареди','Покупните цени не се заредиха — презаредете страницата']
-      :['Не е зададена','Няма покупна цена в каталога — въведете я тук или в Каталог → Напитки'];
-    const costInput=`<label class="pay-note">Покупна цена · €/бутилка <input type="number" min="0" step="0.01" data-bottle-cost="${i}" value="${esc(l.unit_cost_eur??'')}" placeholder="${costPlaceholder}" title="${costTitle}" aria-label="Покупна цена за бутилка"></label>`;
+    // Only a manual line carries its own purchase cost; catalog drinks take
+    // both prices from Каталог → Напитки (drinkUnitPrice / drinkUnitCost).
+    const costInput=`<label class="pay-note">Покупна цена · €/бутилка <input type="number" min="0" step="0.01" data-bottle-cost="${i}" value="${esc(l.unit_cost_eur??'')}" placeholder="Не е зададена" title="Покупна цена на тази ръчно добавена напитка" aria-label="Покупна цена за бутилка"></label>`;
     // Keep the <select>, the priced unit, and the stored id in agreement even
     // for a drink that has since left the catalog - otherwise the browser
     // silently auto-selects the first option while pricing the stored fallback.
@@ -901,7 +901,6 @@ function renderDrinks() {
           <span class="event-pnl__drink-eur" id="pnl-drink-eur-${i}">${lineEur}</span>
           <button type="button" class="del-btn" data-del-drink="${i}" title="Изтрий">×</button>
         </div>
-        ${costInput}
       </li>`;
   }).join('');
 }
