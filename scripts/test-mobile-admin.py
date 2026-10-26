@@ -2,6 +2,7 @@
 from playwright.sync_api import sync_playwright
 
 stub='''
+const SUPABASE_URL='https://wlxutsufrobzovdsiecb.supabase.co';
 const demo={enquiries:[{id:'demo',enquiry_number:1,full_name:'Тестов клиент с дълго име',email:'test@example.test',phone:'+359000000000',preferred_date:'01/09/2026',event_type:'Събитие',created_at:'2026-09-01T12:00:00Z',status:'confirmed',guests:50,addons:[],drinks:[]}],drinks:[{id:'demo',name_bg:'Бутилка с дълго име за проверка',name_en:'Demo bottle',cat:2,price_eur:80,active:true}],drink_purchase_prices:[{drink_id:'demo',cost_eur:40}]};
 const db={auth:{getSession:async()=>({data:{session:{user:{email:'qa@example.test'}}}})},rpc:async()=>({data:true}),functions:{invoke:async()=>({data:{users:[]},error:null})},from(table){const q=new Proxy({},{get(_,key){if(key==='then')return resolve=>Promise.resolve(resolve({data:demo[table]||[],count:(demo[table]||[]).length,error:null}));return ()=>q}});return q}};
 '''

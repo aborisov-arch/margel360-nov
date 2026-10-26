@@ -18,6 +18,7 @@ const TABLE_LABELS = {
     monthly_electricity:    'Сметка за ток',
     drink_purchase_prices:  'Покупна цена на напитка',
     addon_purchase_prices:  'Покупна цена на посуда',
+    calendar_feed_tokens:   'Google Calendar – адрес за абонамент',
   },
   en: {
     financial_events:       'Financial event (P&L)',
@@ -27,6 +28,7 @@ const TABLE_LABELS = {
     partner_commission_rates: 'Partner commission rate',
     enquiries:              'Enquiry',
     'auth.users':           'User (password)',
+    calendar_feed_tokens:   'Google Calendar feed link',
   },
 };
 const ACTION_LABELS = {
