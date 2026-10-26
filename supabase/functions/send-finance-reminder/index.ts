@@ -47,15 +47,16 @@ serve(async (req) => {
   const recipients = [...new Set([...OWNER_EMAILS.split(","), ...TEAM_EMAIL.split(",")].map(s => s.trim()).filter(Boolean))];
   if (!recipients.length) return json({ error: "no_recipients" }, 500);
 
-  const [fes, elec, exp, enq, glass, glassCost] = await Promise.all([
+  const [fes, elec, exp, enq, glass, glassCost, drinkCost] = await Promise.all([
     sb.from("financial_events").select("id, month, event_date, customer_name, enquiry_id, drinks_cost_in_expenses, income_drinks_eur, pnl_drinks"),
     sb.from("monthly_electricity").select("month"),
     sb.from("financial_expenses").select("event_id").eq("category", "drinks"),
     sb.from("enquiries").select("id, full_name, drinks, addons"),
     sb.from("addon_services").select("id").eq("category", "glassware"),
     sb.from("addon_purchase_prices").select("addon_id, cost_eur"),
+    sb.from("drink_purchase_prices").select("drink_id, cost_eur"),
   ]);
-  const err = fes.error || elec.error || exp.error || enq.error || glass.error || glassCost.error;
+  const err = fes.error || elec.error || exp.error || enq.error || glass.error || glassCost.error || drinkCost.error;
   if (err) { console.error("load failed:", err); return json({ error: "load_failed" }, 500); }
 
   type Enq = { id: string; full_name: string | null; drinks: unknown; addons: unknown };
@@ -70,6 +71,8 @@ serve(async (req) => {
     enquiryAddons: new Map(enquiries.map(e => [e.id, (Array.isArray(e.addons) ? e.addons : []) as BookedAddon[]])),
     glasswareIds: new Set(((glass.data ?? []) as { id: string }[]).map(r => r.id)),
     glasswareCosts: new Map(((glassCost.data ?? []) as { addon_id: string; cost_eur: number }[]).map(r => [r.addon_id, Number(r.cost_eur)])),
+    // Bottles without a cost entered on the event follow the catalog purchase price.
+    drinkCosts: new Map(((drinkCost.data ?? []) as { drink_id: string; cost_eur: number }[]).map(r => [r.drink_id, Number(r.cost_eur)])),
   });
   if (!gaps.length) return json({ sent: 0, gaps: 0 });
 
