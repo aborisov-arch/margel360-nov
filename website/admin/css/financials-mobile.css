@@ -60,7 +60,20 @@
   .event-pnl__line-row > .event-pnl__line-notes { grid-column:1/-1; min-height:76px; width:100%; }
   .event-pnl__line-row > .del-btn { width:44px; height:44px; }
   .event-pnl__pay-grid--3col { grid-template-columns:minmax(0,1fr)!important; }
-  .event-pnl__drink-row { flex-wrap:wrap; }
+  /* Drink line on a phone: the drink on its own line (with the delete button),
+     then "unit × qty = total" on the next. Same element order for catalog
+     (select + unit span) and manual (name + price input) lines. The name spans
+     the flexible column so its intrinsic width cannot widen the fixed tracks. */
+  .event-pnl__drink-row { display:grid; grid-template-columns:minmax(0,auto) auto 56px auto minmax(0,1fr) 44px; grid-template-areas:"sel sel sel sel sel del" "unit op1 qty op2 eur eur"; gap:8px 6px; align-items:center; }
+  .event-pnl__drink-row > .event-pnl__drink-select, .event-pnl__drink-row > .event-pnl__drink-name { grid-area:sel; width:100%; min-width:0; }
+  .event-pnl__drink-row > .event-pnl__drink-unit, .event-pnl__drink-row > .event-pnl__drink-price { grid-area:unit; min-width:0; }
+  .event-pnl__drink-row > .event-pnl__drink-price { width:100%; min-width:64px; max-width:90px; }
+  .event-pnl__drink-row > .event-pnl__drink-op { grid-area:op1; }                      /* the × before the qty */
+  .event-pnl__drink-row > .event-pnl__drink-qty { grid-area:qty; width:56px; padding-left:4px; padding-right:4px; }
+  .event-pnl__drink-row > .event-pnl__drink-qty ~ .event-pnl__drink-op { grid-area:op2; } /* the = after it */
+  .event-pnl__drink-row > .event-pnl__drink-eur { grid-area:eur; min-width:0; text-align:right; font-size:14px; overflow-wrap:anywhere; }
+  .event-pnl__drink-row > .del-btn { grid-area:del; width:44px; height:44px; }
+  .event-pnl__line--drink > .pay-note { display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; }
   .event-pnl__ot-calc { width:100%; justify-content:space-between; }
   .event-pnl__actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding-top:16px; }
   #btn-save-pnl { grid-column:1/-1; grid-row:1; min-height:48px; }

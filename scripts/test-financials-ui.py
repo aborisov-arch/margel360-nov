@@ -190,6 +190,17 @@ with sync_playwright() as p:
  assert page.locator('#sum-expense-eur').inner_text()=='€310.00'
  page.locator('#staff-allocations').screenshot(path='/tmp/m360-staff-allocations.png')
  assert page.evaluate('document.documentElement.scrollWidth <= 390')
+ def assert_drink_rows_fit():
+  # Drink lines must fit a phone: no sideways scroll, every control inside the viewport, totals on screen.
+  for width in [320,375,390,430]:
+   page.set_viewport_size({'width':width,'height':844})
+   assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'),('drinks',width,page.evaluate('document.documentElement.scrollWidth'))
+   for row in page.locator('.event-pnl__drink-row').all():
+    assert row.evaluate('e=>e.scrollWidth<=e.clientWidth+1'),('drink row overflow',width)
+    for part in row.locator(':scope > *').all():
+     assert part.evaluate('e=>{const r=e.getBoundingClientRect();return r.width>0&&r.left>=0&&r.right<=innerWidth+1}'),('drink row part outside viewport',width,part.evaluate('e=>e.className'))
+  page.set_viewport_size({'width':390,'height':844})
+  page.wait_for_timeout(300)
  page.locator('#btn-add-drink-manual').click()
  page.locator('[data-drink-f="name"]').fill('QA bottle')
  page.locator('[data-drink-f="unit_price_eur"]').fill('40')
@@ -198,6 +209,7 @@ with sync_playwright() as p:
  # A manual line has no catalog: its purchase cost is typed on the line.
  assert 'липсва покупна цена за 1 ръчна напитка' in page.locator('#event-bottle-expense').inner_text()
  assert page.locator('[data-bottle-cost="0"]').count()==1
+ assert_drink_rows_fit()
  page.locator('[data-bottle-cost="0"]').fill('20')
  assert '€60.00' in page.locator('#bottle-cost-summary').inner_text()
  page.locator('#btn-save-pnl').click()
@@ -216,6 +228,7 @@ with sync_playwright() as p:
  assert page.locator('#pnl-drink-unit-0').inner_text()=='€50.00'
  assert page.locator('[data-bottle-cost]').count()==0
  assert page.locator('#apply-bottle-costs').count()==0
+ assert_drink_rows_fit()
  assert page.locator('#sum-income-eur').inner_text()=='€1450.00'
  assert page.locator('#sum-expense-eur').inner_text()=='€400.00'
  assert page.locator('#sum-profit-eur').inner_text()=='€1050.00'
@@ -251,8 +264,8 @@ with sync_playwright() as p:
  page.wait_for_timeout(800)
  ring=page.locator('[data-chart-total="expense"]').locator('xpath=../..').bounding_box()
  text_box=page.locator('[data-chart-total="expense"]').locator('xpath=..').bounding_box()
- assert abs((ring['x']+ring['width']/2)-(text_box['x']+text_box['width']/2))<2
- assert abs((ring['y']+ring['height']/2)-(text_box['y']+text_box['height']/2))<2
+ assert abs((ring['x']+ring['width']/2)-(text_box['x']+text_box['width']/2))<2,(ring,text_box)
+ assert abs((ring['y']+ring['height']/2)-(text_box['y']+text_box['height']/2))<2,(ring,text_box)
  page.locator('#finance-charts').screenshot(path='/tmp/m360-incomplete-centered.png')
  page.evaluate("document.querySelector('.toast-stack')?.remove()")
  page.locator('[data-chart-total="expense"]').locator('xpath=../../..').screenshot(path='/tmp/m360-expense-donut-phone.png')
