@@ -81,10 +81,13 @@ serve(async (req) => {
   const picked = pickAndValidate(changes);
   if (!picked.ok) return json({ error: "invalid_field", field: picked.field, detail: picked.error }, 400);
   const patch = picked.value;
+  // Only the evening event has a customer-chosen start hour; the other event
+  // types run on fixed windows (see _shared/calendar-event.ts EVENT_SCHEDULE).
+  if (current.event_id !== "evening") delete patch.arrival_time;
   if (!Object.keys(patch).length) return json({ error: "no_changes" }, 400);
 
   // Admin-locked (confirmed) booking: items-only mode. The lock protects the
-  // date and guest count; add-ons/drinks/phone/notes stay editable (see
+  // date, start hour and guest count; add-ons/drinks/phone/notes stay editable (see
   // LOCKED_FROZEN_FIELDS in _shared/diff.ts).
   if (current.edit_locked) {
     const frozen = lockedFieldChanges(patch, current);

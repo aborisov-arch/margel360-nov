@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Manrope:wght@300..800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/venue.css?v=5">
+  <link rel="stylesheet" href="css/venue.css?v=6">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" integrity="sha384-RkASv+6KfBMW9eknReJIJ6b3UnjKOKC5bOUaNgIY778NFbQ8MtWq9Lr/khUgqtTt" crossorigin="anonymous">
   <link rel="icon" href="/favicon.ico" sizes="48x48">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
@@ -89,11 +89,16 @@
           </section>
 
           <section class="composition__section">
-            <h2 class="numeral" data-num="2.">Дата на събитието</h2>
+            <h2 class="numeral" data-num="2.">Дата и час</h2>
             <label class="field">
               <span class="label-caps">Изберете нова дата или запазете избраната</span>
               <input type="text" id="field-date" placeholder="дд / мм / гггг" autocomplete="off" required>
             </label>
+            <div class="field arrival-field" id="arrival-field" hidden>
+              <span class="label-caps" id="arrival-label">Час на пристигане</span>
+              <div class="arrival-chips" id="arrival-chips" role="radiogroup" aria-labelledby="arrival-label"></div>
+              <p class="arrival-hint" id="arrival-hint">Залата е ваша 5 часа от часа на пристигане.</p>
+            </div>
           </section>
 
           <section class="composition__section">
@@ -191,6 +196,6 @@
        unchanged and adds ~30KB gzipped - acceptable for this internal-ish
        page. -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7" integrity="sha384-tD6X9wDfTRdKpuPoHFZrVW2RXjSYSWjLBPWXxpHprWWl9eaHlwl05aRjHsiKF97n" crossorigin="anonymous"></script>
-  <script src="js/edit.js?v=17"></script>
+  <script src="js/edit.js?v=18"></script>
 </body>
 </html>

@@ -302,6 +302,26 @@
 }
 .field .label-caps { color: var(--muted); }
 
+/* Evening start-hour chips on the edit page. */
+.arrival-field { margin-top: 1.5rem; }
+.arrival-chips { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.arrival-chip {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  min-width: 4.5rem;
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--gold-faint);
+  border-radius: 999px;
+  background: var(--cream);
+  color: var(--ink);
+  cursor: pointer;
+}
+.arrival-chip:hover:not(:disabled) { border-color: var(--gold); }
+.arrival-chip.is-selected { background: var(--ink); border-color: var(--ink); color: var(--cream); }
+.arrival-chip:disabled { cursor: not-allowed; opacity: 0.55; }
+.arrival-chip:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.arrival-hint { margin: 0; color: var(--muted); font-size: 0.85rem; }
+
 .field-grid-2 {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));

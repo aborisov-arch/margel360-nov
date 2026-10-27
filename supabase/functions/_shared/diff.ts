@@ -1,4 +1,4 @@
-export const EDITABLE_FIELDS = ["guests", "phone", "notes", "addons", "drinks", "preferred_date"] as const;
+export const EDITABLE_FIELDS = ["guests", "phone", "notes", "addons", "drinks", "preferred_date", "arrival_time"] as const;
 export type EditableField = typeof EDITABLE_FIELDS[number];
 
 export type DiffEntry = { field: EditableField; before: unknown; after: unknown };
@@ -8,10 +8,11 @@ export type DiffEntry = { field: EditableField; before: unknown; after: unknown 
 export const EDIT_COUNT_CAP = 10;
 
 // When an admin confirms a booking it becomes edit_locked: the lock protects
-// the DATE and the guest count (calendar + pricing are the team's business),
+// the DATE, the start hour and the guest count (calendar, staffing and pricing
+// are the team's business),
 // while add-ons, drinks, phone and notes stay customer-editable so the add-on
 // reminder drip can link to a working edit page.
-export const LOCKED_FROZEN_FIELDS: readonly EditableField[] = ["preferred_date", "guests"];
+export const LOCKED_FROZEN_FIELDS: readonly EditableField[] = ["preferred_date", "arrival_time", "guests"];
 
 // Fields of `patch` that would REALLY change a frozen field (sending the
 // unchanged current value along, as the edit page always does, is fine).

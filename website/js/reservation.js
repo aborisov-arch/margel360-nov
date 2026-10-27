@@ -181,6 +181,7 @@ function renderEventPicker() {
 // Available arrival slots for the evening event. The customer picks one of
 // these on the date step; we store the literal "HH:MM" string in
 // booking.arrival_time and ship it to Supabase / the email summary.
+// Mirrored in edit.js + _shared/validate.ts (customer edit page) - keep in sync.
 const EVENING_ARRIVAL_SLOTS = ['19:00', '19:30', '20:00', '20:30', '21:00'];
 
 function renderStep2VariantPicker() {

@@ -407,6 +407,7 @@ const FIELD_LABEL: Record<string, string> = {
   addons:         "Допълнителни услуги",
   drinks:         "Напитки",
   preferred_date: "Дата",
+  arrival_time:   "Час на пристигане",
 };
 
 function fmtAddon(a: LineItem): string {
