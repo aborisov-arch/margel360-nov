@@ -73,3 +73,12 @@ Deno.test("isUuid: accepts valid, rejects invalid", () => {
   assertEquals(isUuid(null), false);
   assertEquals(isUuid(123), false);
 });
+
+Deno.test("validateField: arrival_time accepts only the evening slots", () => {
+  for (const s of ["19:00", "19:30", "20:00", "20:30", "21:00"]) {
+    assertEquals(validateField("arrival_time", s), { ok: true, value: s });
+  }
+  for (const bad of ["18:30", "21:30", "7pm", "", null, 1900]) {
+    assertEquals(validateField("arrival_time", bad).ok, false);
+  }
+});

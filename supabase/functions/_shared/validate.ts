@@ -13,6 +13,10 @@ const MAX_ADDON_PRICE = 50000;
 const MAX_DRINK_QTY = 200;
 const MAX_NAME_LEN = 200;
 
+// Arrival slots of the evening event (hall rent = 5 hours from arrival). Mirror
+// of EVENING_ARRIVAL_SLOTS in website/js/reservation.js + edit.js - keep in sync.
+export const EVENING_ARRIVAL_SLOTS = ["19:00", "19:30", "20:00", "20:30", "21:00"] as const;
+
 export type ValidationResult = { ok: true; value: unknown } | { ok: false; error: string };
 
 export function validateField(field: string, raw: unknown): ValidationResult {
@@ -39,6 +43,13 @@ export function validateField(field: string, raw: unknown): ValidationResult {
     case "preferred_date":
       if (typeof raw !== "string" || !DATE_RE.test(raw)) {
         return { ok: false, error: "preferred_date must be DD/MM/YYYY" };
+      }
+      return { ok: true, value: raw };
+
+    // Only meaningful for the evening event - callers drop it for the others.
+    case "arrival_time":
+      if (typeof raw !== "string" || !(EVENING_ARRIVAL_SLOTS as readonly string[]).includes(raw)) {
+        return { ok: false, error: `arrival_time must be one of ${EVENING_ARRIVAL_SLOTS.join(", ")}` };
       }
       return { ok: true, value: raw };
 

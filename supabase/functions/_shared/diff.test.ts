@@ -54,3 +54,11 @@ Deno.test("lockedFieldChanges: flags only real changes to frozen fields", () => 
 Deno.test("EDIT_COUNT_CAP stays 10 (edit.js copy + HANDOVER mention it)", () => {
   assertEquals(EDIT_COUNT_CAP, 10);
 });
+
+Deno.test("arrival_time: whitelisted, and frozen once the booking is locked", () => {
+  const d = diffEnquiry({ arrival_time: "19:00" }, { arrival_time: "20:30" });
+  assertEquals(d, [{ field: "arrival_time", before: "19:00", after: "20:30" }]);
+  const current = { preferred_date: "05/09/2026", arrival_time: "19:00", guests: 40 };
+  assertEquals(lockedFieldChanges({ arrival_time: "19:00" }, current), []);
+  assertEquals(lockedFieldChanges({ arrival_time: "20:00", guests: 45 }, current), ["arrival_time", "guests"]);
+});

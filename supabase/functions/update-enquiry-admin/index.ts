@@ -35,7 +35,9 @@ function corsHeadersFor(req: Request): Record<string, string> {
   };
 }
 
-const EDITABLE_FIELDS = ["guests", "phone", "notes", "addons", "drinks", "preferred_date"] as const;
+const EDITABLE_FIELDS = ["guests", "phone", "notes", "addons", "drinks", "preferred_date", "arrival_time"] as const;
+// Evening arrival slots - mirror of _shared/validate.ts EVENING_ARRIVAL_SLOTS.
+const EVENING_ARRIVAL_SLOTS = ["19:00", "19:30", "20:00", "20:30", "21:00"];
 type EditableField = typeof EDITABLE_FIELDS[number];
 
 function diffEnquiry(before: Record<string, unknown>, after: Record<string, unknown>) {
@@ -73,6 +75,10 @@ function validateField(field: string, raw: unknown): VR {
     case "preferred_date":
       if (typeof raw !== "string" || !DATE_RE.test(raw))
         return { ok: false, error: "preferred_date DD/MM/YYYY" };
+      return { ok: true, value: raw };
+    case "arrival_time":
+      if (typeof raw !== "string" || !EVENING_ARRIVAL_SLOTS.includes(raw))
+        return { ok: false, error: "arrival_time slot" };
       return { ok: true, value: raw };
     case "addons":
       if (!Array.isArray(raw)) return { ok: false, error: "addons array" };
@@ -146,6 +152,8 @@ serve(async (req) => {
     if (!r.ok) return json({ error: "invalid_field", field: f, detail: r.error }, 400);
     patch[f] = r.value;
   }
+  // Only the evening event has a chosen start hour (others run fixed windows).
+  if (current.event_id !== "evening") delete patch.arrival_time;
   if (!Object.keys(patch).length) return json({ error: "no_changes" }, 400);
 
   // Reprice edited items from the catalog; items removed from the catalog

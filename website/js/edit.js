@@ -20,7 +20,14 @@ let adminToken = null;  // Supabase access token of the logged-in admin
 // addonQtys: id -> integer count. Furniture addons (freeUntil) and inventory
 // qty addons (heater etc.) get a stepper; everything else keeps the checkbox
 // UI and stores qty:1 when selected.
-const state = { token: null, enquiry: null, occupiedDates: [], activeDrinkCat: 0, drinkQtys: {}, addonQtys: {} };
+const state = { token: null, enquiry: null, occupiedDates: [], activeDrinkCat: 0, drinkQtys: {}, addonQtys: {}, arrivalTime: null };
+
+// Evening event: the customer picks an arrival slot; the hall rent covers 5
+// hours from it. Mirror of EVENING_ARRIVAL_SLOTS in reservation.js and
+// supabase/functions/_shared/validate.ts - keep in sync. The other event
+// types run fixed windows and have no start hour to change.
+const EVENING_ARRIVAL_SLOTS = ['19:00', '19:30', '20:00', '20:30', '21:00'];
+function isEvening() { return state.enquiry?.event_id === 'evening'; }
 
 // Addons that use a +/- typeable qty input instead of an on/off toggle.
 // Inventory caps come from the catalog's max_qty column (admin-editable);
@@ -148,7 +155,9 @@ async function loadOccupiedDates() {
 
 function renderForm() {
   const e = state.enquiry;
-  const timeLabel = e.time_of_day === 'day' ? 'Дневно · до 17:30' : 'Вечерно · след 19:00';
+  const timeLabel = e.arrival_time
+    ? `Вечерно · пристигане ${esc(e.arrival_time)}`
+    : (e.time_of_day === 'day' ? 'Дневно · до 17:30' : 'Вечерно · след 19:00');
 
   $('form-eyebrow').textContent = `Редактиране · ${e.event_type}`;
   $('form-headline').innerHTML = `Вашето събитие <em>на ${fmtDateBg(e.preferred_date)}</em>.`;
@@ -180,10 +189,11 @@ function renderForm() {
     $('field-date').value = e.preferred_date || '';
     $('field-date').disabled = true;
     $('field-guests').disabled = true;
-    $('form-sub').innerHTML = 'Датата и броят гости са потвърдени и се променят само чрез екипа — обадете се на <a href="tel:+359888100042">+359&nbsp;888&nbsp;100&nbsp;042</a>. Услугите и напитките може да променяте свободно.';
+    $('form-sub').innerHTML = 'Датата, часът и броят гости са потвърдени и се променят само чрез екипа — обадете се на <a href="tel:+359888100042">+359&nbsp;888&nbsp;100&nbsp;042</a>. Услугите и напитките може да променяте свободно.';
   } else {
     initDatePicker();
   }
+  renderArrivalPicker();
   renderAddons();
   seedDrinkQtys();
   setupDrinksToggle();
@@ -254,6 +264,37 @@ function initDatePicker() {
       if (isOccupied) dayElem.classList.add('occupied-date');
     },
   });
+}
+
+// Start-hour chips (evening bookings only). Locked (confirmed) bookings show
+// the confirmed hour disabled - the server rejects a change with locked_field.
+function renderArrivalPicker() {
+  const field = $('arrival-field');
+  const wrap = $('arrival-chips');
+  if (!field || !wrap || !isEvening()) return;
+  field.hidden = false;
+  state.arrivalTime = state.enquiry.arrival_time || null;
+  const locked = state.editScope === 'items' && !adminMode;
+  wrap.innerHTML = '';
+  EVENING_ARRIVAL_SLOTS.forEach(slot => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'arrival-chip' + (state.arrivalTime === slot ? ' is-selected' : '');
+    btn.textContent = slot;
+    btn.setAttribute('role', 'radio');
+    btn.setAttribute('aria-checked', state.arrivalTime === slot ? 'true' : 'false');
+    btn.disabled = locked;
+    btn.addEventListener('click', () => {
+      state.arrivalTime = slot;
+      wrap.querySelectorAll('.arrival-chip').forEach(b => {
+        const on = b === btn;
+        b.classList.toggle('is-selected', on);
+        b.setAttribute('aria-checked', on ? 'true' : 'false');
+      });
+    });
+    wrap.appendChild(btn);
+  });
+  if (locked) $('arrival-hint').textContent = 'Часът е потвърден - за промяна се обадете на +359 888 100 042.';
 }
 
 // Whole euros stay whole (€300); sub-euro glassware keeps its cents (€0.80).
@@ -673,6 +714,11 @@ async function onSave(evt) {
 
   try {
     const changes = { preferred_date, guests, phone, notes, addons, drinks: drinksOut };
+    // Send the start hour only when the customer actually picked a different
+    // one - an unchanged (or never-set legacy) hour never burns an edit.
+    if (isEvening() && state.arrivalTime && state.arrivalTime !== state.enquiry.arrival_time) {
+      changes.arrival_time = state.arrivalTime;
+    }
     const url = adminMode ? FN_ADMIN_UPDATE : FN_UPDATE;
     const headers = { 'Content-Type': 'application/json' };
     if (adminMode) headers['Authorization'] = `Bearer ${adminToken}`;
@@ -688,7 +734,7 @@ async function onSave(evt) {
   } catch (err) {
     console.error(err);
     errEl.textContent = String(err && err.message) === 'locked_field'
-      ? 'Датата и броят гости са потвърдени и се променят само чрез екипа — обадете се на +359 888 100 042.'
+      ? 'Датата, часът и броят гости са потвърдени и се променят само чрез екипа — обадете се на +359 888 100 042.'
       : 'Нещо се обърка при запазването. Моля опитайте отново или се свържете с нас на 360@margel.info.';
     errEl.classList.remove('hidden');
     btn.disabled = false;
