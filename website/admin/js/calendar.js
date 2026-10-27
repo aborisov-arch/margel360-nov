@@ -10,7 +10,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   const session = await requireAuth();
   if (!session) return;
 
-  await Promise.all([loadOccupiedDates(), loadBookings()]);
+  // Google Calendar subscription card (js/calendar-feed.js) - loads its own
+  // row in parallel with the grid data.
+  const feedCard = typeof initCalendarFeedCard === 'function'
+    ? initCalendarFeedCard(session).catch(err => console.error('Calendar feed card failed:', err))
+    : Promise.resolve();
+  await Promise.all([loadOccupiedDates(), loadBookings(), feedCard]);
   renderCalendar();
   renderSidePanel();
 
@@ -33,6 +38,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 function rerenderPage() {
   renderCalendar();
   renderSidePanel();
+  if (typeof renderFeedCard === 'function') renderFeedCard();
 }
 
 async function loadOccupiedDates() {

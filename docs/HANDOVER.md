@@ -12,7 +12,7 @@ Last verified against live infrastructure: **2026-06-12**. Companion to [CLAUDE.
 | **Cloudflare** | Turnstile CAPTCHA widget (account only — DNS is NOT on Cloudflare) | widget for margel360.bg / www / margell360.netlify.app, Managed mode |
 | **Resend** | Transactional email, sender domain margel360.bg | sender `Margel360 <enquiries@margel360.bg>` |
 
-Admin allowlist source of truth: `is_admin()` and `reject_non_admin_signup` in the latest migration. Do not maintain a duplicate email list in this runbook; see `CLAUDE.md` for the owner, finance-admin, and blog-editor tiers.
+Admin allowlist source of truth: `is_finance_admin_email(text)` and `is_admin_email(text)` in the latest migration (`is_admin()`, `is_finance_admin()`, the `reject_non_admin_signup` trigger and the calendar feed all read them). Do not maintain a duplicate email list in this runbook; see `CLAUDE.md` for the owner, finance-admin, and blog-editor tiers.
 
 ## 2. Secrets — names, where they live, how to restore
 
@@ -27,6 +27,7 @@ Admin allowlist source of truth: `is_admin()` and `reject_non_admin_signup` in t
 - `GOOGLE_REVIEW_URL` — **optional.** The venue's Google review link. When set, submit-feedback emails delighted customers a one-tap review invite (on the current 1–6 star survey: nothing below 5 and an average of 5.25+; the rules per form version live in `_shared/feedback-form.ts`). If unset, that branch no-ops; the low-rating internal alert works regardless. Set with `supabase secrets set GOOGLE_REVIEW_URL='https://g.page/r/...'`.
 - `OWNER_EMAILS` (comma-separated owner notification list), `TEAM_EMAIL` (notify-enquiry recipient), `EVENT_HALL_FROM_EMAIL` (optional from-address override), `PUBLIC_SITE_URL`.
 - `SUPABASE_URL` / `SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY` / `SUPABASE_DB_URL` etc. are auto-provided by the platform.
+- The Google Calendar feed (`calendar-feed`) needs **no** secret of its own: the per-admin tokens live hashed in `calendar_feed_tokens` and are minted from the admin panel.
 
 Set with: `supabase secrets set NAME=value --project-ref wlxutsufrobzovdsiecb` (functions restart automatically).
 
@@ -87,12 +88,14 @@ Version labels below are the last recorded live versions where known; verify the
 | submit-feedback (v17) | no | stores feedback — survey v3 (five 1–6 ratings + improvement comment, `_shared/feedback-form.ts`), still accepts the v2 (1–5) and v1 (1–4) payloads, each on its own scale; one answer per enquiry (a re-submit updates it), mints one 5% hall-rent MG- discount code per enquiry (`_shared/feedback-reward.ts`; unique indexes from `20260927070040`), emails it BG/EN |
 | get-feedback-by-token (v11) | no | feedback page load (booking language + the saved answer of any form version) |
 | validate-discount-code (v4) / redeem-discount-code (v4) | no | promo code check/claim |
+| calendar-feed | no | iCal subscription for Google Calendar: `GET ?token=<64 hex>` (per-admin token minted on admin/calendar.html; only its sha256 is stored in `calendar_feed_tokens`; the `calendar_feed_touch` RPC authorises — active token + owner still on the admin allowlist — and stamps `last_fetched_at`). Serves confirmed/completed bookings + manual blocks, Europe/Sofia → UTC, Bulgarian labels, no prices/emails. Unknown token = empty 404; 30 req/min per IP |
 
 Deploy command and the verify_jwt rule: see CLAUDE.md → Deploying.
 
 ## 6. Database snapshot
 
-- Tables: `enquiries` (+ `enquiry_number_seq` starting 1001; `partner_interest` jsonb holds the wizard's mark-interest snapshot), `enquiry_notes`, `enquiry_edit_log`, `enquiry_status_log` (pipeline transition history — feeds the weekly KPI won/lost), `event_feedback`, `discount_codes`, `financial_events`, `financial_expenses`, `financial_income_items`, `partner_commissions` + `partner_commission_rates` (the venue's commission from partners — one card per partner on admin/financials.html, entered by hand; default 10 %), `occupied_dates`, `partners` (partner catalog: catering / decoration / singer / band / dj, plus legacy `artist` — drives partners.html, the wizard step, admin/partners.html and the commission cards), `rate_limits`.
+- Tables: `enquiries` (+ `enquiry_number_seq` starting 1001; `partner_interest` jsonb holds the wizard's mark-interest snapshot), `enquiry_notes`, `enquiry_edit_log`, `enquiry_status_log` (pipeline transition history — feeds the weekly KPI won/lost), `event_feedback`, `discount_codes`, `financial_events`, `financial_expenses`, `financial_income_items`, `partner_commissions` + `partner_commission_rates` (the venue's commission from partners — one card per partner on admin/financials.html, entered by hand; default 10 %), `occupied_dates`, `partners` (partner catalog: catering / decoration / singer / band / dj, plus legacy `artist` — drives partners.html, the wizard step, admin/partners.html and the commission cards), `rate_limits`, `calendar_feed_tokens` (per-admin sha256 tokens for the Google Calendar feed; written only via RPCs).
+- Admin allowlist: the emails live in `is_finance_admin_email(text)` / `is_admin_email(text)` (migration `20261026120000`); `is_finance_admin()`, `is_admin()` and the `reject_non_admin_signup` trigger delegate to them. Staff change = one new migration editing those two functions (keep the self-check `DO` block).
 - RLS: everything admin-facing behind `is_admin()`, the money tables (`financial_*`, `partner_commissions`, `partner_commission_rates`) behind `is_finance_admin()`; anon may only SELECT `occupied_dates` and **active** `partners` rows; `rate_limits` service-role only.
 - Storage: `partner-images`, `catalog-images`, and `blog-images` use public-read asset URLs with authenticated admin writes. Partner uploads are capped at 5 MB and restricted to jpeg/png/webp; each table stores the corresponding object path.
 - Triggers on `enquiries`: `enquiries_auto_block_date_trigger` (confirmed/completed → block date), `trg_set_enquiry_token_expiry` (token = created + 14 days), `enquiries_log_status_change_trigger` (every pipeline_status change → row in `enquiry_status_log`; SECURITY DEFINER so admin dashboard updates can write it).
@@ -107,3 +110,4 @@ Deploy command and the verify_jwt rule: see CLAUDE.md → Deploying.
 - Emails missing: Resend dashboard logs; then check `send-enquiry-summary` 401s (means `X-Internal-Secret` mismatch).
 - Rate-limit lockouts: `select * from rate_limits;` — delete a row to reset a key.
 - Calendar wrong: `occupied_dates` vs confirmed enquiries; remember dates are freed only by the guarded paths in dashboard.js or manually in admin calendar.
+- Google Calendar not updating: open admin/calendar.html as that admin — the „Google Календар“ card shows when Google last fetched the feed (`calendar_feed_tokens.last_fetched_at`). Google re-reads subscribed URLs on its own schedule (typically every 8–24 h); nothing on our side forces it. A 404 from `calendar-feed` means the URL was rotated/deactivated or the admin left the allowlist — generate a new one on the card and add it again in Google („Други календари“ → „+“ → „От URL адрес“). 429 = rate limit (30/min per IP), 500 = check the function logs. The subscription is personal: a URL made under Angel's login dies when Angel rotates his, so the manager creates his own while logged in as 360@margel.info.
