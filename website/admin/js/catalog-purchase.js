@@ -1,13 +1,18 @@
 // Private finance-only purchase prices. Never stored in the public drinks /
 // addon_services rows. Drinks: drink_purchase_prices (per bottle, used for
 // event bottle costs). Посуда: addon_purchase_prices (per piece).
+// Наргилета: addon_purchase_prices too (per shisha) - a one-off asset cost,
+// shown as payback against the rental price, never charged to event P&L.
 const COST_TABLES={
   drinks:{table:'drink_purchase_prices',key:'drink_id',unit:'бутилка',unitShort:'€/бутилка',
     saved:'Покупната цена е запазена. Цената за клиента не се променя; във Финанси тя важи за всички бутилки във всички събития.'},
   glassware:{table:'addon_purchase_prices',key:'addon_id',unit:'брой',unitShort:'€/брой',
     saved:'Покупната цена е запазена. Цената за клиента не се променя; във Финанси тя важи за наетата посуда във всички проведени събития.'},
+  shisha:{table:'addon_purchase_prices',key:'addon_id',unit:'наргиле',unitShort:'€/наргиле',payback:true,
+    headers:['Покупна цена / наргиле','Окупаемост','Инвестиция общо'],
+    saved:'Покупната цена е запазена. Цената за клиента не се променя.'},
 };
-const catalogCosts={allowed:false,error:false,prices:{drinks:new Map(),glassware:new Map()},drafts:new Map(),saving:new Set()};
+const catalogCosts={allowed:false,error:false,prices:{drinks:new Map(),glassware:new Map(),shisha:new Map()},drafts:new Map(),saving:new Set()};
 function costTab(){return COST_TABLES[activeTab]?activeTab:null;}
 async function loadCatalogCosts(){
   try{
@@ -26,21 +31,33 @@ function catalogMargin(sale,cost){
   const profit=Number(sale)-Number(cost);
   return {profit:'€'+profit.toFixed(2),margin:Number(sale)>0?(profit/Number(sale)*100).toFixed(1)+'%':'—'};
 }
+// Наргилета: rentals needed to earn back the purchase price, and the total
+// spent (cost × shishas owned, when the stock is set).
+function catalogPayback(row,cost){
+  if(cost==null||cost===''||!Number.isFinite(Number(cost))||Number(cost)<0)return {profit:'—',margin:'—'};
+  const sale=Number(row.price_eur),stock=Number(row.max_qty);
+  return {profit:sale>0?`${Math.ceil(Number(cost)/sale)} наема`:'—',
+    margin:stock>0&&stock<999?'€'+(Number(cost)*stock).toFixed(2):'—'};
+}
+function catalogResult(tab,row,cost){return COST_TABLES[tab].payback?catalogPayback(row,cost):catalogMargin(row.price_eur,cost);}
 function catalogPurchaseCells(row){
   const tab=costTab();
   if(!catalogCosts.allowed||!tab)return '';
   if(catalogCosts.error)return '<td colspan="3">Покупните цени не се заредиха. Презаредете страницата.</td>';
   const draftKey=tab+':'+row.id;
   const cost=catalogCosts.drafts.has(draftKey)?catalogCosts.drafts.get(draftKey):catalogCosts.prices[tab].get(row.id);
-  const result=catalogMargin(row.price_eur,cost);
+  const result=catalogResult(tab,row,cost);
   const busy=catalogCosts.saving.has(draftKey)?'disabled':'';
   return `<td><div class="catalog-cost-entry"><input type="number" min="0" max="999999.99" step="0.01" data-purchase-input="${esc(row.id)}" value="${esc(cost??'')}" placeholder="Не е зададена" aria-label="Покупна цена за ${esc(row.name_bg)}" ${busy}><button type="button" class="btn btn-outline btn-sm" data-purchase-save="${esc(row.id)}" ${busy}>Запази</button></div><small data-purchase-status="${esc(row.id)}">${catalogCosts.drafts.has(draftKey)?'Незаписана промяна':COST_TABLES[tab].unitShort+' · само за екипа'}</small></td><td data-purchase-profit="${esc(row.id)}">${result.profit}</td><td data-purchase-margin="${esc(row.id)}">${result.margin}</td>`;
 }
 function syncCatalogCostHeaders(){
   const tab=costTab(),visible=catalogCosts.allowed&&!!tab;
-  document.querySelectorAll('[data-purchase-header]').forEach(el=>{
+  document.querySelectorAll('[data-purchase-header]').forEach((el,i)=>{
     el.hidden=!visible;
-    if(visible&&el.dataset.purchaseHeader)el.textContent=el.dataset.purchaseHeader.replace('{unit}',COST_TABLES[tab].unit);
+    if(!visible)return;
+    if(el.dataset.defaultText==null)el.dataset.defaultText=el.textContent;
+    const custom=COST_TABLES[tab].headers;
+    el.textContent=custom?custom[i]:el.dataset.purchaseHeader?el.dataset.purchaseHeader.replace('{unit}',COST_TABLES[tab].unit):el.dataset.defaultText;
   });
   document.getElementById('catalog-cost-note').hidden=!visible;
 }
@@ -48,7 +65,7 @@ document.addEventListener('input',event=>{
   const input=event.target.closest('[data-purchase-input]');if(!input)return;
   const tab=costTab();if(!tab)return;
   const id=input.dataset.purchaseInput,row=rows[tab].find(r=>r.id===id);if(!row)return;
-  catalogCosts.drafts.set(tab+':'+id,input.value);const result=catalogMargin(row.price_eur,input.value);
+  catalogCosts.drafts.set(tab+':'+id,input.value);const result=catalogResult(tab,row,input.value);
   const tr=input.closest('tr');tr.querySelector('[data-purchase-profit]').textContent=result.profit;tr.querySelector('[data-purchase-margin]').textContent=result.margin;tr.querySelector('[data-purchase-status]').textContent='Незаписана промяна';
 });
 document.addEventListener('click',async event=>{

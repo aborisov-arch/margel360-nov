@@ -14,7 +14,7 @@ async function loadAddonPurchasePrices() {
 // Посуда release); the live catalog and the cost table cover older rows.
 function isGlasswareLine(a){
   if(!a||!a.id)return false;
-  if(a.category==='glassware')return true;
+  if(a.category)return a.category==='glassware';   // e.g. 'shisha' lines never count
   const cat=(window.addonServices||[]).find(s=>s.id===a.id);
   return cat?cat.category==='glassware':addonPurchasePrices.has(a.id);
 }
