@@ -57,6 +57,8 @@ function fmtSvc(eur) {
 // Whole euros stay whole (€300); sub-euro glassware keeps its cents (€0.80).
 function fmtAmount(eur) { return Number.isInteger(eur) ? String(eur) : eur.toFixed(2); }
 function isGlassware(svc) { return svc && svc.category === 'glassware'; }
+function isShisha(svc) { return svc && svc.category === 'shisha'; }
+function addonEmoji(svc) { return svc.emoji || (isGlassware(svc) ? '🥂' : isShisha(svc) ? '💨' : '⭐'); }
 function fmtDrink(eur) {
   if (eur == null) return getLang() === 'bg' ? 'По запитване' : 'On request';
   return '€' + eur.toFixed(2);
@@ -426,13 +428,18 @@ function renderAddons() {
   if (!grid) return;
   grid.innerHTML = '';
 
-  addonServices.filter(svc => !isGlassware(svc)).forEach(svc => {
-    if (isQtyAddon(svc)) {
-      renderQtyAddon(grid, svc, l);
-    } else {
-      renderCheckboxAddon(grid, svc, l);
-    }
-  });
+  const renderOne = (g, svc) => (isQtyAddon(svc) ? renderQtyAddon : renderCheckboxAddon)(g, svc, l);
+  addonServices.filter(svc => !isGlassware(svc) && !isShisha(svc)).forEach(svc => renderOne(grid, svc));
+
+  // Наргилета (rented per event, price per shisha): own block on the same
+  // step, hidden until the catalog has one. Totals with the other add-ons.
+  const shishaGrid = document.getElementById('shisha-grid');
+  if (shishaGrid) {
+    shishaGrid.innerHTML = '';
+    const shishas = addonServices.filter(isShisha);
+    shishas.forEach(svc => renderOne(shishaGrid, svc));
+    document.getElementById('shisha-block').hidden = shishas.length === 0;
+  }
   updateAddonsTotal();
 }
 
@@ -461,7 +468,7 @@ function renderCheckboxAddon(grid, svc, l) {
 
   const visual = document.createElement('div');
   if (svc.img) { visual.className = 'addon-img'; const i = document.createElement('img'); i.src = svc.img; i.alt = ''; visual.appendChild(i); }
-  else { visual.className = 'addon-emoji'; visual.textContent = svc.emoji || (isGlassware(svc) ? '🥂' : '⭐'); visual.setAttribute('aria-hidden', 'true'); }
+  else { visual.className = 'addon-emoji'; visual.textContent = addonEmoji(svc); visual.setAttribute('aria-hidden', 'true'); }
 
   const info = document.createElement('div'); info.className = 'addon-info';
   const name = document.createElement('div'); name.className = 'addon-name'; name.textContent = l === 'bg' ? svc.name_bg : svc.name_en;
@@ -487,7 +494,7 @@ function renderQtyAddon(grid, svc, l) {
 
   const visual = document.createElement('div');
   if (svc.img) { visual.className = 'addon-img'; const i = document.createElement('img'); i.src = svc.img; i.alt = ''; visual.appendChild(i); }
-  else { visual.className = 'addon-emoji'; visual.textContent = svc.emoji || (isGlassware(svc) ? '🥂' : '⭐'); visual.setAttribute('aria-hidden', 'true'); }
+  else { visual.className = 'addon-emoji'; visual.textContent = addonEmoji(svc); visual.setAttribute('aria-hidden', 'true'); }
 
   const info = document.createElement('div'); info.className = 'addon-info';
   const name = document.createElement('div'); name.className = 'addon-name'; name.textContent = l === 'bg' ? svc.name_bg : svc.name_en;

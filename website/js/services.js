@@ -83,7 +83,7 @@ function fmtPrice(svc) {
     wardrobe: '/ 5ч.', valet: '/ 5ч.',
   };
   const perPiece = new Set(['numbers', 'heater', 'heater_tbl', 'glow_table']);
-  const suffix = perSession[svc.id] || (perPiece.has(svc.id) || svc.category === 'glassware' ? '/ бр.' : '');
+  const suffix = perSession[svc.id] || (perPiece.has(svc.id) || svc.category === 'glassware' || svc.category === 'shisha' ? '/ бр.' : '');
   // Keep cents for sub-euro glassware prices (€0.80), whole euros otherwise.
   const amount = Number.isInteger(svc.price) ? String(svc.price) : svc.price.toFixed(2);
   return '€' + amount + (suffix ? ' ' + suffix : '');
@@ -264,7 +264,7 @@ function renderServices(currentLang) {
   if (!grid || typeof addonServices === 'undefined') return;
   grid.innerHTML = '';
   const renderedGroups = new Set();
-  addonServices.filter(svc => svc.category !== 'glassware').forEach(svc => {
+  addonServices.filter(svc => (svc.category || 'service') === 'service').forEach(svc => {
     const group = GROUP_BY_ID.get(svc.id);
     if (group) {
       if (renderedGroups.has(group.key)) return;
@@ -275,16 +275,18 @@ function renderServices(currentLang) {
     }
     grid.appendChild(renderSingleCard(svc, currentLang));
   });
-  renderGlassware(currentLang);
+  renderCategorySection('glassware', currentLang);
+  renderCategorySection('shisha', currentLang);
 }
 
-// Посуда: glassware rented per piece, managed in admin/catalog.html (tab
-// "Посуда"). The section stays hidden until the catalog has an item.
-function renderGlassware(currentLang) {
-  const section = document.getElementById('glassware-section');
-  const grid = document.getElementById('glassware-grid');
+// Посуда (glassware, per piece) and Наргилета (shisha, per shisha per event)
+// are managed in admin/catalog.html under their own tabs. Each section stays
+// hidden until the catalog has an active item of that category.
+function renderCategorySection(category, currentLang) {
+  const section = document.getElementById(category + '-section');
+  const grid = document.getElementById(category + '-grid');
   if (!section || !grid) return;
-  const items = addonServices.filter(svc => svc.category === 'glassware');
+  const items = addonServices.filter(svc => svc.category === category);
   grid.innerHTML = '';
   items.forEach(svc => grid.appendChild(renderSingleCard(svc, currentLang)));
   section.hidden = items.length === 0;

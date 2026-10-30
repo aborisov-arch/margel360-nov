@@ -39,9 +39,9 @@
                    price_eur: r.price_eur == null ? null : Number(r.price_eur), img: resolveImg(r.img) };
         });
         window.addonServices = results[1].map(function (r) {
-          // category: 'service' (Услуги) or 'glassware' (Посуда). Both stay in
-          // addonServices so price/qty lookups by id keep working everywhere;
-          // renderers filter by category.
+          // category: 'service' (Услуги), 'glassware' (Посуда) or 'shisha'
+          // (Наргилета). All stay in addonServices so price/qty lookups by id
+          // keep working everywhere; renderers filter by category.
           const o = { id: r.id, name_bg: r.name_bg, name_en: r.name_en,
                       price: Number(r.price_eur), img: resolveImg(r.img),
                       category: r.category || 'service' };

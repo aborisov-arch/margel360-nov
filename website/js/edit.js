@@ -309,6 +309,10 @@ function renderAddons() {
   if (glassGrid) glassGrid.innerHTML = '';
   const hasGlassware = addonServices.some(s => s.category === 'glassware');
   if ($('glassware-section')) $('glassware-section').hidden = !hasGlassware;
+  // Наргилета (category 'shisha') get their own block under the add-ons.
+  const shishaGrid = $('shisha-grid');
+  if (shishaGrid) shishaGrid.innerHTML = '';
+  if ($('shisha-block')) $('shisha-block').hidden = !addonServices.some(s => s.category === 'shisha');
 
   // Seed state.addonQtys from saved enquiry once. Stepper rows persist qty
   // explicitly; older checkbox rows are treated as qty=1 when present. Clamp
@@ -322,7 +326,8 @@ function renderAddons() {
   }
 
   addonServices.forEach(svc => {
-    const grid = svc.category === 'glassware' && glassGrid ? glassGrid : addonGrid;
+    const grid = svc.category === 'glassware' && glassGrid ? glassGrid
+      : svc.category === 'shisha' && shishaGrid ? shishaGrid : addonGrid;
     const li = document.createElement('li');
     const qty = state.addonQtys[svc.id] || 0;
 
